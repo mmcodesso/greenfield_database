@@ -1,7 +1,5 @@
 # Greenfield Home Furnishings, Inc.
-## Revised Schema Specification and Posting Rules
-
-### Version 3 Draft
+## Schema Specification and Posting Rules
 
 ## 1. Purpose and design objective
 
@@ -55,9 +53,9 @@ The previous row estimates were too low for a five-year monthly transactional da
 
 This produces a database in the broad range of approximately 150,000 to 300,000 total rows, depending on final monthly activity assumptions and anomaly settings.
 
-## 4. Revised schema overview
+## 4. Schema overview
 
-The revised core design contains 24 tables. The two required additions are ShipmentLine and GoodsReceiptLine.
+The core design contains 24 tables.
 
 ### 4.1 Final table groups
 

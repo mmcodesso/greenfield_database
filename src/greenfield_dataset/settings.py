@@ -29,6 +29,7 @@ class Settings:
     sqlite_path: str
     excel_path: str
     validation_report_path: str
+    generation_log_path: str = "outputs/generation.log"
 
 
 @dataclass

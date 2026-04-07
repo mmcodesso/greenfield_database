@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import logging
+import sys
+import time
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterable
+from typing import Any, Iterable, Iterator
 
 import pandas as pd
 
@@ -32,7 +36,7 @@ from greenfield_dataset.p2p import (
 )
 from greenfield_dataset.posting_engine import post_all_transactions
 from greenfield_dataset.schema import create_empty_tables
-from greenfield_dataset.settings import GenerationContext, initialize_context, load_settings
+from greenfield_dataset.settings import GenerationContext, Settings, initialize_context, load_settings
 from greenfield_dataset.validations import (
     validate_phase1,
     validate_phase2,
@@ -42,6 +46,80 @@ from greenfield_dataset.validations import (
     validate_phase6,
     validate_phase7,
 )
+
+
+LOGGER = logging.getLogger("greenfield_dataset")
+
+
+def generation_log_path(context_or_settings: GenerationContext | Settings) -> Path:
+    settings = getattr(context_or_settings, "settings", context_or_settings)
+    return Path(settings.generation_log_path)
+
+
+def configure_generation_logging(log_path: str | Path) -> None:
+    path = Path(log_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    LOGGER.setLevel(logging.INFO)
+    LOGGER.propagate = False
+    for handler in list(LOGGER.handlers):
+        LOGGER.removeHandler(handler)
+        handler.close()
+
+    formatter = logging.Formatter("%(asctime)s | %(levelname)s | %(message)s")
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setFormatter(formatter)
+
+    file_handler = logging.FileHandler(path, mode="w", encoding="utf-8")
+    file_handler.setFormatter(formatter)
+
+    LOGGER.addHandler(console_handler)
+    LOGGER.addHandler(file_handler)
+
+
+@contextmanager
+def logged_step(name: str) -> Iterator[None]:
+    started_at = time.perf_counter()
+    LOGGER.info("START | %s", name)
+    try:
+        yield
+    except Exception:
+        elapsed = time.perf_counter() - started_at
+        LOGGER.exception("FAIL | %s | elapsed_seconds=%.2f", name, elapsed)
+        raise
+    elapsed = time.perf_counter() - started_at
+    LOGGER.info("DONE | %s | elapsed_seconds=%.2f", name, elapsed)
+
+
+def log_settings(settings: Settings, config_path: str | Path) -> None:
+    LOGGER.info("Config path: %s", Path(config_path))
+    LOGGER.info("Company: %s", settings.company_name)
+    LOGGER.info("Fiscal range: %s to %s", settings.fiscal_year_start, settings.fiscal_year_end)
+    LOGGER.info("Random seed: %s", settings.random_seed)
+    LOGGER.info("Anomaly mode: %s", settings.anomaly_mode)
+    LOGGER.info("SQLite export enabled: %s | path=%s", settings.export_sqlite, settings.sqlite_path)
+    LOGGER.info("Excel export enabled: %s | path=%s", settings.export_excel, settings.excel_path)
+    LOGGER.info("Validation report path: %s", settings.validation_report_path)
+    LOGGER.info("Generation log path: %s", generation_log_path(settings))
+
+
+def log_table_counts(context: GenerationContext, table_names: Iterable[str], label: str) -> None:
+    counts = ", ".join(f"{table_name}={len(context.tables[table_name]):,}" for table_name in table_names)
+    LOGGER.info("ROW COUNTS | %s | %s", label, counts)
+
+
+def log_all_table_counts(context: GenerationContext, label: str) -> None:
+    counts = ", ".join(f"{table_name}={len(df):,}" for table_name, df in context.tables.items())
+    LOGGER.info("ROW COUNTS | %s | %s", label, counts)
+
+
+def log_validation_results(phase_name: str, results: dict[str, Any]) -> None:
+    direct_exceptions = len(results.get("exceptions", []))
+    LOGGER.info("VALIDATION | %s | direct_exceptions=%s", phase_name, direct_exceptions)
+
+    for key, value in results.items():
+        if isinstance(value, dict) and "exception_count" in value:
+            LOGGER.info("VALIDATION | %s.%s | exception_count=%s", phase_name, key, value["exception_count"])
 
 
 def build_phase1(config_path: str | Path = "config/settings.yaml") -> GenerationContext:
@@ -157,19 +235,121 @@ def generate_all_months(context: GenerationContext) -> None:
 
 
 def build_full_dataset(config_path: str | Path = "config/settings.yaml") -> GenerationContext:
-    context = build_phase2(config_path)
+    settings = load_settings(config_path)
+    configure_generation_logging(generation_log_path(settings))
+    LOGGER.info("Starting Greenfield dataset generation.")
+    log_settings(settings, config_path)
+    context = initialize_context(settings)
 
-    generate_all_months(context)
-    validate_phase5(context)
-    post_all_transactions(context)
-    validate_phase6(context)
-    inject_anomalies(context)
-    validate_phase7(context)
+    with logged_step("Create empty schema"):
+        create_empty_tables(context)
+        log_all_table_counts(context, "empty schema")
+
+    with logged_step("Generate phase 1 master data"):
+        generate_cost_centers(context)
+        load_accounts(context, accounts_path="config/accounts.csv")
+        generate_employees(context)
+        backfill_cost_center_managers(context)
+        generate_warehouses(context)
+        log_table_counts(context, ("Account", "CostCenter", "Employee", "Warehouse"), "phase 1")
+
+    with logged_step("Validate phase 1"):
+        log_validation_results("phase1", validate_phase1(context))
+
+    with logged_step("Generate phase 2 master data and planning data"):
+        generate_items(context)
+        generate_customers(context)
+        generate_suppliers(context)
+        generate_opening_balances(context)
+        generate_budgets(context)
+        log_table_counts(
+            context,
+            ("Item", "Customer", "Supplier", "JournalEntry", "GLEntry", "Budget"),
+            "phase 2",
+        )
+
+    with logged_step("Validate phase 2"):
+        log_validation_results("phase2", validate_phase2(context))
+
+    with logged_step("Generate all configured monthly subledger transactions"):
+        generated_months = list(fiscal_months(context))
+        LOGGER.info(
+            "MONTH RANGE | count=%s | first=%s-%02d | last=%s-%02d",
+            len(generated_months),
+            *generated_months[0],
+            *generated_months[-1],
+        )
+        for year, month in generated_months:
+            LOGGER.info("MONTH START | %s-%02d", year, month)
+            month_started_at = time.perf_counter()
+            generate_month_o2c(context, year, month)
+            generate_month_p2p(context, year, month)
+            generate_month_shipments(context, year, month)
+            generate_month_goods_receipts(context, year, month)
+            generate_month_sales_invoices(context, year, month)
+            generate_month_cash_receipts(context, year, month)
+            generate_month_purchase_invoices(context, year, month)
+            generate_month_disbursements(context, year, month)
+            LOGGER.info(
+                "MONTH DONE | %s-%02d | elapsed_seconds=%.2f",
+                year,
+                month,
+                time.perf_counter() - month_started_at,
+            )
+        log_table_counts(
+            context,
+            (
+                "SalesOrder",
+                "SalesOrderLine",
+                "PurchaseRequisition",
+                "PurchaseOrder",
+                "Shipment",
+                "GoodsReceipt",
+                "SalesInvoice",
+                "CashReceipt",
+                "PurchaseInvoice",
+                "DisbursementPayment",
+            ),
+            "monthly transactions",
+        )
+
+    with logged_step("Validate operational subledger data"):
+        log_validation_results("phase5", validate_phase5(context))
+
+    with logged_step("Post transactions to general ledger"):
+        post_all_transactions(context)
+        log_table_counts(context, ("JournalEntry", "GLEntry"), "posting")
+
+    with logged_step("Validate posted ledger"):
+        log_validation_results("phase6", validate_phase6(context))
+
+    with logged_step("Inject configured anomalies"):
+        inject_anomalies(context)
+        LOGGER.info("ANOMALIES | count=%s", len(context.anomaly_log))
+
+    with logged_step("Validate final dataset"):
+        log_validation_results("phase7", validate_phase7(context))
+
     if context.settings.export_sqlite:
-        export_sqlite(context)
+        with logged_step("Export SQLite database"):
+            export_sqlite(context)
+            LOGGER.info("EXPORT | sqlite | path=%s", context.settings.sqlite_path)
+    else:
+        LOGGER.info("SKIP | SQLite export disabled.")
+
     if context.settings.export_excel:
-        export_excel(context)
-    export_validation_report(context)
+        with logged_step("Export Excel workbook"):
+            export_excel(context)
+            LOGGER.info("EXPORT | excel | path=%s", context.settings.excel_path)
+    else:
+        LOGGER.info("SKIP | Excel export disabled.")
+
+    with logged_step("Export validation report"):
+        export_validation_report(context)
+        LOGGER.info("EXPORT | validation_report | path=%s", context.settings.validation_report_path)
+
+    log_all_table_counts(context, "final")
+    LOGGER.info("Finished Greenfield dataset generation.")
 
     return context
 
@@ -208,6 +388,7 @@ def print_summary(context: GenerationContext) -> None:
     print(f"SQLite export: {context.settings.sqlite_path}")
     print(f"Excel export: {context.settings.excel_path}")
     print(f"Validation report: {context.settings.validation_report_path}")
+    print(f"Generation log: {generation_log_path(context)}")
 
 
 def main() -> None:

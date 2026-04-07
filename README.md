@@ -12,7 +12,8 @@ The generator creates a full SQLite database, an Excel workbook, and a validatio
 outputs/
 |-- greenfield_2026_2030.sqlite
 |-- greenfield_2026_2030.xlsx
-`-- validation_report.json
+|-- validation_report.json
+`-- generation.log
 ```
 
 Generated output files are ignored by Git. Regenerate them locally whenever needed.
@@ -103,7 +104,7 @@ Important settings:
 - `employee_count`, `customer_count`, `supplier_count`, `item_count`, `warehouse_count`: master-data scale
 - `tax_rate`: sales tax rate applied to sales invoices
 - `anomaly_mode`: anomaly profile selector
-- `sqlite_path`, `excel_path`, `validation_report_path`: output locations
+- `sqlite_path`, `excel_path`, `validation_report_path`, `generation_log_path`: output locations
 
 Anomaly configuration lives in [config/anomaly_profile.yaml](config/anomaly_profile.yaml). The default `standard` profile injects approval, timing, duplicate-reference, threshold, and related-party address anomalies across the fiscal years.
 
@@ -203,6 +204,19 @@ The validation layer checks:
 
 The final validation report is written to `outputs/validation_report.json`.
 
+## Generation Log
+
+Each full run writes a detailed build log to `outputs/generation.log` by default. The log includes:
+
+- Configuration values used for the run
+- Timed start and finish entries for every major generation step
+- Per-month progress for all configured fiscal months
+- Row-count checkpoints after schema, master data, transaction generation, posting, and final export
+- Validation exception summaries by phase
+- Anomaly count and export locations
+
+Change `generation_log_path` in [config/settings.yaml](config/settings.yaml) to write the log somewhere else.
+
 ## Anomalies
 
 The default profile logs planted exceptions such as:
@@ -228,4 +242,9 @@ Anomalies are designed to preserve GL balance. They are intended for detection e
 
 ## License
 
-No open-source license has been selected yet. Add a `LICENSE` file before publishing if the repository should grant public reuse rights.
+Unless otherwise noted, this work is licensed under the
+[Creative Commons Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0)](https://creativecommons.org/licenses/by-sa/4.0/).
+
+You may share and adapt the material for any purpose, including commercial use,
+provided that you give appropriate attribution and distribute adaptations under
+the same license.
