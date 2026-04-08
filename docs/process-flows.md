@@ -59,16 +59,16 @@ flowchart LR
     DP -. Posts AP and Cash .-> GL
 ```
 
-In the current generator, purchasing starts with a requisition, then a purchase order, then a receipt, then the supplier invoice, and finally payment. The accounting events happen when inventory is received, when the supplier invoice is approved, and when payment is made.
+In the current generator, purchasing starts with a requisition, then a purchase order, then one or more goods receipts, then one or more supplier invoices, and finally one or more payments. Purchase orders can batch multiple requisitions. Supplier invoices match specific receipt lines through `PurchaseInvoiceLine.GoodsReceiptLineID`. The accounting events happen when inventory is received, when the supplier invoice is approved, and when payment is made.
 
 | Business event | Main tables | When accounting happens | Typical student questions |
 |---|---|---|---|
 | Supplier setup | `Supplier` | No posting | Which suppliers are most important or risky? |
 | Internal request | `PurchaseRequisition` | No posting | Who requested the item and was it approved properly? |
-| Order placed | `PurchaseOrder`, `PurchaseOrderLine` | No posting | What was ordered, from whom, and at what expected cost? |
-| Goods received | `GoodsReceipt`, `GoodsReceiptLine` | Receipt posts inventory and GRNI | Was receipt timing appropriate? Was quantity fully received? |
-| Supplier billed | `PurchaseInvoice`, `PurchaseInvoiceLine` | Invoice posts GRNI, AP, and purchase variance | Did invoice cost differ from receipt cost? |
-| Supplier paid | `DisbursementPayment` | Payment posts AP and cash | Which invoices are still unpaid? Are there duplicate payment references? |
+| Order placed | `PurchaseOrder`, `PurchaseOrderLine` | No posting | Which requisitions were batched into one PO? What was ordered, from whom, and at what expected cost? |
+| Goods received | `GoodsReceipt`, `GoodsReceiptLine` | Receipt posts inventory and GRNI | Was receipt timing appropriate? Was quantity partially received across dates or months? |
+| Supplier billed | `PurchaseInvoice`, `PurchaseInvoiceLine` | Invoice posts GRNI, AP, and purchase variance | Which receipt lines were matched? Did invoice cost differ from receipt cost? |
+| Supplier paid | `DisbursementPayment` | Payment posts AP and cash | Which invoices are still unpaid or only partially paid? Are there duplicate payment references? |
 
 ## Subledger-to-Ledger Traceability
 
@@ -141,9 +141,10 @@ For multi-year income statement analysis, tell students to exclude the two year-
 
 1. Start with a `PurchaseInvoice`.
 2. Use `PurchaseOrderID` to find the related `PurchaseOrder`.
-3. Use `PurchaseInvoiceLine.POLineID` to connect invoice lines to purchase order lines.
-4. Use `DisbursementPayment.PurchaseInvoiceID` to see the payment.
-5. Use `GLEntry.SourceDocumentType = "GoodsReceipt"`, `"PurchaseInvoice"`, or `"DisbursementPayment"` to see the accounting effect.
+3. Use `PurchaseInvoiceLine.GoodsReceiptLineID` to connect invoice lines to the exact receipt lines when the clean match is available.
+4. Use `GoodsReceiptLine.POLineID` and `PurchaseOrderLine.RequisitionID` to move back to the originating purchase-order line and requisition.
+5. Use `DisbursementPayment.PurchaseInvoiceID` to see one or more payments applied to the invoice.
+6. Use `GLEntry.SourceDocumentType = "GoodsReceipt"`, `"PurchaseInvoice"`, or `"DisbursementPayment"` to see the accounting effect.
 
 ## Where to Go Next
 

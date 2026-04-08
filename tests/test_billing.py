@@ -18,7 +18,8 @@ def test_generate_phase5_billing_and_payments() -> None:
     assert len(context.tables["SalesInvoiceLine"]) >= len(context.tables["SalesInvoice"])
     assert len(context.tables["CashReceipt"]) > 0
     assert len(context.tables["PurchaseInvoice"]) > 0
-    assert len(context.tables["PurchaseInvoiceLine"]) == len(context.tables["PurchaseInvoice"])
+    assert len(context.tables["PurchaseInvoiceLine"]) >= len(context.tables["PurchaseInvoice"])
+    assert context.tables["PurchaseInvoiceLine"]["GoodsReceiptLineID"].notna().all()
     assert len(context.tables["DisbursementPayment"]) > 0
     assert context.tables["SalesInvoice"]["InvoiceNumber"].is_unique
     assert context.tables["CashReceipt"]["ReceiptNumber"].is_unique

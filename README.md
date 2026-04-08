@@ -58,7 +58,7 @@ Generated outputs are ignored by Git and can be regenerated locally at any time.
 | Implemented in current generator | Planned later |
 |---|---|
 | 25-table dataset covering O2C, P2P, master data, budgets, recurring manual journals, year-end close, and ledger postings | Manufacturing process tables and production flows |
-| Five-year fiscal range with monthly operational and manual journal generation | Richer inventory simulation and more complex P2P document structures |
+| Five-year fiscal range with monthly operational and manual journal generation, plus multi-period P2P matching and settlement behavior | Richer O2C inventory constraints, returns, and broader manufacturing flows |
 | Event-based postings from shipments, invoices, receipts, goods receipts, purchase invoices, and disbursements plus seeded journal postings | Starter analytics examples and broader teaching assets |
 | SQLite, Excel, validation report, and generation log outputs | Additional dataset extensions for broader course coverage |
 
@@ -81,13 +81,14 @@ Generated outputs are ignored by Git and can be regenerated locally at any time.
 - Fiscal range: 2026 through 2030
 - Implemented tables: 25
 - Core processes: order-to-cash, procure-to-pay, opening balances, recurring manual journals, year-end close, budgets, and ledger postings
-- Default build counts: `Account` 90, `JournalEntry` 1,442, `GLEntry` 110,075, `SalesOrder` 6,950, `PurchaseOrder` 3,910, `Budget` 2,940
+- Default build counts: `Account` 90, `JournalEntry` 1,442, `GLEntry` 176,643, `SalesOrder` 6,929, `PurchaseOrder` 5,413, `PurchaseInvoice` 12,597, `DisbursementPayment` 13,904, `Budget` 2,940
 - Primary teaching uses: financial analytics, managerial analytics, audit analytics, SQL practice, Excel analysis, and subledger-to-ledger reconciliation
 
 ## Notes on Scope
 
 - The current generator models a distributor and light assembler, but it does **not** yet implement manufacturing transactions.
 - `JournalEntry` now includes the opening balance, recurring operating journals, accrual reversals, and year-end close entries.
+- P2P now supports batched requisition-to-PO conversion, partial receipts across periods, receipt-line invoice matching, and split disbursement settlement behavior.
 - In the default `standard` anomaly mode, the final validation report intentionally contains planted exceptions, including journal-control findings, while keeping the GL balanced.
 - `Design.md` is now an appendix and historical blueprint. It contains future ideas that do not always match the current generator.
 

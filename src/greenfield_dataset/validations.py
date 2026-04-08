@@ -4,6 +4,12 @@ from typing import Any
 
 import pandas as pd
 
+from greenfield_dataset.p2p import (
+    goods_receipt_line_invoiced_quantities,
+    invoice_paid_amounts,
+    po_line_received_quantities,
+    purchase_invoice_line_matched_basis_map,
+)
 from greenfield_dataset.schema import TABLE_COLUMNS
 from greenfield_dataset.settings import GenerationContext
 
@@ -342,14 +348,7 @@ def validate_account_rollforward(context: GenerationContext) -> dict[str, Any]:
         account_rows = operational_gl[operational_gl["AccountID"].astype(int).eq(account_id)]
         return round(float(account_rows["Credit"].sum()) - float(account_rows["Debit"].sum()), 2)
 
-    receipt_cost_by_po_line = context.tables["GoodsReceiptLine"].groupby("POLineID")["ExtendedStandardCost"].sum().to_dict()
-    cleared_grni = round(
-        sum(
-            float(receipt_cost_by_po_line.get(int(line.POLineID), 0.0))
-            for line in context.tables["PurchaseInvoiceLine"].itertuples(index=False)
-        ),
-        2,
-    )
+    cleared_grni = round(sum(purchase_invoice_line_matched_basis_map(context).values()), 2)
     checks = [
         {
             "name": "AR",
@@ -399,6 +398,158 @@ def validate_account_rollforward(context: GenerationContext) -> dict[str, Any]:
     for check in checks:
         if round(float(check["expected"]) - float(check["actual"]), 2) != 0:
             exceptions.append(check)
+
+    return {
+        "exception_count": len(exceptions),
+        "exceptions": exceptions,
+    }
+
+
+def validate_p2p_phase9_controls(context: GenerationContext) -> dict[str, Any]:
+    purchase_orders = context.tables["PurchaseOrder"]
+    purchase_order_lines = context.tables["PurchaseOrderLine"]
+    requisitions = context.tables["PurchaseRequisition"]
+    goods_receipt_lines = context.tables["GoodsReceiptLine"]
+    purchase_invoices = context.tables["PurchaseInvoice"]
+    purchase_invoice_lines = context.tables["PurchaseInvoiceLine"]
+    exceptions: list[dict[str, Any]] = []
+
+    requisition_item_ids = requisitions.set_index("RequisitionID")["ItemID"].to_dict() if not requisitions.empty else {}
+    valid_requisition_ids = set(requisitions["RequisitionID"].astype(int)) if not requisitions.empty else set()
+    valid_goods_receipt_line_ids = (
+        set(goods_receipt_lines["GoodsReceiptLineID"].astype(int)) if not goods_receipt_lines.empty else set()
+    )
+    goods_receipt_lookup = (
+        goods_receipt_lines.set_index("GoodsReceiptLineID")[["POLineID", "ItemID", "QuantityReceived"]].to_dict("index")
+        if not goods_receipt_lines.empty
+        else {}
+    )
+
+    if not purchase_order_lines.empty:
+        linked_po_lines = purchase_order_lines[purchase_order_lines["RequisitionID"].notna()]
+        orphan_requisition_ids = sorted(
+            set(linked_po_lines["RequisitionID"].astype(int)) - valid_requisition_ids
+        )
+        if orphan_requisition_ids:
+            exceptions.append({
+                "type": "po_line_missing_requisition",
+                "message": f"Purchase order lines reference missing requisitions: {orphan_requisition_ids[:5]}.",
+            })
+
+        mismatched_line_items = [
+            int(line.POLineID)
+            for line in linked_po_lines.itertuples(index=False)
+            if int(requisition_item_ids.get(int(line.RequisitionID), line.ItemID)) != int(line.ItemID)
+        ]
+        if mismatched_line_items:
+            exceptions.append({
+                "type": "po_line_item_mismatch",
+                "message": f"Purchase order lines do not match requisition items: {mismatched_line_items[:5]}.",
+            })
+
+        for purchase_order in purchase_orders.itertuples(index=False):
+            related_lines = purchase_order_lines[
+                purchase_order_lines["PurchaseOrderID"].astype(int).eq(int(purchase_order.PurchaseOrderID))
+            ]
+            if related_lines.empty:
+                continue
+
+            line_requisition_ids = set(related_lines["RequisitionID"].dropna().astype(int).tolist())
+            if pd.notna(purchase_order.RequisitionID):
+                if len(line_requisition_ids) != 1 or int(purchase_order.RequisitionID) not in line_requisition_ids:
+                    exceptions.append({
+                        "type": "po_header_requisition_mismatch",
+                        "purchase_order_id": int(purchase_order.PurchaseOrderID),
+                        "message": "Purchase order header RequisitionID does not match its line-level requisition links.",
+                    })
+            elif len(line_requisition_ids) == 1:
+                exceptions.append({
+                    "type": "po_header_missing_requisition",
+                    "purchase_order_id": int(purchase_order.PurchaseOrderID),
+                    "message": "Purchase order header RequisitionID should be populated when all PO lines share one requisition.",
+                })
+
+        received_quantities = po_line_received_quantities(context)
+        for purchase_order in purchase_orders.itertuples(index=False):
+            related_lines = purchase_order_lines[
+                purchase_order_lines["PurchaseOrderID"].astype(int).eq(int(purchase_order.PurchaseOrderID))
+            ]
+            if related_lines.empty:
+                continue
+
+            received_total = 0.0
+            all_fully_received = True
+            for line in related_lines.itertuples(index=False):
+                received_quantity = float(received_quantities.get(int(line.POLineID), 0.0))
+                received_total += received_quantity
+                if round(received_quantity, 2) < round(float(line.Quantity), 2):
+                    all_fully_received = False
+
+            expected_status = "Open" if round(received_total, 2) <= 0 else "Received" if all_fully_received else "Partially Received"
+            if str(purchase_order.Status) != expected_status:
+                exceptions.append({
+                    "type": "po_status_mismatch",
+                    "purchase_order_id": int(purchase_order.PurchaseOrderID),
+                    "message": f"Purchase order status {purchase_order.Status} does not match expected {expected_status}.",
+                })
+
+    if not purchase_invoice_lines.empty:
+        linked_invoice_lines = purchase_invoice_lines[purchase_invoice_lines["GoodsReceiptLineID"].notna()]
+        orphan_receipt_line_ids = sorted(
+            set(linked_invoice_lines["GoodsReceiptLineID"].astype(int)) - valid_goods_receipt_line_ids
+        )
+        if orphan_receipt_line_ids:
+            exceptions.append({
+                "type": "invoice_line_missing_receipt_line",
+                "message": f"Purchase invoice lines reference missing goods receipt lines: {orphan_receipt_line_ids[:5]}.",
+            })
+
+        po_link_mismatches = []
+        item_mismatches = []
+        for line in linked_invoice_lines.itertuples(index=False):
+            receipt_line = goods_receipt_lookup.get(int(line.GoodsReceiptLineID))
+            if receipt_line is None:
+                continue
+            if int(receipt_line["POLineID"]) != int(line.POLineID):
+                po_link_mismatches.append(int(line.PILineID))
+            if int(receipt_line["ItemID"]) != int(line.ItemID):
+                item_mismatches.append(int(line.PILineID))
+
+        if po_link_mismatches:
+            exceptions.append({
+                "type": "invoice_line_po_link_mismatch",
+                "message": f"Purchase invoice lines do not match their goods receipt line PO links: {po_link_mismatches[:5]}.",
+            })
+        if item_mismatches:
+            exceptions.append({
+                "type": "invoice_line_item_mismatch",
+                "message": f"Purchase invoice lines do not match their goods receipt line items: {item_mismatches[:5]}.",
+            })
+
+        invoiced_quantities = goods_receipt_line_invoiced_quantities(context)
+        over_invoiced_receipt_lines = [
+            int(goods_receipt_line_id)
+            for goods_receipt_line_id, quantity_invoiced in invoiced_quantities.items()
+            if round(float(quantity_invoiced), 2)
+            > round(float(goods_receipt_lookup.get(int(goods_receipt_line_id), {}).get("QuantityReceived", 0.0)), 2)
+        ]
+        if over_invoiced_receipt_lines:
+            exceptions.append({
+                "type": "over_invoiced_receipt_line",
+                "message": f"Goods receipt lines are invoiced above received quantity: {over_invoiced_receipt_lines[:5]}.",
+            })
+
+        paid_amounts = invoice_paid_amounts(context)
+        for invoice in purchase_invoices.itertuples(index=False):
+            paid_amount = float(paid_amounts.get(int(invoice.PurchaseInvoiceID), 0.0))
+            outstanding_amount = round(float(invoice.GrandTotal) - paid_amount, 2)
+            expected_status = "Approved" if paid_amount <= 0 else "Paid" if outstanding_amount <= 0 else "Partially Paid"
+            if str(invoice.Status) != expected_status:
+                exceptions.append({
+                    "type": "purchase_invoice_status_mismatch",
+                    "purchase_invoice_id": int(invoice.PurchaseInvoiceID),
+                    "message": f"Purchase invoice status {invoice.Status} does not match expected {expected_status}.",
+                })
 
     return {
         "exception_count": len(exceptions),
@@ -609,13 +760,38 @@ def validate_journal_controls(context: GenerationContext) -> dict[str, Any]:
     }
 
 
-def validate_phase8(context: GenerationContext) -> dict[str, Any]:
-    results = validate_phase7(context)
+def validate_phase9(context: GenerationContext, store: bool = True) -> dict[str, Any]:
+    results = validate_phase6(context)
     exceptions = list(results["exceptions"])
+
+    p2p_controls = validate_p2p_phase9_controls(context)
+    if p2p_controls["exception_count"]:
+        exceptions.append(f"P2P phase 9 control exceptions: {p2p_controls['exception_count']}.")
 
     journal_controls = validate_journal_controls(context)
     if journal_controls["exception_count"]:
         exceptions.append(f"Journal control exceptions: {journal_controls['exception_count']}.")
+
+    phase9_results: dict[str, Any] = {
+        "row_counts": {table: int(len(df)) for table, df in context.tables.items()},
+        "exceptions": exceptions,
+        "gl_balance": results["gl_balance"],
+        "trial_balance_difference": results["trial_balance_difference"],
+        "account_rollforward": results["account_rollforward"],
+        "p2p_controls": p2p_controls,
+        "journal_controls": journal_controls,
+    }
+    if store:
+        context.validation_results["phase9"] = phase9_results
+    return phase9_results
+
+
+def validate_phase8(context: GenerationContext) -> dict[str, Any]:
+    results = validate_phase9(context, store=False)
+    exceptions = list(results["exceptions"])
+
+    if context.settings.anomaly_mode != "none" and not context.anomaly_log:
+        exceptions.append("Anomaly mode is enabled but no anomalies were logged.")
 
     phase8_results: dict[str, Any] = {
         "row_counts": {table: int(len(df)) for table, df in context.tables.items()},
@@ -624,7 +800,8 @@ def validate_phase8(context: GenerationContext) -> dict[str, Any]:
         "trial_balance_difference": results["trial_balance_difference"],
         "account_rollforward": results["account_rollforward"],
         "anomaly_count": len(context.anomaly_log),
-        "journal_controls": journal_controls,
+        "p2p_controls": results["p2p_controls"],
+        "journal_controls": results["journal_controls"],
     }
     context.validation_results["phase8"] = phase8_results
     return phase8_results

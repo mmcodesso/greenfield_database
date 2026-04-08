@@ -86,7 +86,7 @@ This shared context is passed across generation, posting, validation, and export
 | `master_data.py` | Loads accounts and generates cost centers, employees, warehouses, items, customers, and suppliers |
 | `budgets.py` | Generates the opening balance journal and budget rows |
 | `o2c.py` | Generates sales orders, shipments, sales invoices, and cash receipts |
-| `p2p.py` | Generates requisitions, purchase orders, goods receipts, purchase invoices, and disbursements |
+| `p2p.py` | Generates requisitions, batched purchase orders, open-line goods receipts, matched purchase invoices, disbursements, and shared P2P state maps |
 | `journals.py` | Generates recurring manual journals, accrual reversals, and year-end close journals |
 | `posting_engine.py` | Converts operational events into balanced GL entries |
 | `validations.py` | Runs schema, document, ledger, and roll-forward checks |
@@ -103,7 +103,7 @@ The current posting model is event-based:
 - sales invoices post AR, revenue, and sales tax
 - cash receipts post cash and AR
 - goods receipts post inventory and GRNI
-- purchase invoices post GRNI clearing, AP, and purchase variance
+- purchase invoices post matched GRNI clearing, AP, and purchase variance
 - disbursements post AP and cash
 
 The opening balance entry is created in `budgets.py`. Recurring manual journals and year-end close entries are created in `journals.py`. Those prebuilt `VoucherType = "JournalEntry"` rows are preserved when `post_all_transactions()` appends operational postings.
@@ -118,6 +118,7 @@ Current validations include:
 - header-to-line totals
 - orphan line detection
 - over-shipment and over-receipt checks
+- over-invoicing and status-consistency checks for P2P receipt and payment flows
 - overpayment checks
 - voucher balance
 - trial balance equality
@@ -131,6 +132,7 @@ The full run also writes `outputs/generation.log`, which records:
 - configuration values
 - timed step boundaries
 - monthly generation progress
+- monthly P2P checkpoints for converted requisitions, receipt volume, invoiced quantity, payments, and open-state balances
 - row-count checkpoints
 - validation summaries
 - export locations

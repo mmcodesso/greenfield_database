@@ -71,8 +71,8 @@ TABLE_COLUMNS = {
         "OrderTotal",
     ],
     "PurchaseOrderLine": [
-        "POLineID", "PurchaseOrderID", "LineNumber", "ItemID", "Quantity", "UnitCost",
-        "LineTotal",
+        "POLineID", "PurchaseOrderID", "RequisitionID", "LineNumber", "ItemID", "Quantity",
+        "UnitCost", "LineTotal",
     ],
     "GoodsReceipt": [
         "GoodsReceiptID", "ReceiptNumber", "ReceiptDate", "PurchaseOrderID", "WarehouseID",
@@ -88,8 +88,8 @@ TABLE_COLUMNS = {
         "ApprovedByEmployeeID", "ApprovedDate",
     ],
     "PurchaseInvoiceLine": [
-        "PILineID", "PurchaseInvoiceID", "POLineID", "LineNumber", "ItemID", "Quantity",
-        "UnitCost", "LineTotal",
+        "PILineID", "PurchaseInvoiceID", "POLineID", "GoodsReceiptLineID", "LineNumber",
+        "ItemID", "Quantity", "UnitCost", "LineTotal",
     ],
     "DisbursementPayment": [
         "DisbursementID", "PaymentNumber", "PaymentDate", "SupplierID",

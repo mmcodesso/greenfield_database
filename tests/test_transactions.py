@@ -14,8 +14,9 @@ def test_generate_phase3_monthly_transactions() -> None:
     assert results["exceptions"] == []
     assert 90 <= len(context.tables["SalesOrder"]) <= 140
     assert len(context.tables["SalesOrderLine"]) > len(context.tables["SalesOrder"])
-    assert 55 <= len(context.tables["PurchaseRequisition"]) <= 85
+    assert 80 <= len(context.tables["PurchaseRequisition"]) <= 110
     assert len(context.tables["PurchaseOrder"]) > 0
-    assert len(context.tables["PurchaseOrderLine"]) == len(context.tables["PurchaseOrder"])
+    assert len(context.tables["PurchaseOrderLine"]) > len(context.tables["PurchaseOrder"])
+    assert context.tables["PurchaseOrderLine"]["RequisitionID"].notna().all()
     assert context.tables["SalesOrder"]["OrderNumber"].is_unique
     assert context.tables["PurchaseOrder"]["PONumber"].is_unique

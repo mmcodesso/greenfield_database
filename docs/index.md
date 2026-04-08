@@ -53,8 +53,9 @@ The project has two documentation layers:
 
 ### Planned future extension
 
+- Analytics starter assets and teaching examples
 - Manufacturing process coverage
-- Broader document complexity and richer inventory behavior
+- Broader O2C and inventory behavior
 
 ## Root-Level Entry Points
 

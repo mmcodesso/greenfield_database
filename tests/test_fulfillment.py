@@ -15,7 +15,7 @@ def test_generate_phase4_fulfillment_and_receiving() -> None:
     assert len(context.tables["Shipment"]) > 0
     assert len(context.tables["ShipmentLine"]) >= len(context.tables["Shipment"])
     assert len(context.tables["GoodsReceipt"]) > 0
-    assert len(context.tables["GoodsReceiptLine"]) == len(context.tables["GoodsReceipt"])
+    assert len(context.tables["GoodsReceiptLine"]) >= len(context.tables["GoodsReceipt"])
     assert context.tables["Shipment"]["ShipmentNumber"].is_unique
     assert context.tables["GoodsReceipt"]["ReceiptNumber"].is_unique
     assert set(context.tables["ShipmentLine"]["ShipmentID"]).issubset(set(context.tables["Shipment"]["ShipmentID"]))

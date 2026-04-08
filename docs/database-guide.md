@@ -37,10 +37,12 @@ If you are new to the database, start from the header table to understand the do
 |---|---|
 | `CustomerID` | Connect customers to orders, invoices, and cash receipts |
 | `SupplierID` | Connect suppliers to purchase orders, invoices, and payments |
+| `RequisitionID` | Connect requisitions to purchase-order headers and purchase-order lines |
 | `SalesOrderID` | Connect sales order header to shipments and invoices |
 | `SalesOrderLineID` | Connect order lines to shipment lines and sales invoice lines |
 | `PurchaseOrderID` | Connect purchase order header to goods receipts and purchase invoices |
 | `POLineID` | Connect purchase order lines to goods receipt lines and purchase invoice lines |
+| `GoodsReceiptLineID` | Connect purchase invoice lines to specific receipt lines in the clean Phase 9 match design |
 | `ItemID` | Analyze quantities, prices, standard costs, and item account mappings |
 | `AccountID` | Connect `GLEntry` and `Budget` to the chart of accounts |
 | `CostCenterID` | Connect operational activity, employees, and budgets to organizational reporting |
@@ -57,7 +59,7 @@ Use this path when studying revenue, fulfillment, billing, collections, customer
 
 `Supplier -> PurchaseRequisition -> PurchaseOrder -> PurchaseOrderLine -> GoodsReceipt -> GoodsReceiptLine -> PurchaseInvoice -> PurchaseInvoiceLine -> DisbursementPayment`
 
-Use this path when studying approvals, receiving, invoice matching, payables, and cash disbursements.
+Use this path when studying approvals, PO batching, receiving, invoice matching, payables, and cash disbursements.
 
 ### Ledger path
 
@@ -83,8 +85,8 @@ Not every operational document posts to the general ledger.
 | Shipments | Yes | Posts COGS and inventory relief |
 | Sales invoices | Yes | Posts AR, revenue, and sales tax |
 | Cash receipts | Yes | Posts cash and AR |
-| Goods receipts | Yes | Posts inventory and GRNI |
-| Purchase invoices | Yes | Posts GRNI clearing, AP, and purchase variance |
+| Goods receipts | Yes | Posts inventory and GRNI using receipt-line posting basis |
+| Purchase invoices | Yes | Posts GRNI clearing, AP, and purchase variance using matched receipt-line linkage when available |
 | Disbursements | Yes | Posts AP and cash |
 | Journal entries | Yes | Current implementation includes opening, recurring manual, reversal, and year-end close journals |
 
@@ -117,6 +119,8 @@ Start with:
 - `SalesOrderLine`
 - `ShipmentLine`
 - `GoodsReceiptLine`
+- `PurchaseOrderLine`
+- `PurchaseInvoiceLine`
 
 Typical questions:
 
@@ -144,6 +148,7 @@ Typical questions:
 - The SQLite export is the easiest format for SQL work.
 - The Excel export places each table on its own worksheet and also includes `AnomalyLog` and `ValidationSummary`.
 - `JournalEntry` supports journal-entry testing, accrual reversal analysis, and close-cycle exercises in the current base dataset.
+- For P2P traceability, prefer `PurchaseOrderLine.RequisitionID` and `PurchaseInvoiceLine.GoodsReceiptLineID` over header-only assumptions.
 - For raw multi-year income statement analysis, exclude the two year-end close entry types.
 
 ## Where to Go Next

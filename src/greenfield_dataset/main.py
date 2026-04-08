@@ -34,6 +34,7 @@ from greenfield_dataset.p2p import (
     generate_month_goods_receipts,
     generate_month_p2p,
     generate_month_purchase_invoices,
+    p2p_open_state,
 )
 from greenfield_dataset.posting_engine import post_all_transactions
 from greenfield_dataset.schema import create_empty_tables
@@ -47,6 +48,7 @@ from greenfield_dataset.validations import (
     validate_phase6,
     validate_phase7,
     validate_phase8,
+    validate_phase9,
 )
 
 
@@ -230,6 +232,18 @@ def build_phase8(config_path: str | Path = "config/settings.yaml") -> Generation
     return context
 
 
+def build_phase9(config_path: str | Path = "config/settings.yaml") -> GenerationContext:
+    context = build_phase5(config_path)
+
+    generate_recurring_manual_journals(context)
+    post_all_transactions(context)
+    generate_year_end_close_journals(context)
+    validate_phase9(context)
+    export_validation_report(context)
+
+    return context
+
+
 def fiscal_months(context: GenerationContext) -> Iterable[tuple[int, int]]:
     start = pd.Timestamp(context.settings.fiscal_year_start)
     end = pd.Timestamp(context.settings.fiscal_year_end)
@@ -301,6 +315,11 @@ def build_full_dataset(config_path: str | Path = "config/settings.yaml") -> Gene
         for year, month in generated_months:
             LOGGER.info("MONTH START | %s-%02d", year, month)
             month_started_at = time.perf_counter()
+            requisitions_converted_before = int(context.tables["PurchaseRequisition"]["Status"].eq("Converted to PO").sum())
+            po_line_count_before = len(context.tables["PurchaseOrderLine"])
+            receipt_line_count_before = len(context.tables["GoodsReceiptLine"])
+            invoice_line_count_before = len(context.tables["PurchaseInvoiceLine"])
+            disbursement_count_before = len(context.tables["DisbursementPayment"])
             generate_month_o2c(context, year, month)
             generate_month_p2p(context, year, month)
             generate_month_shipments(context, year, month)
@@ -309,6 +328,28 @@ def build_full_dataset(config_path: str | Path = "config/settings.yaml") -> Gene
             generate_month_cash_receipts(context, year, month)
             generate_month_purchase_invoices(context, year, month)
             generate_month_disbursements(context, year, month)
+            requisitions_converted_after = int(context.tables["PurchaseRequisition"]["Status"].eq("Converted to PO").sum())
+            new_receipt_lines = context.tables["GoodsReceiptLine"].iloc[receipt_line_count_before:]
+            new_invoice_lines = context.tables["PurchaseInvoiceLine"].iloc[invoice_line_count_before:]
+            new_disbursements = context.tables["DisbursementPayment"].iloc[disbursement_count_before:]
+            open_state = p2p_open_state(context)
+            LOGGER.info(
+                "P2P CHECKPOINT | %s-%02d | converted_requisitions=%s | po_lines_created=%s | receipt_lines_created=%s | receipt_quantity=%s | invoice_lines_created=%s | invoiced_quantity=%s | disbursements_created=%s | amount_paid=%s | open_requisitions=%s | open_po_quantity=%s | open_receipt_quantity=%s | open_invoice_amount=%s",
+                year,
+                month,
+                requisitions_converted_after - requisitions_converted_before,
+                len(context.tables["PurchaseOrderLine"]) - po_line_count_before,
+                len(new_receipt_lines),
+                round(float(new_receipt_lines["QuantityReceived"].sum()), 2) if not new_receipt_lines.empty else 0.0,
+                len(new_invoice_lines),
+                round(float(new_invoice_lines["Quantity"].sum()), 2) if not new_invoice_lines.empty else 0.0,
+                len(new_disbursements),
+                round(float(new_disbursements["Amount"].sum()), 2) if not new_disbursements.empty else 0.0,
+                int(open_state["open_requisitions"]),
+                open_state["open_po_quantity"],
+                open_state["open_receipt_quantity"],
+                open_state["open_invoice_amount"],
+            )
             LOGGER.info(
                 "MONTH DONE | %s-%02d | elapsed_seconds=%.2f",
                 year,
@@ -347,8 +388,8 @@ def build_full_dataset(config_path: str | Path = "config/settings.yaml") -> Gene
         generate_year_end_close_journals(context)
         log_table_counts(context, ("JournalEntry", "GLEntry"), "year-end close")
 
-    with logged_step("Validate posted ledger"):
-        log_validation_results("phase6", validate_phase6(context))
+    with logged_step("Validate clean final dataset"):
+        log_validation_results("phase9", validate_phase9(context))
 
     with logged_step("Inject configured anomalies"):
         inject_anomalies(context)
@@ -359,7 +400,7 @@ def build_full_dataset(config_path: str | Path = "config/settings.yaml") -> Gene
         )
         LOGGER.info("ANOMALIES | total_count=%s | journal_anomaly_count=%s", len(context.anomaly_log), journal_anomaly_count)
 
-    with logged_step("Validate final dataset"):
+    with logged_step("Validate anomaly-enriched dataset"):
         log_validation_results("phase8", validate_phase8(context))
 
     if context.settings.export_sqlite:
@@ -387,7 +428,7 @@ def build_full_dataset(config_path: str | Path = "config/settings.yaml") -> Gene
 
 
 def print_summary(context: GenerationContext) -> None:
-    row_counts = context.validation_results["phase8"]["row_counts"]
+    row_counts = context.validation_results["phase9"]["row_counts"]
     print("Full dataset generated.")
     print(f"Fiscal range: {context.settings.fiscal_year_start} to {context.settings.fiscal_year_end}")
     print(f"Accounts: {row_counts['Account']}")
@@ -415,8 +456,8 @@ def print_summary(context: GenerationContext) -> None:
     print(f"Purchase invoice lines: {row_counts['PurchaseInvoiceLine']}")
     print(f"Disbursements: {row_counts['DisbursementPayment']}")
     print(f"GL entries: {row_counts['GLEntry']}")
-    print(f"GL balance exceptions: {context.validation_results['phase8']['gl_balance']['exception_count']}")
-    print(f"Anomalies logged: {context.validation_results['phase8']['anomaly_count']}")
+    print(f"GL balance exceptions: {context.validation_results['phase9']['gl_balance']['exception_count']}")
+    print(f"Anomalies logged: {len(context.anomaly_log)}")
     print(f"SQLite export: {context.settings.sqlite_path}")
     print(f"Excel export: {context.settings.excel_path}")
     print(f"Validation report: {context.settings.validation_report_path}")

@@ -4,6 +4,12 @@ from typing import Any
 
 import pandas as pd
 
+from greenfield_dataset.p2p import (
+    goods_receipt_line_cost_center_map,
+    purchase_invoice_line_cost_center_map,
+    purchase_invoice_line_matched_basis_map,
+    purchase_invoice_unique_cost_center_map,
+)
 from greenfield_dataset.schema import TABLE_COLUMNS
 from greenfield_dataset.settings import GenerationContext
 from greenfield_dataset.utils import money, next_id
@@ -245,11 +251,13 @@ def post_goods_receipts(context: GenerationContext) -> list[dict[str, Any]]:
     grni_account_id = account_id_by_number(context, "2020")
     items = context.tables["Item"].set_index("ItemID").to_dict("index")
     receipt_headers = receipts.set_index("GoodsReceiptID").to_dict("index")
+    receipt_line_cost_centers = goods_receipt_line_cost_center_map(context)
     rows: list[dict[str, Any]] = []
 
     for line in receipt_lines.itertuples(index=False):
         receipt = receipt_headers[int(line.GoodsReceiptID)]
         item = items[int(line.ItemID)]
+        line_cost_center_id = receipt_line_cost_centers.get(int(line.GoodsReceiptLineID))
         voucher_rows = [
             build_gl_row(
                 context,
@@ -262,7 +270,7 @@ def post_goods_receipts(context: GenerationContext) -> list[dict[str, Any]]:
                 "GoodsReceipt",
                 int(line.GoodsReceiptID),
                 int(line.GoodsReceiptLineID),
-                None,
+                line_cost_center_id,
                 "Receive inventory",
                 int(receipt["ReceivedByEmployeeID"]),
             ),
@@ -277,7 +285,7 @@ def post_goods_receipts(context: GenerationContext) -> list[dict[str, Any]]:
                 "GoodsReceipt",
                 int(line.GoodsReceiptID),
                 int(line.GoodsReceiptLineID),
-                None,
+                line_cost_center_id,
                 "Record goods received not invoiced",
                 int(receipt["ReceivedByEmployeeID"]),
             ),
@@ -297,7 +305,9 @@ def post_purchase_invoices(context: GenerationContext) -> list[dict[str, Any]]:
     ap_account_id = account_id_by_number(context, "2010")
     grni_account_id = account_id_by_number(context, "2020")
     variance_account_id = account_id_by_number(context, "5060")
-    receipt_cost_by_po_line = context.tables["GoodsReceiptLine"].groupby("POLineID")["ExtendedStandardCost"].sum().to_dict()
+    matched_basis_by_invoice_line = purchase_invoice_line_matched_basis_map(context)
+    invoice_line_cost_centers = purchase_invoice_line_cost_center_map(context)
+    invoice_header_cost_centers = purchase_invoice_unique_cost_center_map(context)
     lines_by_invoice = {key: value for key, value in invoice_lines.groupby("PurchaseInvoiceID")}
     rows: list[dict[str, Any]] = []
 
@@ -307,8 +317,10 @@ def post_purchase_invoices(context: GenerationContext) -> list[dict[str, Any]]:
         if invoice_lines_for_header is None:
             continue
 
+        header_cost_center_id = invoice_header_cost_centers.get(int(invoice.PurchaseInvoiceID))
         for line in invoice_lines_for_header.itertuples(index=False):
-            accrued_amount = money(float(receipt_cost_by_po_line.get(int(line.POLineID), line.LineTotal)))
+            accrued_amount = money(float(matched_basis_by_invoice_line.get(int(line.PILineID), line.LineTotal)))
+            line_cost_center_id = invoice_line_cost_centers.get(int(line.PILineID))
             voucher_rows.append(build_gl_row(
                 context,
                 invoice.ApprovedDate,
@@ -320,7 +332,7 @@ def post_purchase_invoices(context: GenerationContext) -> list[dict[str, Any]]:
                 "PurchaseInvoice",
                 int(invoice.PurchaseInvoiceID),
                 int(line.PILineID),
-                None,
+                line_cost_center_id,
                 "Clear GRNI on supplier invoice",
                 int(invoice.ApprovedByEmployeeID),
             ))
@@ -338,7 +350,7 @@ def post_purchase_invoices(context: GenerationContext) -> list[dict[str, Any]]:
                     "PurchaseInvoice",
                     int(invoice.PurchaseInvoiceID),
                     int(line.PILineID),
-                    None,
+                    line_cost_center_id,
                     "Record unfavorable purchase variance",
                     int(invoice.ApprovedByEmployeeID),
                 ))
@@ -354,7 +366,7 @@ def post_purchase_invoices(context: GenerationContext) -> list[dict[str, Any]]:
                     "PurchaseInvoice",
                     int(invoice.PurchaseInvoiceID),
                     int(line.PILineID),
-                    None,
+                    line_cost_center_id,
                     "Record favorable purchase variance",
                     int(invoice.ApprovedByEmployeeID),
                 ))
@@ -371,7 +383,7 @@ def post_purchase_invoices(context: GenerationContext) -> list[dict[str, Any]]:
                 "PurchaseInvoice",
                 int(invoice.PurchaseInvoiceID),
                 None,
-                None,
+                header_cost_center_id,
                 "Record nonrecoverable purchase tax",
                 int(invoice.ApprovedByEmployeeID),
             ))
@@ -387,7 +399,7 @@ def post_purchase_invoices(context: GenerationContext) -> list[dict[str, Any]]:
             "PurchaseInvoice",
             int(invoice.PurchaseInvoiceID),
             None,
-            None,
+            header_cost_center_id,
             "Record accounts payable",
             int(invoice.ApprovedByEmployeeID),
         ))
@@ -405,8 +417,10 @@ def post_disbursements(context: GenerationContext) -> list[dict[str, Any]]:
 
     ap_account_id = account_id_by_number(context, "2010")
     cash_account_id = account_id_by_number(context, "1010")
+    invoice_cost_centers = purchase_invoice_unique_cost_center_map(context)
     rows: list[dict[str, Any]] = []
     for payment in payments.itertuples(index=False):
+        cost_center_id = invoice_cost_centers.get(int(payment.PurchaseInvoiceID))
         voucher_rows = [
             build_gl_row(
                 context,
@@ -419,7 +433,7 @@ def post_disbursements(context: GenerationContext) -> list[dict[str, Any]]:
                 "DisbursementPayment",
                 int(payment.DisbursementID),
                 None,
-                None,
+                cost_center_id,
                 "Reduce accounts payable",
                 int(payment.ApprovedByEmployeeID),
             ),
@@ -434,7 +448,7 @@ def post_disbursements(context: GenerationContext) -> list[dict[str, Any]]:
                 "DisbursementPayment",
                 int(payment.DisbursementID),
                 None,
-                None,
+                cost_center_id,
                 "Record vendor payment",
                 int(payment.ApprovedByEmployeeID),
             ),

@@ -57,11 +57,11 @@ The canonical schema lives in `src/greenfield_dataset/schema.py` as `TABLE_COLUM
 | `Supplier` | Supplier master data | `PaymentTerms`, `TaxID`, `BankAccount`, `SupplierCategory`, `SupplierRiskRating`, `DefaultCurrency` |
 | `PurchaseRequisition` | Internal request document | `RequisitionNumber`, `RequestDate`, `RequestedByEmployeeID`, `CostCenterID`, `ItemID`, `Quantity`, `EstimatedUnitCost`, `ApprovedByEmployeeID`, `Status` |
 | `PurchaseOrder` | Purchase order header | `PONumber`, `OrderDate`, `SupplierID`, `RequisitionID`, `ExpectedDeliveryDate`, `CreatedByEmployeeID`, `ApprovedByEmployeeID`, `OrderTotal`, `Status` |
-| `PurchaseOrderLine` | Purchase order detail | `PurchaseOrderID`, `LineNumber`, `ItemID`, `Quantity`, `UnitCost`, `LineTotal` |
+| `PurchaseOrderLine` | Purchase order detail | `PurchaseOrderID`, `RequisitionID`, `LineNumber`, `ItemID`, `Quantity`, `UnitCost`, `LineTotal` |
 | `GoodsReceipt` | Receipt header | `ReceiptNumber`, `ReceiptDate`, `PurchaseOrderID`, `WarehouseID`, `ReceivedByEmployeeID`, `Status` |
 | `GoodsReceiptLine` | Receipt detail used for quantity and cost tracking | `GoodsReceiptID`, `POLineID`, `ItemID`, `QuantityReceived`, `ExtendedStandardCost` |
 | `PurchaseInvoice` | Supplier invoice header | `InvoiceNumber`, `InvoiceDate`, `ReceivedDate`, `DueDate`, `PurchaseOrderID`, `SupplierID`, `SubTotal`, `TaxAmount`, `GrandTotal`, `ApprovedByEmployeeID`, `Status` |
-| `PurchaseInvoiceLine` | Supplier invoice detail | `PurchaseInvoiceID`, `POLineID`, `ItemID`, `Quantity`, `UnitCost`, `LineTotal` |
+| `PurchaseInvoiceLine` | Supplier invoice detail | `PurchaseInvoiceID`, `POLineID`, `GoodsReceiptLineID`, `LineNumber`, `ItemID`, `Quantity`, `UnitCost`, `LineTotal` |
 | `DisbursementPayment` | Supplier payment record | `PaymentNumber`, `PaymentDate`, `SupplierID`, `PurchaseInvoiceID`, `Amount`, `PaymentMethod`, `CheckNumber`, `ApprovedByEmployeeID`, `ClearedDate` |
 
 ## Master Data
@@ -81,20 +81,27 @@ The canonical schema lives in `src/greenfield_dataset/schema.py` as `TABLE_COLUM
 
 ## Traceability Fields
 
-The most important lineage fields in the implementation are on `GLEntry`:
+The most important lineage fields in the implementation are:
 
-- `VoucherType`
-- `VoucherNumber`
-- `SourceDocumentType`
-- `SourceDocumentID`
-- `SourceLineID`
-- `FiscalYear`
-- `FiscalPeriod`
+- `PurchaseOrder.RequisitionID`
+- `PurchaseOrderLine.RequisitionID`
+- `GoodsReceiptLine.POLineID`
+- `PurchaseInvoiceLine.POLineID`
+- `PurchaseInvoiceLine.GoodsReceiptLineID`
+- `GLEntry.SourceDocumentType`
+- `GLEntry.SourceDocumentID`
+- `GLEntry.SourceLineID`
+
+`PurchaseOrder.RequisitionID` is compatibility metadata. When a PO batches multiple requisitions, the authoritative requisition linkage is on `PurchaseOrderLine.RequisitionID`.
+
+`PurchaseInvoiceLine.GoodsReceiptLineID` is the authoritative clean-match link for three-way-match style analysis in the current P2P design.
 
 These fields make it possible to trace from posted accounting detail back to the source document that created the entry.
 
 ## Current Implementation Notes
 
 - `JournalEntry.EntryType` is actively used for opening, payroll accrual and settlement, rent, utilities, depreciation, accrual, accrual reversal, and year-end close entries.
+- `GoodsReceiptLine.ExtendedStandardCost` currently stores the receipt posting basis used for inventory and GRNI, derived from PO cost in the clean generator.
+- `PurchaseOrder`, `GoodsReceipt`, `PurchaseInvoice`, and `DisbursementPayment` can now span multiple periods for the same underlying requisition or receipt chain.
 - Excel exports include additional worksheets such as `AnomalyLog` and `ValidationSummary`, but those are export artifacts, not schema tables.
 - For the exact column order and names, use `TABLE_COLUMNS` in `src/greenfield_dataset/schema.py`.

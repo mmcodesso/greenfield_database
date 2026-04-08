@@ -35,8 +35,8 @@ These documents are generated for process analysis but do **not** create `GLEntr
 | Shipment | `Shipment`, `ShipmentLine` | `ShipmentDate` | Item COGS account | Item inventory account |
 | Sales invoice | `SalesInvoice`, `SalesInvoiceLine` | `InvoiceDate` | Accounts receivable | Item revenue account and sales tax payable |
 | Cash receipt | `CashReceipt` | `ReceiptDate` | Cash | Accounts receivable |
-| Goods receipt | `GoodsReceipt`, `GoodsReceiptLine` | `ReceiptDate` | Item inventory account | Goods Received Not Invoiced |
-| Purchase invoice | `PurchaseInvoice`, `PurchaseInvoiceLine` | `ApprovedDate` | GRNI, purchase variance when needed, and nonrecoverable tax to variance | Accounts payable and purchase variance when needed |
+| Goods receipt | `GoodsReceipt`, `GoodsReceiptLine` | `ReceiptDate` | Item inventory account using receipt-line posting basis | Goods Received Not Invoiced |
+| Purchase invoice | `PurchaseInvoice`, `PurchaseInvoiceLine` | `ApprovedDate` | GRNI cleared at matched receipt-line basis, purchase variance when needed, and nonrecoverable tax to variance | Accounts payable and purchase variance when needed |
 | Disbursement | `DisbursementPayment` | `PaymentDate` | Accounts payable | Cash |
 | Year-end close: P&L to income summary | `JournalEntry` plus seeded GL rows from `journals.py` | `YYYY-12-31` | Revenue or expense balances needed to close annual P&L accounts | Offset to `8010` Income Summary |
 | Year-end close: income summary to retained earnings | `JournalEntry` plus seeded GL rows from `journals.py` | `YYYY-12-31` | `8010` Income Summary for profitable years or `3030` Retained Earnings for loss years | `3030` Retained Earnings for profitable years or `8010` Income Summary for loss years |
@@ -89,7 +89,10 @@ The current implementation uses cost centers where they are operationally meanin
 
 - shipment postings inherit `CostCenterID` from the related sales order
 - sales revenue postings inherit `CostCenterID` from the related sales order
-- many control-account rows remain at `CostCenterID = null`
+- goods receipt postings inherit `CostCenterID` from the originating requisition through `PurchaseOrderLine.RequisitionID` when available
+- purchase invoice postings inherit `CostCenterID` from the matched receipt or purchase-order line when available
+- disbursements inherit a cost center only when the related purchase invoice resolves cleanly to one cost center
+- some control-account rows still remain at `CostCenterID = null`
 
 This is sufficient for teaching cost center reporting without forcing every balance-sheet posting into an organizational allocation.
 
@@ -120,6 +123,7 @@ The posting engine enforces these principles:
 ## Current Implementation Notes
 
 - `PurchaseInvoice` postings use `ApprovedDate` as the posting date in the current code.
+- Clean P2P matching uses `PurchaseInvoiceLine.GoodsReceiptLineID` first and falls back to `POLineID` only for legacy or exceptional rows.
 - Purchase invoice tax is treated as nonrecoverable and posted to purchase variance in the current implementation.
 - Year-end close entries are real posted journals in every fiscal year of the default range.
 - For raw multi-year income statement analytics, exclude `Year-End Close - P&L to Income Summary` and `Year-End Close - Income Summary to Retained Earnings`.
