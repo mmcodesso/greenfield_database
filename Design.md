@@ -1,6 +1,20 @@
 # Greenfield Home Furnishings, Inc.
 ## Schema Specification and Posting Rules
 
+> **Audience:** Maintainers and advanced contributors who need the original long-form blueprint.
+>
+> **Primary documentation now lives in `docs/`.** Start with:
+>
+> - `docs/dataset-overview.md`
+> - `docs/process-flows.md`
+> - `docs/database-guide.md`
+> - `docs/code-architecture.md`
+> - `docs/reference/schema.md`
+> - `docs/reference/posting.md`
+> - `docs/reference/row-volume.md`
+>
+> This file is preserved as a technical appendix and historical design document. Some sections describe future or proposed functionality and do **not** match the current generator exactly.
+
 ## 1. Purpose and design objective
 
 This dataset is designed for a teaching book in accounting analytics. It must support SQL querying, financial statement construction, subledger-to-ledger reconciliation, audit analytics, managerial accounting analytics, and business process analysis across both the order-to-cash and procure-to-pay cycles.
@@ -55,7 +69,7 @@ This produces a database in the broad range of approximately 150,000 to 300,000 
 
 ## 4. Schema overview
 
-The core design contains 24 tables.
+The current implemented schema contains 25 tables.
 
 ### 4.1 Final table groups
 
@@ -3092,4 +3106,3 @@ This phased approach reduces debugging complexity.
 ## 26.17 Recommended next drafting task
 
 The next document to draft should be the first runnable implementation package, beginning with the config files, accounts table, context setup, empty-schema creation, and master-data generators. That will convert this blueprint into executable code.
-
