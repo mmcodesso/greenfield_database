@@ -19,6 +19,8 @@ That means students can see the difference between:
 - billing
 - cash collection
 
+In the clean base dataset, most invoices stop there. Returns are documented separately because they are intentionally modeled as a minority exception path rather than a normal outcome on most sales.
+
 ## Process Diagram
 
 ```mermaid

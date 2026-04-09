@@ -381,7 +381,7 @@ def build_full_dataset(config_path: str | Path = "config/settings.yaml") -> Gene
                 & pd.to_datetime(context.tables["CustomerRefund"]["RefundDate"]).dt.month.eq(month)
             ]
             LOGGER.info(
-                "O2C CHECKPOINT | %s-%02d | shipment_lines_created=%s | shipped_quantity=%s | cash_receipts_created=%s | cash_received=%s | returns_created=%s | credit_memos_created=%s | refunds_created=%s | open_order_quantity=%s | backordered_quantity=%s | unbilled_shipment_quantity=%s | open_ar_amount=%s | unapplied_cash_amount=%s | customer_credit_amount=%s",
+                "O2C CHECKPOINT | %s-%02d | shipment_lines_created=%s | shipped_quantity=%s | cash_receipts_created=%s | cash_received=%s | returns_created=%s | credit_memos_created=%s | refunds_created=%s | distinct_returned_invoices=%s | invoice_return_incidence_ratio=%s | return_quantity_ratio=%s | credit_memo_subtotal_ratio=%s | open_order_quantity=%s | backordered_quantity=%s | unbilled_shipment_quantity=%s | open_ar_amount=%s | unapplied_cash_amount=%s | customer_credit_amount=%s",
                 year,
                 month,
                 len(new_shipment_lines),
@@ -391,6 +391,10 @@ def build_full_dataset(config_path: str | Path = "config/settings.yaml") -> Gene
                 len(new_sales_returns),
                 len(new_credit_memos),
                 len(new_refunds),
+                revenue_state["distinct_returned_invoices"],
+                revenue_state["invoice_return_incidence_ratio"],
+                revenue_state["return_quantity_ratio"],
+                revenue_state["credit_memo_subtotal_ratio"],
                 revenue_state["open_order_quantity"],
                 revenue_state["backordered_quantity"],
                 revenue_state["unbilled_shipment_quantity"],

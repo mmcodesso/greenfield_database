@@ -40,6 +40,15 @@ OPENING_STOCK_RANGES = {
 }
 
 RETURN_REASON_CODES = ["Damaged", "Wrong Item", "Customer Remorse", "Quality Concern", "Late Delivery"]
+FULL_RETURN_REASON_CODES = {"Damaged", "Wrong Item"}
+
+TARGET_INVOICE_RETURN_RATE = 0.03
+TARGET_INVOICE_RETURN_RATE_MIN = 0.025
+TARGET_INVOICE_RETURN_RATE_MAX = 0.035
+RETURN_LAG_DAYS_RANGE = (7, 45)
+RETURN_LINE_COUNT_PROBABILITIES = ((1, 0.82), (2, 0.18))
+PARTIAL_RETURN_FRACTION_RANGE = (0.10, 0.40)
+FULL_RETURN_REASON_PROBABILITY = 0.20
 
 CARRIERS = ["Greenfield Fleet", "FedEx Freight", "UPS Freight", "DHL Supply Chain"]
 PAYMENT_METHODS = ["ACH", "Wire Transfer", "Check", "Credit Card"]
@@ -104,6 +113,67 @@ def payment_term_days(payment_terms: str) -> int:
         return int(str(payment_terms).split()[-1])
     except (ValueError, IndexError):
         return 30
+
+
+def return_rng(context: GenerationContext, sales_invoice_id: int) -> np.random.Generator:
+    return np.random.default_rng(context.settings.random_seed + int(sales_invoice_id) * 1009)
+
+
+def returned_invoice_ids(context: GenerationContext) -> set[int]:
+    credit_memos = context.tables["CreditMemo"]
+    if credit_memos.empty:
+        return set()
+    return set(credit_memos["OriginalSalesInvoiceID"].astype(int).tolist())
+
+
+def invoice_return_plan(context: GenerationContext, sales_invoice_id: int, invoice: dict[str, Any]) -> dict[str, Any] | None:
+    invoice_id = int(sales_invoice_id)
+    rng = return_rng(context, invoice_id)
+    if float(rng.random()) > TARGET_INVOICE_RETURN_RATE:
+        return None
+
+    invoice_date = pd.Timestamp(invoice["InvoiceDate"])
+    lag_days = int(rng.integers(RETURN_LAG_DAYS_RANGE[0], RETURN_LAG_DAYS_RANGE[1] + 1))
+    return_date = invoice_date + pd.Timedelta(days=lag_days)
+    fiscal_end = pd.Timestamp(context.settings.fiscal_year_end)
+    if return_date > fiscal_end:
+        return None
+
+    return {
+        "rng": rng,
+        "return_date": return_date,
+    }
+
+
+def select_return_line_count(rng: np.random.Generator, max_available_lines: int) -> int:
+    if max_available_lines <= 1:
+        return 1
+
+    desired_counts = [count for count, _ in RETURN_LINE_COUNT_PROBABILITIES]
+    probabilities = np.array([probability for _, probability in RETURN_LINE_COUNT_PROBABILITIES], dtype=float)
+    probabilities = probabilities / probabilities.sum()
+    selected_count = int(rng.choice(np.array(desired_counts), p=probabilities))
+    return max(1, min(selected_count, max_available_lines))
+
+
+def select_return_quantity(
+    rng: np.random.Generator,
+    eligible_quantity: float,
+    reason_code: str,
+) -> float:
+    if eligible_quantity <= 0:
+        return 0.0
+
+    eligible_quantity = round(float(eligible_quantity), 2)
+    full_return = reason_code in FULL_RETURN_REASON_CODES and float(rng.random()) < FULL_RETURN_REASON_PROBABILITY
+    if full_return:
+        return qty(eligible_quantity)
+
+    partial_fraction = float(rng.uniform(PARTIAL_RETURN_FRACTION_RANGE[0], PARTIAL_RETURN_FRACTION_RANGE[1]))
+    returned_quantity = qty(min(eligible_quantity, max(1.0, eligible_quantity * partial_fraction)))
+    if eligible_quantity > 1.0 and returned_quantity >= eligible_quantity:
+        returned_quantity = qty(max(1.0, eligible_quantity - 1.0))
+    return min(qty(returned_quantity), qty(eligible_quantity))
 
 
 def active_sellable_items(context: GenerationContext) -> pd.DataFrame:
@@ -507,6 +577,13 @@ def o2c_open_state(context: GenerationContext) -> dict[str, float]:
     for credit_memo_id, allocation in allocations.items():
         customer_credit_amount += max(0.0, round(float(allocation["customer_credit_amount"]) - float(refunded.get(int(credit_memo_id), 0.0)), 2))
 
+    distinct_returned_invoices = len(returned_invoice_ids(context))
+    invoice_count = len(context.tables["SalesInvoice"])
+    shipped_quantity = round(float(context.tables["ShipmentLine"]["QuantityShipped"].sum()), 2) if not context.tables["ShipmentLine"].empty else 0.0
+    returned_quantity = round(float(context.tables["SalesReturnLine"]["QuantityReturned"].sum()), 2) if not context.tables["SalesReturnLine"].empty else 0.0
+    sales_subtotal = round(float(context.tables["SalesInvoice"]["SubTotal"].sum()), 2) if not context.tables["SalesInvoice"].empty else 0.0
+    credit_subtotal = round(float(context.tables["CreditMemo"]["SubTotal"].sum()), 2) if not context.tables["CreditMemo"].empty else 0.0
+
     return {
         "open_order_quantity": round(open_order_quantity, 2),
         "backordered_quantity": round(backordered_quantity, 2),
@@ -514,6 +591,10 @@ def o2c_open_state(context: GenerationContext) -> dict[str, float]:
         "open_ar_amount": round(open_ar_amount, 2),
         "unapplied_cash_amount": round(unapplied_cash_amount, 2),
         "customer_credit_amount": round(customer_credit_amount, 2),
+        "distinct_returned_invoices": int(distinct_returned_invoices),
+        "invoice_return_incidence_ratio": round(float(distinct_returned_invoices / invoice_count), 4) if invoice_count else 0.0,
+        "return_quantity_ratio": round(float(returned_quantity / shipped_quantity), 4) if shipped_quantity else 0.0,
+        "credit_memo_subtotal_ratio": round(float(credit_subtotal / sales_subtotal), 4) if sales_subtotal else 0.0,
     }
 
 
@@ -969,7 +1050,6 @@ def generate_month_cash_receipts(context: GenerationContext, year: int, month: i
 
 
 def generate_month_sales_returns(context: GenerationContext, year: int, month: int) -> None:
-    rng = context.rng
     month_start, month_end = month_bounds(year, month)
     sales_invoices = context.tables["SalesInvoice"]
     sales_invoice_lines = context.tables["SalesInvoiceLine"]
@@ -979,58 +1059,83 @@ def generate_month_sales_returns(context: GenerationContext, year: int, month: i
     shipment_headers = context.tables["Shipment"].set_index("ShipmentID").to_dict("index") if not context.tables["Shipment"].empty else {}
     shipment_line_lookup = context.tables["ShipmentLine"].set_index("ShipmentLineID").to_dict("index")
     invoice_lookup = sales_invoices.set_index("SalesInvoiceID").to_dict("index")
+    invoice_lines_by_invoice = {
+        int(invoice_id): rows.copy()
+        for invoice_id, rows in sales_invoice_lines[sales_invoice_lines["ShipmentLineID"].notna()].groupby("SalesInvoiceID")
+    }
     returned_quantities = shipment_line_returned_quantities(context)
     warehouse_receivers = employee_ids_for_cost_center(context, "Warehouse")
     approvers = employee_ids_for_cost_center(context, "Customer Service")
-
-    selected_by_invoice: dict[int, list[Any]] = defaultdict(list)
-    for line in sales_invoice_lines[sales_invoice_lines["ShipmentLineID"].notna()].itertuples(index=False):
-        invoice = invoice_lookup[int(line.SalesInvoiceID)]
-        if pd.Timestamp(invoice["InvoiceDate"]) > month_end - pd.Timedelta(days=3):
-            continue
-        shipment_line_id = int(line.ShipmentLineID)
-        eligible_quantity = round(float(line.Quantity) - float(returned_quantities.get(shipment_line_id, 0.0)), 2)
-        if eligible_quantity <= 0:
-            continue
-        probability = 0.015 if pd.Timestamp(invoice["InvoiceDate"]) >= month_start else 0.028
-        if rng.random() <= probability:
-            selected_by_invoice[int(line.SalesInvoiceID)].append(line)
+    already_returned_invoices = returned_invoice_ids(context)
 
     return_rows: list[dict[str, Any]] = []
     return_line_rows: list[dict[str, Any]] = []
     memo_rows: list[dict[str, Any]] = []
     memo_line_rows: list[dict[str, Any]] = []
 
-    for sales_invoice_id, lines in selected_by_invoice.items():
-        invoice = invoice_lookup[int(sales_invoice_id)]
+    for invoice in sales_invoices.sort_values(["InvoiceDate", "SalesInvoiceID"]).itertuples(index=False):
+        sales_invoice_id = int(invoice.SalesInvoiceID)
+        if sales_invoice_id in already_returned_invoices:
+            continue
+
+        lines = invoice_lines_by_invoice.get(sales_invoice_id)
+        if lines is None or lines.empty:
+            continue
+
+        invoice_record = invoice_lookup[sales_invoice_id]
+        plan = invoice_return_plan(context, sales_invoice_id, invoice_record)
+        if plan is None:
+            continue
+
+        return_date = pd.Timestamp(plan["return_date"])
+        if return_date < month_start or return_date > month_end:
+            continue
+
+        invoice_rng = plan["rng"]
+        reason_code = str(invoice_rng.choice(RETURN_REASON_CODES))
         return_id = next_id(context, "SalesReturn")
-        invoice_date = pd.Timestamp(invoice["InvoiceDate"])
-        return_date = clamp_date_to_month(max(invoice_date + pd.Timedelta(days=int(rng.integers(3, 20))), month_start), year, month)
-        first_shipment_line = shipment_line_lookup[int(lines[0].ShipmentLineID)]
+        first_shipment_line = shipment_line_lookup[int(lines.iloc[0]["ShipmentLineID"])]
         first_shipment = shipment_headers[int(first_shipment_line["ShipmentID"])]
         return_rows.append({
             "SalesReturnID": return_id,
             "ReturnNumber": format_doc_number("SR", year, return_id),
             "ReturnDate": return_date.strftime("%Y-%m-%d"),
-            "CustomerID": int(invoice["CustomerID"]),
-            "SalesOrderID": int(invoice["SalesOrderID"]),
+            "CustomerID": int(invoice_record["CustomerID"]),
+            "SalesOrderID": int(invoice_record["SalesOrderID"]),
             "WarehouseID": int(first_shipment["WarehouseID"]),
-            "ReceivedByEmployeeID": int(rng.choice(warehouse_receivers)),
-            "ReasonCode": str(rng.choice(RETURN_REASON_CODES)),
+            "ReceivedByEmployeeID": int(invoice_rng.choice(warehouse_receivers)),
+            "ReasonCode": reason_code,
             "Status": "Received",
         })
 
         credit_memo_id = next_id(context, "CreditMemo")
-        credit_memo_date = clamp_date_to_month(return_date + pd.Timedelta(days=int(rng.integers(0, 4))), year, month)
+        credit_memo_date = clamp_date_to_month(return_date + pd.Timedelta(days=int(invoice_rng.integers(0, 4))), year, month)
         subtotal = 0.0
         line_number = 1
-        for line in lines[: int(rng.integers(1, min(3, len(lines)) + 1))]:
+        eligible_lines: list[dict[str, Any]] = []
+        for line in lines.itertuples(index=False):
             shipment_line_id = int(line.ShipmentLineID)
-            shipment_line = shipment_line_lookup[shipment_line_id]
             eligible_quantity = round(float(line.Quantity) - float(returned_quantities.get(shipment_line_id, 0.0)), 2)
             if eligible_quantity <= 0:
                 continue
-            returned_quantity = qty(min(eligible_quantity, max(1.0, eligible_quantity * rng.uniform(0.25, 0.85))))
+            eligible_lines.append({"line": line, "eligible_quantity": eligible_quantity})
+
+        if not eligible_lines:
+            context.counters["SalesReturn"] -= 1
+            context.counters["CreditMemo"] -= 1
+            continue
+
+        selected_count = select_return_line_count(invoice_rng, len(eligible_lines))
+        selected_indexes = invoice_rng.choice(np.arange(len(eligible_lines)), size=selected_count, replace=False)
+        selected_indexes = np.atleast_1d(selected_indexes).astype(int).tolist()
+
+        for selected_index in selected_indexes:
+            selected_entry = eligible_lines[int(selected_index)]
+            line = selected_entry["line"]
+            shipment_line_id = int(line.ShipmentLineID)
+            shipment_line = shipment_line_lookup[shipment_line_id]
+            eligible_quantity = float(selected_entry["eligible_quantity"])
+            returned_quantity = select_return_quantity(invoice_rng, eligible_quantity, reason_code)
             if returned_quantity <= 0:
                 continue
 
@@ -1074,16 +1179,17 @@ def generate_month_sales_returns(context: GenerationContext, year: int, month: i
             "CreditMemoNumber": format_doc_number("CM", year, credit_memo_id),
             "CreditMemoDate": credit_memo_date.strftime("%Y-%m-%d"),
             "SalesReturnID": return_id,
-            "SalesOrderID": int(invoice["SalesOrderID"]),
-            "CustomerID": int(invoice["CustomerID"]),
+            "SalesOrderID": int(invoice_record["SalesOrderID"]),
+            "CustomerID": int(invoice_record["CustomerID"]),
             "OriginalSalesInvoiceID": int(sales_invoice_id),
             "SubTotal": subtotal,
             "TaxAmount": tax_amount,
             "GrandTotal": money(subtotal + tax_amount),
             "Status": "Issued",
-            "ApprovedByEmployeeID": int(rng.choice(approvers)),
+            "ApprovedByEmployeeID": int(invoice_rng.choice(approvers)),
             "ApprovedDate": credit_memo_date.strftime("%Y-%m-%d"),
         })
+        already_returned_invoices.add(sales_invoice_id)
 
     append_rows(context, "SalesReturn", return_rows)
     append_rows(context, "SalesReturnLine", return_line_rows)

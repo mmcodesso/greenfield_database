@@ -12,7 +12,7 @@
 
 Some customer sales do not end with the original invoice. Goods may come back because they were damaged, incorrect, or no longer needed. Warehouse staff receive the goods back. Accounting issues a credit memo. If the invoice is still open, the credit reduces receivables. If the customer already paid, the credit can become customer credit and may later be refunded in cash.
 
-This is a valuable teaching path because it shows that revenue correction is both an operational and an accounting process.
+This is a valuable teaching path because it shows that revenue correction is both an operational and an accounting process. In the clean base dataset, this is intentionally a minority exception path, not a dominant share of revenue activity.
 
 ## Process Diagram
 

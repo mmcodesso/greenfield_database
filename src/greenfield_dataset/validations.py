@@ -745,6 +745,32 @@ def validate_o2c_phase11_controls(context: GenerationContext) -> dict[str, Any]:
                 "message": f"Shipment lines are returned above billed quantity: {over_returned_shipment_lines[:5]}.",
             })
 
+    if not credit_memos.empty:
+        duplicate_invoice_returns = credit_memos["OriginalSalesInvoiceID"].astype(int).value_counts()
+        repeated_return_invoices = sorted(duplicate_invoice_returns[duplicate_invoice_returns.gt(1)].index.astype(int).tolist())
+        if repeated_return_invoices:
+            exceptions.append({
+                "type": "multiple_return_events_per_invoice",
+                "message": f"Original sales invoices have more than one return or credit-memo chain: {repeated_return_invoices[:5]}.",
+            })
+
+        credit_memo_by_return = credit_memos.set_index("SalesReturnID")["OriginalSalesInvoiceID"].astype(int).to_dict()
+        invalid_return_dates = []
+        for sales_return in sales_returns.itertuples(index=False):
+            original_invoice_id = credit_memo_by_return.get(int(sales_return.SalesReturnID))
+            if original_invoice_id is None:
+                continue
+            original_invoice = invoice_lookup.get(int(original_invoice_id))
+            if original_invoice is None:
+                continue
+            if pd.Timestamp(sales_return.ReturnDate) <= pd.Timestamp(original_invoice["InvoiceDate"]):
+                invalid_return_dates.append(int(sales_return.SalesReturnID))
+        if invalid_return_dates:
+            exceptions.append({
+                "type": "return_date_before_or_on_invoice_date",
+                "message": f"Sales returns must occur after the original invoice date: {invalid_return_dates[:5]}.",
+            })
+
     if not credit_memo_lines.empty:
         line_mismatches = []
         pricing_mismatches = []
