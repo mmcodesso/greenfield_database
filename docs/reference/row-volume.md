@@ -16,7 +16,7 @@ The default configuration uses:
 
 ## Current Default Build vs Design Intent
 
-The target ranges below come from `Design.md` and represent design intent, not hard validation thresholds.
+The target ranges below come from the project's earlier design-planning model and represent historical design intent, not hard validation thresholds.
 
 | Group | Table | Target rows | Current default rows |
 |---|---|---:|---:|

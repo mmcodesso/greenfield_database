@@ -27,8 +27,13 @@ The dataset is especially strong when a course wants students to see that operat
 
 Use these directly with students:
 
+- [company-story.md](company-story.md)
 - [dataset-overview.md](dataset-overview.md)
 - [process-flows.md](process-flows.md)
+- [processes/o2c.md](processes/o2c.md)
+- [processes/o2c-returns-credits-refunds.md](processes/o2c-returns-credits-refunds.md)
+- [processes/p2p.md](processes/p2p.md)
+- [processes/manual-journals-and-close.md](processes/manual-journals-and-close.md)
 - [database-guide.md](database-guide.md)
 - [analytics/index.md](analytics/index.md)
 - [analytics/financial.md](analytics/financial.md)
@@ -44,6 +49,7 @@ Use these directly with students:
 
 Use these to frame the course and answer implementation questions:
 
+- [technical-guide.md](technical-guide.md)
 - [reference/schema.md](reference/schema.md)
 - [reference/posting.md](reference/posting.md)
 - [reference/row-volume.md](reference/row-volume.md)
@@ -54,14 +60,15 @@ Use these to frame the course and answer implementation questions:
 
 | Week or module | Teaching goal | Main docs | Main starter assets |
 |---|---|---|---|
-| 1. Business orientation | Explain the company, scope, and why the dataset exists | [dataset-overview.md](dataset-overview.md) | None yet |
-| 2. Process mapping | Show O2C and P2P document flow | [process-flows.md](process-flows.md) | None yet |
-| 3. Table navigation and joins | Teach keys, header-line patterns, and traceability | [database-guide.md](database-guide.md) | Introductory ad hoc joins |
-| 4. Source-to-ledger bridge | Show how operational activity becomes accounting data | [reference/posting.md](reference/posting.md) | Ledger-oriented examples |
-| 5. Financial analytics | Teach revenue, AR, AP, trial balance, and close cycle | [analytics/financial.md](analytics/financial.md) | `queries/financial/` |
-| 6. Managerial analytics | Teach budgeting, cost centers, sales mix, and inventory movement | [analytics/managerial.md](analytics/managerial.md) | `queries/managerial/` |
-| 7. Audit analytics | Teach completeness, approvals, cut-off, duplicates, and exception logic | [analytics/audit.md](analytics/audit.md) | `queries/audit/` |
-| 8. Anomaly-focused work | Move from clean analysis to exception-oriented work | [analytics/audit.md](analytics/audit.md), [analytics/excel-guide.md](analytics/excel-guide.md) | `AnomalyLog`, `ValidationSummary`, audit query pack |
+| 1. Business orientation | Explain the company, scope, and why the dataset exists | [company-story.md](company-story.md), [dataset-overview.md](dataset-overview.md) | None yet |
+| 2. Process mapping | Show O2C, returns, P2P, and close-cycle flow | [process-flows.md](process-flows.md), [processes/o2c.md](processes/o2c.md), [processes/p2p.md](processes/p2p.md) | None yet |
+| 3. Exception paths | Show returns, credits, refunds, and manual journal activity | [processes/o2c-returns-credits-refunds.md](processes/o2c-returns-credits-refunds.md), [processes/manual-journals-and-close.md](processes/manual-journals-and-close.md) | None yet |
+| 4. Table navigation and joins | Teach keys, header-line patterns, and traceability | [database-guide.md](database-guide.md) | Introductory ad hoc joins |
+| 5. Source-to-ledger bridge | Show how operational activity becomes accounting data | [reference/posting.md](reference/posting.md) | Ledger-oriented examples |
+| 6. Financial analytics | Teach revenue, AR, AP, trial balance, and close cycle | [analytics/financial.md](analytics/financial.md) | `queries/financial/` |
+| 7. Managerial analytics | Teach budgeting, cost centers, sales mix, and inventory movement | [analytics/managerial.md](analytics/managerial.md) | `queries/managerial/` |
+| 8. Audit analytics | Teach completeness, approvals, cut-off, duplicates, and exception logic | [analytics/audit.md](analytics/audit.md) | `queries/audit/` |
+| 9. Anomaly-focused work | Move from clean analysis to exception-oriented work | [analytics/audit.md](analytics/audit.md), [analytics/excel-guide.md](analytics/excel-guide.md) | `AnomalyLog`, `ValidationSummary`, audit query pack |
 
 This sequence can be compressed into fewer weeks or expanded into several assignments. The important sequencing rule is: process understanding first, analytics second.
 
@@ -69,7 +76,8 @@ This sequence can be compressed into fewer weeks or expanded into several assign
 
 | Learning objective | Best starting docs | Best starter SQL set | Best Excel path |
 |---|---|---|---|
-| Understand the business cycles | [process-flows.md](process-flows.md) | None required | Process walkthrough in workbook sheets |
+| Understand the company and business model | [company-story.md](company-story.md), [dataset-overview.md](dataset-overview.md) | None required | Workbook orientation |
+| Understand the business cycles | [process-flows.md](process-flows.md), [processes/o2c.md](processes/o2c.md), [processes/p2p.md](processes/p2p.md) | None required | Process walkthrough in workbook sheets |
 | Learn the table structure | [database-guide.md](database-guide.md) | Any topic folder | Sheet-by-sheet workbook tour |
 | Trace source documents to postings | [reference/posting.md](reference/posting.md) | Financial and audit packs | `GLEntry` plus source-document sheets |
 | Analyze revenue, AR, AP, and journals | [analytics/financial.md](analytics/financial.md) | `queries/financial/` | Financial section in [analytics/excel-guide.md](analytics/excel-guide.md) |
@@ -142,6 +150,7 @@ Use the starter layer for:
 ## Teaching Notes
 
 - Start with process understanding before asking students to write joins.
+- Use the company story to explain why each document exists before discussing its table structure.
 - Use `GLEntry` only after students understand which source events post and which do not.
 - Teach the distinction between:
   - clean baseline analysis

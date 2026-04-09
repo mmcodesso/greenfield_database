@@ -1,7 +1,7 @@
 # Code Architecture
 
 **Audience:** Contributors, teaching assistants, and advanced users who want to understand how the generator works.  
-**Purpose:** Explain the generator from entrypoint to export using the current implementation, not the historical blueprint.  
+**Purpose:** Explain the codebase from entrypoint to export using the current implementation.  
 **What you will learn:** The orchestration flow, the role of each module, and where future extensions such as manufacturing would fit.
 
 > **Implemented in current generator:** Config loading, shared generation context, schema registry, master data, budgets, monthly O2C and P2P generation, recurring manual journals, year-end close, posting, validations, anomaly injection, SQLite/Excel export, JSON reporting, and generation logging.
@@ -12,6 +12,7 @@
 
 - `generate_dataset.py` is the simplest way to run the project from the repository root.
 - `src/greenfield_dataset/main.py` contains the orchestration logic for the full build.
+- [technical-guide.md](technical-guide.md) is the best system-level companion to this page if you need both the data-design and code-design view.
 
 The full build path uses `build_full_dataset()` and `main()`.
 
@@ -175,6 +176,7 @@ Manufacturing is a roadmap item. The current generator does not yet implement it
 
 ## Where to Go Next
 
+- Read [technical-guide.md](technical-guide.md) for the system-level design view.
 - Read [reference/schema.md](reference/schema.md) for the current table structure.
 - Read [reference/posting.md](reference/posting.md) for the detailed posting reference.
 - Read [roadmap.md](roadmap.md) for the next planned implementation phases.

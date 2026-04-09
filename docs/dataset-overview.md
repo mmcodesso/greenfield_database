@@ -1,53 +1,54 @@
 # Dataset Overview
 
-**Audience:** Students and instructors using the dataset in AIS, accounting analytics, and auditing analytics courses.  
-**Purpose:** Explain what the dataset is, why it exists, and what kinds of analysis it supports.  
-**What you will learn:** The business scenario, the scope of the database, and the main terms used throughout the project.
+**Audience:** Students, instructors, and analysts using the dataset in AIS, accounting analytics, and auditing analytics courses.  
+**Purpose:** Explain what the dataset is, why it exists, and what kinds of work it supports.  
+**What you will learn:** The scope of the database, the business context, the implemented process coverage, and the core terms used throughout the project.
 
 ## What This Project Is
 
-Greenfield Accounting Dataset Generator creates a teaching database for **Greenfield Home Furnishings, Inc.**, a fictional company that buys, stores, and sells home furnishings. The generator produces realistic business transactions and the related accounting postings so learners can connect operational activity to financial reporting.
+Greenfield Accounting Dataset provides a teachable business database for **Greenfield Home Furnishings, Inc.** The dataset links operational activity to accounting outcomes so learners can move from business documents to subledger detail to posted `GLEntry` records.
 
 The project is built for:
 
 - SQL exercises
 - Excel-based analysis
-- financial analytics
-- managerial analytics
+- financial accounting analytics
+- managerial accounting analytics
 - audit analytics
-- subledger-to-ledger tracing
+- document tracing and control testing
 - business process understanding
 
-> **Implemented in current generator:** A five-year dataset with master data, budgets, order-to-cash, procure-to-pay, opening balances, recurring manual journals, year-end close, general ledger postings, validations, and planted anomalies.
+> **Implemented in current generator:** A five-year dataset with 31 tables covering O2C, P2P, accounting core, master data, budgets, recurring manual journals, year-end close, validations, anomalies, and exports.
 
 > **Planned future extension:** Manufacturing tables and production transactions.
 
-## Business Story
+## Business Context
 
-Greenfield Home Furnishings, Inc. is modeled as a mid-sized distributor and light assembler. In the current implementation, the dataset behaves like a merchandising environment with perpetual inventory accounting:
+Greenfield is a mid-sized home furnishings distributor with two warehouses and a finance team that closes the books each year. The current dataset behaves like a merchandising company:
 
-- the company sells items to customers
-- the company buys items from suppliers
-- inventory moves through warehouses
-- selected operational events create accounting entries
+- it sells finished goods to customers
+- it buys inventory from suppliers
+- it stores inventory in warehouses
+- it bills customers and collects cash
+- it processes returns, customer credits, and refunds
+- it requests, orders, receives, invoices, and pays for purchased inventory
+- it records recurring journals and year-end close entries
 
-The company context is realistic enough for classroom analysis, but still constrained enough to stay teachable.
-
-The accounting side of the dataset combines operational postings with recurring manual activity, including payroll accruals and settlements, rent, utilities, depreciation, accrued expenses with reversals, and year-end close entries.
+Read [company-story.md](company-story.md) for the full narrative of how the company operates.
 
 ## What the Database Contains
 
-The current generator produces 25 implemented tables across five areas:
+The current implementation contains **31 tables** across five areas:
 
-| Area | Examples |
-|---|---|
-| Accounting core | `Account`, `JournalEntry`, `GLEntry` |
-| Order-to-cash | `SalesOrder`, `Shipment`, `SalesInvoice`, `CashReceipt` |
-| Procure-to-pay | `PurchaseRequisition`, `PurchaseOrder`, `GoodsReceipt`, `PurchaseInvoice`, `DisbursementPayment` |
-| Master data | `Customer`, `Supplier`, `Item`, `Employee`, `Warehouse` |
-| Organizational planning | `CostCenter`, `Budget` |
+| Area | Example tables | Count |
+|---|---|---:|
+| Accounting core | `Account`, `JournalEntry`, `GLEntry` | 3 |
+| Order-to-cash | `Customer`, `SalesOrder`, `Shipment`, `SalesInvoice`, `CashReceiptApplication`, `SalesReturn`, `CreditMemo`, `CustomerRefund` | 14 |
+| Procure-to-pay | `Supplier`, `PurchaseRequisition`, `PurchaseOrder`, `GoodsReceipt`, `PurchaseInvoice`, `DisbursementPayment` | 9 |
+| Master data | `Item`, `Warehouse`, `Employee` | 3 |
+| Organizational planning | `CostCenter`, `Budget` | 2 |
 
-The generator also writes:
+The project also produces four release-ready outputs:
 
 - a SQLite database
 - an Excel workbook
@@ -58,34 +59,33 @@ The generator also writes:
 
 This dataset supports three broad learning tracks.
 
-### Financial analytics
+### Financial accounting
 
 Students can:
 
-- build revenue, expense, and margin views
-- reconcile invoices and cash receipts to receivables
-- reconcile purchase invoices and payments to payables
-- trace operational postings into the general ledger
-- compare budget to actuals by cost center and account
-- analyze recurring journal activity and period-end close entries
+- analyze revenue, COGS, margin, and close-cycle activity
+- reconcile receivables using invoices, cash applications, credit memos, and refunds
+- reconcile payables using purchase invoices and disbursements
+- trace operational activity into the general ledger
+- study recurring journals and year-end close entries
 
-### Managerial analytics
-
-Students can:
-
-- analyze sales mix by item, customer segment, and region
-- compare planned spending to actual operational activity
-- examine cost center performance
-- study inventory movements using shipments and goods receipts
-
-### Audit analytics
+### Managerial accounting
 
 Students can:
 
-- test order-to-cash and procure-to-pay process flow
-- look for approval and segregation-of-duties issues
-- analyze timing and cut-off behavior
-- detect duplicate references and related-party indicators
+- compare budget to actual activity by cost center and account
+- analyze sales mix by item, customer, segment, and region
+- study purchasing volume and supplier concentration
+- examine inventory movement through receipts, shipments, and returns
+
+### Auditing
+
+Students can:
+
+- test O2C and P2P document chains
+- review approvals and segregation-of-duties patterns
+- examine timing and cut-off behavior
+- detect duplicate references, customer-credit patterns, and planted anomalies
 - trace source documents to `GLEntry`
 
 ## What Is Not in Scope Yet
@@ -95,25 +95,27 @@ The current generator does **not** yet include:
 - manufacturing orders
 - bills of materials
 - work centers or routings
+- work-in-process accounting
 - production completions
 
-Those items are future expansion areas, not current features.
+Those items are future roadmap areas, not hidden functionality inside the current dataset.
 
 ## Glossary
 
 | Term | Plain-language meaning |
 |---|---|
-| O2C | Order-to-cash. The sales cycle from customer order through cash collection. |
+| O2C | Order-to-cash. The sales cycle from customer order through billing, cash application, and possible return activity. |
 | P2P | Procure-to-pay. The purchasing cycle from requisition through supplier payment. |
-| Subledger | Detailed operational records such as invoices, receipts, or purchase documents. |
+| Subledger | Detailed operational records such as invoices, receipts, returns, or purchase documents. |
 | GL | General ledger. The accounting table used for reporting and control-account reconciliation. |
-| Control account | A GL account such as AR, AP, inventory, or GRNI that summarizes subledger activity. |
+| Control account | A GL account such as AR, AP, inventory, GRNI, or customer deposits that summarizes operational activity. |
 | GRNI | Goods Received Not Invoiced. A liability recorded when inventory is received before the supplier invoice is approved. |
 | Cost center | An organizational unit used for planning and performance analysis. |
 | Anomaly | A deliberately planted exception or unusual pattern for analytics and audit exercises. |
 
 ## Where to Go Next
 
-- Read [process-flows.md](process-flows.md) to understand O2C, P2P, and ledger traceability.
+- Read [company-story.md](company-story.md) for the business narrative.
+- Read [process-flows.md](process-flows.md) to understand O2C, P2P, journals, and ledger traceability.
 - Read [database-guide.md](database-guide.md) to learn how to navigate the tables.
 - Read [instructor-guide.md](instructor-guide.md) if you are designing class activities around the dataset.

@@ -19,17 +19,18 @@ This layer is designed for the current stable dataset. It does not assume future
 
 ## Recommended Starting Path
 
-1. Generate the dataset and produce the SQLite and Excel outputs.
-2. Read [sql-guide.md](sql-guide.md) to understand how the query pack is organized.
-3. Pick an analytics area below.
-4. Use the matching SQL files first.
-5. Use [excel-guide.md](excel-guide.md) to build the same ideas in Excel pivots.
+1. Start with the release SQLite and Excel files, or generate them locally if needed.
+2. Read [../company-story.md](../company-story.md) and [../process-flows.md](../process-flows.md) if you need the business context first.
+3. Read [sql-guide.md](sql-guide.md) to understand how the query pack is organized.
+4. Pick an analytics area below.
+5. Use the matching SQL files first.
+6. Use [excel-guide.md](excel-guide.md) to build the same ideas in Excel pivots.
 
 ## Coverage Map
 
 | Analytics area | Start with | Starter SQL folder | Best paired workbook sheets |
 |---|---|---|---|
-| Financial accounting | [financial.md](financial.md) | [queries/financial](../../queries/financial) | `GLEntry`, `Account`, `SalesInvoice`, `CashReceipt`, `PurchaseInvoice`, `DisbursementPayment`, `JournalEntry` |
+| Financial accounting | [financial.md](financial.md) | [queries/financial](../../queries/financial) | `GLEntry`, `Account`, `SalesInvoice`, `CashReceiptApplication`, `CreditMemo`, `CustomerRefund`, `PurchaseInvoice`, `DisbursementPayment`, `JournalEntry` |
 | Managerial accounting | [managerial.md](managerial.md) | [queries/managerial](../../queries/managerial) | `Budget`, `CostCenter`, `Item`, `SalesInvoiceLine`, `ShipmentLine`, `GoodsReceiptLine`, `PurchaseOrderLine`, `PurchaseInvoiceLine` |
 | Auditing | [audit.md](audit.md) | [queries/audit](../../queries/audit) | operational document sheets, `GLEntry`, `JournalEntry`, `AnomalyLog`, `ValidationSummary` |
 | SQL workflow | [sql-guide.md](sql-guide.md) | All starter SQL folders | SQLite database |
@@ -39,7 +40,7 @@ This layer is designed for the current stable dataset. It does not assume future
 
 ### Student path
 
-1. Read [../process-flows.md](../process-flows.md).
+1. Read [../company-story.md](../company-story.md) and [../process-flows.md](../process-flows.md).
 2. Read [../database-guide.md](../database-guide.md).
 3. Start with one area guide:
    - [financial.md](financial.md)

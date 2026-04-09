@@ -16,6 +16,12 @@ The current implementation contains 31 tables grouped into five areas:
 | Master data | `Item`, `Warehouse`, `Employee` |
 | Organizational planning | `CostCenter`, `Budget` |
 
+If you are new to the dataset, the easiest reading order is:
+
+1. [company-story.md](company-story.md)
+2. [process-flows.md](process-flows.md)
+3. this guide
+
 ## Header-Line Pattern
 
 Many business documents use a header table and a line table.
@@ -40,6 +46,7 @@ If you are new to the database, start from the header table to understand the do
 | `RequisitionID` | Connect requisitions to purchase-order headers and purchase-order lines |
 | `SalesOrderID` | Connect sales order header to shipments and invoices |
 | `SalesOrderLineID` | Connect order lines to shipment lines and sales invoice lines |
+| `ShipmentLineID` | Connect billed and returned lines to the exact shipped line |
 | `PurchaseOrderID` | Connect purchase order header to goods receipts and purchase invoices |
 | `POLineID` | Connect purchase order lines to goods receipt lines and purchase invoice lines |
 | `GoodsReceiptLineID` | Connect purchase invoice lines to specific receipt lines in the clean Phase 9 match design |
@@ -51,7 +58,11 @@ If you are new to the database, start from the header table to understand the do
 
 ### O2C path
 
-`Customer -> SalesOrder -> SalesOrderLine -> Shipment -> ShipmentLine -> SalesInvoice -> SalesInvoiceLine -> CashReceipt -> CashReceiptApplication`
+`Customer -> SalesOrder -> SalesOrderLine -> Shipment -> ShipmentLine -> SalesInvoice -> SalesInvoiceLine`
+
+Cash collection is tracked through:
+
+`CashReceipt -> CashReceiptApplication -> SalesInvoice`
 
 Returns, credits, and refunds branch from the billed shipment path:
 
@@ -88,8 +99,8 @@ Not every operational document posts to the general ledger.
 | Purchase orders | No | External commitment document |
 | Shipments | Yes | Posts COGS and inventory relief |
 | Sales invoices | Yes | Posts AR, revenue, and sales tax |
-| Cash receipts | Yes | Posts cash and unapplied cash; applications clear AR |
-| Cash receipt applications | Yes | Moves customer cash from unapplied cash to AR settlement |
+| Cash receipts | Yes | Posts cash and customer deposits / unapplied cash |
+| Cash receipt applications | Yes | Clears AR from customer deposits / unapplied cash |
 | Sales returns | Yes | Posts inventory back in and reverses COGS |
 | Credit memos | Yes | Posts contra revenue, tax reversal, and AR or customer credit reduction |
 | Customer refunds | Yes | Posts customer credit and cash |
@@ -109,6 +120,7 @@ Start with:
 - `SalesInvoice`
 - `CashReceiptApplication`
 - `CreditMemo`
+- `CustomerRefund`
 - `PurchaseInvoice`
 - `DisbursementPayment`
 
@@ -116,6 +128,7 @@ Typical questions:
 
 - What are revenue, COGS, and gross margin by month?
 - What remains open in AR and AP?
+- How much customer cash is unapplied or held as credit?
 - Does the subledger reconcile to the control accounts?
 
 ### Managerial analytics
@@ -136,12 +149,13 @@ Typical questions:
 - How do budget and actual activity compare by cost center?
 - Which products or regions drive sales?
 - Which items move most through the warehouses?
+- Which suppliers and categories drive purchasing activity?
 
 ### Audit analytics
 
 Start with:
 
-- `SalesOrder`, `Shipment`, `SalesInvoice`, `CashReceipt`
+- `SalesOrder`, `Shipment`, `SalesInvoice`, `CashReceipt`, `CashReceiptApplication`, `SalesReturn`, `CreditMemo`
 - `PurchaseRequisition`, `PurchaseOrder`, `GoodsReceipt`, `PurchaseInvoice`, `DisbursementPayment`
 - `GLEntry`
 - output files such as `validation_report.json` and the anomaly log in Excel
@@ -151,12 +165,14 @@ Typical questions:
 - Are document chains complete?
 - Are there approval exceptions?
 - Are there timing, duplicate-reference, or segregation-of-duties issues?
+- Do the control accounts reconcile to the subledger logic?
 
 ## Current Practical Tips
 
 - The SQLite export is the easiest format for SQL work.
 - The starter SQL files under `queries/` are the fastest way to move from schema understanding to analysis.
 - The Excel export places each table on its own worksheet and also includes `AnomalyLog` and `ValidationSummary`.
+- `CashReceiptApplication` is the authoritative invoice-settlement link in O2C.
 - `JournalEntry` supports journal-entry testing, accrual reversal analysis, and close-cycle exercises in the current base dataset.
 - For P2P traceability, prefer `PurchaseOrderLine.RequisitionID` and `PurchaseInvoiceLine.GoodsReceiptLineID` over header-only assumptions.
 - For raw multi-year income statement analysis, exclude the two year-end close entry types.

@@ -16,12 +16,11 @@ The current generator already delivers:
 
 Phase 11 is now complete. The default build includes:
 
-- 1,442 journal headers across opening, recurring operating journals, reversals, and year-end close
-- 176,643 GL rows in the default five-year build
-- journal-focused anomaly patterns that preserve overall GL balance while creating detectable control exceptions
-- multi-period P2P activity with 5,548 purchase-order lines, 9,163 goods-receipt lines, 12,658 purchase-invoice lines, and 13,904 disbursement records
-- a starter analytics layer with topic guides, starter SQL packs, Excel workflow guidance, and expanded instructor-facing teaching structure
+- recurring journals, reversals, and year-end close activity at useful teaching scale
 - inventory-constrained O2C shipments, receipt applications, customer deposits, sales returns, credit memos, and customer refunds
+- multi-period P2P activity with batched purchase orders, matched supplier invoices, and split settlement behavior
+- a starter analytics layer with topic guides, starter SQL packs, Excel workflow guidance, and expanded instructor-facing teaching structure
+- validation outputs, anomaly logging, and release-ready exports
 
 The next practical gap is no longer starter usability or O2C realism. The next high-value addition is manufacturing coverage.
 

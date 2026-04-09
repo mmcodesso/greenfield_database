@@ -1,106 +1,116 @@
-# Greenfield Accounting Dataset Generator
+# Greenfield Accounting Dataset
 
-Greenfield Accounting Dataset Generator creates a reproducible synthetic accounting database for Accounting Information Systems, accounting analytics, and audit analytics courses. The dataset is designed for SQL and Excel exercises that connect business processes, subledgers, and the general ledger.
+Greenfield Accounting Dataset is a synthetic accounting database for business students who need to connect business processes, operational documents, subledgers, and the general ledger in one teachable system.
 
-The fictional company is **Greenfield Home Furnishings, Inc.** The current generator produces five fiscal years of data from **2026-01-01** through **2030-12-31**.
+Most users should start with the pre-generated release files, not the Python generator. The project is built for SQL work, Excel analysis, accounting analytics, AIS courses, and audit-style document tracing.
 
-## Quick Start
+## Meet the Company
 
-Create and activate a virtual environment:
+The fictional company is **Greenfield Home Furnishings, Inc.**, a mid-sized home furnishings distributor with two warehouses, a multi-department operating structure, and a finance team that books recurring journals and closes the books each year.
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-```
+In the current implementation, Greenfield behaves like a merchandising business:
 
-Install dependencies:
+- customers place sales orders
+- warehouses ship goods when inventory is available
+- accounting invoices customers and applies cash receipts
+- some sales flow into returns, credit memos, and refunds
+- employees request purchases, purchasing issues POs, warehouses receive goods, suppliers invoice the company, and treasury pays the invoices
+- finance also books opening balances, monthly operating journals, accrual reversals, and year-end close entries
 
-```powershell
-pip install -r requirements.txt
-```
+That operating model is detailed enough for classroom analysis, but still constrained enough to remain readable for students.
 
-Generate the full dataset:
+## What the Database Contains
 
-```powershell
-python generate_dataset.py
-```
+The current generator produces a five-year dataset covering fiscal years **2026 through 2030**.
 
-If you do not activate the virtual environment, run:
+Current scope:
 
-```powershell
-.\.venv\Scripts\python.exe generate_dataset.py
-```
+- `31` implemented tables
+- order-to-cash with backorders, invoice matching, cash applications, returns, credit memos, and refunds
+- procure-to-pay with batched purchase orders, partial receipts, receipt-line invoice matching, and split payments
+- chart of accounts, budgets, recurring manual journals, year-end close, and posted `GLEntry` detail
+- validation outputs, anomaly logging, SQLite export, Excel export, and generation logs
 
-## Outputs
+Primary teaching uses:
 
-Each run produces:
+- financial accounting analytics
+- managerial accounting analytics
+- auditing and controls analytics
+- SQL exercises
+- Excel pivot-table and chart work
+- source-to-ledger traceability
 
-- `outputs/greenfield_2026_2030.sqlite`
-- `outputs/greenfield_2026_2030.xlsx`
-- `outputs/validation_report.json`
-- `outputs/generation.log`
+## Release Files
 
-Generated outputs are ignored by Git and can be regenerated locally at any time.
+Each generated release is intended to be usable as a standalone teaching package.
 
-## Read Next
+Expected artifacts:
 
-| If you are a... | Start here |
-|---|---|
-| Student | [docs/dataset-overview.md](docs/dataset-overview.md) and [docs/process-flows.md](docs/process-flows.md) |
-| Instructor | [docs/instructor-guide.md](docs/instructor-guide.md) and [docs/analytics/index.md](docs/analytics/index.md) |
-| Analyst learning the tables | [docs/database-guide.md](docs/database-guide.md) and [docs/analytics/index.md](docs/analytics/index.md) |
-| Contributor or maintainer | [docs/code-architecture.md](docs/code-architecture.md) |
-| Looking for detailed technical reference | [docs/reference/schema.md](docs/reference/schema.md), [docs/reference/posting.md](docs/reference/posting.md), and [docs/reference/row-volume.md](docs/reference/row-volume.md) |
-| Looking for the historical blueprint | [Design.md](Design.md) |
+- `greenfield_2026_2030.sqlite`: best starting point for SQL work
+- `greenfield_2026_2030.xlsx`: easiest starting point for Excel work
+- `validation_report.json`: structured validation results
+- `generation.log`: run log with generation checkpoints and summaries
 
-## What Is Implemented Now
+## Start Here
 
-| Implemented in current generator | Planned later |
-|---|---|
-| 31-table dataset covering O2C, P2P, master data, budgets, recurring manual journals, year-end close, and ledger postings | Manufacturing process tables and production flows |
-| Five-year fiscal range with monthly operational and manual journal generation, plus multi-period O2C and P2P matching and settlement behavior | Broader manufacturing flows |
-| Event-based postings from shipments, invoices, receipt applications, goods receipts, purchase invoices, disbursements, returns, credit memos, and refunds plus seeded journal postings | More advanced teaching packs and broader course extensions |
-| Starter analytics docs, runnable SQLite query packs, and Excel workflow guidance across financial, managerial, and audit analytics | Additional analytics packs for later O2C and manufacturing phases |
-| SQLite, Excel, validation report, and generation log outputs | Additional dataset extensions for broader course coverage |
+| If you are a... | Read this first | Then continue with |
+|---|---|---|
+| Student | [docs/company-story.md](docs/company-story.md) | [docs/process-flows.md](docs/process-flows.md), [docs/database-guide.md](docs/database-guide.md), [docs/analytics/index.md](docs/analytics/index.md) |
+| Instructor | [docs/instructor-guide.md](docs/instructor-guide.md) | [docs/company-story.md](docs/company-story.md), [docs/process-flows.md](docs/process-flows.md), [docs/analytics/index.md](docs/analytics/index.md) |
+| Analyst | [docs/database-guide.md](docs/database-guide.md) | [docs/process-flows.md](docs/process-flows.md), [docs/analytics/index.md](docs/analytics/index.md), [docs/reference/schema.md](docs/reference/schema.md) |
+| Contributor | [docs/technical-guide.md](docs/technical-guide.md) | [docs/code-architecture.md](docs/code-architecture.md), [docs/reference/schema.md](docs/reference/schema.md), [docs/reference/posting.md](docs/reference/posting.md) |
 
 ## Documentation Map
 
 - [docs/index.md](docs/index.md): documentation hub and reading paths by audience
-- [docs/dataset-overview.md](docs/dataset-overview.md): business story, dataset purpose, and glossary
-- [docs/process-flows.md](docs/process-flows.md): O2C, P2P, and ledger traceability explained with diagrams
-- [docs/database-guide.md](docs/database-guide.md): how to navigate tables and joins
+- [docs/company-story.md](docs/company-story.md): business context for the fictional company
+- [docs/dataset-overview.md](docs/dataset-overview.md): what the dataset is, what it includes, and the core glossary
+- [docs/process-flows.md](docs/process-flows.md): process documentation hub and traceability overview
+- [docs/processes/o2c.md](docs/processes/o2c.md): order-to-cash step by step
+- [docs/processes/o2c-returns-credits-refunds.md](docs/processes/o2c-returns-credits-refunds.md): returns, credit memos, and refunds step by step
+- [docs/processes/p2p.md](docs/processes/p2p.md): procure-to-pay step by step
+- [docs/processes/manual-journals-and-close.md](docs/processes/manual-journals-and-close.md): recurring journals and close-cycle documentation
+- [docs/database-guide.md](docs/database-guide.md): table families, keys, and navigation patterns
 - [docs/analytics/index.md](docs/analytics/index.md): analytics starter hub for SQL and Excel users
-- [docs/analytics/financial.md](docs/analytics/financial.md): financial accounting starter analytics
-- [docs/analytics/managerial.md](docs/analytics/managerial.md): managerial accounting starter analytics
-- [docs/analytics/audit.md](docs/analytics/audit.md): auditing starter analytics
-- [docs/analytics/sql-guide.md](docs/analytics/sql-guide.md): how to run the starter SQL files
-- [docs/analytics/excel-guide.md](docs/analytics/excel-guide.md): how to use the Excel export for analytics
-- [docs/instructor-guide.md](docs/instructor-guide.md): suggested teaching path and exercise categories
-- [docs/code-architecture.md](docs/code-architecture.md): how the Python generator works
-- [docs/reference/schema.md](docs/reference/schema.md): executable schema reference
+- [docs/instructor-guide.md](docs/instructor-guide.md): teaching path and exercise framing
+- [docs/technical-guide.md](docs/technical-guide.md): system-level technical guide for the dataset and generator
+- [docs/code-architecture.md](docs/code-architecture.md): module-level explanation of the Python codebase
+- [docs/reference/schema.md](docs/reference/schema.md): implemented schema reference
 - [docs/reference/posting.md](docs/reference/posting.md): posting logic reference
-- [docs/reference/row-volume.md](docs/reference/row-volume.md): default row counts and target ranges
-- [docs/roadmap.md](docs/roadmap.md): next implementation phase and the remaining roadmap
-- `queries/`: starter SQLite query pack grouped into financial, managerial, and audit areas
+- [docs/reference/row-volume.md](docs/reference/row-volume.md): scale expectations and current row volumes
+- [docs/roadmap.md](docs/roadmap.md): future phases
 
-## Project Snapshot
+## Implemented Now vs Planned Later
 
-- Company: Greenfield Home Furnishings, Inc.
-- Fiscal range: 2026 through 2030
-- Implemented tables: 31
-- Core processes: order-to-cash, procure-to-pay, opening balances, recurring manual journals, year-end close, budgets, and ledger postings
-- Default build counts: `Account` 90, `JournalEntry` 1,442, `GLEntry` 469,567, `SalesOrder` 6,903, `Shipment` 25,606, `SalesInvoice` 33,089, `CashReceipt` 9,113, `SalesReturn` 24,813, `CreditMemo` 24,813, `PurchaseOrder` 5,384, `PurchaseInvoice` 12,440, `DisbursementPayment` 13,833, `Budget` 2,940
-- Primary teaching uses: financial analytics, managerial analytics, audit analytics, SQL practice, Excel analysis, and subledger-to-ledger reconciliation
+| Implemented in current generator | Planned future extension |
+|---|---|
+| Five years of O2C, P2P, budgets, recurring journals, close-cycle activity, and posted ledger data | Manufacturing tables and production flows |
+| Separate customer receipt applications and customer-credit flows | Manufacturing analytics packs |
+| Multi-period receiving, billing, collection, and settlement behavior | Broader production and cost-accounting coverage |
+| Starter analytics docs, runnable SQL packs, and Excel workflow guidance | Additional advanced analytics packs |
 
-## Notes on Scope
+## Build It Yourself
 
-- The current generator models a distributor and light assembler, but it does **not** yet implement manufacturing transactions.
-- `JournalEntry` now includes the opening balance, recurring operating journals, accrual reversals, and year-end close entries.
-- O2C now supports inventory-constrained shipments, backorders, exact shipment-to-invoice linkage, cash receipt applications, customer deposits, sales returns, credit memos, and customer refunds.
-- P2P now supports batched requisition-to-PO conversion, partial receipts across periods, receipt-line invoice matching, and split disbursement settlement behavior.
-- Phase 10 and Phase 11 together add a starter analytics layer under `docs/analytics/` plus runnable SQL files under `queries/` that now cover returns, customer credits, and richer O2C timing.
-- In the default `standard` anomaly mode, the final validation report intentionally contains planted exceptions, including journal-control findings, while keeping the GL balanced.
-- `Design.md` is now an appendix and historical blueprint. It contains future ideas that do not always match the current generator.
+Most users do not need to run the generator locally. If you do want to regenerate the dataset, use the commands below from the repository root.
+
+### Linux and macOS
+
+```bash
+python3 -m venv .venv
+. .venv/bin/activate
+python3 -m pip install -r requirements.txt
+python3 generate_dataset.py
+```
+
+### Windows
+
+```bat
+py -m venv .venv
+.venv\Scripts\python -m pip install -r requirements.txt
+.venv\Scripts\python generate_dataset.py
+```
+
+Generated files are written to `outputs/`.
 
 ## Contributing
 
