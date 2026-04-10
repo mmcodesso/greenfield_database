@@ -54,8 +54,8 @@ flowchart LR
     PR --> GL
     PAY --> GL
     REM --> GL
-    DR --> GL
     OH --> GL
+    DR --> GL
     GL --> WO
 ```
 

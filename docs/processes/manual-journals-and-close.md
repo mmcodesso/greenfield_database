@@ -48,9 +48,9 @@ flowchart LR
     FO --> JE
     DL --> JE
     OH --> JE
-    AC --> JE
-    AJ --> JE
     YC --> JE
+    AJ --> JE
+    AC --> JE
     JE --> GL
     AC --> PI --> DP
     PI -. Clears accrued expenses through AP .-> GL
