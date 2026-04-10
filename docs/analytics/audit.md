@@ -15,7 +15,7 @@
 | O2C completeness | O2C header and line tables plus `CashReceiptApplication` |
 | P2P completeness | P2P header and line tables |
 | Approvals and SOD | `PurchaseRequisition`, `PurchaseOrder`, `PurchaseInvoice`, `JournalEntry`, `CreditMemo`, `CustomerRefund`, `Employee`, `PayrollRegister` |
-| Manufacturing controls | `Item`, `BillOfMaterial`, `BillOfMaterialLine`, `WorkOrder`, `MaterialIssueLine`, `ProductionCompletionLine`, `WorkOrderClose` |
+| Manufacturing controls | `Item`, `BillOfMaterial`, `BillOfMaterialLine`, `Routing`, `RoutingOperation`, `WorkCenter`, `WorkOrder`, `WorkOrderOperation`, `MaterialIssueLine`, `ProductionCompletionLine`, `WorkOrderClose` |
 | Payroll controls | `PayrollPeriod`, `LaborTimeEntry`, `PayrollRegister`, `PayrollRegisterLine`, `PayrollPayment`, `PayrollLiabilityRemittance`, `Employee` |
 | Cut-off and timing | operational header and line tables plus date fields |
 | Duplicate and anomaly review | `DisbursementPayment`, `PurchaseInvoice`, `JournalEntry`, `SalesInvoice`, `CreditMemo`, `PayrollPayment`, Excel `AnomalyLog` |
@@ -37,12 +37,14 @@
 | Payroll control review | [11_payroll_control_review.sql](../../queries/audit/11_payroll_control_review.sql) |
 | Labor-time-after-close and paid-without-time review | [12_labor_time_after_close_and_paid_without_time.sql](../../queries/audit/12_labor_time_after_close_and_paid_without_time.sql) |
 | Over and under accrual review | [13_over_under_accrual_review.sql](../../queries/audit/13_over_under_accrual_review.sql) |
+| Missing routing or operation-link review | [14_missing_routing_or_operation_link_review.sql](../../queries/audit/14_missing_routing_or_operation_link_review.sql) |
+| Operation sequence and final-completion review | [15_operation_sequence_and_final_completion_review.sql](../../queries/audit/15_operation_sequence_and_final_completion_review.sql) |
 
 ## Interpretation Notes
 
 - A clean build with `anomaly_mode: none` may return few or no exceptions from anomaly-oriented queries.
 - The default `standard` build is better for controls teaching because anomalies are present while the GL remains balanced.
 - O2C completeness should be checked at the line and application level.
-- Manufacturing controls should start from BOM integrity and work-order close timing before moving to ledger balances.
+- Manufacturing controls should now start from BOM and routing integrity before moving to work-order close timing and ledger balances.
 - Payroll-control review should distinguish between normal processing lag and true exceptions such as missing payment, time after close, or hourly pay without time.
 - Accrued-expense review should distinguish receipt-matched inventory AP from direct service invoices that intentionally clear prior accruals.

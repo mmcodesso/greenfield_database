@@ -93,7 +93,7 @@ Safe ways to extend the starter pack:
 
 Changes to avoid in this phase:
 
-- rewriting queries around future routing or capacity flows
+- rewriting queries around future capacity-calendar or time-clock flows
 - assuming anomaly rows will always exist
 - assuming every control-account or balance-sheet line carries a cost center
 

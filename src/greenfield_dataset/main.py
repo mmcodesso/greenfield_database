@@ -22,6 +22,7 @@ from greenfield_dataset.manufacturing import (
     generate_boms,
     generate_month_manufacturing_activity,
     generate_month_work_orders_and_requisitions,
+    generate_work_centers_and_routings,
     manufacturing_open_state,
 )
 from greenfield_dataset.master_data import (
@@ -70,6 +71,7 @@ from greenfield_dataset.validations import (
     validate_phase11,
     validate_phase12,
     validate_phase13,
+    validate_phase14,
 )
 
 
@@ -174,6 +176,7 @@ def build_phase2(config_path: str | Path = "config/settings.yaml") -> Generation
 
     generate_items(context)
     generate_boms(context)
+    generate_work_centers_and_routings(context)
     generate_customers(context)
     generate_suppliers(context)
     generate_opening_balances(context)
@@ -354,6 +357,37 @@ def build_phase13(config_path: str | Path = "config/settings.yaml") -> Generatio
     return context
 
 
+def build_phase14(config_path: str | Path = "config/settings.yaml") -> GenerationContext:
+    context = build_phase2(config_path)
+    generate_payroll_periods(context)
+
+    for year, month in [(2026, 1), (2026, 2), (2026, 3), (2026, 4)]:
+        generate_month_o2c(context, year, month)
+        generate_month_requisitions(context, year, month)
+        generate_month_work_orders_and_requisitions(context, year, month)
+        generate_month_purchase_orders(context, year, month)
+        generate_month_goods_receipts(context, year, month)
+        generate_month_manufacturing_activity(context, year, month)
+        generate_month_payroll(context, year, month)
+        close_eligible_work_orders(context, year, month)
+        generate_month_shipments(context, year, month)
+        generate_month_sales_invoices(context, year, month)
+        generate_month_cash_receipts(context, year, month)
+        generate_month_sales_returns(context, year, month)
+        generate_month_customer_refunds(context, year, month)
+        generate_month_purchase_invoices(context, year, month)
+        generate_month_disbursements(context, year, month)
+    generate_recurring_manual_journals(context)
+    generate_accrued_service_settlements(context)
+    generate_accrual_adjustment_journals(context)
+    post_all_transactions(context)
+    generate_year_end_close_journals(context)
+    validate_phase14(context)
+    export_validation_report(context)
+
+    return context
+
+
 def fiscal_months(context: GenerationContext) -> Iterable[tuple[int, int]]:
     start = pd.Timestamp(context.settings.fiscal_year_start)
     end = pd.Timestamp(context.settings.fiscal_year_end)
@@ -409,6 +443,7 @@ def build_full_dataset(config_path: str | Path = "config/settings.yaml") -> Gene
     with logged_step("Generate phase 2 master data and planning data"):
         generate_items(context)
         generate_boms(context)
+        generate_work_centers_and_routings(context)
         generate_customers(context)
         generate_suppliers(context)
         generate_opening_balances(context)
@@ -420,6 +455,9 @@ def build_full_dataset(config_path: str | Path = "config/settings.yaml") -> Gene
                 "Item",
                 "BillOfMaterial",
                 "BillOfMaterialLine",
+                "WorkCenter",
+                "Routing",
+                "RoutingOperation",
                 "Customer",
                 "Supplier",
                 "JournalEntry",
@@ -451,6 +489,7 @@ def build_full_dataset(config_path: str | Path = "config/settings.yaml") -> Gene
             invoice_line_count_before = len(context.tables["PurchaseInvoiceLine"])
             disbursement_count_before = len(context.tables["DisbursementPayment"])
             work_order_count_before = len(context.tables["WorkOrder"])
+            work_order_operation_count_before = len(context.tables["WorkOrderOperation"])
             issue_line_count_before = len(context.tables["MaterialIssueLine"])
             completion_line_count_before = len(context.tables["ProductionCompletionLine"])
             work_order_close_count_before = len(context.tables["WorkOrderClose"])
@@ -479,6 +518,7 @@ def build_full_dataset(config_path: str | Path = "config/settings.yaml") -> Gene
             new_invoice_lines = context.tables["PurchaseInvoiceLine"].iloc[invoice_line_count_before:]
             new_disbursements = context.tables["DisbursementPayment"].iloc[disbursement_count_before:]
             new_work_orders = context.tables["WorkOrder"].iloc[work_order_count_before:]
+            new_work_order_operations = context.tables["WorkOrderOperation"].iloc[work_order_operation_count_before:]
             new_issue_lines = context.tables["MaterialIssueLine"].iloc[issue_line_count_before:]
             new_completion_lines = context.tables["ProductionCompletionLine"].iloc[completion_line_count_before:]
             new_work_order_closes = context.tables["WorkOrderClose"].iloc[work_order_close_count_before:]
@@ -525,13 +565,17 @@ def build_full_dataset(config_path: str | Path = "config/settings.yaml") -> Gene
                 revenue_state["customer_credit_amount"],
             )
             LOGGER.info(
-                "MFG CHECKPOINT | %s-%02d | manufactured_items=%s | bom_count=%s | bom_line_count=%s | work_orders_released=%s | issue_lines_created=%s | issue_cost=%s | completion_lines_created=%s | completed_quantity=%s | work_orders_closed=%s | open_work_order_count=%s | wip_balance=%s | manufacturing_clearing_balance=%s | manufacturing_variance_posted=%s",
+                "MFG CHECKPOINT | %s-%02d | manufactured_items=%s | work_centers=%s | routing_count=%s | routing_operation_count=%s | bom_count=%s | bom_line_count=%s | work_orders_released=%s | work_order_operations_created=%s | issue_lines_created=%s | issue_cost=%s | completion_lines_created=%s | completed_quantity=%s | work_orders_closed=%s | open_work_order_count=%s | wip_balance=%s | manufacturing_clearing_balance=%s | manufacturing_variance_posted=%s",
                 year,
                 month,
                 int(manufacturing_state["manufactured_item_count"]),
+                int(manufacturing_state["work_center_count"]),
+                int(manufacturing_state["routing_count"]),
+                int(manufacturing_state["routing_operation_count"]),
                 int(manufacturing_state["bom_count"]),
                 int(manufacturing_state["bom_line_count"]),
                 len(new_work_orders),
+                len(new_work_order_operations),
                 len(new_issue_lines),
                 round(float(new_issue_lines["ExtendedStandardCost"].sum()), 2) if not new_issue_lines.empty else 0.0,
                 len(new_completion_lines),
@@ -585,6 +629,7 @@ def build_full_dataset(config_path: str | Path = "config/settings.yaml") -> Gene
                 "PurchaseRequisition",
                 "PurchaseOrder",
                 "WorkOrder",
+                "WorkOrderOperation",
                 "PayrollRegister",
                 "Shipment",
                 "GoodsReceipt",
@@ -624,7 +669,7 @@ def build_full_dataset(config_path: str | Path = "config/settings.yaml") -> Gene
         log_table_counts(context, ("JournalEntry", "GLEntry"), "year-end close")
 
     with logged_step("Validate clean final dataset"):
-        log_validation_results("phase13", validate_phase13(context))
+        log_validation_results("phase14", validate_phase14(context))
 
     with logged_step("Inject configured anomalies"):
         inject_anomalies(context)
@@ -664,7 +709,7 @@ def build_full_dataset(config_path: str | Path = "config/settings.yaml") -> Gene
 
 
 def print_summary(context: GenerationContext) -> None:
-    row_counts = context.validation_results["phase13"]["row_counts"]
+    row_counts = context.validation_results["phase14"]["row_counts"]
     print("Full dataset generated.")
     print(f"Fiscal range: {context.settings.fiscal_year_start} to {context.settings.fiscal_year_end}")
     print(f"Accounts: {row_counts['Account']}")
@@ -672,6 +717,9 @@ def print_summary(context: GenerationContext) -> None:
     print(f"Employees: {row_counts['Employee']}")
     print(f"Warehouses: {row_counts['Warehouse']}")
     print(f"Items: {row_counts['Item']}")
+    print(f"Work centers: {row_counts['WorkCenter']}")
+    print(f"Routings: {row_counts['Routing']}")
+    print(f"Routing operations: {row_counts['RoutingOperation']}")
     print(f"Customers: {row_counts['Customer']}")
     print(f"Suppliers: {row_counts['Supplier']}")
     print(f"Journal entries: {row_counts['JournalEntry']}")
@@ -681,6 +729,8 @@ def print_summary(context: GenerationContext) -> None:
     print(f"Purchase requisitions: {row_counts['PurchaseRequisition']}")
     print(f"Purchase orders: {row_counts['PurchaseOrder']}")
     print(f"Purchase order lines: {row_counts['PurchaseOrderLine']}")
+    print(f"Work orders: {row_counts['WorkOrder']}")
+    print(f"Work order operations: {row_counts['WorkOrderOperation']}")
     print(f"Shipments: {row_counts['Shipment']}")
     print(f"Shipment lines: {row_counts['ShipmentLine']}")
     print(f"Goods receipts: {row_counts['GoodsReceipt']}")
@@ -704,7 +754,7 @@ def print_summary(context: GenerationContext) -> None:
     print(f"Payroll payments: {row_counts['PayrollPayment']}")
     print(f"Payroll liability remittances: {row_counts['PayrollLiabilityRemittance']}")
     print(f"GL entries: {row_counts['GLEntry']}")
-    print(f"GL balance exceptions: {context.validation_results['phase13']['gl_balance']['exception_count']}")
+    print(f"GL balance exceptions: {context.validation_results['phase14']['gl_balance']['exception_count']}")
     print(f"Anomalies logged: {len(context.anomaly_log)}")
     print(f"SQLite export: {context.settings.sqlite_path}")
     print(f"Excel export: {context.settings.excel_path}")

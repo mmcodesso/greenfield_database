@@ -36,6 +36,13 @@ FACTORY_OVERHEAD_FACTOR_RANGE = (0.92, 1.08)
 HOURLY_PERIOD_HOURS_RANGE = (75.0, 84.0)
 HOURLY_PERIOD_OVERTIME_RANGE = (0.0, 6.0)
 DIRECT_WORKER_SPLIT_OPTIONS = ((1, 0.58), (2, 0.34), (3, 0.08))
+DIRECT_OPERATION_WEIGHT = {
+    "ASSEMBLY": 1.40,
+    "FINISH": 1.20,
+    "QA": 1.00,
+    "CUT": 0.85,
+    "PACK": 0.45,
+}
 EMPLOYEE_TAX_WITHHOLDING_RANGE = (0.11, 0.16)
 BENEFITS_DEDUCTION_RANGE = (0.02, 0.05)
 EMPLOYER_BENEFIT_RATE_RANGE = (0.04, 0.08)
@@ -232,6 +239,99 @@ def work_order_latest_completion_date_in_period(
     return {int(work_order_id): pd.Timestamp(date_value) for work_order_id, date_value in grouped.items()}
 
 
+def work_order_operation_targets_for_period(
+    context: GenerationContext,
+    period_start: pd.Timestamp,
+    period_end: pd.Timestamp,
+) -> dict[int, list[dict[str, Any]]]:
+    targets = direct_labor_targets_for_period(context, period_start, period_end)
+    if not targets:
+        return {}
+
+    work_order_operations = context.tables["WorkOrderOperation"]
+    routing_operations = context.tables["RoutingOperation"]
+    period_completion_lines = production_completion_lines_for_period(context, period_start, period_end)
+    latest_dates = work_order_latest_completion_date_in_period(period_completion_lines)
+    if work_order_operations.empty or routing_operations.empty:
+        return {
+            int(work_order_id): [{
+                "WorkOrderOperationID": None,
+                "WorkDate": latest_dates.get(int(work_order_id), period_end),
+                "TargetCost": money(float(target["actual_direct_labor_cost"])),
+            }]
+            for work_order_id, target in targets.items()
+        }
+
+    operation_details = work_order_operations.merge(
+        routing_operations[
+            [
+                "RoutingOperationID",
+                "OperationCode",
+                "OperationSequence",
+                "StandardSetupHours",
+                "StandardRunHoursPerUnit",
+            ]
+        ],
+        on="RoutingOperationID",
+        how="left",
+        suffixes=("", "_Routing"),
+    )
+    target_map: dict[int, list[dict[str, Any]]] = {}
+
+    for work_order_id, target in targets.items():
+        work_date_fallback = latest_dates.get(int(work_order_id), period_end)
+        candidates = operation_details[
+            operation_details["WorkOrderID"].astype(int).eq(int(work_order_id))
+        ].sort_values("OperationSequence")
+        if candidates.empty:
+            target_map[int(work_order_id)] = [{
+                "WorkOrderOperationID": None,
+                "WorkDate": work_date_fallback,
+                "TargetCost": money(float(target["actual_direct_labor_cost"])),
+            }]
+            continue
+
+        eligible = candidates.copy()
+        eligible["Weight"] = (
+            eligible["OperationCode"].map(DIRECT_OPERATION_WEIGHT).fillna(0.60).astype(float)
+            * (
+                eligible["StandardRunHoursPerUnit"].fillna(0.0).astype(float)
+                + eligible["StandardSetupHours"].fillna(0.0).astype(float)
+                + 0.05
+            )
+        )
+        eligible = eligible[eligible["Weight"].gt(0)].copy()
+        if eligible.empty:
+            eligible = candidates.copy()
+            eligible["Weight"] = 1.0
+
+        total_weight = float(eligible["Weight"].sum()) or 1.0
+        allocated = 0.0
+        work_order_targets: list[dict[str, Any]] = []
+        target_cost_total = float(target["actual_direct_labor_cost"])
+        for index, row in enumerate(eligible.itertuples(index=False), start=1):
+            if index == len(eligible):
+                target_cost = money(max(target_cost_total - allocated, 0.0))
+            else:
+                target_cost = money(target_cost_total * float(row.Weight) / total_weight)
+                allocated = money(allocated + target_cost)
+            if target_cost <= 0:
+                continue
+            work_date_value = row.ActualEndDate or row.ActualStartDate or row.PlannedEndDate or row.PlannedStartDate
+            work_order_targets.append({
+                "WorkOrderOperationID": int(row.WorkOrderOperationID),
+                "WorkDate": pd.Timestamp(work_date_value) if work_date_value is not None else work_date_fallback,
+                "TargetCost": target_cost,
+            })
+        target_map[int(work_order_id)] = work_order_targets or [{
+            "WorkOrderOperationID": None,
+            "WorkDate": work_date_fallback,
+            "TargetCost": money(target_cost_total),
+        }]
+
+    return target_map
+
+
 def build_direct_labor_time_entries(
     context: GenerationContext,
     payroll_period_id: int,
@@ -250,62 +350,73 @@ def build_direct_labor_time_entries(
     if direct_workers.empty:
         return []
 
-    period_completion_lines = production_completion_lines_for_period(context, period_start, period_end)
     targets = direct_labor_targets_for_period(context, period_start, period_end)
-    latest_dates = work_order_latest_completion_date_in_period(period_completion_lines)
+    operation_targets = work_order_operation_targets_for_period(context, period_start, period_end)
     approver = accounting_manager_id(context)
     direct_rows: list[dict[str, Any]] = []
     assigned_hours: dict[int, float] = defaultdict(float)
     employee_lookup = direct_workers.set_index("EmployeeID").to_dict("index")
     ordered_worker_ids = sorted(employee_lookup)
 
-    for work_order_id in sorted(targets, key=lambda value: (latest_dates.get(value, period_end), value)):
-        work_order_target = float(targets[work_order_id]["actual_direct_labor_cost"])
-        if work_order_target <= 0:
+    for work_order_id in sorted(targets):
+        operation_target_rows = operation_targets.get(int(work_order_id), [])
+        if not operation_target_rows:
             continue
 
-        rng = stable_rng(context, "direct-work-order", payroll_period_id, work_order_id)
-        worker_count = min(len(ordered_worker_ids), choose_count(rng, DIRECT_WORKER_SPLIT_OPTIONS))
-        candidate_workers = sorted(
-            ordered_worker_ids,
-            key=lambda employee_id: (assigned_hours.get(employee_id, 0.0), employee_id),
-        )[:worker_count]
-        split_weights = rng.dirichlet(np.ones(worker_count))
-        completion_date = latest_dates.get(work_order_id, period_end)
-
-        for employee_id, split_weight in zip(candidate_workers, split_weights, strict=False):
-            employee = employee_lookup[int(employee_id)]
-            hourly_rate = implied_hourly_rate(employee, completion_date.year)
-            entry_cost = money(work_order_target * float(split_weight))
-            if entry_cost <= 0 or hourly_rate <= 0:
+        for operation_target in operation_target_rows:
+            work_date = next_business_day(pd.Timestamp(operation_target["WorkDate"]))
+            target_cost = float(operation_target["TargetCost"])
+            if target_cost <= 0:
                 continue
 
-            raw_hours = entry_cost / hourly_rate
-            regular_capacity = max(0.0, 80.0 - assigned_hours.get(int(employee_id), 0.0))
-            regular_hours = qty(min(raw_hours, regular_capacity))
-            overtime_hours = qty(max(raw_hours - regular_hours, 0.0))
-            extended_labor_cost = money(regular_hours * hourly_rate + overtime_hours * hourly_rate * 1.5)
-            if extended_labor_cost <= 0:
-                continue
-
-            direct_rows.append({
-                "LaborTimeEntryID": next_id(context, "LaborTimeEntry"),
-                "PayrollPeriodID": payroll_period_id,
-                "EmployeeID": int(employee_id),
-                "WorkOrderID": int(work_order_id),
-                "WorkDate": next_business_day(completion_date).strftime("%Y-%m-%d"),
-                "LaborType": "Direct Manufacturing",
-                "RegularHours": regular_hours,
-                "OvertimeHours": overtime_hours,
-                "HourlyRateUsed": hourly_rate,
-                "ExtendedLaborCost": extended_labor_cost,
-                "ApprovedByEmployeeID": approver,
-                "ApprovedDate": next_business_day(completion_date).strftime("%Y-%m-%d"),
-            })
-            assigned_hours[int(employee_id)] = round(
-                assigned_hours.get(int(employee_id), 0.0) + regular_hours + overtime_hours,
-                2,
+            rng = stable_rng(
+                context,
+                "direct-work-order-operation",
+                payroll_period_id,
+                work_order_id,
+                operation_target["WorkOrderOperationID"],
             )
+            worker_count = min(len(ordered_worker_ids), choose_count(rng, DIRECT_WORKER_SPLIT_OPTIONS))
+            candidate_workers = sorted(
+                ordered_worker_ids,
+                key=lambda employee_id: (assigned_hours.get(employee_id, 0.0), employee_id),
+            )[:worker_count]
+            split_weights = rng.dirichlet(np.ones(worker_count))
+
+            for employee_id, split_weight in zip(candidate_workers, split_weights, strict=False):
+                employee = employee_lookup[int(employee_id)]
+                hourly_rate = implied_hourly_rate(employee, work_date.year)
+                entry_cost = money(target_cost * float(split_weight))
+                if entry_cost <= 0 or hourly_rate <= 0:
+                    continue
+
+                raw_hours = entry_cost / hourly_rate
+                regular_capacity = max(0.0, 80.0 - assigned_hours.get(int(employee_id), 0.0))
+                regular_hours = qty(min(raw_hours, regular_capacity))
+                overtime_hours = qty(max(raw_hours - regular_hours, 0.0))
+                extended_labor_cost = money(regular_hours * hourly_rate + overtime_hours * hourly_rate * 1.5)
+                if extended_labor_cost <= 0:
+                    continue
+
+                direct_rows.append({
+                    "LaborTimeEntryID": next_id(context, "LaborTimeEntry"),
+                    "PayrollPeriodID": payroll_period_id,
+                    "EmployeeID": int(employee_id),
+                    "WorkOrderID": int(work_order_id),
+                    "WorkOrderOperationID": operation_target["WorkOrderOperationID"],
+                    "WorkDate": work_date.strftime("%Y-%m-%d"),
+                    "LaborType": "Direct Manufacturing",
+                    "RegularHours": regular_hours,
+                    "OvertimeHours": overtime_hours,
+                    "HourlyRateUsed": hourly_rate,
+                    "ExtendedLaborCost": extended_labor_cost,
+                    "ApprovedByEmployeeID": approver,
+                    "ApprovedDate": work_date.strftime("%Y-%m-%d"),
+                })
+                assigned_hours[int(employee_id)] = round(
+                    assigned_hours.get(int(employee_id), 0.0) + regular_hours + overtime_hours,
+                    2,
+                )
 
     for employee in direct_workers.itertuples(index=False):
         rng = stable_rng(context, "direct-worker-topup", payroll_period_id, int(employee.EmployeeID))
@@ -327,6 +438,7 @@ def build_direct_labor_time_entries(
             "PayrollPeriodID": payroll_period_id,
             "EmployeeID": int(employee.EmployeeID),
             "WorkOrderID": None,
+            "WorkOrderOperationID": None,
             "WorkDate": work_date.strftime("%Y-%m-%d"),
             "LaborType": "Indirect Manufacturing",
             "RegularHours": remaining_regular,
@@ -372,6 +484,7 @@ def build_indirect_and_nonmanufacturing_time_entries(
             "PayrollPeriodID": payroll_period_id,
             "EmployeeID": int(employee.EmployeeID),
             "WorkOrderID": None,
+            "WorkOrderOperationID": None,
             "WorkDate": work_date.strftime("%Y-%m-%d"),
             "LaborType": labor_type,
             "RegularHours": regular_hours,

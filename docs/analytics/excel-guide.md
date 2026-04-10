@@ -6,7 +6,7 @@
 
 > **Implemented in current generator:** A workbook with one sheet per table plus `AnomalyLog` and `ValidationSummary`, suitable for Excel-based starter analytics across O2C, P2P, manufacturing, payroll, and journals.
 
-> **Planned future extension:** More advanced workbook guidance for planning, routing, and labor-scheduling analysis.
+> **Planned future extension:** More advanced workbook guidance for capacity planning, shift detail, and richer scheduling analysis.
 
 ## Workbook Setup
 
@@ -243,7 +243,11 @@ Suggested pivots:
 Use:
 
 - `Item`
+- `Routing`
+- `RoutingOperation`
+- `WorkCenter`
 - `WorkOrder`
+- `WorkOrderOperation`
 - `ProductionCompletionLine`
 - `WorkOrderClose`
 - `LaborTimeEntry`
@@ -253,6 +257,7 @@ Suggested outputs:
 
 - unit-cost bridge by manufactured item
 - direct labor by work order and employee class
+- operation-level labor by work center and month
 - labor efficiency and rate variance by work order
 - absorption margin vs contribution margin
 - manufactured vs purchased product margin comparison
@@ -261,6 +266,7 @@ Suggested charts:
 
 - contribution margin by item group
 - labor-cost trend by month
+- work-center activity by month
 - work-order variance bridge by cost component
 
 ### Manufacturing workflows
@@ -270,7 +276,11 @@ Use:
 - `Item`
 - `BillOfMaterial`
 - `BillOfMaterialLine`
+- `Routing`
+- `RoutingOperation`
+- `WorkCenter`
 - `WorkOrder`
+- `WorkOrderOperation`
 - `MaterialIssueLine`
 - `ProductionCompletionLine`
 - `WorkOrderClose`
@@ -280,7 +290,9 @@ Use:
 Suggested outputs:
 
 - BOM cost rollup by manufactured item
+- routing master review by manufactured item
 - work-order throughput by month and warehouse
+- operation throughput and planned-versus-actual labor by work center
 - issued material versus completed output by work order
 - WIP, manufacturing clearing, and manufacturing variance review by period
 
@@ -378,7 +390,7 @@ Suggested workflow:
 The Excel starter layer does **not** assume:
 
 - prebuilt pivot tables inside the exported workbook
-- routings or capacity-planning tables
+- capacity-planning tables or scheduling calendars
 - time-clock or shift-level labor detail
 
 Those are future teaching extensions, not missing pieces of the current workbook.

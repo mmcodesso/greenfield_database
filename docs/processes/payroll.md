@@ -4,9 +4,9 @@
 **Purpose:** Explain the payroll cycle, how labor time connects to manufacturing, and how payroll liabilities clear.  
 **What you will learn:** How pay periods, labor time, payroll registers, payments, remittances, and manufacturing labor reclasses work together.
 
-> **Implemented in current generator:** Biweekly payroll periods, labor-time capture, payroll registers, payroll payments, liability remittances, and direct-labor / manufacturing-overhead integration.
+> **Implemented in current generator:** Biweekly payroll periods, labor-time capture, payroll registers, payroll payments, liability remittances, operation-level direct-labor assignment, and direct-labor / manufacturing-overhead integration.
 
-> **Planned future extension:** Time clocks, richer scheduling, and deeper labor-planning detail.
+> **Planned future extension:** Time clocks, shift attendance, and richer labor-scheduling detail.
 
 ## Business Storyline
 
@@ -34,6 +34,7 @@ That makes payroll useful for:
 flowchart LR
     PP[PayrollPeriod]
     LTE[LaborTimeEntry]
+    WOO[WorkOrderOperation]
     PR[PayrollRegister]
     PL[PayrollRegisterLine]
     PAY[PayrollPayment]
@@ -44,6 +45,7 @@ flowchart LR
     WO[WorkOrderClose]
 
     PP --> LTE
+    WOO --> LTE
     PP --> PR
     LTE --> PR
     PR --> PL
@@ -62,7 +64,7 @@ flowchart LR
 In plain language:
 
 - `PayrollPeriod` organizes the pay calendar
-- `LaborTimeEntry` captures work effort, especially direct labor tied to work orders
+- `LaborTimeEntry` captures work effort, especially direct labor tied to work orders and work-order operations
 - `PayrollRegister` and `PayrollRegisterLine` calculate gross-to-net payroll
 - `PayrollPayment` clears net-pay liability
 - `PayrollLiabilityRemittance` clears tax and deduction liabilities
@@ -80,11 +82,16 @@ Main table:
 
 ### 2. Capture labor time
 
-Hourly manufacturing workers create labor-time records. Direct manufacturing time is tied to `WorkOrderID`. Indirect manufacturing and nonmanufacturing time remain untied to production orders.
+Hourly manufacturing workers create labor-time records. Direct manufacturing time is tied to both `WorkOrderID` and `WorkOrderOperationID`. Indirect manufacturing and nonmanufacturing time remain untied to production orders.
 
 Main table:
 
 - `LaborTimeEntry`
+
+Related planning and production tables:
+
+- `WorkOrder`
+- `WorkOrderOperation`
 
 Important labor types:
 
@@ -156,7 +163,7 @@ Accounting effect:
 
 Payroll is also part of manufacturing costing.
 
-Direct labor tied to work orders is reclassed from manufacturing wage expense into `1090` Manufacturing Cost Clearing. Manufacturing overhead is reclassed separately from the factory-overhead pool.
+Direct labor tied to work-order operations is reclassed from manufacturing wage expense into `1090` Manufacturing Cost Clearing. Manufacturing overhead is reclassed separately from the factory-overhead pool.
 
 This is how payroll integrates with product cost for manufactured items.
 
@@ -165,7 +172,8 @@ This is how payroll integrates with product cost for manufactured items.
 | Table | Role |
 |---|---|
 | `PayrollPeriod` | Biweekly payroll calendar |
-| `LaborTimeEntry` | Operational labor-time detail |
+| `LaborTimeEntry` | Operational labor-time detail, including operation-linked direct labor |
+| `WorkOrderOperation` | Production operation record used for routing-aware labor analysis |
 | `PayrollRegister` | Employee payroll header |
 | `PayrollRegisterLine` | Earnings, withholding, and burden detail |
 | `PayrollPayment` | Employee net-pay settlement |
@@ -188,8 +196,8 @@ Payroll creates several accounting events:
 
 - How does gross pay turn into net pay?
 - Which liabilities remain open after payroll is posted?
-- Which employees contribute direct labor to work orders?
-- How much direct labor cost is tied to each manufactured item or work order?
+- Which employees contribute direct labor to each work-order operation?
+- How much direct labor cost is tied to each manufactured item, work order, or work center?
 - How do payroll payments differ from payroll liability remittances?
 - How does payroll feed product costing without switching the dataset to full actual-cost inventory?
 
@@ -198,6 +206,7 @@ Payroll creates several accounting events:
 - Payroll is now an operational subledger, not only a recurring journal pattern.
 - The clean build no longer uses payroll accrual or payroll settlement journals.
 - Direct labor affects manufacturing through reclass journals and work-order close, not through a separate job-cost ledger.
+- Direct labor is now assigned at the routing-operation level for manufactured work orders.
 - The manufacturing model remains standard-cost based even though payroll provides actual labor detail.
 
 ## Where to Go Next

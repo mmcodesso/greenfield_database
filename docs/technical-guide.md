@@ -6,7 +6,7 @@
 
 > **Implemented in current generator:** A 45-table hybrid manufacturer-distributor dataset with O2C, P2P, manufacturing, payroll, recurring journals, year-end close, posting, validation, anomaly injection, and export logic.
 
-> **Planned future extension:** Advanced manufacturing planning, richer labor scheduling, and deeper cost-accounting detail.
+> **Planned future extension:** Capacity planning, richer labor scheduling, and deeper cost-accounting detail.
 
 ## What This Guide Covers
 
@@ -171,7 +171,7 @@ The next clean extension point is deeper manufacturing and labor planning.
 
 Likely next additions:
 
-- routings and work centers
+- work-center capacity calendars and finite scheduling
 - time-clock and shift detail
-- capacity-oriented planning
-- richer labor and overhead analytics
+- richer labor-timing and attendance analytics
+- deeper bottleneck and backlog analysis

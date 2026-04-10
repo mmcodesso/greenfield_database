@@ -4,9 +4,9 @@
 **Purpose:** Explain the manufacturing flow in plain language and connect it to the database tables and accounting entries.  
 **What you will learn:** How Greenfield plans production, issues materials, captures labor, completes finished goods, closes work orders, and links manufacturing to purchasing, payroll, inventory, and the ledger.
 
-> **Implemented in current generator:** Single-level BOMs, manufacturing work orders, material issues, production completions, work-order close, payroll-driven direct-labor integration, factory-overhead journals, manufacturing labor / overhead reclasses, and manufacturing variance accounting.
+> **Implemented in current generator:** Single-level BOMs, work centers, active routings, work-order operations, manufacturing work orders, material issues, production completions, work-order close, payroll-driven direct-labor integration, factory-overhead journals, manufacturing labor / overhead reclasses, and manufacturing variance accounting.
 
-> **Planned future extension:** Routings, time clocks, capacity planning, and deeper production planning.
+> **Planned future extension:** Capacity calendars, time clocks, shift detail, and richer production scheduling.
 
 ## Business Storyline
 
@@ -23,7 +23,9 @@ flowchart LR
     PO[Purchase orders]
     GR[Goods receipts]
     BOM[Bill of material]
+    RT[Routing and work centers]
     WO[Work order]
+    WOO[Work-order operations]
     MI[Material issue]
     LT[Labor time and payroll]
     PC[Production completion]
@@ -33,10 +35,12 @@ flowchart LR
 
     SO --> WO
     BOM --> WO
+    RT --> WO
     WO --> PR
+    WO --> WOO
     PR --> PO --> GR --> MI
-    WO --> MI
-    WO --> LT
+    WOO --> MI
+    WOO --> LT
     MI --> PC
     LT --> PC
     PC --> WC
@@ -68,7 +72,17 @@ Main tables:
 - `BillOfMaterialLine`
 - `Item`
 
-### 2. Release a work order
+### 2. Define the routing and work centers
+
+Each manufactured item also has one active routing. The routing breaks production into `2` to `4` ordered operations and assigns each operation to a work center such as cutting, assembly, finishing, packing, or selected quality checks.
+
+Main tables:
+
+- `WorkCenter`
+- `Routing`
+- `RoutingOperation`
+
+### 3. Release a work order
 
 Work orders are created for manufactured items when projected shortage exists after considering:
 
@@ -81,7 +95,13 @@ Main table:
 
 - `WorkOrder`
 
-### 3. Replenish components through P2P
+At release time the generator also creates work-order operation rows for the routing sequence that item uses.
+
+Main linked table:
+
+- `WorkOrderOperation`
+
+### 4. Replenish components through P2P
 
 If the planned work order needs more materials than current stock supports, the generator creates purchasing demand through `PurchaseRequisition`. Those requisitions move through the normal P2P process into purchase orders and goods receipts.
 
@@ -91,7 +111,7 @@ Main linked tables:
 - `PurchaseOrder`
 - `GoodsReceipt`
 
-### 4. Issue components to production
+### 5. Issue components to production
 
 When work begins, raw materials and packaging are issued from warehouse inventory into WIP.
 
@@ -105,17 +125,18 @@ Accounting event:
 - debit `1046` Inventory - Work in Process
 - credit `1045` Inventory - Materials and Packaging
 
-### 5. Capture labor and overhead inputs
+### 6. Capture labor and overhead inputs
 
-Manufacturing direct workers record `LaborTimeEntry` rows tied to work orders. Payroll later turns those time entries into direct-labor and manufacturing-overhead reclass journals.
+Manufacturing direct workers record `LaborTimeEntry` rows tied to both the work order and the specific work-order operation where labor was consumed. Payroll later turns those time entries into direct-labor and manufacturing-overhead reclass journals.
 
 Main linked tables:
 
 - `LaborTimeEntry`
 - `PayrollRegister`
+- `WorkOrderOperation`
 - `JournalEntry`
 
-### 6. Complete finished goods
+### 7. Complete finished goods
 
 Completed production moves finished goods into inventory at standard material plus standard direct labor plus standard variable and fixed overhead.
 
@@ -130,7 +151,7 @@ Accounting event:
 - credit `1046` Inventory - Work in Process
 - credit `1090` Manufacturing Cost Clearing
 
-### 7. Close the work order
+### 8. Close the work order
 
 When the generator determines the work order is ready to close, residual material, direct-labor, and overhead differences are closed to manufacturing variance.
 
@@ -142,7 +163,7 @@ Accounting event:
 
 - residual WIP and clearing balances move to `5080` Manufacturing Variance
 
-### 8. Ship the completed goods
+### 9. Ship the completed goods
 
 Once finished goods are in inventory, normal O2C shipments can consume them.
 
@@ -153,7 +174,11 @@ Once finished goods are in inventory, normal O2C shipments can consume them.
 | `Item` | Identifies which sellable items are purchased versus manufactured and stores standard cost components |
 | `BillOfMaterial` | BOM header for manufactured items |
 | `BillOfMaterialLine` | BOM component detail |
+| `WorkCenter` | Manufacturing resource group where an operation is performed |
+| `Routing` | Active operation plan for a manufactured item |
+| `RoutingOperation` | Ordered routing step with standard setup, run, and queue assumptions |
 | `WorkOrder` | Production order for a manufactured item |
+| `WorkOrderOperation` | Operation-level execution plan and actual start/end progression for a work order |
 | `MaterialIssue` | Header for component issue to production |
 | `MaterialIssueLine` | Component issue detail |
 | `ProductionCompletion` | Header for finished-goods completion |
@@ -177,7 +202,9 @@ Manufacturing creates both operational and journal-driven accounting:
 
 - Which products are manufactured and which are purchased?
 - What materials go into a manufactured item?
-- How much direct labor is tied to each work order?
+- Which operations and work centers are used for each manufactured item?
+- How much direct labor is tied to each work order and operation?
+- Which work centers look busiest by month?
 - Which work orders stayed open at period end?
 - How much material was issued compared with standard requirement?
 - How much manufacturing variance was posted by month or item group?
@@ -187,11 +214,12 @@ Manufacturing creates both operational and journal-driven accounting:
 
 - The current model is intentionally a foundation:
   - single-level BOMs only
-  - no routings or work centers
-  - no subassemblies
+  - no multi-level BOMs or subassemblies
+  - no capacity calendars or formal finite scheduling
+  - no time-clock or shift-attendance layer
 - Manufacturing demand is linked to sales backlog and finished-goods inventory logic.
 - Raw-material replenishment uses the existing P2P flow instead of a separate procurement subsystem.
-- Manufacturing remains standard-cost based even though payroll now provides actual labor detail.
+- Manufacturing remains standard-cost based even though payroll now provides actual labor detail and direct labor is assigned at the operation level.
 
 ## Where to Go Next
 

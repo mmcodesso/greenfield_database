@@ -6,9 +6,9 @@
 
 The canonical schema lives in `src/greenfield_dataset/schema.py` as `TABLE_COLUMNS`.
 
-> **Implemented in current generator:** 45 tables across accounting, O2C, P2P, manufacturing, payroll, master data, and organizational planning.
+> **Implemented in current generator:** 49 tables across accounting, O2C, P2P, manufacturing, payroll, master data, and organizational planning.
 
-> **Planned future extension:** Advanced manufacturing planning, richer labor scheduling, and deeper production detail.
+> **Planned future extension:** Capacity calendars, richer labor scheduling, and deeper production detail beyond the current routing foundation.
 
 ## Table Groups
 
@@ -17,17 +17,17 @@ The canonical schema lives in `src/greenfield_dataset/schema.py` as `TABLE_COLUM
 | Accounting core | `Account`, `JournalEntry`, `GLEntry` | 3 |
 | O2C | `Customer`, `SalesOrder`, `SalesOrderLine`, `Shipment`, `ShipmentLine`, `SalesInvoice`, `SalesInvoiceLine`, `CashReceipt`, `CashReceiptApplication`, `SalesReturn`, `SalesReturnLine`, `CreditMemo`, `CreditMemoLine`, `CustomerRefund` | 14 |
 | P2P | `Supplier`, `PurchaseRequisition`, `PurchaseOrder`, `PurchaseOrderLine`, `GoodsReceipt`, `GoodsReceiptLine`, `PurchaseInvoice`, `PurchaseInvoiceLine`, `DisbursementPayment` | 9 |
-| Manufacturing | `BillOfMaterial`, `BillOfMaterialLine`, `WorkOrder`, `MaterialIssue`, `MaterialIssueLine`, `ProductionCompletion`, `ProductionCompletionLine`, `WorkOrderClose` | 8 |
+| Manufacturing | `BillOfMaterial`, `BillOfMaterialLine`, `WorkCenter`, `Routing`, `RoutingOperation`, `WorkOrder`, `WorkOrderOperation`, `MaterialIssue`, `MaterialIssueLine`, `ProductionCompletion`, `ProductionCompletionLine`, `WorkOrderClose` | 12 |
 | Payroll | `PayrollPeriod`, `LaborTimeEntry`, `PayrollRegister`, `PayrollRegisterLine`, `PayrollPayment`, `PayrollLiabilityRemittance` | 6 |
 | Master data | `Item`, `Warehouse`, `Employee` | 3 |
 | Organizational planning | `CostCenter`, `Budget` | 2 |
-| Total |  | 45 |
+| Total |  | 49 |
 
 ## Design Patterns That Matter
 
 - Header-line tables are used for orders, shipments, invoices, purchase orders, goods receipts, purchase invoices, material issues, production completions, and payroll registers.
 - `GLEntry` is the reporting bridge between operational events and accounting analysis.
-- `Item` carries account-mapping fields plus manufacturing and costing attributes such as `SupplyMode`, `ProductionLeadTimeDays`, `StandardLaborHoursPerUnit`, and `StandardConversionCost`.
+- `Item` carries account-mapping fields plus manufacturing and costing attributes such as `SupplyMode`, `ProductionLeadTimeDays`, `RoutingID`, `StandardLaborHoursPerUnit`, and `StandardConversionCost`.
 - `JournalEntry` and `GLEntry` together represent opening, recurring, manufacturing, accrual-adjustment, and close-cycle activity without a separate journal-line table.
 - Payroll is now operationally modeled through payroll-period, register, payment, and remittance tables rather than clean-build payroll accrual journals.
 
@@ -78,7 +78,11 @@ The canonical schema lives in `src/greenfield_dataset/schema.py` as `TABLE_COLUM
 |---|---|---|
 | `BillOfMaterial` | BOM header for manufactured items | `ParentItemID`, `VersionNumber`, `Status`, `StandardBatchQuantity` |
 | `BillOfMaterialLine` | BOM component detail | `BOMID`, `ComponentItemID`, `LineNumber`, `QuantityPerUnit`, `ScrapFactorPct` |
-| `WorkOrder` | Production order header | `ItemID`, `BOMID`, `WarehouseID`, `PlannedQuantity`, `ReleasedDate`, `DueDate`, `CompletedDate`, `ClosedDate`, `Status`, `CostCenterID` |
+| `WorkCenter` | Manufacturing resource grouping | `WorkCenterCode`, `WorkCenterName`, `Department`, `WarehouseID`, `ManagerEmployeeID`, `IsActive` |
+| `Routing` | Routing header for manufactured items | `ParentItemID`, `VersionNumber`, `EffectiveStartDate`, `EffectiveEndDate`, `Status` |
+| `RoutingOperation` | Ordered routing step | `RoutingID`, `OperationSequence`, `OperationCode`, `OperationName`, `WorkCenterID`, `StandardSetupHours`, `StandardRunHoursPerUnit`, `StandardQueueDays` |
+| `WorkOrder` | Production order header | `ItemID`, `BOMID`, `RoutingID`, `WarehouseID`, `PlannedQuantity`, `ReleasedDate`, `DueDate`, `CompletedDate`, `ClosedDate`, `Status`, `CostCenterID` |
+| `WorkOrderOperation` | Operation-level work-order execution record | `WorkOrderID`, `RoutingOperationID`, `OperationSequence`, `WorkCenterID`, `PlannedQuantity`, `PlannedStartDate`, `PlannedEndDate`, `ActualStartDate`, `ActualEndDate`, `Status` |
 | `MaterialIssue` | Material issue header | `WorkOrderID`, `IssueDate`, `WarehouseID`, `IssuedByEmployeeID`, `Status` |
 | `MaterialIssueLine` | Material issue detail | `MaterialIssueID`, `BOMLineID`, `ItemID`, `QuantityIssued`, `ExtendedStandardCost` |
 | `ProductionCompletion` | Production completion header | `WorkOrderID`, `CompletionDate`, `WarehouseID`, `ReceivedByEmployeeID`, `Status` |
@@ -90,7 +94,7 @@ The canonical schema lives in `src/greenfield_dataset/schema.py` as `TABLE_COLUM
 | Table | Purpose | High-value columns |
 |---|---|---|
 | `PayrollPeriod` | Biweekly payroll calendar | `PeriodNumber`, `PeriodStartDate`, `PeriodEndDate`, `PayDate`, `FiscalYear`, `FiscalPeriod`, `Status` |
-| `LaborTimeEntry` | Employee labor detail used for payroll and costing | `PayrollPeriodID`, `EmployeeID`, `WorkOrderID`, `WorkDate`, `LaborType`, `RegularHours`, `OvertimeHours`, `HourlyRateUsed`, `ExtendedLaborCost` |
+| `LaborTimeEntry` | Employee labor detail used for payroll and costing | `PayrollPeriodID`, `EmployeeID`, `WorkOrderID`, `WorkOrderOperationID`, `WorkDate`, `LaborType`, `RegularHours`, `OvertimeHours`, `HourlyRateUsed`, `ExtendedLaborCost` |
 | `PayrollRegister` | Employee payroll header | `PayrollPeriodID`, `EmployeeID`, `CostCenterID`, `GrossPay`, `EmployeeWithholdings`, `EmployerPayrollTax`, `EmployerBenefits`, `NetPay`, `Status` |
 | `PayrollRegisterLine` | Earnings and deduction detail | `PayrollRegisterID`, `LineType`, `Hours`, `Rate`, `Amount`, `WorkOrderID`, `LaborTimeEntryID` |
 | `PayrollPayment` | Net-pay settlement record | `PayrollRegisterID`, `PaymentDate`, `PaymentMethod`, `ReferenceNumber`, `ClearedDate` |
@@ -100,7 +104,7 @@ The canonical schema lives in `src/greenfield_dataset/schema.py` as `TABLE_COLUM
 
 | Table | Purpose | High-value columns |
 |---|---|---|
-| `Item` | Product master and account mapping | `ItemCode`, `ItemGroup`, `SupplyMode`, `ProductionLeadTimeDays`, `StandardLaborHoursPerUnit`, `StandardDirectLaborCost`, `StandardVariableOverheadCost`, `StandardFixedOverheadCost`, `StandardConversionCost`, `StandardCost`, `InventoryAccountID`, `RevenueAccountID`, `COGSAccountID`, `PurchaseVarianceAccountID` |
+| `Item` | Product master and account mapping | `ItemCode`, `ItemGroup`, `SupplyMode`, `ProductionLeadTimeDays`, `RoutingID`, `StandardLaborHoursPerUnit`, `StandardDirectLaborCost`, `StandardVariableOverheadCost`, `StandardFixedOverheadCost`, `StandardConversionCost`, `StandardCost`, `InventoryAccountID`, `RevenueAccountID`, `COGSAccountID`, `PurchaseVarianceAccountID` |
 | `Warehouse` | Inventory storage locations | `WarehouseName`, `ManagerID`, address fields |
 | `Employee` | Employee and approval metadata | `CostCenterID`, `JobTitle`, `ManagerID`, `AuthorizationLevel`, `PayClass`, `BaseHourlyRate`, `BaseAnnualSalary`, `StandardHoursPerWeek`, `OvertimeEligible`, `IsActive` |
 
@@ -126,10 +130,13 @@ The most important lineage fields in the implementation are:
 - `CreditMemo.OriginalSalesInvoiceID`
 - `CustomerRefund.CreditMemoID`
 - `WorkOrder.BOMID`
+- `WorkOrder.RoutingID`
+- `WorkOrderOperation.RoutingOperationID`
 - `MaterialIssueLine.BOMLineID`
 - `ProductionCompletion.WorkOrderID`
 - `WorkOrderClose.WorkOrderID`
 - `LaborTimeEntry.WorkOrderID`
+- `LaborTimeEntry.WorkOrderOperationID`
 - `PayrollRegister.PayrollPeriodID`
 - `PayrollRegisterLine.PayrollRegisterID`
 - `PayrollRegisterLine.LaborTimeEntryID`
@@ -146,6 +153,7 @@ The most important lineage fields in the implementation are:
 - `PurchaseInvoiceLine.GoodsReceiptLineID` is the clean-match key for receipt-based inventory invoices.
 - `PurchaseInvoiceLine.AccrualJournalEntryID` links direct service invoices back to month-end accrual journals.
 - `GoodsReceiptLine.ExtendedStandardCost` stores the receipt posting basis used for inventory and GRNI.
-- The manufacturing foundation uses single-level BOMs only.
+- The manufacturing foundation uses single-level BOMs plus one active routing per manufactured item.
+- `WorkOrderOperation` is the operation-level planning and actual-flow bridge between routing design and payroll labor detail.
 - Payroll is operationally modeled, but manufacturing still uses standard-cost valuation rather than full actual-cost inventory.
 - For exact column order and names, use `TABLE_COLUMNS` in `src/greenfield_dataset/schema.py`.

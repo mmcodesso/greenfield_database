@@ -61,6 +61,88 @@ COMPLETION_EVENT_COUNT_PROBABILITIES = ((1, 0.72), (2, 0.28))
 ISSUE_FACTOR_RANGE = (0.98, 1.04)
 MATERIAL_REQUISITION_BUFFER_FACTOR = (1.03, 1.08)
 
+WORK_CENTER_DEFINITIONS = (
+    {
+        "WorkCenterCode": "CUT",
+        "WorkCenterName": "Cutting Work Center",
+        "Department": "Manufacturing",
+        "ManagerTitles": ("Production Supervisor", "Production Manager"),
+    },
+    {
+        "WorkCenterCode": "ASSEMBLY",
+        "WorkCenterName": "Assembly Work Center",
+        "Department": "Manufacturing",
+        "ManagerTitles": ("Production Supervisor", "Production Manager"),
+    },
+    {
+        "WorkCenterCode": "FINISH",
+        "WorkCenterName": "Finishing and Test Work Center",
+        "Department": "Manufacturing",
+        "ManagerTitles": ("Production Supervisor", "Production Manager"),
+    },
+    {
+        "WorkCenterCode": "PACK",
+        "WorkCenterName": "Packing Work Center",
+        "Department": "Manufacturing",
+        "ManagerTitles": ("Production Planner", "Production Supervisor", "Production Manager"),
+    },
+    {
+        "WorkCenterCode": "QA",
+        "WorkCenterName": "Quality Assurance Work Center",
+        "Department": "Manufacturing",
+        "ManagerTitles": ("Production Manager", "Quality Technician"),
+    },
+)
+
+ROUTING_PATTERN_BY_GROUP = {
+    "Furniture": [
+        ("CUT", "Cut Components"),
+        ("ASSEMBLY", "Assemble Units"),
+        ("FINISH", "Finish and Inspect"),
+        ("PACK", "Pack Finished Goods"),
+    ],
+    "Lighting": [
+        ("ASSEMBLY", "Assemble Lighting Units"),
+        ("FINISH", "Test and Finish"),
+        ("PACK", "Pack Finished Goods"),
+    ],
+    "Textiles": [
+        ("CUT", "Cut Fabric"),
+        ("ASSEMBLY", "Sew and Assemble"),
+        ("PACK", "Pack Finished Goods"),
+    ],
+    "Accessories": [
+        ("ASSEMBLY", "Assemble Units"),
+        ("PACK", "Pack Finished Goods"),
+    ],
+}
+
+OPERATION_LABOR_WEIGHT = {
+    "CUT": 0.20,
+    "ASSEMBLY": 0.42,
+    "FINISH": 0.25,
+    "PACK": 0.09,
+    "QA": 0.04,
+}
+
+OPERATION_SETUP_HOURS_RANGE = {
+    "CUT": (0.30, 0.70),
+    "ASSEMBLY": (0.25, 0.55),
+    "FINISH": (0.20, 0.45),
+    "PACK": (0.08, 0.20),
+    "QA": (0.10, 0.22),
+}
+
+OPERATION_QUEUE_DAY_OPTIONS = {
+    "CUT": (0, 1),
+    "ASSEMBLY": (0, 1),
+    "FINISH": (1, 2),
+    "PACK": (0, 1),
+    "QA": (0, 1),
+}
+
+LABOR_BEARING_OPERATION_CODES = {"ASSEMBLY", "FINISH", "QA", "CUT"}
+
 
 def append_rows(context: GenerationContext, table_name: str, rows: list[dict[str, Any]]) -> None:
     if not rows:
@@ -151,6 +233,108 @@ def bom_lines_by_bom(context: GenerationContext) -> dict[int, pd.DataFrame]:
     }
 
 
+def active_routing_by_item(context: GenerationContext) -> dict[int, dict[str, Any]]:
+    routings = context.tables["Routing"]
+    if routings.empty:
+        return {}
+    active = routings[routings["Status"].eq("Active")].copy()
+    if active.empty:
+        return {}
+    active = active.sort_values(["ParentItemID", "RoutingID"]).drop_duplicates("ParentItemID", keep="first")
+    return active.set_index("ParentItemID").to_dict("index")
+
+
+def routing_operations_by_routing(context: GenerationContext) -> dict[int, pd.DataFrame]:
+    operations = context.tables["RoutingOperation"]
+    if operations.empty:
+        return {}
+    return {
+        int(routing_id): rows.sort_values("OperationSequence").reset_index(drop=True)
+        for routing_id, rows in operations.groupby("RoutingID")
+    }
+
+
+def work_order_operations_by_work_order(context: GenerationContext) -> dict[int, pd.DataFrame]:
+    operations = context.tables["WorkOrderOperation"]
+    if operations.empty:
+        return {}
+    return {
+        int(work_order_id): rows.sort_values("OperationSequence").reset_index(drop=True)
+        for work_order_id, rows in operations.groupby("WorkOrderID")
+    }
+
+
+def work_center_id_by_code(context: GenerationContext) -> dict[str, int]:
+    work_centers = context.tables["WorkCenter"]
+    if work_centers.empty:
+        return {}
+    return {
+        str(row.WorkCenterCode): int(row.WorkCenterID)
+        for row in work_centers.itertuples(index=False)
+    }
+
+
+def manager_for_titles(context: GenerationContext, titles: tuple[str, ...]) -> int:
+    employees = context.tables["Employee"]
+    for title in titles:
+        matches = employees.loc[employees["JobTitle"].eq(title), "EmployeeID"]
+        if not matches.empty:
+            return int(matches.iloc[0])
+    manufacturing_ids = employee_ids_for_cost_center(context, "Manufacturing")
+    if manufacturing_ids:
+        return int(manufacturing_ids[0])
+    return int(employees.iloc[0]["EmployeeID"])
+
+
+def routing_pattern_for_item(context: GenerationContext, item_group: str, item_id: int) -> list[tuple[str, str]]:
+    pattern = list(ROUTING_PATTERN_BY_GROUP.get(str(item_group), ROUTING_PATTERN_BY_GROUP["Accessories"]))
+    if str(item_group) == "Lighting" and (context.settings.random_seed + int(item_id)) % 4 == 0:
+        pattern.insert(len(pattern) - 1, ("QA", "Quality Check"))
+    return pattern
+
+
+def normalized_operation_run_hours(
+    item_standard_labor_hours: float,
+    operation_codes: list[str],
+) -> list[float]:
+    weights = [float(OPERATION_LABOR_WEIGHT.get(code, 0.10)) for code in operation_codes]
+    total_weight = sum(weights) or 1.0
+    allocated = 0.0
+    run_hours: list[float] = []
+    for index, weight in enumerate(weights, start=1):
+        if index == len(weights):
+            value = money(max(float(item_standard_labor_hours) - allocated, 0.0))
+        else:
+            value = money(float(item_standard_labor_hours) * weight / total_weight)
+            allocated = money(allocated + value)
+        run_hours.append(value)
+    return run_hours
+
+
+def sequential_operation_windows(
+    start_date: pd.Timestamp,
+    end_date: pd.Timestamp,
+    operation_count: int,
+) -> list[tuple[pd.Timestamp, pd.Timestamp]]:
+    if operation_count <= 0:
+        return []
+
+    start = pd.Timestamp(start_date)
+    finish = pd.Timestamp(end_date)
+    if finish < start:
+        finish = start
+    total_days = max(int((finish - start).days), 0)
+    breakpoints = [int(round(total_days * index / operation_count)) for index in range(operation_count + 1)]
+    windows: list[tuple[pd.Timestamp, pd.Timestamp]] = []
+    for index in range(operation_count):
+        window_start = start + pd.Timedelta(days=breakpoints[index])
+        window_end = start + pd.Timedelta(days=breakpoints[index + 1])
+        if window_end < window_start:
+            window_end = window_start
+        windows.append((window_start, window_end))
+    return windows
+
+
 def manufactured_item_group_share(context: GenerationContext) -> float:
     items = context.tables["Item"]
     sellable = items[items["RevenueAccountID"].notna() & items["ListPrice"].notna()]
@@ -229,6 +413,75 @@ def generate_boms(context: GenerationContext) -> None:
     context.tables["Item"] = items.reset_index()[TABLE_COLUMNS["Item"]]
     append_rows(context, "BillOfMaterial", bom_rows)
     append_rows(context, "BillOfMaterialLine", bom_line_rows)
+
+
+def generate_work_centers_and_routings(context: GenerationContext) -> None:
+    if (
+        not context.tables["WorkCenter"].empty
+        or not context.tables["Routing"].empty
+        or not context.tables["RoutingOperation"].empty
+    ):
+        return
+
+    manufactured = manufactured_items(context)
+    if manufactured.empty:
+        return
+
+    warehouses = warehouse_ids(context)
+    work_center_rows: list[dict[str, Any]] = []
+    for index, definition in enumerate(WORK_CENTER_DEFINITIONS):
+        work_center_rows.append({
+            "WorkCenterID": next_id(context, "WorkCenter"),
+            "WorkCenterCode": definition["WorkCenterCode"],
+            "WorkCenterName": definition["WorkCenterName"],
+            "Department": definition["Department"],
+            "WarehouseID": int(warehouses[index % len(warehouses)]),
+            "ManagerEmployeeID": manager_for_titles(context, definition["ManagerTitles"]),
+            "IsActive": 1,
+        })
+    append_rows(context, "WorkCenter", work_center_rows)
+
+    work_center_ids = {row["WorkCenterCode"]: int(row["WorkCenterID"]) for row in work_center_rows}
+    items = context.tables["Item"].copy()
+    routing_rows: list[dict[str, Any]] = []
+    routing_operation_rows: list[dict[str, Any]] = []
+
+    for item in manufactured.itertuples(index=False):
+        rng = np.random.default_rng(context.settings.random_seed + int(item.ItemID) * 313)
+        routing_id = next_id(context, "Routing")
+        routing_rows.append({
+            "RoutingID": routing_id,
+            "ParentItemID": int(item.ItemID),
+            "VersionNumber": 1,
+            "EffectiveStartDate": context.settings.fiscal_year_start,
+            "EffectiveEndDate": None,
+            "Status": "Active",
+        })
+
+        pattern = routing_pattern_for_item(context, str(item.ItemGroup), int(item.ItemID))
+        operation_codes = [operation_code for operation_code, _ in pattern]
+        run_hours = normalized_operation_run_hours(float(item.StandardLaborHoursPerUnit), operation_codes)
+        for sequence, ((operation_code, operation_name), operation_run_hours) in enumerate(zip(pattern, run_hours, strict=False), start=1):
+            setup_low, setup_high = OPERATION_SETUP_HOURS_RANGE[operation_code]
+            queue_options = OPERATION_QUEUE_DAY_OPTIONS[operation_code]
+            routing_operation_rows.append({
+                "RoutingOperationID": next_id(context, "RoutingOperation"),
+                "RoutingID": routing_id,
+                "OperationSequence": sequence,
+                "OperationCode": operation_code,
+                "OperationName": operation_name,
+                "WorkCenterID": int(work_center_ids[operation_code]),
+                "StandardSetupHours": money(float(rng.uniform(setup_low, setup_high))),
+                "StandardRunHoursPerUnit": money(float(operation_run_hours)),
+                "StandardQueueDays": int(rng.integers(queue_options[0], queue_options[1] + 1)),
+            })
+
+        item_mask = items["ItemID"].astype(int).eq(int(item.ItemID))
+        items.loc[item_mask, "RoutingID"] = int(routing_id)
+
+    context.tables["Item"] = items[TABLE_COLUMNS["Item"]]
+    append_rows(context, "Routing", routing_rows)
+    append_rows(context, "RoutingOperation", routing_operation_rows)
 
 
 def material_inventory_state(context: GenerationContext) -> dict[tuple[int, int], float]:
@@ -443,6 +696,10 @@ def manufacturing_open_state(context: GenerationContext) -> dict[str, float]:
         "manufactured_item_count": float(len(manufactured_items(context))),
         "bom_count": float(len(context.tables["BillOfMaterial"])),
         "bom_line_count": float(len(context.tables["BillOfMaterialLine"])),
+        "work_center_count": float(len(context.tables["WorkCenter"])),
+        "routing_count": float(len(context.tables["Routing"])),
+        "routing_operation_count": float(len(context.tables["RoutingOperation"])),
+        "work_order_operation_count": float(len(context.tables["WorkOrderOperation"])),
         "open_work_order_count": float(open_work_orders),
         "wip_balance": money(wip_balance),
         "manufacturing_clearing_balance": money(clearing_balance),
@@ -514,6 +771,110 @@ def finished_goods_shortage_by_item(context: GenerationContext, month_end: pd.Ti
     return shortages
 
 
+def build_work_order_operations(
+    context: GenerationContext,
+    work_order_id: int,
+    routing_id: int,
+    planned_quantity: float,
+    release_date: pd.Timestamp,
+    due_date: pd.Timestamp,
+) -> list[dict[str, Any]]:
+    routing_rows = routing_operations_by_routing(context).get(int(routing_id))
+    if routing_rows is None or routing_rows.empty:
+        return []
+
+    planning_anchor = pd.Timestamp(release_date)
+    due = pd.Timestamp(due_date)
+    if due < planning_anchor:
+        due = planning_anchor
+
+    operation_hours = [
+        float(row.StandardSetupHours) + float(row.StandardRunHoursPerUnit) * float(planned_quantity)
+        for row in routing_rows.itertuples(index=False)
+    ]
+    total_hours = sum(operation_hours) or float(len(operation_hours))
+    total_days = max(int((due - planning_anchor).days), len(operation_hours) - 1, 0)
+    current_start = planning_anchor
+    rows: list[dict[str, Any]] = []
+
+    for index, row in enumerate(routing_rows.itertuples(index=False), start=1):
+        if index == len(operation_hours):
+            planned_end = max(current_start, due)
+        else:
+            proportion = float(operation_hours[index - 1]) / total_hours
+            duration_days = max(0, int(round(total_days * proportion)))
+            remaining_slots = len(operation_hours) - index
+            max_end = due - pd.Timedelta(days=remaining_slots)
+            planned_end = current_start + pd.Timedelta(days=duration_days)
+            if planned_end > max_end:
+                planned_end = max(current_start, max_end)
+        rows.append({
+            "WorkOrderOperationID": next_id(context, "WorkOrderOperation"),
+            "WorkOrderID": int(work_order_id),
+            "RoutingOperationID": int(row.RoutingOperationID),
+            "OperationSequence": int(row.OperationSequence),
+            "WorkCenterID": int(row.WorkCenterID),
+            "PlannedQuantity": qty(float(planned_quantity)),
+            "PlannedStartDate": current_start.strftime("%Y-%m-%d"),
+            "PlannedEndDate": planned_end.strftime("%Y-%m-%d"),
+            "ActualStartDate": None,
+            "ActualEndDate": None,
+            "Status": "Released",
+        })
+        queue_days = int(row.StandardQueueDays)
+        current_start = max(planned_end, current_start) + pd.Timedelta(days=queue_days)
+        if current_start > due:
+            current_start = due
+
+    return rows
+
+
+def set_work_order_operation_activity(
+    context: GenerationContext,
+    work_order_id: int,
+    activity_start: pd.Timestamp,
+    activity_end: pd.Timestamp,
+    final_complete: bool,
+) -> None:
+    mask = context.tables["WorkOrderOperation"]["WorkOrderID"].astype(int).eq(int(work_order_id))
+    work_order_operations = context.tables["WorkOrderOperation"].loc[mask].sort_values("OperationSequence").copy()
+    if work_order_operations.empty:
+        return
+
+    start = pd.Timestamp(activity_start)
+    end = pd.Timestamp(activity_end)
+    if final_complete:
+        windows = sequential_operation_windows(start, end, len(work_order_operations))
+        for (row_index, _), (window_start, window_end) in zip(work_order_operations.iterrows(), windows, strict=False):
+            context.tables["WorkOrderOperation"].loc[row_index, "ActualStartDate"] = window_start.strftime("%Y-%m-%d")
+            context.tables["WorkOrderOperation"].loc[row_index, "ActualEndDate"] = window_end.strftime("%Y-%m-%d")
+            context.tables["WorkOrderOperation"].loc[row_index, "Status"] = "Completed"
+        return
+
+    if len(work_order_operations) == 1:
+        row_index = work_order_operations.index[0]
+        context.tables["WorkOrderOperation"].loc[row_index, "ActualStartDate"] = start.strftime("%Y-%m-%d")
+        context.tables["WorkOrderOperation"].loc[row_index, "ActualEndDate"] = None
+        context.tables["WorkOrderOperation"].loc[row_index, "Status"] = "In Progress"
+        return
+
+    completed_windows = sequential_operation_windows(start, end, len(work_order_operations) - 1)
+    for (row_index, _), (window_start, window_end) in zip(
+        work_order_operations.iloc[:-1].iterrows(),
+        completed_windows,
+        strict=False,
+    ):
+        context.tables["WorkOrderOperation"].loc[row_index, "ActualStartDate"] = window_start.strftime("%Y-%m-%d")
+        context.tables["WorkOrderOperation"].loc[row_index, "ActualEndDate"] = window_end.strftime("%Y-%m-%d")
+        context.tables["WorkOrderOperation"].loc[row_index, "Status"] = "Completed"
+
+    final_row_index = work_order_operations.index[-1]
+    final_start = completed_windows[-1][1] if completed_windows else start
+    context.tables["WorkOrderOperation"].loc[final_row_index, "ActualStartDate"] = final_start.strftime("%Y-%m-%d")
+    context.tables["WorkOrderOperation"].loc[final_row_index, "ActualEndDate"] = None
+    context.tables["WorkOrderOperation"].loc[final_row_index, "Status"] = "In Progress"
+
+
 def generate_month_work_orders_and_requisitions(context: GenerationContext, year: int, month: int) -> None:
     manufactured = manufactured_items(context)
     if manufactured.empty or context.tables["BillOfMaterial"].empty:
@@ -529,16 +890,19 @@ def generate_month_work_orders_and_requisitions(context: GenerationContext, year
     manufacturing_cost_center = cost_center_id(context, "Manufacturing")
     bom_by_parent = bom_lookup(context)
     bom_lines_lookup = bom_lines_by_bom(context)
+    routing_by_parent = active_routing_by_item(context)
     material_items = context.tables["Item"].set_index("ItemID").to_dict("index")
     material_inventory = material_inventory_state(context).copy()
     warehouse_list = warehouse_ids(context)
     requisition_rows: list[dict[str, Any]] = []
     work_order_rows: list[dict[str, Any]] = []
+    work_order_operation_rows: list[dict[str, Any]] = []
 
     for item in manufactured.sort_values("ItemID").itertuples(index=False):
         shortage = shortages.get(int(item.ItemID))
         bom = bom_by_parent.get(int(item.ItemID))
-        if shortage is None or bom is None:
+        routing = routing_by_parent.get(int(item.ItemID))
+        if shortage is None or bom is None or routing is None:
             continue
 
         release_date = random_date_between(rng, month_start, min(month_end, month_start + pd.Timedelta(days=9)))
@@ -558,6 +922,7 @@ def generate_month_work_orders_and_requisitions(context: GenerationContext, year
             "WorkOrderNumber": work_order_number,
             "ItemID": int(item.ItemID),
             "BOMID": int(bom["BOMID"]),
+            "RoutingID": int(routing["RoutingID"]),
             "WarehouseID": int(warehouse_id),
             "PlannedQuantity": planned_quantity,
             "ReleasedDate": release_date.strftime("%Y-%m-%d"),
@@ -569,6 +934,16 @@ def generate_month_work_orders_and_requisitions(context: GenerationContext, year
             "ReleasedByEmployeeID": int(rng.choice(manufacturing_employee_ids)),
             "ClosedByEmployeeID": None,
         })
+        work_order_operation_rows.extend(
+            build_work_order_operations(
+                context,
+                work_order_id,
+                int(routing["RoutingID"]),
+                planned_quantity,
+                release_date,
+                due_date,
+            )
+        )
 
         bom_lines = bom_lines_lookup.get(int(bom["BOMID"]))
         if bom_lines is None or bom_lines.empty:
@@ -603,6 +978,7 @@ def generate_month_work_orders_and_requisitions(context: GenerationContext, year
             })
 
     append_rows(context, "WorkOrder", work_order_rows)
+    append_rows(context, "WorkOrderOperation", work_order_operation_rows)
     append_rows(context, "PurchaseRequisition", requisition_rows)
 
 
@@ -825,7 +1201,15 @@ def generate_month_manufacturing_activity(context: GenerationContext, year: int,
             fg_inventory[fg_key] = qty(float(fg_inventory.get(fg_key, 0.0)) + completion_qty)
 
         completed_total = qty(float(completed_quantities.get(work_order_id, 0.0)) + sum(completion_quantities))
+        activity_start = issue_dates[0] if issue_dates else max(month_start, release_date)
         if completed_total >= qty(float(work_order.PlannedQuantity)):
+            set_work_order_operation_activity(
+                context,
+                work_order_id,
+                activity_start,
+                completion_dates[-1],
+                final_complete=True,
+            )
             update_work_order_row(
                 context,
                 work_order_id,
@@ -833,6 +1217,13 @@ def generate_month_manufacturing_activity(context: GenerationContext, year: int,
                 completed_date=completion_dates[-1].strftime("%Y-%m-%d"),
             )
         else:
+            set_work_order_operation_activity(
+                context,
+                work_order_id,
+                activity_start,
+                completion_dates[-1],
+                final_complete=False,
+            )
             update_work_order_row(context, work_order_id, "In Progress")
 
     append_rows(context, "MaterialIssue", issue_headers)
@@ -845,6 +1236,7 @@ def final_work_order_activity_dates(context: GenerationContext) -> dict[int, pd.
     final_dates: dict[int, pd.Timestamp] = {}
     issues = context.tables["MaterialIssue"]
     completions = context.tables["ProductionCompletion"]
+    operations = context.tables["WorkOrderOperation"]
     for issue in issues.itertuples(index=False):
         final_dates[int(issue.WorkOrderID)] = max(
             final_dates.get(int(issue.WorkOrderID), pd.Timestamp.min),
@@ -855,6 +1247,12 @@ def final_work_order_activity_dates(context: GenerationContext) -> dict[int, pd.
             final_dates.get(int(completion.WorkOrderID), pd.Timestamp.min),
             pd.Timestamp(completion.CompletionDate),
         )
+    for operation in operations.itertuples(index=False):
+        if pd.notna(operation.ActualEndDate):
+            final_dates[int(operation.WorkOrderID)] = max(
+                final_dates.get(int(operation.WorkOrderID), pd.Timestamp.min),
+                pd.Timestamp(operation.ActualEndDate),
+            )
     return final_dates
 
 

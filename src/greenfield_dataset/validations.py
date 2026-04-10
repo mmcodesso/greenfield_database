@@ -8,8 +8,11 @@ import pandas as pd
 from greenfield_dataset.journals import ACCRUAL_ACCOUNT_METADATA, accrual_journal_details
 from greenfield_dataset.master_data import ACCRUAL_SERVICE_ITEMS
 from greenfield_dataset.manufacturing import (
+    active_routing_by_item,
     manufacturing_open_state,
     open_work_order_remaining_quantity_map,
+    routing_operations_by_routing,
+    work_order_operations_by_work_order,
     work_order_actual_conversion_cost_map,
     work_order_completed_quantity_map,
     work_order_material_issue_cost_map,
@@ -1600,6 +1603,135 @@ def validate_manufacturing_controls(context: GenerationContext) -> dict[str, Any
     }
 
 
+def validate_routing_controls(context: GenerationContext) -> dict[str, Any]:
+    items = context.tables["Item"]
+    routings = context.tables["Routing"]
+    routing_operations = context.tables["RoutingOperation"]
+    work_centers = context.tables["WorkCenter"]
+    work_orders = context.tables["WorkOrder"]
+    work_order_operations = context.tables["WorkOrderOperation"]
+    exceptions: list[dict[str, Any]] = []
+
+    if items.empty:
+        return {"exception_count": 0, "exceptions": []}
+
+    manufactured_items = items[
+        items["SupplyMode"].eq("Manufactured")
+        & items["RevenueAccountID"].notna()
+        & items["IsActive"].eq(1)
+    ].copy()
+    purchased_items = items[
+        items["SupplyMode"].ne("Manufactured")
+        & items["RevenueAccountID"].notna()
+        & items["IsActive"].eq(1)
+    ].copy()
+    active_routings = active_routing_by_item(context)
+
+    missing_routings = sorted(
+        set(manufactured_items["ItemID"].astype(int)) - set(active_routings.keys())
+    )
+    duplicate_routing_counts = (
+        routings[routings["Status"].eq("Active")]["ParentItemID"].astype(int).value_counts()
+        if not routings.empty
+        else pd.Series(dtype=int)
+    )
+    duplicate_routings = sorted(duplicate_routing_counts[duplicate_routing_counts.ne(1)].index.astype(int).tolist())
+    purchased_routings = sorted(
+        set(purchased_items["ItemID"].astype(int)) & set(active_routings.keys())
+    )
+    if missing_routings:
+        exceptions.append({
+            "type": "manufactured_item_missing_routing",
+            "message": f"Manufactured items are missing an active routing: {missing_routings[:5]}.",
+        })
+    if duplicate_routings:
+        exceptions.append({
+            "type": "manufactured_item_duplicate_routing",
+            "message": f"Manufactured items have more than one active routing: {duplicate_routings[:5]}.",
+        })
+    if purchased_routings:
+        exceptions.append({
+            "type": "purchased_item_has_routing",
+            "message": f"Purchased items should not have active routings: {purchased_routings[:5]}.",
+        })
+
+    item_lookup = items.set_index("ItemID").to_dict("index")
+    for routing in routings.itertuples(index=False):
+        parent = item_lookup.get(int(routing.ParentItemID))
+        if parent is None or str(parent.get("SupplyMode")) != "Manufactured" or pd.isna(parent.get("RevenueAccountID")):
+            exceptions.append({
+                "type": "invalid_routing_parent",
+                "message": f"Routing parent is not a manufactured sellable item: {int(routing.ParentItemID)}.",
+            })
+
+    work_center_ids = set(work_centers["WorkCenterID"].astype(int).tolist()) if not work_centers.empty else set()
+    routing_operation_groups = routing_operations_by_routing(context)
+    for routing_id, rows in routing_operation_groups.items():
+        sequences = rows["OperationSequence"].astype(int).tolist()
+        if sequences != list(range(1, len(sequences) + 1)):
+            exceptions.append({
+                "type": "routing_sequence_gap",
+                "message": f"Routing {routing_id} has non-contiguous operation sequences.",
+            })
+        if rows["OperationSequence"].astype(int).duplicated().any():
+            exceptions.append({
+                "type": "routing_sequence_duplicate",
+                "message": f"Routing {routing_id} has duplicate operation sequences.",
+            })
+        invalid_work_centers = sorted(set(rows["WorkCenterID"].astype(int)) - work_center_ids)
+        if invalid_work_centers:
+            exceptions.append({
+                "type": "routing_invalid_work_center",
+                "message": f"Routing {routing_id} references invalid work centers: {invalid_work_centers[:5]}.",
+            })
+
+    work_order_lookup = work_orders.set_index("WorkOrderID").to_dict("index") if not work_orders.empty else {}
+    work_order_operation_groups = work_order_operations_by_work_order(context)
+    manufactured_work_orders = work_orders[
+        work_orders["ItemID"].astype(int).isin(manufactured_items["ItemID"].astype(int))
+    ] if not work_orders.empty else work_orders.head(0)
+    for work_order in manufactured_work_orders.itertuples(index=False):
+        rows = work_order_operation_groups.get(int(work_order.WorkOrderID))
+        if rows is None or rows.empty:
+            exceptions.append({
+                "type": "work_order_missing_operations",
+                "message": f"Work order {int(work_order.WorkOrderID)} is missing work-order operations.",
+            })
+            continue
+        if rows["RoutingOperationID"].isna().any():
+            exceptions.append({
+                "type": "work_order_operation_missing_routing_operation",
+                "message": f"Work order {int(work_order.WorkOrderID)} has operation rows without routing linkage.",
+            })
+        prior_completion: pd.Timestamp | None = None
+        for row in rows.itertuples(index=False):
+            actual_start = pd.Timestamp(row.ActualStartDate) if pd.notna(row.ActualStartDate) else None
+            actual_end = pd.Timestamp(row.ActualEndDate) if pd.notna(row.ActualEndDate) else None
+            if prior_completion is not None and actual_start is not None and actual_start < prior_completion:
+                exceptions.append({
+                    "type": "work_order_operation_out_of_sequence",
+                    "message": f"Work-order operation sequence is violated for work order {int(work_order.WorkOrderID)}.",
+                })
+                break
+            if actual_end is not None:
+                prior_completion = actual_end
+
+        final_actual_end = None
+        if rows["ActualEndDate"].notna().any():
+            final_actual_end = pd.to_datetime(rows["ActualEndDate"]).max()
+        if final_actual_end is not None and pd.notna(work_order.CompletedDate):
+            if pd.Timestamp(work_order.CompletedDate) < pd.Timestamp(final_actual_end):
+                exceptions.append({
+                    "type": "work_order_completed_before_final_operation",
+                    "message": f"Work order {int(work_order.WorkOrderID)} completes before the final routing operation ends.",
+                })
+
+    return {
+        "exception_count": len(exceptions),
+        "exceptions": exceptions,
+    }
+
+
 def validate_payroll_controls(context: GenerationContext) -> dict[str, Any]:
     periods = context.tables["PayrollPeriod"]
     labor_entries = context.tables["LaborTimeEntry"]
@@ -1609,6 +1741,8 @@ def validate_payroll_controls(context: GenerationContext) -> dict[str, Any]:
     remittances = context.tables["PayrollLiabilityRemittance"]
     employees = context.tables["Employee"]
     work_orders = context.tables["WorkOrder"]
+    work_order_operations = context.tables["WorkOrderOperation"]
+    routing_operations = context.tables["RoutingOperation"]
     items = context.tables["Item"]
     exceptions: list[dict[str, Any]] = []
 
@@ -1702,17 +1836,46 @@ def validate_payroll_controls(context: GenerationContext) -> dict[str, Any]:
     if not labor_entries.empty and not work_orders.empty and not items.empty:
         work_order_item_ids = work_orders.set_index("WorkOrderID")["ItemID"].astype(int).to_dict()
         supply_modes = items.set_index("ItemID")["SupplyMode"].to_dict()
+        operation_lookup = work_order_operations.set_index("WorkOrderOperationID").to_dict("index") if not work_order_operations.empty else {}
+        routing_operation_lookup = routing_operations.set_index("RoutingOperationID").to_dict("index") if not routing_operations.empty else {}
         invalid_direct_labor = []
+        invalid_operation_links = []
+        missing_operation_links = []
         for entry in labor_entries.itertuples(index=False):
             if str(entry.LaborType) != "Direct Manufacturing" or pd.isna(entry.WorkOrderID):
                 continue
             item_id = work_order_item_ids.get(int(entry.WorkOrderID))
             if item_id is None or str(supply_modes.get(int(item_id))) != "Manufactured":
                 invalid_direct_labor.append(int(entry.LaborTimeEntryID))
+            if pd.isna(entry.WorkOrderOperationID):
+                if not work_order_operations.empty:
+                    missing_operation_links.append(int(entry.LaborTimeEntryID))
+                continue
+            operation = operation_lookup.get(int(entry.WorkOrderOperationID))
+            routing_operation = None
+            if operation is not None:
+                routing_operation = routing_operation_lookup.get(int(operation["RoutingOperationID"]))
+            if (
+                operation is None
+                or int(operation["WorkOrderID"]) != int(entry.WorkOrderID)
+                or routing_operation is None
+                or str(routing_operation.get("OperationCode")) not in {"ASSEMBLY", "FINISH", "QA", "CUT", "PACK"}
+            ):
+                invalid_operation_links.append(int(entry.LaborTimeEntryID))
         if invalid_direct_labor:
             exceptions.append({
                 "type": "direct_labor_invalid_work_order",
                 "message": f"Direct labor entries reference invalid or non-manufactured work orders: {invalid_direct_labor[:5]}.",
+            })
+        if missing_operation_links:
+            exceptions.append({
+                "type": "direct_labor_missing_operation",
+                "message": f"Direct labor entries are missing work-order operation linkage: {missing_operation_links[:5]}.",
+            })
+        if invalid_operation_links:
+            exceptions.append({
+                "type": "direct_labor_invalid_operation_link",
+                "message": f"Direct labor entries reference invalid work-order operations: {invalid_operation_links[:5]}.",
             })
 
     return {
@@ -1765,6 +1928,36 @@ def validate_phase13(context: GenerationContext, store: bool = True) -> dict[str
     return phase13_results
 
 
+def validate_phase14(context: GenerationContext, store: bool = True) -> dict[str, Any]:
+    results = validate_phase13(context, store=False)
+    exceptions = list(results["exceptions"])
+
+    routing_controls = validate_routing_controls(context)
+    if routing_controls["exception_count"]:
+        exceptions.append(f"Routing control exceptions: {routing_controls['exception_count']}.")
+
+    phase14_results: dict[str, Any] = {
+        "row_counts": {table: int(len(df)) for table, df in context.tables.items()},
+        "exceptions": exceptions,
+        "gl_balance": results["gl_balance"],
+        "trial_balance_difference": results["trial_balance_difference"],
+        "account_rollforward": results["account_rollforward"],
+        "o2c_controls": results["o2c_controls"],
+        "p2p_controls": results["p2p_controls"],
+        "journal_controls": results["journal_controls"],
+        "manufacturing_controls": results["manufacturing_controls"],
+        "payroll_controls": results["payroll_controls"],
+        "routing_controls": routing_controls,
+    }
+    if store:
+        context.validation_results["phase14"] = phase14_results
+        context.validation_results["phase13"] = phase14_results
+        context.validation_results["phase12"] = phase14_results
+        context.validation_results["phase11"] = phase14_results
+        context.validation_results["phase9"] = phase14_results
+    return phase14_results
+
+
 def validate_phase12(context: GenerationContext, store: bool = True) -> dict[str, Any]:
     results = validate_phase13(context, store=False)
     if store:
@@ -1787,7 +1980,7 @@ def validate_phase9(context: GenerationContext, store: bool = True) -> dict[str,
 
 
 def validate_phase8(context: GenerationContext) -> dict[str, Any]:
-    results = validate_phase13(context, store=False)
+    results = validate_phase14(context, store=False)
     exceptions = list(results["exceptions"])
 
     if context.settings.anomaly_mode != "none" and not context.anomaly_log:
@@ -1805,6 +1998,7 @@ def validate_phase8(context: GenerationContext) -> dict[str, Any]:
         "journal_controls": results["journal_controls"],
         "manufacturing_controls": results["manufacturing_controls"],
         "payroll_controls": results["payroll_controls"],
+        "routing_controls": results["routing_controls"],
     }
     context.validation_results["phase8"] = phase8_results
     return phase8_results

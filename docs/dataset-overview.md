@@ -24,9 +24,9 @@ The project is built for:
 - auditing and controls analytics
 - document tracing and business-process understanding
 
-> **Implemented in current generator:** A five-year dataset with 45 tables covering O2C, P2P, manufacturing, payroll, accounting core, master data, budgets, recurring journals, year-end close, validations, anomalies, and exports.
+> **Implemented in current generator:** A five-year dataset with 49 tables covering O2C, P2P, manufacturing, payroll, accounting core, master data, budgets, recurring journals, year-end close, validations, anomalies, and exports.
 
-> **Planned future extension:** Advanced manufacturing planning, richer labor analytics, and deeper cost-accounting detail.
+> **Planned future extension:** Capacity planning, richer labor analytics, and deeper cost-accounting detail.
 
 ## Business Context
 
@@ -44,14 +44,14 @@ Read [company-story.md](company-story.md) for the narrative version of that oper
 
 ## What the Database Contains
 
-The current implementation contains **45 tables** across seven areas:
+The current implementation contains **49 tables** across seven areas:
 
 | Area | Example tables | Count |
 |---|---|---:|
 | Accounting core | `Account`, `JournalEntry`, `GLEntry` | 3 |
 | Order-to-cash | `Customer`, `SalesOrder`, `Shipment`, `SalesInvoice`, `CashReceiptApplication`, `SalesReturn`, `CreditMemo`, `CustomerRefund` | 14 |
 | Procure-to-pay | `Supplier`, `PurchaseRequisition`, `PurchaseOrder`, `GoodsReceipt`, `PurchaseInvoice`, `DisbursementPayment` | 9 |
-| Manufacturing | `BillOfMaterial`, `BillOfMaterialLine`, `WorkOrder`, `MaterialIssue`, `ProductionCompletion`, `WorkOrderClose` | 8 |
+| Manufacturing | `BillOfMaterial`, `BillOfMaterialLine`, `WorkCenter`, `Routing`, `RoutingOperation`, `WorkOrder`, `WorkOrderOperation`, `MaterialIssue`, `ProductionCompletion`, `WorkOrderClose` | 12 |
 | Payroll | `PayrollPeriod`, `LaborTimeEntry`, `PayrollRegister`, `PayrollRegisterLine`, `PayrollPayment`, `PayrollLiabilityRemittance` | 6 |
 | Master data | `Item`, `Warehouse`, `Employee` | 3 |
 | Organizational planning | `CostCenter`, `Budget` | 2 |
@@ -102,7 +102,7 @@ Students can:
 
 The current generator does **not** yet include:
 
-- routings or work-center capacity
+- work-center capacity calendars or formal scheduling
 - time clocks or shift scheduling
 - multi-level BOMs or subassemblies
 - detailed labor planning beyond the current payroll-period model

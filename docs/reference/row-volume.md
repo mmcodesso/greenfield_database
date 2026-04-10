@@ -12,7 +12,7 @@ The default configuration uses:
 
 > **Implemented in current generator:** A deterministic five-year hybrid manufacturer-distributor dataset with payroll, manufacturing, and posted-ledger detail whose default counts are stable unless configuration or generation logic changes.
 
-> **Planned future extension:** Advanced manufacturing planning, richer labor scheduling, and additional scenario packs that may increase operational and ledger volume further.
+> **Planned future extension:** Capacity planning, scheduling, and additional scenario packs that may increase operational and ledger volume further.
 
 ## Current Default Build vs Historical Design Intent
 
@@ -22,7 +22,7 @@ The target ranges below come from the project's earlier design-planning model. T
 |---|---|---:|---:|
 | Accounting core | Account | 75 to 95 | 98 |
 | Accounting core | JournalEntry | 900 to 1,500 | 736 |
-| Accounting core | GLEntry | 60,000 to 110,000 | 621,329 |
+| Accounting core | GLEntry | 60,000 to 110,000 | 643,141 |
 | O2C | Customer | 150 to 300 | 220 |
 | O2C | SalesOrder | 4,500 to 9,000 | 6,916 |
 | O2C | SalesOrderLine | 13,000 to 30,000 | 26,795 |
@@ -48,16 +48,20 @@ The target ranges below come from the project's earlier design-planning model. T
 | P2P | DisbursementPayment | 2,300 to 5,500 | 35,784 |
 | Manufacturing | BillOfMaterial | Not specified in original design | 77 |
 | Manufacturing | BillOfMaterialLine | Not specified in original design | 281 |
+| Manufacturing | WorkCenter | Not specified in original design | 5 |
+| Manufacturing | Routing | Not specified in original design | 77 |
+| Manufacturing | RoutingOperation | Not specified in original design | 291 |
 | Manufacturing | WorkOrder | Not specified in original design | 3,981 |
+| Manufacturing | WorkOrderOperation | Not specified in original design | 15,183 |
 | Manufacturing | MaterialIssue | Not specified in original design | 7,132 |
 | Manufacturing | MaterialIssueLine | Not specified in original design | 26,314 |
 | Manufacturing | ProductionCompletion | Not specified in original design | 6,980 |
 | Manufacturing | ProductionCompletionLine | Not specified in original design | 6,980 |
 | Manufacturing | WorkOrderClose | Not specified in original design | 2,943 |
 | Payroll | PayrollPeriod | Not specified in original design | 131 |
-| Payroll | LaborTimeEntry | Not specified in original design | 11,120 |
+| Payroll | LaborTimeEntry | Not specified in original design | 32,935 |
 | Payroll | PayrollRegister | Not specified in original design | 8,320 |
-| Payroll | PayrollRegisterLine | Not specified in original design | 52,332 |
+| Payroll | PayrollRegisterLine | Not specified in original design | 74,145 |
 | Payroll | PayrollPayment | Not specified in original design | 8,320 |
 | Payroll | PayrollLiabilityRemittance | Not specified in original design | 387 |
 | Master data | Item | 180 to 350 | 243 |
@@ -77,6 +81,15 @@ Phase 13 materially changed total row volume through:
 - larger ledger volume from payroll postings
 - lower recurring-journal counts because clean-build payroll is no longer simulated through payroll accrual and payroll settlement journals
 
+## What Changed in Phase 14
+
+Phase 14 added a planning and execution layer inside manufacturing without changing standard-cost valuation:
+
+- `WorkCenter`, `Routing`, and `RoutingOperation` rows for manufactured items
+- `WorkOrderOperation` rows at release time for each work order
+- substantially more `LaborTimeEntry` rows because direct labor is now assigned at the operation level
+- higher `PayrollRegisterLine` and `GLEntry` volumes because the routing-aware labor layer increased payroll and downstream posting detail
+
 ## What Changed in the Accrued-Expense Rework
 
 The accrued-expense settlement rework changed row volume in a narrower but important way:
@@ -92,3 +105,4 @@ The accrued-expense settlement rework changed row volume in a narrower but impor
 - Treat the target ranges as historical design guidance, not strict quality thresholds.
 - Expect counts to change if you alter settings, anomaly behavior, or later phases.
 - The historical journal-entry target assumed journal-mode payroll. Phase 13 moved payroll into operational tables, so `JournalEntry` is now lower while payroll tables and `GLEntry` are materially higher.
+- Phase 14 added routing and operation tables plus denser labor detail, so manufacturing-planning and payroll row counts are materially above the earlier manufacturing-foundation baseline.

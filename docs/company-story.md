@@ -98,7 +98,6 @@ The current dataset is a teaching model, not a full ERP simulation.
 
 The current implementation does **not** include:
 
-- routings or work centers
 - time clocks or shift scheduling
 - capacity planning
 - subassemblies or multi-level BOMs

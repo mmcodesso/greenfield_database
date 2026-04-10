@@ -125,7 +125,7 @@ TABLE_COLUMNS = {
         "ItemID", "ItemCode", "ItemName", "ItemGroup", "ItemType", "StandardCost",
         "ListPrice", "UnitOfMeasure", "SupplyMode", "ProductionLeadTimeDays",
         "StandardLaborHoursPerUnit", "StandardDirectLaborCost", "StandardVariableOverheadCost",
-        "StandardFixedOverheadCost", "StandardConversionCost", "InventoryAccountID",
+        "StandardFixedOverheadCost", "StandardConversionCost", "RoutingID", "InventoryAccountID",
         "RevenueAccountID", "COGSAccountID", "PurchaseVarianceAccountID", "TaxCategory", "IsActive",
     ],
     "BillOfMaterial": [
@@ -135,10 +135,26 @@ TABLE_COLUMNS = {
     "BillOfMaterialLine": [
         "BOMLineID", "BOMID", "ComponentItemID", "LineNumber", "QuantityPerUnit", "ScrapFactorPct",
     ],
+    "WorkCenter": [
+        "WorkCenterID", "WorkCenterCode", "WorkCenterName", "Department", "WarehouseID",
+        "ManagerEmployeeID", "IsActive",
+    ],
+    "Routing": [
+        "RoutingID", "ParentItemID", "VersionNumber", "EffectiveStartDate", "EffectiveEndDate",
+        "Status",
+    ],
+    "RoutingOperation": [
+        "RoutingOperationID", "RoutingID", "OperationSequence", "OperationCode", "OperationName",
+        "WorkCenterID", "StandardSetupHours", "StandardRunHoursPerUnit", "StandardQueueDays",
+    ],
     "WorkOrder": [
-        "WorkOrderID", "WorkOrderNumber", "ItemID", "BOMID", "WarehouseID", "PlannedQuantity",
-        "ReleasedDate", "DueDate", "CompletedDate", "ClosedDate", "Status", "CostCenterID",
-        "ReleasedByEmployeeID", "ClosedByEmployeeID",
+        "WorkOrderID", "WorkOrderNumber", "ItemID", "BOMID", "RoutingID", "WarehouseID",
+        "PlannedQuantity", "ReleasedDate", "DueDate", "CompletedDate", "ClosedDate", "Status",
+        "CostCenterID", "ReleasedByEmployeeID", "ClosedByEmployeeID",
+    ],
+    "WorkOrderOperation": [
+        "WorkOrderOperationID", "WorkOrderID", "RoutingOperationID", "OperationSequence", "WorkCenterID",
+        "PlannedQuantity", "PlannedStartDate", "PlannedEndDate", "ActualStartDate", "ActualEndDate", "Status",
     ],
     "MaterialIssue": [
         "MaterialIssueID", "IssueNumber", "WorkOrderID", "IssueDate", "WarehouseID",
@@ -168,9 +184,9 @@ TABLE_COLUMNS = {
         "FiscalYear", "FiscalPeriod", "Status",
     ],
     "LaborTimeEntry": [
-        "LaborTimeEntryID", "PayrollPeriodID", "EmployeeID", "WorkOrderID", "WorkDate",
-        "LaborType", "RegularHours", "OvertimeHours", "HourlyRateUsed", "ExtendedLaborCost",
-        "ApprovedByEmployeeID", "ApprovedDate",
+        "LaborTimeEntryID", "PayrollPeriodID", "EmployeeID", "WorkOrderID", "WorkOrderOperationID",
+        "WorkDate", "LaborType", "RegularHours", "OvertimeHours", "HourlyRateUsed",
+        "ExtendedLaborCost", "ApprovedByEmployeeID", "ApprovedDate",
     ],
     "PayrollRegister": [
         "PayrollRegisterID", "PayrollPeriodID", "EmployeeID", "CostCenterID", "GrossPay",

@@ -8,7 +8,7 @@ Posting logic is implemented across `src/greenfield_dataset/journals.py`, `src/g
 
 > **Implemented in current generator:** Event-based postings for O2C, P2P, manufacturing, payroll, opening balances, recurring manual journals, accrued-expense settlement invoices, rare accrual-adjustment journals, manufacturing reclasses, and year-end close.
 
-> **Planned future extension:** Advanced manufacturing-planning and labor-scheduling events beyond the current payroll and production foundation.
+> **Planned future extension:** Capacity-planning, scheduling, and time-clock events beyond the current routing and payroll foundation.
 
 ## Non-Posting Documents
 
@@ -21,7 +21,11 @@ These documents are generated for process analysis but do **not** create `GLEntr
 - `PurchaseOrderLine`
 - `BillOfMaterial`
 - `BillOfMaterialLine`
+- `WorkCenter`
+- `Routing`
+- `RoutingOperation`
 - `WorkOrder`
+- `WorkOrderOperation`
 - `PayrollPeriod`
 - `LaborTimeEntry`
 

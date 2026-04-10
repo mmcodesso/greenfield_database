@@ -99,7 +99,7 @@ Each release is intended to function as a ready-to-use teaching package.
 
 | Implemented in current generator | Planned future extension |
 |---|---|
-| Hybrid manufacturing plus distributor operations with an operational payroll subledger | Advanced manufacturing topics such as routings, capacity, and deeper production planning |
+| Hybrid manufacturing plus distributor operations with an operational payroll subledger, routings, work centers, and operation-level labor assignment | Advanced manufacturing topics such as capacity, scheduling, and deeper production planning |
 | Payroll, manufacturing, and cost analytics starter queries and process docs | More advanced payroll-control and labor-planning scenarios |
 | O2C, P2P, recurring journals, close-cycle activity, and posted ledger data | Additional advanced analytics packs |
 | SQLite, Excel, validation, anomaly, and log outputs | Broader process extensions beyond the current teaching core |

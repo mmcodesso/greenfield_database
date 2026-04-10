@@ -6,7 +6,7 @@
 
 > **Implemented in current generator:** O2C, returns and credits, P2P, manufacturing, payroll, recurring journals, year-end close, and event-based posting into `GLEntry`.
 
-> **Planned future extension:** Advanced manufacturing planning, richer labor scheduling, and deeper process detail.
+> **Planned future extension:** Capacity planning, richer labor scheduling, and deeper process detail.
 
 ## How to Use This Section
 
@@ -17,8 +17,8 @@ Use this page as the hub for the detailed process guides:
 | Core O2C | [processes/o2c.md](processes/o2c.md) | Customer order through shipment, invoice, receipt, and cash application |
 | Returns and credits | [processes/o2c-returns-credits-refunds.md](processes/o2c-returns-credits-refunds.md) | Returned goods, credit memos, customer credits, and refunds |
 | P2P | [processes/p2p.md](processes/p2p.md) | Requisition through PO, goods receipt, supplier invoice, and payment |
-| Manufacturing | [processes/manufacturing.md](processes/manufacturing.md) | BOMs, work orders, material issues, completions, and work-order close |
-| Payroll | [processes/payroll.md](processes/payroll.md) | Pay periods, labor time, payroll registers, payments, remittances, and labor integration |
+| Manufacturing | [processes/manufacturing.md](processes/manufacturing.md) | BOMs, routings, work centers, work orders, material issues, completions, and work-order close |
+| Payroll | [processes/payroll.md](processes/payroll.md) | Pay periods, labor time, payroll registers, payments, remittances, and operation-level labor integration |
 | Journals and close | [processes/manual-journals-and-close.md](processes/manual-journals-and-close.md) | Recurring journals, accrued-expense estimates and adjustments, reclasses, and year-end close |
 
 ## Greenfield Process Map

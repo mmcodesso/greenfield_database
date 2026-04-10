@@ -4,9 +4,9 @@
 **Purpose:** Explain the codebase from entrypoint to export using the current implementation.  
 **What you will learn:** The orchestration flow, the role of each module, and where the next extension should plug in.
 
-> **Implemented in current generator:** Config loading, shared generation context, schema registry, master data, BOMs, budgets, monthly O2C/P2P/manufacturing/payroll generation, recurring manual journals, year-end close, posting, validations, anomaly injection, SQLite/Excel export, JSON reporting, and generation logging.
+> **Implemented in current generator:** Config loading, shared generation context, schema registry, master data, BOMs, routings, work centers, budgets, monthly O2C/P2P/manufacturing/payroll generation, recurring manual journals, year-end close, posting, validations, anomaly injection, SQLite/Excel export, JSON reporting, and generation logging.
 
-> **Planned future extension:** Advanced manufacturing planning and richer labor scheduling.
+> **Planned future extension:** Capacity planning, scheduling, and richer labor-timing detail.
 
 ## Entrypoints
 
@@ -21,7 +21,7 @@ flowchart LR
     S[Load Settings]
     C[Initialize GenerationContext]
     E[Create Empty Tables]
-    M[Generate Master Data and BOMs]
+    M[Generate Master Data, BOMs, and Routings]
     B[Generate Opening Balances and Budgets]
     T[Generate Monthly O2C Demand]
     R[Generate Monthly P2P Demand]
@@ -71,8 +71,8 @@ Also defined in `settings.py`. This object carries:
 | `calendar.py` | Builds the fiscal calendar used during generation |
 | `schema.py` | Defines `TABLE_COLUMNS` and creates empty DataFrames |
 | `master_data.py` | Loads accounts and generates cost centers, employees, warehouses, items, customers, and suppliers |
-| `manufacturing.py` | Generates BOMs, work orders, material issues, completions, work-order close, and manufacturing state helpers |
-| `payroll.py` | Generates payroll periods, labor time, payroll registers, payroll payments, remittances, and manufacturing labor allocations |
+| `manufacturing.py` | Generates BOMs, work centers, routings, work orders, work-order operations, material issues, completions, work-order close, and manufacturing state helpers |
+| `payroll.py` | Generates payroll periods, labor time, payroll registers, payroll payments, remittances, and operation-aware manufacturing labor allocations |
 | `budgets.py` | Generates the opening balance journal and budget rows |
 | `o2c.py` | Generates sales orders, shipments, sales invoices, cash receipts, applications, sales returns, credit memos, refunds, and O2C state maps |
 | `p2p.py` | Generates requisitions, purchase orders, goods receipts, purchase invoices, disbursements, and P2P state maps |
@@ -132,6 +132,7 @@ Current validations include:
 - P2P controls
 - manufacturing controls
 - payroll controls
+- routing controls
 - voucher balance
 - trial balance equality
 - account roll-forwards
@@ -160,6 +161,6 @@ The current generator exports:
 
 ## Next Extension Point
 
-The next clean extension point is advanced manufacturing and labor planning.
+The next clean extension point is capacity and scheduling on top of the routing foundation.
 
-That work should extend the current payroll and manufacturing foundation without rewriting the O2C, P2P, or payroll subledger model.
+That work should extend the current work-center, routing, payroll, and manufacturing model without rewriting the O2C, P2P, or payroll subledger layers.
