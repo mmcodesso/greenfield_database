@@ -28,13 +28,15 @@ flowchart LR
     F[Generate Monthly Manufacturing Activity]
     L[Generate Monthly Payroll and Labor Activity]
     J[Generate Recurring Journals]
+    S1[Generate Accrued-Service Settlements]
+    A1[Generate Accrual Adjustments]
     P[Post to GLEntry]
     Y[Generate Year-End Close Journals]
     V[Run Validations]
     A[Inject Anomalies]
     X[Export SQLite, Excel, JSON, and Log]
 
-    S --> C --> E --> M --> B --> T --> R --> F --> L --> J --> P --> Y --> V --> A --> X
+    S --> C --> E --> M --> B --> T --> R --> F --> L --> J --> S1 --> A1 --> P --> Y --> V --> A --> X
 ```
 
 ## Core Runtime Objects
@@ -74,7 +76,7 @@ Also defined in `settings.py`. This object carries:
 | `budgets.py` | Generates the opening balance journal and budget rows |
 | `o2c.py` | Generates sales orders, shipments, sales invoices, cash receipts, applications, sales returns, credit memos, refunds, and O2C state maps |
 | `p2p.py` | Generates requisitions, purchase orders, goods receipts, purchase invoices, disbursements, and P2P state maps |
-| `journals.py` | Generates recurring journals, reversals, factory overhead, direct-labor reclasses, manufacturing-overhead reclasses, and year-end close journals |
+| `journals.py` | Generates recurring journals, accrued-expense estimates, rare accrual adjustments, factory overhead, direct-labor reclasses, manufacturing-overhead reclasses, and year-end close journals |
 | `posting_engine.py` | Converts operational and payroll events into balanced GL entries |
 | `validations.py` | Runs schema, document, payroll, ledger, and manufacturing checks |
 | `anomalies.py` | Applies configurable anomaly patterns and records them in `context.anomaly_log` |
@@ -96,7 +98,7 @@ Operational posting events:
 - credit memos reverse revenue and tax while reducing AR or creating customer credit
 - customer refunds clear customer credit and cash
 - goods receipts post inventory and GRNI
-- purchase invoices post matched GRNI clearing, AP, and purchase variance
+- purchase invoices either post matched GRNI clearing or clear prior accrued expenses, then post AP
 - disbursements post AP and cash
 - material issues post WIP and materials inventory
 - production completions post finished goods, WIP, and manufacturing clearing
@@ -114,7 +116,7 @@ Journal-sourced posting events:
 - direct labor reclass
 - manufacturing overhead reclass
 - depreciation
-- accrual and accrual reversal
+- accrual and rare accrual adjustment
 - year-end close
 
 ## Validation and Logging

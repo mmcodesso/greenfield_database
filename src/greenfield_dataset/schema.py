@@ -113,8 +113,8 @@ TABLE_COLUMNS = {
         "ApprovedByEmployeeID", "ApprovedDate",
     ],
     "PurchaseInvoiceLine": [
-        "PILineID", "PurchaseInvoiceID", "POLineID", "GoodsReceiptLineID", "LineNumber",
-        "ItemID", "Quantity", "UnitCost", "LineTotal",
+        "PILineID", "PurchaseInvoiceID", "POLineID", "GoodsReceiptLineID", "AccrualJournalEntryID",
+        "LineNumber", "ItemID", "Quantity", "UnitCost", "LineTotal",
     ],
     "DisbursementPayment": [
         "DisbursementID", "PaymentNumber", "PaymentDate", "SupplierID",

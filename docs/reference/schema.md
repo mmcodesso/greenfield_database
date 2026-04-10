@@ -28,7 +28,7 @@ The canonical schema lives in `src/greenfield_dataset/schema.py` as `TABLE_COLUM
 - Header-line tables are used for orders, shipments, invoices, purchase orders, goods receipts, purchase invoices, material issues, production completions, and payroll registers.
 - `GLEntry` is the reporting bridge between operational events and accounting analysis.
 - `Item` carries account-mapping fields plus manufacturing and costing attributes such as `SupplyMode`, `ProductionLeadTimeDays`, `StandardLaborHoursPerUnit`, and `StandardConversionCost`.
-- `JournalEntry` and `GLEntry` together represent opening, recurring, manufacturing, reversal, and close-cycle activity without a separate journal-line table.
+- `JournalEntry` and `GLEntry` together represent opening, recurring, manufacturing, accrual-adjustment, and close-cycle activity without a separate journal-line table.
 - Payroll is now operationally modeled through payroll-period, register, payment, and remittance tables rather than clean-build payroll accrual journals.
 
 ## Accounting Core
@@ -69,7 +69,7 @@ The canonical schema lives in `src/greenfield_dataset/schema.py` as `TABLE_COLUM
 | `GoodsReceipt` | Receipt header | `ReceiptNumber`, `ReceiptDate`, `PurchaseOrderID`, `WarehouseID`, `ReceivedByEmployeeID`, `Status` |
 | `GoodsReceiptLine` | Receipt detail used for quantity and cost tracking | `GoodsReceiptID`, `POLineID`, `ItemID`, `QuantityReceived`, `ExtendedStandardCost` |
 | `PurchaseInvoice` | Supplier invoice header | `InvoiceNumber`, `InvoiceDate`, `ReceivedDate`, `DueDate`, `PurchaseOrderID`, `SupplierID`, `SubTotal`, `TaxAmount`, `GrandTotal`, `ApprovedByEmployeeID`, `Status` |
-| `PurchaseInvoiceLine` | Supplier invoice detail | `PurchaseInvoiceID`, `POLineID`, `GoodsReceiptLineID`, `LineNumber`, `ItemID`, `Quantity`, `UnitCost`, `LineTotal` |
+| `PurchaseInvoiceLine` | Supplier invoice detail | `PurchaseInvoiceID`, `POLineID`, `GoodsReceiptLineID`, `AccrualJournalEntryID`, `LineNumber`, `ItemID`, `Quantity`, `UnitCost`, `LineTotal` |
 | `DisbursementPayment` | Supplier payment record | `PaymentNumber`, `PaymentDate`, `SupplierID`, `PurchaseInvoiceID`, `Amount`, `PaymentMethod`, `CheckNumber`, `ApprovedByEmployeeID`, `ClearedDate` |
 
 ## Manufacturing
@@ -117,6 +117,7 @@ The most important lineage fields in the implementation are:
 
 - `PurchaseOrderLine.RequisitionID`
 - `PurchaseInvoiceLine.GoodsReceiptLineID`
+- `PurchaseInvoiceLine.AccrualJournalEntryID`
 - `SalesInvoiceLine.ShipmentLineID`
 - `CashReceiptApplication.CashReceiptID`
 - `CashReceiptApplication.SalesInvoiceID`
@@ -142,6 +143,8 @@ The most important lineage fields in the implementation are:
 
 - `CashReceipt.SalesInvoiceID` is compatibility metadata only. The authoritative settlement link is `CashReceiptApplication`.
 - `PurchaseOrder.RequisitionID` is compatibility metadata when a PO batches multiple requisitions.
+- `PurchaseInvoiceLine.GoodsReceiptLineID` is the clean-match key for receipt-based inventory invoices.
+- `PurchaseInvoiceLine.AccrualJournalEntryID` links direct service invoices back to month-end accrual journals.
 - `GoodsReceiptLine.ExtendedStandardCost` stores the receipt posting basis used for inventory and GRNI.
 - The manufacturing foundation uses single-level BOMs only.
 - Payroll is operationally modeled, but manufacturing still uses standard-cost valuation rather than full actual-cost inventory.

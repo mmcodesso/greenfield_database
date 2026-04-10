@@ -61,6 +61,25 @@ MONTHLY_ACCRUAL_BASES = {
     "6180": 5000.0,
 }
 
+ACCRUAL_ACCOUNT_METADATA = {
+    "6100": {
+        "description": "Insurance accrual",
+        "journal_description": "Month-end insurance accrued expense",
+    },
+    "6140": {
+        "description": "IT and software accrual",
+        "journal_description": "Month-end IT and software accrued expense",
+    },
+    "6180": {
+        "description": "Professional fees accrual",
+        "journal_description": "Month-end professional fees accrued expense",
+    },
+}
+
+ACCRUAL_ADJUSTMENTS_PER_YEAR = 1
+ACCRUAL_ADJUSTMENT_MIN_AGE_DAYS = 90
+ACCRUAL_ADJUSTMENT_MIN_AMOUNT = 250.0
+
 OPENING_FIXED_ASSET_BALANCES = {
     "1110": 260000.0,
     "1120": 850000.0,
@@ -730,78 +749,191 @@ def generate_depreciation_journals(context: GenerationContext, year: int, month:
         )
 
 
-def generate_month_end_accrual(context: GenerationContext, year: int, month: int) -> dict[str, Any]:
+def generate_month_end_accruals(context: GenerationContext, year: int, month: int) -> list[dict[str, Any]]:
     posting_date = last_business_day(year, month).strftime("%Y-%m-%d")
     creator_id = accounting_journal_creator_id(context)
     approver_id = accounting_journal_approver_id(context)
-
-    debit_lines = [
-        {
-            "AccountNumber": account_number,
-            "Debit": monthly_accrual_amount(context, year, month, account_number),
-            "Credit": 0.0,
-            "Description": {
-                "6100": "Insurance accrual",
-                "6140": "IT and software accrual",
-                "6180": "Professional fees accrual",
-            }[account_number],
-            "CostCenterID": None,
-        }
-        for account_number in ["6100", "6140", "6180"]
-    ]
-    total_accrual = money(sum(float(line["Debit"]) for line in debit_lines))
-    lines = debit_lines + [
-        {
-            "AccountNumber": "2040",
-            "Debit": 0.0,
-            "Credit": total_accrual,
-            "Description": "Accrued expenses liability",
-            "CostCenterID": None,
-        }
-    ]
-    header = create_journal(
-        context,
-        posting_date,
-        "Accrual",
-        f"Month-end accrued expenses for {year}-{month:02d}",
-        lines,
-        creator_id,
-        approver_id,
-    )
-    return {
-        "JournalEntryID": int(header["JournalEntryID"]),
-        "PostingDate": posting_date,
-        "Lines": lines,
-    }
+    accrual_rows: list[dict[str, Any]] = []
+    for account_number, metadata in ACCRUAL_ACCOUNT_METADATA.items():
+        amount = monthly_accrual_amount(context, year, month, account_number)
+        lines = [
+            {
+                "AccountNumber": account_number,
+                "Debit": amount,
+                "Credit": 0.0,
+                "Description": metadata["description"],
+                "CostCenterID": None,
+            },
+            {
+                "AccountNumber": "2040",
+                "Debit": 0.0,
+                "Credit": amount,
+                "Description": f"Accrued expenses liability for {metadata['description'].lower()}",
+                "CostCenterID": None,
+            },
+        ]
+        header = create_journal(
+            context,
+            posting_date,
+            "Accrual",
+            f"{metadata['journal_description']} for {year}-{month:02d}",
+            lines,
+            creator_id,
+            approver_id,
+        )
+        accrual_rows.append({
+            "JournalEntryID": int(header["JournalEntryID"]),
+            "PostingDate": posting_date,
+            "ExpenseAccountNumber": account_number,
+            "Amount": amount,
+        })
+    return accrual_rows
 
 
-def generate_accrual_reversal(context: GenerationContext, reversal_year: int, reversal_month: int, original_accrual: dict[str, Any]) -> None:
-    posting_timestamp = first_business_day(reversal_year, reversal_month)
-    if not date_in_range(context, posting_timestamp):
+def accrual_journal_details(context: GenerationContext) -> list[dict[str, Any]]:
+    journal_entries = context.tables["JournalEntry"]
+    gl = context.tables["GLEntry"]
+    accounts = context.tables["Account"].set_index("AccountID")["AccountNumber"].astype(str).to_dict()
+    accrual_entries = journal_entries[journal_entries["EntryType"].eq("Accrual")].copy()
+    if accrual_entries.empty:
+        return []
+
+    source_gl = gl[
+        gl["VoucherType"].eq("JournalEntry")
+        & gl["SourceDocumentType"].eq("JournalEntry")
+        & gl["SourceDocumentID"].notna()
+    ].copy()
+    details: list[dict[str, Any]] = []
+    for journal in accrual_entries.itertuples(index=False):
+        linked_rows = source_gl[source_gl["SourceDocumentID"].astype(int).eq(int(journal.JournalEntryID))]
+        expense_rows = linked_rows[linked_rows["Debit"].astype(float).gt(0)]
+        for row in expense_rows.itertuples(index=False):
+            account_number = accounts.get(int(row.AccountID))
+            if account_number not in ACCRUAL_ACCOUNT_METADATA:
+                continue
+            details.append({
+                "JournalEntryID": int(journal.JournalEntryID),
+                "PostingDate": str(journal.PostingDate),
+                "ExpenseAccountNumber": account_number,
+                "Amount": money(float(row.Debit)),
+            })
+            break
+    return details
+
+
+def generate_accrual_adjustment_journals(context: GenerationContext) -> None:
+    journal_entries = context.tables["JournalEntry"]
+    if journal_entries.empty:
         return
+
+    existing_adjustments = journal_entries[journal_entries["EntryType"].eq("Accrual Adjustment")]
+    if not existing_adjustments.empty:
+        raise ValueError("Accrual adjustment journals have already been generated.")
+
+    purchase_invoice_lines = context.tables["PurchaseInvoiceLine"]
+    purchase_invoices = context.tables["PurchaseInvoice"]
+    if purchase_invoice_lines.empty or purchase_invoices.empty:
+        return
+
+    invoice_headers = purchase_invoices.set_index("PurchaseInvoiceID")[["ApprovedDate", "InvoiceDate"]].to_dict("index")
+    settled_by_accrual: dict[int, float] = {}
+    for line in purchase_invoice_lines[purchase_invoice_lines["AccrualJournalEntryID"].notna()].itertuples(index=False):
+        settled_by_accrual[int(line.AccrualJournalEntryID)] = money(
+            float(settled_by_accrual.get(int(line.AccrualJournalEntryID), 0.0)) + float(line.LineTotal)
+        )
 
     creator_id = accounting_journal_creator_id(context)
     approver_id = accounting_journal_approver_id(context)
-    reversal_lines = [
-        {
-            "AccountNumber": str(line["AccountNumber"]),
-            "Debit": float(line["Credit"]),
-            "Credit": float(line["Debit"]),
-            "Description": f"Reversal of {line['Description']}",
-            "CostCenterID": line.get("CostCenterID"),
-        }
-        for line in original_accrual["Lines"]
-    ]
-    create_journal(
-        context,
-        posting_timestamp.strftime("%Y-%m-%d"),
-        "Accrual Reversal",
-        f"Reverse month-end accrued expenses from {original_accrual['PostingDate']}",
-        reversal_lines,
-        creator_id,
-        approver_id,
-        int(original_accrual["JournalEntryID"]),
-    )
+    fiscal_end = pd.Timestamp(context.settings.fiscal_year_end)
+    eligible_adjustments_by_year: dict[int, list[dict[str, Any]]] = {}
+    for accrual in accrual_journal_details(context):
+        accrual_id = int(accrual["JournalEntryID"])
+        accrual_amount = float(accrual["Amount"])
+        settled_amount = float(settled_by_accrual.get(accrual_id, 0.0))
+        residual_amount = money(accrual_amount - min(accrual_amount, settled_amount))
+        if residual_amount < ACCRUAL_ADJUSTMENT_MIN_AMOUNT:
+            continue
+
+        accrual_date = pd.Timestamp(accrual["PostingDate"])
+        earliest_adjustment_date = accrual_date + pd.Timedelta(days=ACCRUAL_ADJUSTMENT_MIN_AGE_DAYS)
+        if earliest_adjustment_date > fiscal_end:
+            continue
+
+        linked_invoice_lines = purchase_invoice_lines[purchase_invoice_lines["AccrualJournalEntryID"].notna()].copy()
+        if not linked_invoice_lines.empty:
+            linked_invoice_lines = linked_invoice_lines[
+                linked_invoice_lines["AccrualJournalEntryID"].astype(int).eq(accrual_id)
+            ]
+        invoice_dates = [
+            pd.Timestamp(invoice_headers[int(line.PurchaseInvoiceID)]["ApprovedDate"])
+            for line in linked_invoice_lines.itertuples(index=False)
+            if int(line.PurchaseInvoiceID) in invoice_headers
+        ]
+        if invoice_dates:
+            earliest_adjustment_date = max(earliest_adjustment_date, max(invoice_dates) + pd.Timedelta(days=10))
+        if earliest_adjustment_date > fiscal_end:
+            continue
+
+        adjustment_month = pd.Timestamp(year=earliest_adjustment_date.year, month=earliest_adjustment_date.month, day=1)
+        posting_timestamp = first_business_day(int(adjustment_month.year), int(adjustment_month.month))
+        if posting_timestamp < earliest_adjustment_date:
+            posting_timestamp = first_business_day(*next_month(int(adjustment_month.year), int(adjustment_month.month)))
+        if not date_in_range(context, posting_timestamp):
+            continue
+
+        adjustment_factor = stable_uniform(context, 0.35, 0.80, "accrual-adjustment-factor", accrual_id)
+        adjustment_amount = money(residual_amount * adjustment_factor)
+        if adjustment_amount <= 0 or adjustment_amount >= residual_amount:
+            continue
+
+        account_number = str(accrual["ExpenseAccountNumber"])
+        metadata = ACCRUAL_ACCOUNT_METADATA[account_number]
+        adjustment_year = int(posting_timestamp.year)
+        eligible_adjustments_by_year.setdefault(adjustment_year, []).append({
+            "JournalEntryID": accrual_id,
+            "PostingDate": posting_timestamp.strftime("%Y-%m-%d"),
+            "ExpenseAccountNumber": account_number,
+            "Amount": adjustment_amount,
+            "ResidualAmount": residual_amount,
+            "Description": metadata["description"],
+            "AccrualPostingDate": accrual["PostingDate"],
+        })
+
+    for year, candidates in eligible_adjustments_by_year.items():
+        candidates = sorted(
+            candidates,
+            key=lambda candidate: (
+                candidate["PostingDate"],
+                -float(candidate["ResidualAmount"]),
+                stable_seed(context, "accrual-adjustment-order", year, candidate["JournalEntryID"]),
+            ),
+        )
+        for candidate in candidates[:ACCRUAL_ADJUSTMENTS_PER_YEAR]:
+            create_journal(
+                context,
+                candidate["PostingDate"],
+                "Accrual Adjustment",
+                f"Partial cleanup of residual {candidate['Description'].lower()} accrual from {candidate['AccrualPostingDate']}",
+                [
+                    {
+                        "AccountNumber": "2040",
+                        "Debit": float(candidate["Amount"]),
+                        "Credit": 0.0,
+                        "Description": "Reduce residual accrued expenses liability",
+                        "CostCenterID": None,
+                    },
+                    {
+                        "AccountNumber": str(candidate["ExpenseAccountNumber"]),
+                        "Debit": 0.0,
+                        "Credit": float(candidate["Amount"]),
+                        "Description": f"Reduce residual {candidate['Description'].lower()} estimate",
+                        "CostCenterID": None,
+                    },
+                ],
+                creator_id,
+                approver_id,
+                int(candidate["JournalEntryID"]),
+            )
 
 
 def generate_recurring_manual_journals(context: GenerationContext) -> None:
@@ -812,19 +944,14 @@ def generate_recurring_manual_journals(context: GenerationContext) -> None:
     if not existing_non_opening.empty:
         raise ValueError("Recurring manual journals have already been generated.")
 
-    previous_month_accrual: dict[str, Any] | None = None
-
     for year, month in fiscal_months(context):
-        if previous_month_accrual is not None:
-            generate_accrual_reversal(context, year, month, previous_month_accrual)
-
         generate_rent_journals(context, year, month)
         generate_utilities_journal(context, year, month)
         generate_factory_overhead_journal(context, year, month)
         generate_direct_labor_reclass_journal(context, year, month)
         generate_manufacturing_overhead_reclass_journal(context, year, month)
         generate_depreciation_journals(context, year, month)
-        previous_month_accrual = generate_month_end_accrual(context, year, month)
+        generate_month_end_accruals(context, year, month)
 
 
 def close_account_lines_for_year(context: GenerationContext, year: int) -> list[dict[str, Any]]:

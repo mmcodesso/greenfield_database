@@ -36,6 +36,7 @@
 | Work-order close timing | [10_work_order_close_timing_review.sql](../../queries/audit/10_work_order_close_timing_review.sql) |
 | Payroll control review | [11_payroll_control_review.sql](../../queries/audit/11_payroll_control_review.sql) |
 | Labor-time-after-close and paid-without-time review | [12_labor_time_after_close_and_paid_without_time.sql](../../queries/audit/12_labor_time_after_close_and_paid_without_time.sql) |
+| Over and under accrual review | [13_over_under_accrual_review.sql](../../queries/audit/13_over_under_accrual_review.sql) |
 
 ## Interpretation Notes
 
@@ -44,3 +45,4 @@
 - O2C completeness should be checked at the line and application level.
 - Manufacturing controls should start from BOM integrity and work-order close timing before moving to ledger balances.
 - Payroll-control review should distinguish between normal processing lag and true exceptions such as missing payment, time after close, or hourly pay without time.
+- Accrued-expense review should distinguish receipt-matched inventory AP from direct service invoices that intentionally clear prior accruals.

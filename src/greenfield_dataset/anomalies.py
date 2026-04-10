@@ -194,7 +194,7 @@ def inject_same_creator_approver_journals(context: GenerationContext, count_per_
         "Manufacturing Overhead Reclass",
         "Depreciation",
         "Accrual",
-        "Accrual Reversal",
+        "Accrual Adjustment",
     }
     for year in fiscal_years(context):
         selected = journal_entries_for_year(
@@ -245,12 +245,11 @@ def inject_missing_reversal_links(context: GenerationContext, count_per_year: in
         return
 
     for year in fiscal_years(context):
-        selected = journal_entries_for_year(
-            context,
-            year,
-            entry_types={"Accrual Reversal"},
-            exclude_used=True,
-        ).head(count_per_year)
+        selected = journal_entries_for_year(context, year, entry_types={"Accrual Adjustment"})
+        used_ids = used_primary_keys(context, "JournalEntry", "missing_reversal_link")
+        if used_ids:
+            selected = selected[~selected["JournalEntryID"].astype(int).isin(used_ids)]
+        selected = selected.head(count_per_year)
         for row in selected.itertuples(index=False):
             mask = context.tables["JournalEntry"]["JournalEntryID"].astype(int).eq(int(row.JournalEntryID))
             context.tables["JournalEntry"].loc[mask, "ReversesJournalEntryID"] = None
@@ -260,8 +259,8 @@ def inject_missing_reversal_links(context: GenerationContext, count_per_year: in
                 "JournalEntry",
                 int(row.JournalEntryID),
                 year,
-                "Accrual reversal is missing its link to the original accrual journal.",
-                "Journal reversals with null ReversesJournalEntryID.",
+                "Accrual adjustment is missing its link to the original accrual journal.",
+                "Accrual adjustments with null ReversesJournalEntryID.",
             )
 
 
@@ -305,10 +304,12 @@ def inject_late_reversals(context: GenerationContext, count_per_year: int) -> No
     for year in fiscal_years(context):
         reversals = journal_entries[
             pd.to_datetime(journal_entries["PostingDate"]).dt.year.eq(year)
-            & journal_entries["EntryType"].eq("Accrual Reversal")
+            & journal_entries["EntryType"].eq("Accrual Adjustment")
             & journal_entries["ReversesJournalEntryID"].notna()
-            & ~journal_entries["JournalEntryID"].astype(int).isin(used_primary_keys(context, "JournalEntry"))
         ].sort_values(["PostingDate", "JournalEntryID"])
+        used_ids = used_primary_keys(context, "JournalEntry", "late_reversal")
+        if used_ids:
+            reversals = reversals[~reversals["JournalEntryID"].astype(int).isin(used_ids)]
 
         for row in reversals.head(count_per_year).itertuples(index=False):
             current_date = pd.Timestamp(row.PostingDate)
@@ -323,8 +324,8 @@ def inject_late_reversals(context: GenerationContext, count_per_year: int) -> No
                 "JournalEntry",
                 int(row.JournalEntryID),
                 year,
-                "Accrual reversal posting date was moved later than the first business day of the following month.",
-                "Reversal journals posted after the expected first-business-day window.",
+                "Accrual adjustment posting date was moved later than the intended cleanup window.",
+                "Accrual adjustment journals posted later than their clean-build timing.",
             )
 
 
@@ -482,9 +483,9 @@ def inject_anomalies(context: GenerationContext) -> None:
     inject_same_creator_approver(context, int(profile.get("same_creator_approver_per_year", 0)))
     inject_same_creator_approver_journals(context, int(profile.get("same_creator_approver_journals_per_year", 0)))
     inject_missing_approvals(context, int(profile.get("missing_approvals_per_year", 0)))
+    inject_late_reversals(context, int(profile.get("late_reversals_per_year", 0)))
     inject_missing_reversal_links(context, int(profile.get("missing_reversal_links_per_year", 0)))
     inject_invoice_before_shipment(context, int(profile.get("invoice_before_shipment_per_year", 0)))
-    inject_late_reversals(context, int(profile.get("late_reversals_per_year", 0)))
     inject_duplicate_vendor_payment_reference(context, int(profile.get("duplicate_vendor_payments_per_year", 0)))
     inject_threshold_adjacent_entries(context, int(profile.get("threshold_adjacent_entries_per_year", 0)))
     inject_round_dollar_manual_journals(context, int(profile.get("round_dollar_manual_journals_per_year", 0)))

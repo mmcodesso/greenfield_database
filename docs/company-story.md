@@ -75,7 +75,7 @@ This matters because the same dataset can now support:
 
 ### 6. Close the books
 
-Finance records opening balances, recurring journals, accrual reversals, factory-overhead journals, manufacturing labor and overhead reclasses, and year-end close entries.
+Finance records opening balances, recurring journals, accrued-expense estimates, rare accrual adjustments, factory-overhead journals, manufacturing labor and overhead reclasses, and year-end close entries.
 
 That gives students a full accounting environment, not only an operational database.
 

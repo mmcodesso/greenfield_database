@@ -218,7 +218,7 @@ def select_sales_item(context: GenerationContext, sellable_items: pd.DataFrame, 
 
 def opening_inventory_map(context: GenerationContext) -> dict[tuple[int, int], float]:
     warehouse_list = warehouse_ids(context)
-    items = context.tables["Item"]
+    items = context.tables["Item"][context.tables["Item"]["InventoryAccountID"].notna()].copy()
     inventory: dict[tuple[int, int], float] = {}
     for item in items.itertuples(index=False):
         stock_rng = np.random.default_rng(context.settings.random_seed + int(item.ItemID) * 37)

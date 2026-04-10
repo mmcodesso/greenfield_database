@@ -52,7 +52,8 @@ Many business documents use a header table and a line table.
 | `RequisitionID` | Connect requisitions to purchase-order headers and purchase-order lines |
 | `PurchaseOrderID` | Connect purchase order header to goods receipts and purchase invoices |
 | `POLineID` | Connect purchase order lines to goods receipt lines and purchase invoice lines |
-| `GoodsReceiptLineID` | Connect purchase invoice lines to exact receipt lines |
+| `GoodsReceiptLineID` | Connect inventory purchase invoice lines to exact receipt lines |
+| `AccrualJournalEntryID` | Connect accrued-service purchase invoice lines to the source accrual journal |
 | `BOMID` | Connect manufactured items to their BOM headers |
 | `BOMLineID` | Connect component issues back to BOM detail |
 | `WorkOrderID` | Connect work-order activity across issue, completion, close, and direct labor |
@@ -79,6 +80,10 @@ Returns, credits, and refunds branch from the billed shipment path:
 ### P2P path
 
 `Supplier -> PurchaseRequisition -> PurchaseOrder -> PurchaseOrderLine -> GoodsReceipt -> GoodsReceiptLine -> PurchaseInvoice -> PurchaseInvoiceLine -> DisbursementPayment`
+
+There is also a direct service-settlement branch:
+
+`JournalEntry (Accrual) -> PurchaseInvoiceLine.AccrualJournalEntryID -> PurchaseInvoice -> DisbursementPayment`
 
 ### Manufacturing path
 
@@ -139,7 +144,7 @@ Not every operational document posts to the general ledger.
 | Payroll registers | Yes | Posts wages and payroll liabilities |
 | Payroll payments | Yes | Posts accrued payroll and cash |
 | Payroll liability remittances | Yes | Posts payroll liabilities and cash |
-| Purchase invoices | Yes | Posts GRNI clearing, AP, and purchase variance |
+| Purchase invoices | Yes | Posts GRNI clearing for receipt-matched lines, or clears `2040` for accrued-service lines, then posts AP |
 | Disbursements | Yes | Posts AP and cash |
 | Journal entries | Yes | Opening, recurring manual, manufacturing reclass, reversal, and year-end close journals |
 
@@ -191,7 +196,7 @@ Start with:
 
 - The SQLite export is the easiest format for SQL work.
 - `CashReceiptApplication` is the authoritative invoice-settlement link in O2C.
-- For P2P traceability, prefer `PurchaseOrderLine.RequisitionID` and `PurchaseInvoiceLine.GoodsReceiptLineID`.
+- For P2P traceability, prefer `PurchaseOrderLine.RequisitionID`, `PurchaseInvoiceLine.GoodsReceiptLineID`, and `PurchaseInvoiceLine.AccrualJournalEntryID`.
 - For manufacturing traceability, start from `WorkOrderID`.
 - For payroll traceability, start from `PayrollPeriodID` and `PayrollRegisterID`.
 - For raw multi-year income-statement analysis, exclude the two year-end close entry types.

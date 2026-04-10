@@ -89,6 +89,32 @@ Recommended outputs:
 - open AP by supplier category
 - overdue AP by aging bucket
 
+### Accrued expense roll-forward and settlement timing
+
+Use:
+
+- `JournalEntry`
+- `GLEntry`
+- `PurchaseInvoice`
+- `PurchaseInvoiceLine`
+- `DisbursementPayment`
+- `Account`
+- `Supplier`
+- `Item`
+
+Recommended steps:
+
+1. filter `JournalEntry` to `EntryType = Accrual` and `EntryType = Accrual Adjustment`
+2. use `PurchaseInvoiceLine[AccrualJournalEntryID]` to identify direct service invoice lines that clear prior accruals
+3. summarize accrued amount, invoiced amount, and paid amount by month and expense family
+4. tie the ledger view back to `2040` in `GLEntry`
+
+Suggested outputs:
+
+- accrued-expense roll-forward by month
+- invoice-clearing lag by expense family
+- residual accrued balances still open at period end
+
 ### Payroll liability and cash-flow review
 
 Use:
@@ -318,6 +344,21 @@ Use:
 - `AnomalyLog`
 - `ValidationSummary`
 - the base document sheets that the anomaly references
+
+### Accrual cleanup review
+
+Use:
+
+- `JournalEntry`
+- `PurchaseInvoice`
+- `PurchaseInvoiceLine`
+- `DisbursementPayment`
+
+Recommended outputs:
+
+- accruals with no linked service invoice after a long lag
+- service invoices materially above or below the original accrual amount
+- rare accrual-adjustment journals by month and expense family
 
 Suggested workflow:
 

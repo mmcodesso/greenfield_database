@@ -5,6 +5,8 @@ from typing import Any
 
 import pandas as pd
 
+from greenfield_dataset.journals import ACCRUAL_ACCOUNT_METADATA, accrual_journal_details
+from greenfield_dataset.master_data import ACCRUAL_SERVICE_ITEMS
 from greenfield_dataset.manufacturing import (
     manufacturing_open_state,
     open_work_order_remaining_quantity_map,
@@ -81,7 +83,7 @@ def validate_phase2(context: GenerationContext) -> dict[str, Any]:
     exceptions = list(results["exceptions"])
 
     expected_counts = {
-        "Item": context.settings.item_count,
+        "Item": context.settings.item_count + len(ACCRUAL_SERVICE_ITEMS),
         "Customer": context.settings.customer_count,
         "Supplier": context.settings.supplier_count,
     }
@@ -401,7 +403,37 @@ def validate_account_rollforward(context: GenerationContext) -> dict[str, Any]:
         account_rows = operational_gl[operational_gl["AccountID"].astype(int).eq(account_id)]
         return round(float(account_rows["Credit"].sum()) - float(account_rows["Debit"].sum()), 2)
 
-    cleared_grni = round(sum(purchase_invoice_line_matched_basis_map(context).values()), 2)
+    def gl_credit_net_all(account_number: str) -> float:
+        account_id = account_id_by_number(context, account_number)
+        account_rows = gl[gl["AccountID"].astype(int).eq(account_id)]
+        return round(float(account_rows["Credit"].sum()) - float(account_rows["Debit"].sum()), 2)
+
+    matched_basis_map = purchase_invoice_line_matched_basis_map(context)
+    purchase_invoice_lines = context.tables["PurchaseInvoiceLine"]
+    inventory_invoice_line_ids = set(
+        purchase_invoice_lines.loc[purchase_invoice_lines["GoodsReceiptLineID"].notna(), "PILineID"].astype(int).tolist()
+    ) if not purchase_invoice_lines.empty else set()
+    cleared_grni = round(
+        sum(
+            float(amount)
+            for piline_id, amount in matched_basis_map.items()
+            if int(piline_id) in inventory_invoice_line_ids
+        ),
+        2,
+    )
+    accrued_expense_opening_balance = journal_entry_type_amount_by_account(context, "Opening", "2040")
+    accrued_expense_accrual_total = round(
+        sum(float(entry["Amount"]) for entry in accrual_journal_details(context)),
+        2,
+    )
+    accrued_expense_clear_total = round(
+        sum(float(value) for value in accrued_service_clear_amounts_by_journal(context).values()),
+        2,
+    )
+    accrued_expense_adjustment_total = round(
+        sum(float(value) for value in accrued_adjustment_amounts_by_journal(context).values()),
+        2,
+    )
     credit_memo_allocations = credit_memo_allocation_map(context)
     customer_credit_total = round(
         sum(float(allocation["customer_credit_amount"]) for allocation in credit_memo_allocations.values()),
@@ -504,6 +536,17 @@ def validate_account_rollforward(context: GenerationContext) -> dict[str, Any]:
             "actual": gl_credit_net("2020"),
         },
         {
+            "name": "Accrued Expenses",
+            "expected": round(
+                accrued_expense_opening_balance
+                + accrued_expense_accrual_total
+                - accrued_expense_clear_total
+                - accrued_expense_adjustment_total,
+                2,
+            ),
+            "actual": gl_credit_net_all("2040"),
+        },
+        {
             "name": "WIP",
             "expected": round(
                 float(context.tables["MaterialIssueLine"]["ExtendedStandardCost"].sum())
@@ -569,12 +612,18 @@ def validate_p2p_phase9_controls(context: GenerationContext) -> dict[str, Any]:
     purchase_order_lines = context.tables["PurchaseOrderLine"]
     requisitions = context.tables["PurchaseRequisition"]
     goods_receipt_lines = context.tables["GoodsReceiptLine"]
+    journal_entries = context.tables["JournalEntry"]
+    items = context.tables["Item"]
     purchase_invoices = context.tables["PurchaseInvoice"]
     purchase_invoice_lines = context.tables["PurchaseInvoiceLine"]
     exceptions: list[dict[str, Any]] = []
 
     requisition_item_ids = requisitions.set_index("RequisitionID")["ItemID"].to_dict() if not requisitions.empty else {}
     valid_requisition_ids = set(requisitions["RequisitionID"].astype(int)) if not requisitions.empty else set()
+    valid_accrual_journal_ids = set(
+        journal_entries.loc[journal_entries["EntryType"].eq("Accrual"), "JournalEntryID"].astype(int).tolist()
+    ) if not journal_entries.empty else set()
+    item_group_lookup = items.set_index("ItemID")["ItemGroup"].to_dict() if not items.empty else {}
     valid_goods_receipt_line_ids = (
         set(goods_receipt_lines["GoodsReceiptLineID"].astype(int)) if not goods_receipt_lines.empty else set()
     )
@@ -653,6 +702,42 @@ def validate_p2p_phase9_controls(context: GenerationContext) -> dict[str, Any]:
                 })
 
     if not purchase_invoice_lines.empty:
+        service_invoice_lines = purchase_invoice_lines[purchase_invoice_lines["AccrualJournalEntryID"].notna()]
+        if not service_invoice_lines.empty:
+            invalid_accrual_ids = sorted(
+                set(service_invoice_lines["AccrualJournalEntryID"].astype(int)) - valid_accrual_journal_ids
+            )
+            if invalid_accrual_ids:
+                exceptions.append({
+                    "type": "invoice_line_missing_accrual_journal",
+                    "message": f"Accrued service invoice lines reference missing accrual journals: {invalid_accrual_ids[:5]}.",
+                })
+
+            service_lines_with_receipts = service_invoice_lines[service_invoice_lines["GoodsReceiptLineID"].notna()]
+            if not service_lines_with_receipts.empty:
+                exceptions.append({
+                    "type": "service_invoice_line_has_receipt",
+                    "message": "Accrued service invoice lines should not reference goods receipt lines.",
+                })
+
+            service_lines_with_po = service_invoice_lines[service_invoice_lines["POLineID"].notna()]
+            if not service_lines_with_po.empty:
+                exceptions.append({
+                    "type": "service_invoice_line_has_po_line",
+                    "message": "Accrued service invoice lines should not reference PO lines.",
+                })
+
+            non_service_items = [
+                int(line.PILineID)
+                for line in service_invoice_lines.itertuples(index=False)
+                if str(item_group_lookup.get(int(line.ItemID), "")) != "Services"
+            ]
+            if non_service_items:
+                exceptions.append({
+                    "type": "service_invoice_item_mismatch",
+                    "message": f"Accrued service invoice lines do not use service items: {non_service_items[:5]}.",
+                })
+
         linked_invoice_lines = purchase_invoice_lines[purchase_invoice_lines["GoodsReceiptLineID"].notna()]
         orphan_receipt_line_ids = sorted(
             set(linked_invoice_lines["GoodsReceiptLineID"].astype(int)) - valid_goods_receipt_line_ids
@@ -1025,6 +1110,73 @@ def next_month(year: int, month: int) -> tuple[int, int]:
     return int(current.year), int(current.month)
 
 
+def journal_entry_type_amount_by_account(context: GenerationContext, entry_type: str, account_number: str) -> float:
+    gl = context.tables["GLEntry"]
+    journal_entries = context.tables["JournalEntry"]
+    if gl.empty or journal_entries.empty:
+        return 0.0
+
+    account_id = account_id_by_number(context, account_number)
+    journal_type_by_id = journal_entries.set_index("JournalEntryID")["EntryType"].to_dict()
+    journal_gl = gl[
+        gl["VoucherType"].eq("JournalEntry")
+        & gl["SourceDocumentType"].eq("JournalEntry")
+        & gl["SourceDocumentID"].notna()
+        & gl["AccountID"].astype(int).eq(account_id)
+    ].copy()
+    if journal_gl.empty:
+        return 0.0
+
+    journal_gl["EntryType"] = journal_gl["SourceDocumentID"].astype(int).map(journal_type_by_id)
+    matched = journal_gl[journal_gl["EntryType"].eq(entry_type)]
+    return round(float(matched["Credit"].sum()) - float(matched["Debit"].sum()), 2)
+
+
+def accrued_service_clear_amounts_by_journal(context: GenerationContext) -> dict[int, float]:
+    accrual_amounts = {
+        int(entry["JournalEntryID"]): float(entry["Amount"])
+        for entry in accrual_journal_details(context)
+    }
+    invoice_lines = context.tables["PurchaseInvoiceLine"]
+    if invoice_lines.empty or "AccrualJournalEntryID" not in invoice_lines.columns:
+        return {}
+
+    cleared: dict[int, float] = {}
+    for line in invoice_lines[invoice_lines["AccrualJournalEntryID"].notna()].sort_values(["PurchaseInvoiceID", "PILineID"]).itertuples(index=False):
+        journal_entry_id = int(line.AccrualJournalEntryID)
+        remaining = float(accrual_amounts.get(journal_entry_id, 0.0)) - float(cleared.get(journal_entry_id, 0.0))
+        clear_amount = money(max(0.0, min(float(line.LineTotal), remaining)))
+        cleared[journal_entry_id] = money(float(cleared.get(journal_entry_id, 0.0)) + clear_amount)
+    return cleared
+
+
+def accrued_adjustment_amounts_by_journal(context: GenerationContext) -> dict[int, float]:
+    journal_entries = context.tables["JournalEntry"]
+    gl = context.tables["GLEntry"]
+    if journal_entries.empty or gl.empty:
+        return {}
+
+    adjustments = journal_entries[journal_entries["EntryType"].eq("Accrual Adjustment")]
+    if adjustments.empty:
+        return {}
+
+    accrued_expenses_account_id = account_id_by_number(context, "2040")
+    adjustment_amounts: dict[int, float] = {}
+    for journal in adjustments.itertuples(index=False):
+        if pd.isna(journal.ReversesJournalEntryID):
+            continue
+        linked_rows = gl[
+            gl["SourceDocumentType"].eq("JournalEntry")
+            & gl["SourceDocumentID"].notna()
+            & gl["SourceDocumentID"].astype(int).eq(int(journal.JournalEntryID))
+            & gl["AccountID"].astype(int).eq(accrued_expenses_account_id)
+        ]
+        adjustment_amounts[int(journal.ReversesJournalEntryID)] = money(
+            float(adjustment_amounts.get(int(journal.ReversesJournalEntryID), 0.0)) + float(linked_rows["Debit"].sum())
+        )
+    return adjustment_amounts
+
+
 def validate_journal_controls(context: GenerationContext) -> dict[str, Any]:
     journal_entries = context.tables["JournalEntry"]
     gl = context.tables["GLEntry"]
@@ -1058,35 +1210,72 @@ def validate_journal_controls(context: GenerationContext) -> dict[str, Any]:
             })
 
     journal_lookup = journal_entries.set_index("JournalEntryID").to_dict("index")
-    reversals = journal_entries[journal_entries["EntryType"].eq("Accrual Reversal")]
-    for reversal in reversals.itertuples(index=False):
-        reverses_id = reversal.ReversesJournalEntryID
+    accrual_amounts = {
+        int(entry["JournalEntryID"]): float(entry["Amount"])
+        for entry in accrual_journal_details(context)
+    }
+    cleared_by_accrual = accrued_service_clear_amounts_by_journal(context)
+    adjustment_totals = accrued_adjustment_amounts_by_journal(context)
+    accrued_expenses_account_id = account_id_by_number(context, "2040")
+    adjustments = journal_entries[journal_entries["EntryType"].eq("Accrual Adjustment")]
+    for adjustment in adjustments.itertuples(index=False):
+        reverses_id = adjustment.ReversesJournalEntryID
         if pd.isna(reverses_id):
             exceptions.append({
-                "type": "missing_reversal_link",
-                "journal_entry_id": int(reversal.JournalEntryID),
-                "message": "Accrual reversal is missing ReversesJournalEntryID.",
+                "type": "missing_adjustment_link",
+                "journal_entry_id": int(adjustment.JournalEntryID),
+                "message": "Accrual adjustment is missing ReversesJournalEntryID.",
             })
             continue
 
         original = journal_lookup.get(int(reverses_id))
         if original is None or original["EntryType"] != "Accrual":
             exceptions.append({
-                "type": "invalid_reversal_link",
-                "journal_entry_id": int(reversal.JournalEntryID),
-                "message": "Accrual reversal does not reference a valid Accrual journal entry.",
+                "type": "invalid_adjustment_link",
+                "journal_entry_id": int(adjustment.JournalEntryID),
+                "message": "Accrual adjustment does not reference a valid Accrual journal entry.",
             })
             continue
 
-        original_year = pd.Timestamp(original["PostingDate"]).year
-        original_month = pd.Timestamp(original["PostingDate"]).month
-        expected_year, expected_month = next_month(int(original_year), int(original_month))
-        expected_posting_date = first_business_day(expected_year, expected_month).strftime("%Y-%m-%d")
-        if str(reversal.PostingDate) != expected_posting_date:
+        if pd.Timestamp(adjustment.PostingDate) <= pd.Timestamp(original["PostingDate"]):
             exceptions.append({
-                "type": "late_reversal",
-                "journal_entry_id": int(reversal.JournalEntryID),
-                "message": "Accrual reversal was not posted on the first business day of the following month.",
+                "type": "premature_adjustment",
+                "journal_entry_id": int(adjustment.JournalEntryID),
+                "message": "Accrual adjustment was posted on or before the original accrual date.",
+            })
+            continue
+
+        source_rows = gl_by_source.get(int(adjustment.JournalEntryID))
+        current_adjustment_amount = 0.0
+        if source_rows is not None:
+            current_adjustment_amount = round(
+                float(
+                    source_rows[
+                        source_rows["AccountID"].astype(int).eq(accrued_expenses_account_id)
+                    ]["Debit"].sum()
+                ),
+                2,
+            )
+
+        original_amount = float(accrual_amounts.get(int(reverses_id), 0.0))
+        prior_adjustments = round(float(adjustment_totals.get(int(reverses_id), 0.0)) - current_adjustment_amount, 2)
+        remaining_before_adjustment = round(
+            original_amount
+            - float(cleared_by_accrual.get(int(reverses_id), 0.0))
+            - prior_adjustments,
+            2,
+        )
+        if current_adjustment_amount <= 0:
+            exceptions.append({
+                "type": "empty_adjustment",
+                "journal_entry_id": int(adjustment.JournalEntryID),
+                "message": "Accrual adjustment does not debit accrued expenses.",
+            })
+        elif current_adjustment_amount >= remaining_before_adjustment:
+            exceptions.append({
+                "type": "full_or_excess_adjustment",
+                "journal_entry_id": int(adjustment.JournalEntryID),
+                "message": "Accrual adjustment is not partial or exceeds remaining accrued balance.",
             })
 
     fiscal_years = range(
@@ -1117,8 +1306,8 @@ def validate_journal_controls(context: GenerationContext) -> dict[str, Any]:
             1 for year, month in fiscal_months(context) if monthly_manufacturing_overhead_pool_amount(context, year, month) > 0
         ),
         "Depreciation": len(fiscal_months(context)) * 3,
-        "Accrual": len(fiscal_months(context)),
-        "Accrual Reversal": max(len(fiscal_months(context)) - 1, 0),
+        "Accrual": len(fiscal_months(context)) * len(ACCRUAL_ACCOUNT_METADATA),
+        "Accrual Reversal": 0,
         "Year-End Close - P&L to Income Summary": len(list(fiscal_years)),
         "Year-End Close - Income Summary to Retained Earnings": len(list(fiscal_years)),
     }

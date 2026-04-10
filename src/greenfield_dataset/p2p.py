@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from collections import defaultdict
 
+import numpy as np
 import pandas as pd
 
+from greenfield_dataset.journals import ACCRUAL_ACCOUNT_METADATA, accrual_journal_details
 from greenfield_dataset.schema import TABLE_COLUMNS
 from greenfield_dataset.settings import GenerationContext
 from greenfield_dataset.utils import format_doc_number, money, next_id, qty, random_date_in_month
@@ -61,6 +63,17 @@ SUPPLIER_RISK_LEAD_DAYS = {
     "Medium": (2, 4),
     "High": (4, 8),
 }
+
+ACCRUAL_SERVICE_ITEM_CODE_BY_ACCOUNT = {
+    "6100": "SRV-INS",
+    "6140": "SRV-SW",
+    "6180": "SRV-PRO",
+}
+
+ACCRUED_SERVICE_SETTLEMENT_RATE = 0.93
+ACCRUED_SERVICE_LAG_DAYS = (15, 60)
+ACCRUED_SERVICE_AMOUNT_FACTOR_RANGE = (0.94, 1.08)
+ACCRUED_SERVICE_PAYMENT_RATE = 0.88
 
 
 def append_rows(context: GenerationContext, table_name: str, rows: list[dict]) -> None:
@@ -127,6 +140,36 @@ def payment_term_days(payment_terms: str) -> int:
         return int(str(payment_terms).split()[-1])
     except (ValueError, IndexError):
         return 30
+
+
+def service_item_id_by_account(context: GenerationContext) -> dict[str, int]:
+    items = context.tables["Item"]
+    mapping: dict[str, int] = {}
+    for account_number, item_code in ACCRUAL_SERVICE_ITEM_CODE_BY_ACCOUNT.items():
+        matches = items.loc[items["ItemCode"].eq(item_code), "ItemID"]
+        if matches.empty:
+            raise ValueError(f"Service item {item_code} is required for accrued expense settlement.")
+        mapping[account_number] = int(matches.iloc[0])
+    return mapping
+
+
+def preferred_service_supplier_by_account(context: GenerationContext) -> dict[str, int]:
+    suppliers = context.tables["Supplier"].copy()
+    approved = suppliers[suppliers["IsApproved"].astype(int).eq(1)].copy()
+    service_suppliers = approved[approved["SupplierCategory"].eq("Services")].copy()
+    if service_suppliers.empty:
+        service_suppliers = approved
+    if service_suppliers.empty:
+        raise ValueError("At least one approved supplier is required for accrued expense settlement.")
+
+    risk_order = {"Low": 0, "Medium": 1, "High": 2}
+    service_suppliers["RiskOrder"] = service_suppliers["SupplierRiskRating"].map(risk_order).fillna(99)
+    supplier_ids = service_suppliers.sort_values(["RiskOrder", "SupplierID"])["SupplierID"].astype(int).tolist()
+    account_numbers = list(ACCRUAL_ACCOUNT_METADATA)
+    return {
+        account_number: supplier_ids[index % len(supplier_ids)]
+        for index, account_number in enumerate(account_numbers)
+    }
 
 
 def active_purchasable_items(context: GenerationContext) -> pd.DataFrame:
@@ -289,13 +332,14 @@ def purchase_invoice_line_cost_center_map(context: GenerationContext) -> dict[in
     cost_center_map: dict[int, int | None] = {}
     for line in invoice_lines.itertuples(index=False):
         goods_receipt_line_id = None if pd.isna(line.GoodsReceiptLineID) else int(line.GoodsReceiptLineID)
+        po_line_id = None if pd.isna(line.POLineID) else int(line.POLineID)
         cost_center_value = (
             receipt_line_cost_centers.get(goods_receipt_line_id)
             if goods_receipt_line_id is not None
             else None
         )
-        if cost_center_value is None:
-            cost_center_value = po_line_cost_centers.get(int(line.POLineID))
+        if cost_center_value is None and po_line_id is not None:
+            cost_center_value = po_line_cost_centers.get(po_line_id)
         cost_center_map[int(line.PILineID)] = cost_center_value
     return cost_center_map
 
@@ -307,10 +351,21 @@ def purchase_invoice_line_matched_basis_map(context: GenerationContext) -> dict[
 
     po_unit_costs = context.tables["PurchaseOrderLine"].set_index("POLineID")["UnitCost"].astype(float).to_dict()
     receipt_lines = context.tables["GoodsReceiptLine"].set_index("GoodsReceiptLineID").to_dict("index")
+    accrual_amounts = {
+        int(entry["JournalEntryID"]): float(entry["Amount"])
+        for entry in accrual_journal_details(context)
+    }
 
     matched_basis: dict[int, float] = {}
     for line in invoice_lines.itertuples(index=False):
-        unit_basis = float(po_unit_costs.get(int(line.POLineID), line.UnitCost))
+        accrual_journal_entry_id = None if pd.isna(line.AccrualJournalEntryID) else int(line.AccrualJournalEntryID)
+        if accrual_journal_entry_id is not None:
+            accrual_amount = float(accrual_amounts.get(accrual_journal_entry_id, line.LineTotal))
+            matched_basis[int(line.PILineID)] = money(min(float(line.LineTotal), accrual_amount))
+            continue
+
+        po_line_id = None if pd.isna(line.POLineID) else int(line.POLineID)
+        unit_basis = float(po_unit_costs.get(po_line_id, line.UnitCost))
         goods_receipt_line_id = None if pd.isna(line.GoodsReceiptLineID) else int(line.GoodsReceiptLineID)
         if goods_receipt_line_id is not None:
             receipt_line = receipt_lines.get(goods_receipt_line_id)
@@ -858,6 +913,7 @@ def generate_month_purchase_invoices(context: GenerationContext, year: int, mont
             "PurchaseInvoiceID": int(header["PurchaseInvoiceID"]),
             "POLineID": int(receipt_line.POLineID),
             "GoodsReceiptLineID": int(receipt_line.GoodsReceiptLineID),
+            "AccrualJournalEntryID": None,
             "LineNumber": line_number,
             "ItemID": int(receipt_line.ItemID),
             "Quantity": quantity_invoiced,
@@ -933,6 +989,103 @@ def generate_month_disbursements(context: GenerationContext, year: int, month: i
             "ClearedDate": (payment_date + pd.Timedelta(days=int(rng.integers(1, 5)))).strftime("%Y-%m-%d"),
         })
 
+    append_rows(context, "DisbursementPayment", payment_rows)
+    update_purchase_invoice_statuses(context)
+
+
+def generate_accrued_service_settlements(context: GenerationContext) -> None:
+    purchase_invoice_lines = context.tables["PurchaseInvoiceLine"]
+    if (
+        not purchase_invoice_lines.empty
+        and "AccrualJournalEntryID" in purchase_invoice_lines.columns
+        and purchase_invoice_lines["AccrualJournalEntryID"].notna().any()
+    ):
+        raise ValueError("Accrued service settlements have already been generated.")
+
+    suppliers = context.tables["Supplier"]
+    if suppliers.empty:
+        return
+
+    service_item_ids = service_item_id_by_account(context)
+    supplier_by_account = preferred_service_supplier_by_account(context)
+    supplier_lookup = suppliers.set_index("SupplierID").to_dict("index")
+    fiscal_end = pd.Timestamp(context.settings.fiscal_year_end)
+
+    invoice_rows: list[dict] = []
+    invoice_line_rows: list[dict] = []
+    payment_rows: list[dict] = []
+
+    for accrual in accrual_journal_details(context):
+        accrual_id = int(accrual["JournalEntryID"])
+        rng = np.random.default_rng(context.settings.random_seed + accrual_id * 809)
+        if float(rng.random()) > ACCRUED_SERVICE_SETTLEMENT_RATE:
+            continue
+
+        accrual_date = pd.Timestamp(accrual["PostingDate"])
+        lag_days = int(rng.integers(ACCRUED_SERVICE_LAG_DAYS[0], ACCRUED_SERVICE_LAG_DAYS[1] + 1))
+        invoice_date = accrual_date + pd.Timedelta(days=lag_days)
+        if invoice_date > fiscal_end:
+            continue
+
+        account_number = str(accrual["ExpenseAccountNumber"])
+        supplier_id = int(supplier_by_account[account_number])
+        supplier = supplier_lookup[supplier_id]
+        purchase_invoice_id = next_id(context, "PurchaseInvoice")
+        received_date = min(invoice_date + pd.Timedelta(days=int(rng.integers(0, 3))), fiscal_end)
+        due_date = invoice_date + pd.Timedelta(days=payment_term_days(str(supplier["PaymentTerms"])))
+        subtotal = money(float(accrual["Amount"]) * float(rng.uniform(*ACCRUED_SERVICE_AMOUNT_FACTOR_RANGE)))
+        if subtotal <= 0:
+            continue
+
+        invoice_rows.append({
+            "PurchaseInvoiceID": purchase_invoice_id,
+            "InvoiceNumber": f"ASV{supplier_id:04d}-{invoice_date.year}-{purchase_invoice_id:06d}",
+            "InvoiceDate": invoice_date.strftime("%Y-%m-%d"),
+            "ReceivedDate": received_date.strftime("%Y-%m-%d"),
+            "DueDate": due_date.strftime("%Y-%m-%d"),
+            "PurchaseOrderID": None,
+            "SupplierID": supplier_id,
+            "SubTotal": subtotal,
+            "TaxAmount": 0.0,
+            "GrandTotal": subtotal,
+            "Status": "Approved",
+            "ApprovedByEmployeeID": approver_id(context, subtotal),
+            "ApprovedDate": received_date.strftime("%Y-%m-%d"),
+        })
+        invoice_line_rows.append({
+            "PILineID": next_id(context, "PurchaseInvoiceLine"),
+            "PurchaseInvoiceID": purchase_invoice_id,
+            "POLineID": None,
+            "GoodsReceiptLineID": None,
+            "AccrualJournalEntryID": accrual_id,
+            "LineNumber": 1,
+            "ItemID": int(service_item_ids[account_number]),
+            "Quantity": 1.0,
+            "UnitCost": subtotal,
+            "LineTotal": subtotal,
+        })
+
+        if due_date <= fiscal_end and float(rng.random()) <= ACCRUED_SERVICE_PAYMENT_RATE:
+            disbursement_id = next_id(context, "DisbursementPayment")
+            lower_bound = max(invoice_date, due_date - pd.Timedelta(days=4))
+            upper_bound = min(fiscal_end, due_date + pd.Timedelta(days=12))
+            payment_date = random_date_between(rng, lower_bound, upper_bound)
+            payment_method = str(rng.choice(DISBURSEMENT_METHODS, p=[0.65, 0.25, 0.10]))
+            payment_rows.append({
+                "DisbursementID": disbursement_id,
+                "PaymentNumber": format_doc_number("DP", int(payment_date.year), disbursement_id),
+                "PaymentDate": payment_date.strftime("%Y-%m-%d"),
+                "SupplierID": supplier_id,
+                "PurchaseInvoiceID": purchase_invoice_id,
+                "Amount": subtotal,
+                "PaymentMethod": payment_method,
+                "CheckNumber": f"CHK{disbursement_id:07d}" if payment_method == "Check" else None,
+                "ApprovedByEmployeeID": approver_id(context, subtotal),
+                "ClearedDate": min(payment_date + pd.Timedelta(days=int(rng.integers(1, 5))), fiscal_end).strftime("%Y-%m-%d"),
+            })
+
+    append_rows(context, "PurchaseInvoice", invoice_rows)
+    append_rows(context, "PurchaseInvoiceLine", invoice_line_rows)
     append_rows(context, "DisbursementPayment", payment_rows)
     update_purchase_invoice_statuses(context)
 

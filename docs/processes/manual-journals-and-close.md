@@ -1,10 +1,10 @@
 # Manual Journals and Close Cycle
 
 **Audience:** Students, instructors, and analysts who need the finance-team activity explained alongside the operational cycles.  
-**Purpose:** Show how recurring journals, reversals, manufacturing reclasses, and year-end close work in the current dataset.  
+**Purpose:** Show how recurring journals, accrued-expense estimates, manufacturing reclasses, and year-end close work in the current dataset.  
 **What you will learn:** The journal storyline, the journal categories, when entries occur, and how those entries affect analysis.
 
-> **Implemented in current generator:** Opening balance, recurring monthly operating journals, factory-overhead journals, direct-labor reclass journals, manufacturing-overhead reclass journals, accrual reversals, and year-end close entries.
+> **Implemented in current generator:** Opening balance, recurring monthly operating journals, factory-overhead journals, direct-labor reclass journals, manufacturing-overhead reclass journals, month-end accruals, rare accrual adjustments, and year-end close entries.
 
 > **Planned future extension:** More advanced journal sources that may come from future planning or scheduling layers.
 
@@ -16,7 +16,7 @@ Greenfield is not just an operational database. The finance team also records re
 - utilities
 - depreciation
 - month-end accruals
-- accrual reversals
+- rare accrual adjustments
 - factory overhead
 - manufacturing labor and overhead reclasses
 - year-end close
@@ -36,7 +36,9 @@ flowchart LR
     DL[Direct Labor Reclass]
     OH[Manufacturing Overhead Reclass]
     AC[Accruals]
-    RV[Accrual Reversals]
+    PI[Accrued-Service Invoices]
+    DP[Service Invoice Payments]
+    AJ[Accrual Adjustments]
     YC[Year-End Close]
     JE[JournalEntry]
     GL[GLEntry]
@@ -47,9 +49,11 @@ flowchart LR
     DL --> JE
     OH --> JE
     AC --> JE
-    RV --> JE
+    AJ --> JE
     YC --> JE
     JE --> GL
+    AC --> PI --> DP
+    PI -. Clears accrued expenses through AP .-> GL
 ```
 
 Unlike O2C, P2P, manufacturing, and payroll, this process starts directly in `JournalEntry`. The linked `GLEntry` rows carry the posted accounting detail.
@@ -58,9 +62,10 @@ Unlike O2C, P2P, manufacturing, and payroll, this process starts directly in `Jo
 
 1. The dataset begins with an opening balance journal.
 2. Each month, the generator creates recurring operating journals such as rent, utilities, depreciation, and month-end accruals.
-3. The following month, accrual reversal journals unwind temporary accrual balances.
-4. Manufacturing-related journals record factory overhead and payroll-driven labor and overhead reclasses.
-5. At year end, closing journals move profit-and-loss activity into `8010` Income Summary and then into `3030` Retained Earnings.
+3. Most accrued expenses are later cleared through normal supplier invoices and disbursement payments rather than automatic reversals.
+4. Rare `Accrual Adjustment` journals partially reduce residual estimates when an accrual is overstated or remains stale.
+5. Manufacturing-related journals record factory overhead and payroll-driven labor and overhead reclasses.
+6. At year end, closing journals move profit-and-loss activity into `8010` Income Summary and then into `3030` Retained Earnings.
 
 ## Main Tables in This Process
 
@@ -85,13 +90,13 @@ Current recurring categories:
 - manufacturing overhead reclass
 - depreciation
 - accrual
-- accrual reversal
+- accrual adjustment
 - year-end close
 
 ## Common Student Questions
 
 - Which journal types recur each month?
-- Which entries reverse in the next period?
+- Which accrued expenses later clear through AP rather than through automatic reversal?
 - Which entries support manufacturing cost accounting even though they are journal-based?
 - How much manual journal activity exists beside operational postings?
 - How should year-end close entries be treated in multi-year income-statement analysis?
@@ -99,7 +104,8 @@ Current recurring categories:
 ## Current Implementation Notes
 
 - Manual journal detail is represented through `JournalEntry` headers plus linked `GLEntry` rows. There is no separate journal-line table.
-- `ReversesJournalEntryID` is used for accrual reversals.
+- `ReversesJournalEntryID` is used for rare accrual adjustments that point back to the original accrual.
+- Most accrued expenses are cleared operationally through direct service `PurchaseInvoice` and `DisbursementPayment` activity.
 - Clean-build payroll is now operationally modeled through payroll tables, so payroll accrual and payroll settlement journals are no longer part of the clean recurring-journal set.
 - For raw multi-year income-statement analysis, exclude the two year-end close entry types.
 

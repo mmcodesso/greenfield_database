@@ -4,7 +4,7 @@
 **Purpose:** Show how Greenfield moves from internal demand to supplier payment.  
 **What you will learn:** The business storyline, the main P2P tables, when accounting happens, and what questions the P2P data can answer.
 
-> **Implemented in current generator:** Requisitions, batched purchase orders, manufacturing-driven material demand, partial goods receipts across periods, matched supplier invoices, and split disbursement settlement.
+> **Implemented in current generator:** Requisitions, batched purchase orders, manufacturing-driven material demand, partial goods receipts across periods, matched supplier invoices, direct accrued-service invoices, and split disbursement settlement.
 
 > **Planned future extension:** More advanced supplier planning and sourcing behavior.
 
@@ -13,6 +13,8 @@
 Greenfield does not buy inventory randomly. Employees identify a need, purchasing groups that demand into supplier orders, warehouse staff receive the goods over time, suppliers send invoices, and finance pays those invoices when approved. That demand now comes from both normal business replenishment and manufacturing-driven raw-material and packaging needs.
 
 That gives students a realistic three-way-match style environment where ordering, receiving, invoicing, and payment do not always happen on the same day or even in the same month.
+
+The AP side also includes a second path for certain operating expenses. Finance records month-end accrued expenses, then later clears those estimates through direct supplier service invoices that do not rely on goods receipts.
 
 ## Process Diagram
 
@@ -24,15 +26,18 @@ flowchart LR
     POL[PurchaseOrderLine]
     GR[GoodsReceipt]
     GRL[GoodsReceiptLine]
+    AC[Accrual Journal]
     PI[PurchaseInvoice]
     PIL[PurchaseInvoiceLine]
     DP[DisbursementPayment]
     GL[GLEntry]
 
     PR --> PO --> POL --> GR --> GRL --> PI --> PIL --> DP
+    AC --> PIL
     S --> PO
+    S --> PI
     GR -. Posts Inventory and GRNI .-> GL
-    PI -. Posts GRNI AP and Purchase Variance .-> GL
+    PI -. Posts GRNI or clears 2040 then AP .-> GL
     DP -. Posts AP and Cash .-> GL
 ```
 
@@ -45,8 +50,9 @@ Requisitions and purchase orders do not post to the ledger. Receiving, supplier 
 3. Purchasing batches compatible requisitions into `PurchaseOrder` and `PurchaseOrderLine`.
 4. The warehouse receives inventory over one or more dates, creating `GoodsReceipt` and `GoodsReceiptLine`.
 5. The supplier sends one or more invoices that match the received lines, recorded in `PurchaseInvoice` and `PurchaseInvoiceLine`.
-6. Treasury or AP issues one or more `DisbursementPayment` records against approved supplier invoices.
-7. Posted activity lands in `GLEntry` for AP, inventory, GRNI, and cash analysis.
+6. Some service invoices settle prior accrued expenses directly, so those `PurchaseInvoiceLine` rows intentionally have no receipt linkage.
+7. Treasury or AP issues one or more `DisbursementPayment` records against approved supplier invoices.
+8. Posted activity lands in `GLEntry` for AP, inventory, GRNI, accrued-expense clearing, and cash analysis.
 
 ## Main Tables in This Process
 
@@ -55,7 +61,7 @@ Requisitions and purchase orders do not post to the ledger. Receiving, supplier 
 | Internal demand | `PurchaseRequisition` | Shows who requested the item and for which cost center |
 | Supplier order | `PurchaseOrder`, `PurchaseOrderLine` | Shows what was ordered, from whom, and at what expected cost |
 | Receiving | `GoodsReceipt`, `GoodsReceiptLine` | Shows what physically arrived and when |
-| Supplier billing | `PurchaseInvoice`, `PurchaseInvoiceLine` | Shows what the supplier billed and which receipt lines were matched |
+| Supplier billing | `PurchaseInvoice`, `PurchaseInvoiceLine` | Shows what the supplier billed, whether the line matched a receipt, and whether it cleared a prior accrual |
 | Payment | `DisbursementPayment` | Shows how and when the invoice was settled |
 
 ## When Accounting Happens
@@ -63,7 +69,7 @@ Requisitions and purchase orders do not post to the ledger. Receiving, supplier 
 | Event | Accounting effect |
 |---|---|
 | Goods receipt | Debit inventory, credit GRNI |
-| Purchase invoice | Debit GRNI, debit or credit purchase variance, credit AP |
+| Purchase invoice | For inventory lines: debit GRNI, debit or credit purchase variance, credit AP. For accrued-service lines: debit `2040` up to the estimate, book any excess to expense, and credit AP |
 | Disbursement | Debit AP, credit cash |
 
 ## Common Student Questions
@@ -77,7 +83,8 @@ Requisitions and purchase orders do not post to the ledger. Receiving, supplier 
 ## Current Implementation Notes
 
 - `PurchaseOrderLine.RequisitionID` is the authoritative requisition link when POs batch several requisitions.
-- `PurchaseInvoiceLine.GoodsReceiptLineID` is the authoritative clean-match link for receipt-to-invoice analysis.
+- `PurchaseInvoiceLine.GoodsReceiptLineID` is the authoritative clean-match link for receipt-based inventory invoicing.
+- `PurchaseInvoiceLine.AccrualJournalEntryID` is the authoritative link for direct accrued-service invoice settlement.
 - P2P flow is multi-period in the current generator. Receiving, invoicing, and payment do not need to occur in the same month.
 
 ## Where to Go Next

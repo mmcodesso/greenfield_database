@@ -21,8 +21,8 @@ The target ranges below come from the project's earlier design-planning model. T
 | Group | Table | Target rows | Current default rows |
 |---|---|---:|---:|
 | Accounting core | Account | 75 to 95 | 98 |
-| Accounting core | JournalEntry | 900 to 1,500 | 670 |
-| Accounting core | GLEntry | 60,000 to 110,000 | 620,706 |
+| Accounting core | JournalEntry | 900 to 1,500 | 736 |
+| Accounting core | GLEntry | 60,000 to 110,000 | 621,329 |
 | O2C | Customer | 150 to 300 | 220 |
 | O2C | SalesOrder | 4,500 to 9,000 | 6,916 |
 | O2C | SalesOrderLine | 13,000 to 30,000 | 26,795 |
@@ -43,9 +43,9 @@ The target ranges below come from the project's earlier design-planning model. T
 | P2P | PurchaseOrderLine | 7,000 to 18,000 | 14,787 |
 | P2P | GoodsReceipt | 2,100 to 5,000 | 24,355 |
 | P2P | GoodsReceiptLine | 6,500 to 17,000 | 24,512 |
-| P2P | PurchaseInvoice | 2,100 to 5,000 | 33,845 |
-| P2P | PurchaseInvoiceLine | 6,500 to 17,000 | 34,218 |
-| P2P | DisbursementPayment | 2,300 to 5,500 | 35,643 |
+| P2P | PurchaseInvoice | 2,100 to 5,000 | 34,015 |
+| P2P | PurchaseInvoiceLine | 6,500 to 17,000 | 34,388 |
+| P2P | DisbursementPayment | 2,300 to 5,500 | 35,784 |
 | Manufacturing | BillOfMaterial | Not specified in original design | 77 |
 | Manufacturing | BillOfMaterialLine | Not specified in original design | 281 |
 | Manufacturing | WorkOrder | Not specified in original design | 3,981 |
@@ -60,7 +60,7 @@ The target ranges below come from the project's earlier design-planning model. T
 | Payroll | PayrollRegisterLine | Not specified in original design | 52,332 |
 | Payroll | PayrollPayment | Not specified in original design | 8,320 |
 | Payroll | PayrollLiabilityRemittance | Not specified in original design | 387 |
-| Master data | Item | 180 to 350 | 240 |
+| Master data | Item | 180 to 350 | 243 |
 | Master data | Warehouse | 2 to 3 | 2 |
 | Master data | Employee | 55 to 75 | 64 |
 | Organizational planning | CostCenter | 8 to 14 | 9 |
@@ -76,6 +76,15 @@ Phase 13 materially changed total row volume through:
 - labor-time detail tied to work orders
 - larger ledger volume from payroll postings
 - lower recurring-journal counts because clean-build payroll is no longer simulated through payroll accrual and payroll settlement journals
+
+## What Changed in the Accrued-Expense Rework
+
+The accrued-expense settlement rework changed row volume in a narrower but important way:
+
+- `Accrual Reversal` journals were removed from the clean build
+- monthly accruals now generate three separate accrual journals, one for each expense family
+- a small number of `Accrual Adjustment` journals remain for rare cleanup activity
+- direct service `PurchaseInvoice` and `DisbursementPayment` rows now clear most accrued expenses operationally
 
 ## How to Read These Counts
 

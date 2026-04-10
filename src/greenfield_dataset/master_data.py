@@ -119,6 +119,24 @@ ITEM_GROUP_CONFIG = {
     "Raw Materials": ("RAW", "Purchased Material", "Roll", "1045", None, None, (5, 55), None),
 }
 
+ACCRUAL_SERVICE_ITEMS = {
+    "6100": {
+        "ItemCode": "SRV-INS",
+        "ItemName": "Insurance Service",
+        "StandardCost": 4500.0,
+    },
+    "6140": {
+        "ItemCode": "SRV-SW",
+        "ItemName": "IT and Software Service",
+        "StandardCost": 6000.0,
+    },
+    "6180": {
+        "ItemCode": "SRV-PRO",
+        "ItemName": "Professional Services",
+        "StandardCost": 5000.0,
+    },
+}
+
 MANUFACTURED_SUPPLY_MODE_PROBABILITY = {
     "Furniture": 0.62,
     "Lighting": 0.55,
@@ -529,7 +547,36 @@ def generate_items(context: GenerationContext) -> None:
             items.loc[row_index, "StandardFixedOverheadCost"] = float(cost_profile["StandardFixedOverheadCost"])
             items.loc[row_index, "StandardConversionCost"] = float(cost_profile["StandardConversionCost"])
 
-    context.tables["Item"] = items
+    service_rows = []
+    for account_number, service_item in ACCRUAL_SERVICE_ITEMS.items():
+        service_rows.append({
+            "ItemID": next_id(context, "Item"),
+            "ItemCode": service_item["ItemCode"],
+            "ItemName": service_item["ItemName"],
+            "ItemGroup": "Services",
+            "ItemType": "Service",
+            "StandardCost": money(float(service_item["StandardCost"])),
+            "ListPrice": None,
+            "UnitOfMeasure": "Month",
+            "SupplyMode": "Purchased",
+            "ProductionLeadTimeDays": 0,
+            "StandardLaborHoursPerUnit": 0.0,
+            "StandardDirectLaborCost": 0.0,
+            "StandardVariableOverheadCost": 0.0,
+            "StandardFixedOverheadCost": 0.0,
+            "StandardConversionCost": 0.0,
+            "InventoryAccountID": None,
+            "RevenueAccountID": None,
+            "COGSAccountID": None,
+            "PurchaseVarianceAccountID": account_id_by_number(context, "5060"),
+            "TaxCategory": "Exempt",
+            "IsActive": 1,
+        })
+
+    if service_rows:
+        items = pd.concat([items, pd.DataFrame(service_rows, columns=TABLE_COLUMNS["Item"])], ignore_index=True)
+
+    context.tables["Item"] = items[TABLE_COLUMNS["Item"]]
 
 
 def generate_customers(context: GenerationContext) -> None:

@@ -58,13 +58,14 @@ def test_generate_phase2_master_data() -> None:
     generate_customers(context)
     generate_suppliers(context)
 
-    assert len(context.tables["Item"]) == context.settings.item_count
+    assert len(context.tables["Item"]) == context.settings.item_count + 3
     assert len(context.tables["BillOfMaterial"]) > 0
     assert len(context.tables["BillOfMaterialLine"]) > 0
     assert len(context.tables["Customer"]) == context.settings.customer_count
     assert len(context.tables["Supplier"]) == context.settings.supplier_count
     assert context.tables["Item"]["ItemCode"].is_unique
-    assert context.tables["Item"]["InventoryAccountID"].notna().all()
+    non_service_items = context.tables["Item"][~context.tables["Item"]["ItemGroup"].eq("Services")]
+    assert non_service_items["InventoryAccountID"].notna().all()
     assert context.tables["Item"]["SupplyMode"].isin(["Purchased", "Manufactured"]).all()
     assert context.tables["Customer"]["SalesRepEmployeeID"].notna().all()
     assert context.tables["Supplier"]["DefaultCurrency"].eq("USD").all()

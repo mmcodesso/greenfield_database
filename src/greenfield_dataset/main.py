@@ -12,7 +12,11 @@ import pandas as pd
 from greenfield_dataset.anomalies import inject_anomalies
 from greenfield_dataset.budgets import generate_budgets, generate_opening_balances
 from greenfield_dataset.exporters import export_excel, export_sqlite, export_validation_report
-from greenfield_dataset.journals import generate_recurring_manual_journals, generate_year_end_close_journals
+from greenfield_dataset.journals import (
+    generate_accrual_adjustment_journals,
+    generate_recurring_manual_journals,
+    generate_year_end_close_journals,
+)
 from greenfield_dataset.manufacturing import (
     close_eligible_work_orders,
     generate_boms,
@@ -40,6 +44,7 @@ from greenfield_dataset.o2c import (
     o2c_open_state,
 )
 from greenfield_dataset.p2p import (
+    generate_accrued_service_settlements,
     generate_month_disbursements,
     generate_month_goods_receipts,
     generate_month_p2p,
@@ -242,6 +247,8 @@ def build_phase8(config_path: str | Path = "config/settings.yaml") -> Generation
     context = build_phase5(config_path)
 
     generate_recurring_manual_journals(context)
+    generate_accrued_service_settlements(context)
+    generate_accrual_adjustment_journals(context)
     post_all_transactions(context)
     generate_year_end_close_journals(context)
     inject_anomalies(context)
@@ -259,6 +266,8 @@ def build_phase9(config_path: str | Path = "config/settings.yaml") -> Generation
     context = build_phase5(config_path)
 
     generate_recurring_manual_journals(context)
+    generate_accrued_service_settlements(context)
+    generate_accrual_adjustment_journals(context)
     post_all_transactions(context)
     generate_year_end_close_journals(context)
     validate_phase9(context)
@@ -273,6 +282,8 @@ def build_phase11(config_path: str | Path = "config/settings.yaml") -> Generatio
     generate_month_sales_returns(context, 2026, 1)
     generate_month_customer_refunds(context, 2026, 1)
     generate_recurring_manual_journals(context)
+    generate_accrued_service_settlements(context)
+    generate_accrual_adjustment_journals(context)
     post_all_transactions(context)
     generate_year_end_close_journals(context)
     validate_phase11(context)
@@ -302,6 +313,8 @@ def build_phase12(config_path: str | Path = "config/settings.yaml") -> Generatio
         generate_month_purchase_invoices(context, year, month)
         generate_month_disbursements(context, year, month)
     generate_recurring_manual_journals(context)
+    generate_accrued_service_settlements(context)
+    generate_accrual_adjustment_journals(context)
     post_all_transactions(context)
     generate_year_end_close_journals(context)
     validate_phase12(context)
@@ -331,6 +344,8 @@ def build_phase13(config_path: str | Path = "config/settings.yaml") -> Generatio
         generate_month_purchase_invoices(context, year, month)
         generate_month_disbursements(context, year, month)
     generate_recurring_manual_journals(context)
+    generate_accrued_service_settlements(context)
+    generate_accrual_adjustment_journals(context)
     post_all_transactions(context)
     generate_year_end_close_journals(context)
     validate_phase13(context)
@@ -587,6 +602,18 @@ def build_full_dataset(config_path: str | Path = "config/settings.yaml") -> Gene
     with logged_step("Generate recurring manual journals"):
         generate_recurring_manual_journals(context)
         log_table_counts(context, ("JournalEntry", "GLEntry"), "manual journals")
+
+    with logged_step("Generate accrued expense settlement invoices and payments"):
+        generate_accrued_service_settlements(context)
+        log_table_counts(
+            context,
+            ("PurchaseInvoice", "PurchaseInvoiceLine", "DisbursementPayment"),
+            "accrued expense settlements",
+        )
+
+    with logged_step("Generate rare accrual adjustment journals"):
+        generate_accrual_adjustment_journals(context)
+        log_table_counts(context, ("JournalEntry", "GLEntry"), "accrual adjustments")
 
     with logged_step("Post transactions to general ledger"):
         post_all_transactions(context)

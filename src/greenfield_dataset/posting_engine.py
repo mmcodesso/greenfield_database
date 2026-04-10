@@ -4,6 +4,7 @@ from typing import Any
 
 import pandas as pd
 
+from greenfield_dataset.journals import accrual_journal_details
 from greenfield_dataset.p2p import (
     goods_receipt_line_cost_center_map,
     purchase_invoice_line_cost_center_map,
@@ -1123,11 +1124,17 @@ def post_purchase_invoices(context: GenerationContext) -> list[dict[str, Any]]:
         return []
 
     ap_account_id = account_id_by_number(context, "2010")
+    accrued_expenses_account_id = account_id_by_number(context, "2040")
     grni_account_id = account_id_by_number(context, "2020")
     variance_account_id = account_id_by_number(context, "5060")
     matched_basis_by_invoice_line = purchase_invoice_line_matched_basis_map(context)
     invoice_line_cost_centers = purchase_invoice_line_cost_center_map(context)
     invoice_header_cost_centers = purchase_invoice_unique_cost_center_map(context)
+    accrual_by_journal_id = {
+        int(entry["JournalEntryID"]): entry
+        for entry in accrual_journal_details(context)
+    }
+    accrued_expense_cleared_by_journal: dict[int, float] = {}
     lines_by_invoice = {key: value for key, value in invoice_lines.groupby("PurchaseInvoiceID")}
     rows: list[dict[str, Any]] = []
 
@@ -1139,8 +1146,59 @@ def post_purchase_invoices(context: GenerationContext) -> list[dict[str, Any]]:
 
         header_cost_center_id = invoice_header_cost_centers.get(int(invoice.PurchaseInvoiceID))
         for line in invoice_lines_for_header.itertuples(index=False):
-            accrued_amount = money(float(matched_basis_by_invoice_line.get(int(line.PILineID), line.LineTotal)))
             line_cost_center_id = invoice_line_cost_centers.get(int(line.PILineID))
+            accrual_journal_entry_id = None if pd.isna(line.AccrualJournalEntryID) else int(line.AccrualJournalEntryID)
+            if accrual_journal_entry_id is not None:
+                accrual_detail = accrual_by_journal_id.get(accrual_journal_entry_id)
+                if accrual_detail is None:
+                    raise ValueError(
+                        f"Purchase invoice line {int(line.PILineID)} references missing accrual journal {accrual_journal_entry_id}."
+                    )
+
+                remaining_accrual = float(accrual_detail["Amount"]) - float(
+                    accrued_expense_cleared_by_journal.get(accrual_journal_entry_id, 0.0)
+                )
+                clear_amount = money(max(0.0, min(float(line.LineTotal), remaining_accrual)))
+                if clear_amount > 0:
+                    voucher_rows.append(build_gl_row(
+                        context,
+                        invoice.ApprovedDate,
+                        accrued_expenses_account_id,
+                        clear_amount,
+                        0.0,
+                        "PurchaseInvoice",
+                        invoice.InvoiceNumber,
+                        "PurchaseInvoice",
+                        int(invoice.PurchaseInvoiceID),
+                        int(line.PILineID),
+                        line_cost_center_id,
+                        "Clear accrued expenses on supplier invoice",
+                        int(invoice.ApprovedByEmployeeID),
+                    ))
+                    accrued_expense_cleared_by_journal[accrual_journal_entry_id] = money(
+                        float(accrued_expense_cleared_by_journal.get(accrual_journal_entry_id, 0.0)) + clear_amount
+                    )
+
+                excess_amount = money(float(line.LineTotal) - clear_amount)
+                if excess_amount > 0:
+                    voucher_rows.append(build_gl_row(
+                        context,
+                        invoice.ApprovedDate,
+                        account_id_by_number(context, str(accrual_detail["ExpenseAccountNumber"])),
+                        excess_amount,
+                        0.0,
+                        "PurchaseInvoice",
+                        invoice.InvoiceNumber,
+                        "PurchaseInvoice",
+                        int(invoice.PurchaseInvoiceID),
+                        int(line.PILineID),
+                        line_cost_center_id,
+                        "Record supplier invoice amount above accrued estimate",
+                        int(invoice.ApprovedByEmployeeID),
+                    ))
+                continue
+
+            accrued_amount = money(float(matched_basis_by_invoice_line.get(int(line.PILineID), line.LineTotal)))
             voucher_rows.append(build_gl_row(
                 context,
                 invoice.ApprovedDate,

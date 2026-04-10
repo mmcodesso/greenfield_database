@@ -12,7 +12,7 @@
 
 | Folder | Coverage |
 |---|---|
-| [../../queries/financial](../../queries/financial) | Revenue, margin, AR, AP, payroll liabilities, trial balance, control-account work, and manufacturing balance review |
+| [../../queries/financial](../../queries/financial) | Revenue, margin, AR, AP, accrued expenses, payroll liabilities, trial balance, control-account work, and manufacturing balance review |
 | [../../queries/managerial](../../queries/managerial) | Budgeting, cost centers, sales mix, inventory movement, purchasing, BOMs, work orders, labor, unit cost, and profitability |
 | [../../queries/audit](../../queries/audit) | Document-chain completeness, approvals, cut-off, duplicate checks, anomaly review, manufacturing controls, and payroll controls |
 
@@ -112,9 +112,11 @@ Changes to avoid in this phase:
 3. AP aging
 4. payroll liability roll-forward
 5. gross-to-net payroll review
-6. trial balance
-7. journal and close-cycle review
-8. control-account reconciliation
+6. accrued expense roll-forward
+7. accrued versus invoiced versus paid timing
+8. trial balance
+9. journal and close-cycle review
+10. control-account reconciliation
 
 ### Managerial
 
@@ -144,6 +146,7 @@ Changes to avoid in this phase:
 9. work-order close timing review
 10. payroll control review
 11. labor-time-after-close and paid-without-time review
+12. over and under accrual review
 
 ## Where to Go Next
 

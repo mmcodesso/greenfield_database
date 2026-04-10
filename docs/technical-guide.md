@@ -62,14 +62,16 @@ flowchart LR
     R[Generate Monthly P2P Demand]
     F[Generate Manufacturing Demand and Activity]
     L[Generate Payroll and Labor Activity]
-    P[Post Operational Events]
     J[Generate Recurring Manual Journals]
+    S1[Generate Accrued-Service Settlements]
+    A1[Generate Rare Accrual Adjustments]
+    P[Post Operational Events]
     Y[Generate Year-End Close]
     V[Validate]
     A[Inject Anomalies]
     X[Export]
 
-    S --> C --> E --> M --> B --> T --> R --> F --> L --> J --> P --> Y --> V --> A --> X
+    S --> C --> E --> M --> B --> T --> R --> F --> L --> J --> S1 --> A1 --> P --> Y --> V --> A --> X
 ```
 
 In plain language, the build works like this:
@@ -84,9 +86,11 @@ In plain language, the build works like this:
 8. generate payroll periods, labor time, payroll registers, payments, remittances, and work-order close inputs
 9. generate shipments, billing, collections, returns, supplier invoicing, and disbursements
 10. generate recurring manual journals
-11. post operational and payroll events into `GLEntry`
-12. generate year-end close journals after operational posting is complete
-13. validate the clean dataset, inject anomalies, revalidate, and export
+11. generate direct service supplier invoices and payments that settle prior accrued expenses
+12. generate rare accrual-adjustment journals for residual over-accrual cleanup
+13. post operational and payroll events into `GLEntry`
+14. generate year-end close journals after operational posting is complete
+15. validate the clean dataset, inject anomalies, revalidate, and export
 
 ## Module Responsibilities
 
@@ -101,7 +105,7 @@ In plain language, the build works like this:
 | `budgets.py` | Generate opening balances and budgets |
 | `o2c.py` | Generate orders, shipments, invoices, receipts, applications, returns, credits, and refunds |
 | `p2p.py` | Generate requisitions, purchase orders, receipts, supplier invoices, and disbursements |
-| `journals.py` | Generate recurring journals, reversals, factory overhead, manufacturing labor / overhead reclasses, and year-end close |
+| `journals.py` | Generate recurring journals, accrued-expense estimates, rare accrual adjustments, factory overhead, manufacturing labor / overhead reclasses, and year-end close |
 | `posting_engine.py` | Convert source events into balanced GL entries |
 | `validations.py` | Run document, accounting, payroll, manufacturing, and roll-forward checks |
 | `anomalies.py` | Inject configured anomalies and log them |

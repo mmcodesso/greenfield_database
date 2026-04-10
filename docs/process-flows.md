@@ -19,7 +19,7 @@ Use this page as the hub for the detailed process guides:
 | P2P | [processes/p2p.md](processes/p2p.md) | Requisition through PO, goods receipt, supplier invoice, and payment |
 | Manufacturing | [processes/manufacturing.md](processes/manufacturing.md) | BOMs, work orders, material issues, completions, and work-order close |
 | Payroll | [processes/payroll.md](processes/payroll.md) | Pay periods, labor time, payroll registers, payments, remittances, and labor integration |
-| Journals and close | [processes/manual-journals-and-close.md](processes/manual-journals-and-close.md) | Recurring journals, reversals, reclasses, and year-end close |
+| Journals and close | [processes/manual-journals-and-close.md](processes/manual-journals-and-close.md) | Recurring journals, accrued-expense estimates and adjustments, reclasses, and year-end close |
 
 ## Greenfield Process Map
 

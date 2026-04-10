@@ -46,9 +46,15 @@ def test_phase9_multimonth_p2p_partial_and_linked_flows() -> None:
     assert repeated_receipt_months.gt(1).any()
 
     assert len(purchase_invoice_lines) > len(purchase_invoices)
-    assert purchase_invoice_lines["GoodsReceiptLineID"].notna().all()
+    matched_lines = purchase_invoice_lines[purchase_invoice_lines["GoodsReceiptLineID"].notna()]
+    service_lines = purchase_invoice_lines[purchase_invoice_lines["AccrualJournalEntryID"].notna()]
+    assert not matched_lines.empty
+    assert matched_lines["AccrualJournalEntryID"].isna().all()
+    if not service_lines.empty:
+        assert service_lines["GoodsReceiptLineID"].isna().all()
+        assert service_lines["POLineID"].isna().all()
 
-    invoice_dates = purchase_invoice_lines.merge(
+    invoice_dates = matched_lines.merge(
         purchase_invoices[["PurchaseInvoiceID", "InvoiceDate"]],
         on="PurchaseInvoiceID",
         how="left",
@@ -81,5 +87,6 @@ def test_phase9_full_dataset_p2p_volume_regression(full_dataset_artifacts: dict[
     assert row_counts["GoodsReceiptLine"] > 4500
     assert row_counts["PurchaseInvoiceLine"] > 4000
     assert row_counts["DisbursementPayment"] > 2300
+    assert context.tables["PurchaseInvoiceLine"]["AccrualJournalEntryID"].notna().any()
     assert full_dataset_artifacts["validation_report_path"].exists()
     assert full_dataset_artifacts["generation_log_path"].exists()
