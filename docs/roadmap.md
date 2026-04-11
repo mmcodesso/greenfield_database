@@ -41,6 +41,19 @@ Phase 16 delivered:
 
 This phase turned payroll and manufacturing labor into a more realistic time-and-attendance model without changing standard-cost valuation.
 
+## Recently Delivered: Phase 17 - Starter Analytics and Audit Anomaly Teaching Expansion
+
+Phase 17 delivered:
+
+- broader use of the default `config/settings.yaml` build for starter analytics, anomaly work, and walkthrough cases
+- broader starter SQL coverage across financial, managerial, and audit topics
+- richer audit anomaly coverage inside the main `standard` anomaly profile
+- case-style walkthrough docs under `docs/analytics/cases/`
+- richer subprocess diagrams inside the process guides
+- SQLite export support for `AnomalyLog` and `ValidationSummary`
+
+This phase did not add a new operational process. It made the current Phase 16 foundation easier to teach, easier to audit, and easier to explore with starter analytics.
+
 ## Previously Delivered: Phase 15 - Capacity and Scheduling
 
 Phase 15 delivered:
@@ -56,17 +69,17 @@ This phase turned the routing-aware manufacturing model into a capacity-aware sc
 
 ## Next Planning Focus
 
-The next major phase is not locked yet, but the most likely follow-on work is deeper workforce and operations planning built on top of the new time-clock layer.
+The next major phase is not locked yet, but the most likely follow-on work is deeper workforce-planning detail beneath the current daily time-clock model.
 
 Likely next candidates:
 
 - raw punch-event detail beneath the current approved daily time-clock model
 - rotating shift rosters and richer attendance-planning logic
-- shift-level capacity planning that ties workforce availability more tightly to work-center scheduling
+- shift-level workforce planning that ties employee availability more tightly to work-center scheduling
 - deeper labor-timing anomaly packs and workforce-efficiency analytics
 
 ## Recommended Sequence
 
-1. Expand the starter analytics pack around the Phase 16 time-clock layer
-2. Add richer workforce-planning detail when the next phase is locked
-3. Continue extending analytics and anomaly packs on top of those operational layers
+1. Add raw punch-event detail beneath the current approved daily time-clock layer
+2. Add rotating shift rosters and richer workforce-planning detail
+3. Continue extending analytics and anomaly packs on top of those deeper workforce layers

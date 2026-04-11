@@ -38,6 +38,7 @@ The docs are organized for two broad uses:
 | Document | What it covers |
 |---|---|
 | [analytics/index.md](analytics/index.md) | Analytics starter hub for SQL and Excel users |
+| [analytics/cases/index.md](analytics/cases/index.md) | Guided walkthroughs that connect process story, starter SQL, Excel, and interpretation |
 | [analytics/financial.md](analytics/financial.md) | Financial accounting starter analytics, including payroll and manufacturing balance review |
 | [analytics/managerial.md](analytics/managerial.md) | Managerial accounting starter analytics, including product-cost and labor analysis |
 | [analytics/audit.md](analytics/audit.md) | Auditing starter analytics, including manufacturing and payroll control review |
@@ -67,6 +68,7 @@ The docs are organized for two broad uses:
 - payroll periods, shift assignments, approved daily time clocks, labor time, payroll registers, payroll payments, and liability remittances
 - recurring manual journals, manufacturing labor / overhead reclasses, and year-end close
 - analytics starter docs, SQL packs, Excel workflow guidance, and exports
+- guided analytics case walkthroughs for O2C, P2P, manufacturing, and audit teaching
 
 ### Planned future extension
 

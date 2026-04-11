@@ -82,6 +82,7 @@ from greenfield_dataset.validations import (
     validate_phase15,
     validate_phase15_2,
     validate_phase16,
+    validate_phase17,
 )
 
 
@@ -258,13 +259,7 @@ def build_phase7(config_path: str | Path = "config/settings.yaml") -> Generation
 
 
 def build_phase8(config_path: str | Path = "config/settings.yaml") -> GenerationContext:
-    context = build_phase5(config_path)
-
-    generate_recurring_manual_journals(context)
-    generate_accrued_service_settlements(context)
-    generate_accrual_adjustment_journals(context)
-    post_all_transactions(context)
-    generate_year_end_close_journals(context)
+    context = build_phase17(config_path)
     inject_anomalies(context)
     validate_phase8(context)
     if context.settings.export_sqlite:
@@ -494,6 +489,41 @@ def build_phase16(
     post_all_transactions(context)
     generate_year_end_close_journals(context)
     validate_phase16(context, scope=validation_scope)
+    export_validation_report(context)
+
+    return context
+
+
+def build_phase17(
+    config_path: str | Path = "config/settings.yaml",
+    validation_scope: str = "full",
+) -> GenerationContext:
+    context = build_phase2(config_path)
+    generate_payroll_periods(context)
+    generate_shift_definitions_and_assignments(context)
+
+    for year, month in [(2026, 1), (2026, 2), (2026, 3), (2026, 4)]:
+        generate_month_o2c(context, year, month)
+        generate_month_requisitions(context, year, month)
+        generate_month_work_orders_and_requisitions(context, year, month)
+        generate_month_purchase_orders(context, year, month)
+        generate_month_goods_receipts(context, year, month)
+        generate_month_manufacturing_activity(context, year, month)
+        generate_month_payroll(context, year, month)
+        close_eligible_work_orders(context, year, month)
+        generate_month_shipments(context, year, month)
+        generate_month_sales_invoices(context, year, month)
+        generate_month_cash_receipts(context, year, month)
+        generate_month_sales_returns(context, year, month)
+        generate_month_customer_refunds(context, year, month)
+        generate_month_purchase_invoices(context, year, month)
+        generate_month_disbursements(context, year, month)
+    generate_recurring_manual_journals(context)
+    generate_accrued_service_settlements(context)
+    generate_accrual_adjustment_journals(context)
+    post_all_transactions(context)
+    generate_year_end_close_journals(context)
+    validate_phase17(context, scope=validation_scope)
     export_validation_report(context)
 
     return context
@@ -811,7 +841,7 @@ def build_full_dataset(
         log_table_counts(context, ("JournalEntry", "GLEntry"), "year-end close")
 
     with logged_step("Validate clean final dataset"):
-        log_validation_results("phase16", validate_phase16(context, scope=validation_scope))
+        log_validation_results("phase17", validate_phase17(context, scope=validation_scope))
 
     with logged_step("Inject configured anomalies"):
         inject_anomalies(context)
@@ -851,7 +881,7 @@ def build_full_dataset(
 
 
 def print_summary(context: GenerationContext) -> None:
-    row_counts = context.validation_results["phase16"]["row_counts"]
+    row_counts = context.validation_results["phase17"]["row_counts"]
     print("Full dataset generated.")
     print(f"Fiscal range: {context.settings.fiscal_year_start} to {context.settings.fiscal_year_end}")
     print(f"Accounts: {row_counts['Account']}")
@@ -901,7 +931,7 @@ def print_summary(context: GenerationContext) -> None:
     print(f"Payroll payments: {row_counts['PayrollPayment']}")
     print(f"Payroll liability remittances: {row_counts['PayrollLiabilityRemittance']}")
     print(f"GL entries: {row_counts['GLEntry']}")
-    print(f"GL balance exceptions: {context.validation_results['phase16']['gl_balance']['exception_count']}")
+    print(f"GL balance exceptions: {context.validation_results['phase17']['gl_balance']['exception_count']}")
     print(f"Anomalies logged: {len(context.anomaly_log)}")
     print(f"SQLite export: {context.settings.sqlite_path}")
     print(f"Excel export: {context.settings.excel_path}")

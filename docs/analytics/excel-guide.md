@@ -13,7 +13,7 @@
 The generated workbook contains:
 
 - one worksheet for each dataset table
-- `AnomalyLog` when anomalies are enabled
+- `AnomalyLog`
 - `ValidationSummary`
 
 Recommended first steps:
@@ -23,6 +23,8 @@ Recommended first steps:
 3. freeze the top row on large sheets
 4. format date and amount columns consistently
 5. add slicers or timeline filters for year and month where helpful
+
+For anomaly-focused teaching, use the default workbook from `config/settings.yaml` and then filter pivots or tables to one fiscal year when you want a narrower lab. The default workbook already includes `AnomalyLog`.
 
 ## Financial Accounting Workflows
 
@@ -183,6 +185,65 @@ If you want to exclude year-end close activity from ledger analysis:
 - filter out:
   - `Year-End Close - P&L to Income Summary`
   - `Year-End Close - Income Summary to Retained Earnings`
+
+### Customer deposits and unapplied cash
+
+Use:
+
+- `CashReceipt`
+- `CashReceiptApplication`
+- `Customer`
+
+Recommended outputs:
+
+- open unapplied cash by customer
+- age of open customer deposits
+- days from receipt to first application
+
+### Retained earnings and close-entry impact
+
+Use:
+
+- `GLEntry`
+- `JournalEntry`
+- `Account`
+
+Recommended outputs:
+
+- pre-close P&L by fiscal year
+- close-entry totals by year-end close step
+- retained-earnings movement from close journals
+
+### Manufacturing cost-component bridge
+
+Use:
+
+- `MaterialIssueLine`
+- `ProductionCompletionLine`
+- `WorkOrderClose`
+- `GLEntry`
+- `Account`
+
+Recommended outputs:
+
+- material issued versus completed standard material cost
+- direct labor and overhead components by month
+- WIP, manufacturing clearing, and variance ledger movement by month
+
+### Payroll expense mix by cost center and pay class
+
+Use:
+
+- `PayrollRegister`
+- `PayrollPeriod`
+- `Employee`
+- `CostCenter`
+
+Recommended outputs:
+
+- gross pay by pay class and cost center
+- employer burden by cost center
+- net-pay mix by month
 
 ## Managerial Accounting Workflows
 
@@ -361,6 +422,41 @@ Suggested charts:
 - overtime trend by work center
 - average clock-in variance by shift
 
+### Backorder, return, and supplier-reliability workflows
+
+Use:
+
+- `SalesOrder`
+- `SalesOrderLine`
+- `ShipmentLine`
+- `CreditMemo`
+- `CustomerRefund`
+- `PurchaseOrder`
+- `GoodsReceipt`
+- `Supplier`
+
+Suggested outputs:
+
+- backorder quantity and fill rate by item group and month
+- return and refund value by region and item group
+- days to first receipt and days to full receipt by supplier
+
+### Paid hours versus productive labor
+
+Use:
+
+- `TimeClockEntry`
+- `LaborTimeEntry`
+- `WorkOrderOperation`
+- `WorkCenter`
+
+Suggested outputs:
+
+- approved paid hours by work center and month
+- direct manufacturing hours by work center and month
+- unallocated paid hours by work center
+- direct productive share percentage
+
 ## Audit Analytics Workflows
 
 ### Document-chain completeness
@@ -422,6 +518,12 @@ Use:
 - `ValidationSummary`
 - the base document sheets that the anomaly references
 
+Suggested workflow:
+
+1. summarize `AnomalyLog` by `anomaly_type`
+2. trace one AP anomaly, one payroll anomaly, and one manufacturing anomaly to the source sheets
+3. compare the sheet-level evidence to the matching SQL starter query
+
 ### Accrual cleanup review
 
 Use:
@@ -462,6 +564,26 @@ Recommended outputs:
 - off-shift clocking review
 - paid-without-clock and clock-without-pay review
 - labor outside scheduled operation windows
+
+### Accrued-service, customer-deposit, and bridge exception review
+
+Use:
+
+- `JournalEntry`
+- `PurchaseInvoice`
+- `PurchaseInvoiceLine`
+- `DisbursementPayment`
+- `CashReceipt`
+- `CashReceiptApplication`
+- `TimeClockEntry`
+- `LaborTimeEntry`
+- `PayrollRegister`
+
+Recommended outputs:
+
+- accrued-service invoices with large differences from their linked accrual
+- open unapplied customer cash older than 30 days
+- payroll hours versus approved-clock-hours mismatch review
 
 ## Clean Analysis vs Anomaly Analysis
 

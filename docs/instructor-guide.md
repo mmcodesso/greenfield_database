@@ -39,6 +39,7 @@ Use these directly with students:
 - [processes/manual-journals-and-close.md](processes/manual-journals-and-close.md)
 - [database-guide.md](database-guide.md)
 - [analytics/index.md](analytics/index.md)
+- [analytics/cases/index.md](analytics/cases/index.md)
 - [analytics/financial.md](analytics/financial.md)
 - [analytics/managerial.md](analytics/managerial.md)
 - [analytics/audit.md](analytics/audit.md)
@@ -71,7 +72,8 @@ Use these to frame the course and answer implementation questions:
 | 6. Financial analytics | Teach revenue, AR, AP, payroll liabilities, trial balance, and close cycle | [analytics/financial.md](analytics/financial.md) | `queries/financial/` |
 | 7. Managerial analytics | Teach budgeting, cost centers, sales mix, product cost, labor, inventory movement, BOMs, and work-order behavior | [analytics/managerial.md](analytics/managerial.md) | `queries/managerial/` |
 | 8. Audit analytics | Teach completeness, approvals, cut-off, duplicates, manufacturing controls, payroll controls, and exception logic | [analytics/audit.md](analytics/audit.md) | `queries/audit/` |
-| 9. Anomaly-focused work | Move from clean analysis to exception-oriented work | [analytics/audit.md](analytics/audit.md), [analytics/excel-guide.md](analytics/excel-guide.md) | `AnomalyLog`, `ValidationSummary`, audit query pack |
+| 9. Guided walkthroughs | Pair one business scenario with a small sequence of starter queries and workbook checks | [analytics/cases/index.md](analytics/cases/index.md) | case docs plus topic query packs |
+| 10. Anomaly-focused work | Move from clean analysis to exception-oriented work | [analytics/audit.md](analytics/audit.md), [analytics/excel-guide.md](analytics/excel-guide.md), [analytics/cases/audit-exception-lab.md](analytics/cases/audit-exception-lab.md) | `AnomalyLog`, `ValidationSummary`, audit query pack |
 
 This sequence can be compressed into fewer weeks or expanded into several assignments. The important sequencing rule is: process understanding first, analytics second.
 
@@ -160,8 +162,14 @@ Use the starter layer for:
 ## Clean Dataset vs Anomaly-Enabled Dataset
 
 - For baseline process and accounting teaching, a clean build with `anomaly_mode: none` is useful.
-- For auditing and controls exercises, the default `standard` build is usually better.
+- For auditing and controls exercises, `config/settings.yaml` is usually the best starting point.
 - Make the distinction explicit to students. Some audit starter queries may return no rows on a clean build, and that is expected.
+
+## Recommended Build Pairing
+
+- Use `config/settings_validation.yaml` when you want a fast clean baseline for instructor prep.
+- Use `config/settings.yaml` when you want the standard five-year anomaly-enabled build for starter analytics, walkthroughs, and audit labs.
+- If you want a narrower classroom exercise, filter the default SQLite or Excel outputs to a single year instead of generating a separate teaching-only config.
 
 ## Teaching Notes
 

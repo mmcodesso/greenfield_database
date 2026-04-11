@@ -77,6 +77,12 @@ def used_primary_keys(
     }
 
 
+def invalidate_all_caches(context: GenerationContext) -> None:
+    for attribute_name in list(vars(context)):
+        if attribute_name.startswith("_"):
+            delattr(context, attribute_name)
+
+
 def compose_timestamp(new_date: str, original_value: object, default_time: str) -> str | None:
     if pd.isna(original_value):
         return None
@@ -368,26 +374,273 @@ def inject_duplicate_vendor_payment_reference(context: GenerationContext, count_
         return
 
     for year in fiscal_years(context):
-        year_payments = rows_for_year(payments, "PaymentDate", year)
+        year_payments = rows_for_year(payments, "PaymentDate", year).copy()
         if len(year_payments) < 2:
             continue
+        used_ids = used_primary_keys(context, "DisbursementPayment", "duplicate_vendor_payment_reference")
+        if used_ids:
+            year_payments = year_payments[~year_payments["DisbursementID"].astype(int).isin(used_ids)]
+        injected = 0
+        for _, supplier_rows in year_payments.groupby("SupplierID", sort=True):
+            supplier_rows = supplier_rows.sort_values(["PaymentDate", "DisbursementID"])
+            if len(supplier_rows) < 2:
+                continue
 
-        first_payment = year_payments.iloc[0]
-        duplicate_reference = first_payment["CheckNumber"] or first_payment["PaymentNumber"]
-        selected = year_payments.iloc[1: 1 + count_per_year]
-        for row in selected.itertuples(index=False):
-            mask = context.tables["DisbursementPayment"]["DisbursementID"].astype(int).eq(int(row.DisbursementID))
+            first_payment = supplier_rows.iloc[0]
+            duplicate_reference = first_payment["CheckNumber"] or first_payment["PaymentNumber"]
+            first_mask = context.tables["DisbursementPayment"]["DisbursementID"].astype(int).eq(int(first_payment["DisbursementID"]))
+            context.tables["DisbursementPayment"].loc[first_mask, "CheckNumber"] = duplicate_reference
+            duplicate_row = supplier_rows.iloc[1]
+            mask = context.tables["DisbursementPayment"]["DisbursementID"].astype(int).eq(int(duplicate_row["DisbursementID"]))
             context.tables["DisbursementPayment"].loc[mask, "PaymentMethod"] = first_payment["PaymentMethod"]
             context.tables["DisbursementPayment"].loc[mask, "CheckNumber"] = duplicate_reference
             log_anomaly(
                 context,
                 "duplicate_vendor_payment_reference",
                 "DisbursementPayment",
-                int(row.DisbursementID),
+                int(duplicate_row["DisbursementID"]),
                 year,
-                "Vendor payment shares a payment reference with another disbursement in the same fiscal year.",
-                "Duplicate CheckNumber or payment reference query by fiscal year.",
+                "Vendor payment shares a duplicate check reference with another payment for the same supplier.",
+                "Duplicate supplier payment reference review by SupplierID and CheckNumber.",
             )
+            injected += 1
+            if injected >= count_per_year:
+                break
+
+
+def inject_duplicate_supplier_invoice_number(context: GenerationContext, count_per_year: int) -> None:
+    invoices = context.tables["PurchaseInvoice"]
+    if len(invoices) < 2 or count_per_year <= 0:
+        return
+
+    for year in fiscal_years(context):
+        year_invoices = rows_for_year(invoices, "InvoiceDate", year).copy()
+        if len(year_invoices) < 2:
+            continue
+        used_ids = used_primary_keys(context, "PurchaseInvoice", "duplicate_supplier_invoice_number")
+        if used_ids:
+            year_invoices = year_invoices[~year_invoices["PurchaseInvoiceID"].astype(int).isin(used_ids)]
+        injected = 0
+        for _, supplier_rows in year_invoices.groupby("SupplierID", sort=True):
+            supplier_rows = supplier_rows.sort_values(["InvoiceDate", "PurchaseInvoiceID"])
+            if len(supplier_rows) < 2:
+                continue
+
+            first_invoice = supplier_rows.iloc[0]
+            duplicate_row = supplier_rows.iloc[1]
+            mask = context.tables["PurchaseInvoice"]["PurchaseInvoiceID"].astype(int).eq(int(duplicate_row["PurchaseInvoiceID"]))
+            context.tables["PurchaseInvoice"].loc[mask, "InvoiceNumber"] = str(first_invoice["InvoiceNumber"])
+            log_anomaly(
+                context,
+                "duplicate_supplier_invoice_number",
+                "PurchaseInvoice",
+                int(duplicate_row["PurchaseInvoiceID"]),
+                year,
+                "Supplier invoice number was duplicated within the same supplier account.",
+                "Duplicate supplier invoice number review by SupplierID and InvoiceNumber.",
+            )
+            injected += 1
+            if injected >= count_per_year:
+                break
+
+
+def inject_missing_payroll_payment(context: GenerationContext, count_per_year: int) -> None:
+    registers = context.tables["PayrollRegister"]
+    payments = context.tables["PayrollPayment"]
+    if registers.empty or payments.empty or count_per_year <= 0:
+        return
+
+    payment_counts = payments.groupby("PayrollRegisterID").size()
+    for year in fiscal_years(context):
+        year_registers = rows_for_year(registers, "ApprovedDate", year).copy()
+        year_registers = year_registers[
+            year_registers["Status"].eq("Approved")
+            & year_registers["ApprovedDate"].notna()
+            & year_registers["PayrollRegisterID"].astype(int).isin(payment_counts.index.astype(int))
+        ]
+        used_ids = used_primary_keys(context, "PayrollRegister", "missing_payroll_payment")
+        if used_ids:
+            year_registers = year_registers[~year_registers["PayrollRegisterID"].astype(int).isin(used_ids)]
+        for row in year_registers.head(count_per_year).itertuples(index=False):
+            context.tables["PayrollPayment"] = context.tables["PayrollPayment"][
+                ~context.tables["PayrollPayment"]["PayrollRegisterID"].astype(int).eq(int(row.PayrollRegisterID))
+            ].reset_index(drop=True)
+            log_anomaly(
+                context,
+                "missing_payroll_payment",
+                "PayrollRegister",
+                int(row.PayrollRegisterID),
+                year,
+                "Approved payroll register no longer has a supporting payroll payment row.",
+                "Payroll control review for approved payroll registers missing payment.",
+            )
+
+
+def inject_payroll_payment_before_approval(context: GenerationContext, count_per_year: int) -> None:
+    registers = context.tables["PayrollRegister"]
+    payments = context.tables["PayrollPayment"]
+    if registers.empty or payments.empty or count_per_year <= 0:
+        return
+
+    payment_lookup = payments.groupby("PayrollRegisterID").size()
+    for year in fiscal_years(context):
+        year_registers = rows_for_year(registers, "ApprovedDate", year).copy()
+        year_registers = year_registers[
+            year_registers["Status"].eq("Approved")
+            & year_registers["ApprovedDate"].notna()
+            & year_registers["PayrollRegisterID"].astype(int).isin(payment_lookup.index.astype(int))
+        ]
+        used_ids = used_primary_keys(context, "PayrollPayment", "payroll_payment_before_approval")
+        injected = 0
+        for row in year_registers.itertuples(index=False):
+            payment_rows = context.tables["PayrollPayment"][
+                context.tables["PayrollPayment"]["PayrollRegisterID"].astype(int).eq(int(row.PayrollRegisterID))
+            ].sort_values(["PaymentDate", "PayrollPaymentID"])
+            if payment_rows.empty:
+                continue
+            payment_row = payment_rows.iloc[0]
+            if int(payment_row["PayrollPaymentID"]) in used_ids:
+                continue
+            target_date = (pd.Timestamp(row.ApprovedDate) - pd.Timedelta(days=1)).strftime("%Y-%m-%d")
+            mask = context.tables["PayrollPayment"]["PayrollPaymentID"].astype(int).eq(int(payment_row["PayrollPaymentID"]))
+            context.tables["PayrollPayment"].loc[mask, "PaymentDate"] = target_date
+            log_anomaly(
+                context,
+                "payroll_payment_before_approval",
+                "PayrollPayment",
+                int(payment_row["PayrollPaymentID"]),
+                year,
+                "Payroll payment date was moved before the payroll register approval date.",
+                "Payroll control review for payroll payments dated before approval.",
+            )
+            injected += 1
+            if injected >= count_per_year:
+                break
+
+
+def inject_missing_work_order_operations(context: GenerationContext, count_per_year: int) -> None:
+    work_orders = context.tables["WorkOrder"]
+    operations = context.tables["WorkOrderOperation"]
+    schedules = context.tables["WorkOrderOperationSchedule"]
+    if work_orders.empty or operations.empty or count_per_year <= 0:
+        return
+
+    items = context.tables["Item"][["ItemID", "SupplyMode"]].copy()
+    manufactured_ids = set(items.loc[items["SupplyMode"].eq("Manufactured"), "ItemID"].astype(int))
+    operation_counts = operations.groupby("WorkOrderID").size()
+    for year in fiscal_years(context):
+        year_orders = rows_for_year(work_orders, "ReleasedDate", year).copy()
+        year_orders = year_orders[
+            year_orders["ItemID"].astype(int).isin(manufactured_ids)
+            & year_orders["WorkOrderID"].astype(int).isin(operation_counts.index.astype(int))
+        ]
+        used_ids = used_primary_keys(context, "WorkOrder", "missing_work_order_operations")
+        if used_ids:
+            year_orders = year_orders[~year_orders["WorkOrderID"].astype(int).isin(used_ids)]
+        injected = 0
+        for row in year_orders.itertuples(index=False):
+            operation_ids = operations.loc[
+                operations["WorkOrderID"].astype(int).eq(int(row.WorkOrderID)),
+                "WorkOrderOperationID",
+            ].astype(int).tolist()
+            if not operation_ids:
+                continue
+            context.tables["WorkOrderOperation"] = context.tables["WorkOrderOperation"][
+                ~context.tables["WorkOrderOperation"]["WorkOrderID"].astype(int).eq(int(row.WorkOrderID))
+            ].reset_index(drop=True)
+            if not schedules.empty:
+                context.tables["WorkOrderOperationSchedule"] = context.tables["WorkOrderOperationSchedule"][
+                    ~context.tables["WorkOrderOperationSchedule"]["WorkOrderOperationID"].astype(int).isin(operation_ids)
+                ].reset_index(drop=True)
+            log_anomaly(
+                context,
+                "missing_work_order_operations",
+                "WorkOrder",
+                int(row.WorkOrderID),
+                year,
+                "Manufactured work order no longer has any work-order operation rows.",
+                "Missing routing or operation-link review for manufactured work orders without operations.",
+            )
+            injected += 1
+            if injected >= count_per_year:
+                break
+
+
+def inject_invalid_direct_labor_operation_link(context: GenerationContext, count_per_year: int) -> None:
+    labor_entries = context.tables["LaborTimeEntry"]
+    if labor_entries.empty or count_per_year <= 0:
+        return
+
+    direct_labor = labor_entries[
+        labor_entries["LaborType"].eq("Direct Manufacturing")
+        & labor_entries["WorkOrderID"].notna()
+        & labor_entries["WorkOrderOperationID"].notna()
+    ].copy()
+    for year in fiscal_years(context):
+        year_entries = rows_for_year(direct_labor, "WorkDate", year).copy()
+        used_ids = used_primary_keys(context, "LaborTimeEntry", "invalid_direct_labor_operation_link")
+        if used_ids:
+            year_entries = year_entries[~year_entries["LaborTimeEntryID"].astype(int).isin(used_ids)]
+        for row in year_entries.head(count_per_year).itertuples(index=False):
+            mask = context.tables["LaborTimeEntry"]["LaborTimeEntryID"].astype(int).eq(int(row.LaborTimeEntryID))
+            context.tables["LaborTimeEntry"].loc[mask, "WorkOrderOperationID"] = None
+            log_anomaly(
+                context,
+                "invalid_direct_labor_operation_link",
+                "LaborTimeEntry",
+                int(row.LaborTimeEntryID),
+                year,
+                "Direct manufacturing labor row is missing its work-order operation link.",
+                "Missing routing or operation-link review for direct labor rows without operation linkage.",
+            )
+
+
+def inject_overlapping_operation_sequence(context: GenerationContext, count_per_year: int) -> None:
+    operations = context.tables["WorkOrderOperation"]
+    if operations.empty or count_per_year <= 0:
+        return
+
+    excluded_work_orders = {
+        int(entry["primary_key_value"])
+        for entry in context.anomaly_log
+        if entry["table_name"] == "WorkOrder" and entry["anomaly_type"] == "missing_work_order_operations"
+    }
+    for year in fiscal_years(context):
+        year_operations = rows_for_year(operations, "ActualStartDate", year).copy()
+        year_operations = year_operations[
+            year_operations["ActualStartDate"].notna() & year_operations["ActualEndDate"].notna()
+        ]
+        used_ids = used_primary_keys(context, "WorkOrderOperation", "overlapping_operation_sequence")
+        if used_ids:
+            year_operations = year_operations[~year_operations["WorkOrderOperationID"].astype(int).isin(used_ids)]
+        injected = 0
+        for work_order_id, work_order_rows in year_operations.groupby("WorkOrderID", sort=True):
+            if int(work_order_id) in excluded_work_orders:
+                continue
+            work_order_rows = work_order_rows.sort_values(["OperationSequence", "WorkOrderOperationID"])
+            if len(work_order_rows) < 2:
+                continue
+            prior_row = work_order_rows.iloc[0]
+            target_row = work_order_rows.iloc[1]
+            if pd.isna(prior_row["ActualEndDate"]) or pd.isna(target_row["ActualStartDate"]):
+                continue
+            target_date = (pd.Timestamp(prior_row["ActualEndDate"]) - pd.Timedelta(days=1)).strftime("%Y-%m-%d")
+            mask = context.tables["WorkOrderOperation"]["WorkOrderOperationID"].astype(int).eq(
+                int(target_row["WorkOrderOperationID"])
+            )
+            context.tables["WorkOrderOperation"].loc[mask, "ActualStartDate"] = target_date
+            log_anomaly(
+                context,
+                "overlapping_operation_sequence",
+                "WorkOrderOperation",
+                int(target_row["WorkOrderOperationID"]),
+                year,
+                "Work-order operation was moved to start before the prior operation finished.",
+                "Operation sequence and final-completion review for overlapping routing operations.",
+            )
+            injected += 1
+            if injected >= count_per_year:
+                break
 
 
 def inject_threshold_adjacent_entries(context: GenerationContext, count_per_year: int) -> None:
@@ -824,12 +1077,15 @@ def inject_labor_after_operation_close(context: GenerationContext, count_per_yea
         return
 
     work_order_lookup = work_orders.set_index("WorkOrderID").to_dict("index")
+    valid_operation_ids = set(context.tables["WorkOrderOperation"]["WorkOrderOperationID"].astype(int))
     time_clock_mask_series = context.tables["TimeClockEntry"]["TimeClockEntryID"].astype(int)
     candidates = labor_entries[
         labor_entries["LaborType"].eq("Direct Manufacturing")
         & labor_entries["WorkOrderID"].notna()
+        & labor_entries["WorkOrderOperationID"].notna()
         & labor_entries["TimeClockEntryID"].notna()
     ].copy()
+    candidates = candidates[candidates["WorkOrderOperationID"].astype(int).isin(valid_operation_ids)]
 
     for year in fiscal_years(context):
         year_candidates = candidates[pd.to_datetime(candidates["WorkDate"]).dt.year.eq(year)].copy()
@@ -889,9 +1145,15 @@ def inject_anomalies(context: GenerationContext) -> None:
     inject_missing_reversal_links(context, int(profile.get("missing_reversal_links_per_year", 0)))
     inject_invoice_before_shipment(context, int(profile.get("invoice_before_shipment_per_year", 0)))
     inject_duplicate_vendor_payment_reference(context, int(profile.get("duplicate_vendor_payments_per_year", 0)))
+    inject_duplicate_supplier_invoice_number(context, int(profile.get("duplicate_supplier_invoice_numbers_per_year", 0)))
     inject_threshold_adjacent_entries(context, int(profile.get("threshold_adjacent_entries_per_year", 0)))
     inject_round_dollar_manual_journals(context, int(profile.get("round_dollar_manual_journals_per_year", 0)))
     inject_related_party_address_matches(context, int(profile.get("related_party_address_matches_per_year", 0)))
+    inject_missing_payroll_payment(context, int(profile.get("missing_payroll_payments_per_year", 0)))
+    inject_payroll_payment_before_approval(context, int(profile.get("payroll_payment_before_approval_per_year", 0)))
+    inject_missing_work_order_operations(context, int(profile.get("missing_work_order_operations_per_year", 0)))
+    inject_invalid_direct_labor_operation_link(context, int(profile.get("invalid_direct_labor_operation_links_per_year", 0)))
+    inject_overlapping_operation_sequence(context, int(profile.get("overlapping_operation_sequence_per_year", 0)))
     inject_scheduled_on_nonworking_day(context, int(profile.get("scheduled_on_nonworking_day_per_year", 0)))
     inject_overbooked_work_center_day(context, int(profile.get("overbooked_work_center_day_per_year", 0)))
     inject_completion_before_operation_end(context, int(profile.get("completion_before_operation_end_per_year", 0)))
@@ -900,3 +1162,4 @@ def inject_anomalies(context: GenerationContext) -> None:
     inject_off_shift_clocking(context, int(profile.get("off_shift_clocking_per_year", 0)))
     inject_paid_without_clock(context, int(profile.get("paid_without_clock_per_year", 0)))
     inject_labor_after_operation_close(context, int(profile.get("labor_after_operation_close_per_year", 0)))
+    invalidate_all_caches(context)

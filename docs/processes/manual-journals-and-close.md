@@ -109,6 +109,26 @@ Current recurring categories:
 - Clean-build payroll is now operationally modeled through payroll tables, so payroll accrual and payroll settlement journals are no longer part of the clean recurring-journal set.
 - For raw multi-year income-statement analysis, exclude the two year-end close entry types.
 
+## Subprocess Spotlight: Accrual Estimate to Settlement to Adjustment
+
+```mermaid
+flowchart LR
+    AC[Accrual Journal]
+    PI[Direct Service PurchaseInvoiceLine]
+    DP[DisbursementPayment]
+    AJ[Accrual Adjustment]
+    GL[GLEntry]
+
+    AC --> PI --> DP
+    AC --> AJ
+    AC -. Recognizes estimated expense and liability .-> GL
+    PI -. Clears 2040 through AP .-> GL
+    DP -. Clears AP through cash .-> GL
+    AJ -. Rare cleanup of residual estimate .-> GL
+```
+
+The teaching point is that accrued expenses are now expected to survive into later operational settlement. They are not blanket-reversed every month. That makes year-end expense totals and liability roll-forwards much more realistic for students.
+
 ## Where to Go Next
 
 - Read [payroll.md](payroll.md) for the operational payroll process.

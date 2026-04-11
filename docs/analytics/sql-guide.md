@@ -25,12 +25,13 @@ Each file is a single SQLite-friendly `SELECT` statement with short comment head
 
 ## Recommended Workflow
 
-1. Generate the SQLite output with `python generate_dataset.py`.
-2. Open `outputs/greenfield_2026_2030.sqlite` in your SQLite tool of choice.
+1. Generate the SQLite output with `python generate_dataset.py` or `python generate_dataset.py config/settings.yaml` for the default five-year anomaly-enabled build, or use `config/settings_validation.yaml` for a fast clean build.
+2. Open the generated SQLite file in your SQLite tool of choice.
 3. Start with one topic area:
    - [financial.md](financial.md)
    - [managerial.md](managerial.md)
    - [audit.md](audit.md)
+   - [cases/index.md](cases/index.md)
 4. Run the corresponding `.sql` files.
 5. Export results or compare them to the Excel workbook.
 
@@ -101,6 +102,7 @@ Changes to avoid in this phase:
 
 - Financial and managerial queries work well on either a clean or default build.
 - Audit queries are often more interesting on the default `standard` anomaly mode.
+- The default build exports `AnomalyLog` and `ValidationSummary` into SQLite as helper tables for audit walkthroughs.
 - Some audit starter queries may return no rows on a clean build. That is expected and not a query failure.
 
 ## Suggested Starter Sequence

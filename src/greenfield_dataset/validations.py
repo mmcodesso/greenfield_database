@@ -2486,6 +2486,42 @@ def validate_phase16(
     return phase16_results
 
 
+def validate_phase17(
+    context: GenerationContext,
+    scope: str = "full",
+    store: bool = True,
+) -> dict[str, Any]:
+    results = validate_phase16(context, scope=scope, store=False)
+
+    phase17_results: dict[str, Any] = {
+        "row_counts": {table: int(len(df)) for table, df in context.tables.items()},
+        "exceptions": list(results["exceptions"]),
+        "validation_scope": results["validation_scope"],
+        "gl_balance": results["gl_balance"],
+        "trial_balance_difference": results["trial_balance_difference"],
+        "account_rollforward": results["account_rollforward"],
+        "o2c_controls": results["o2c_controls"],
+        "p2p_controls": results["p2p_controls"],
+        "journal_controls": results["journal_controls"],
+        "manufacturing_controls": results["manufacturing_controls"],
+        "payroll_controls": results["payroll_controls"],
+        "routing_controls": results["routing_controls"],
+        "capacity_controls": results["capacity_controls"],
+        "time_clock_controls": results["time_clock_controls"],
+    }
+    if store:
+        context.validation_results["phase17"] = phase17_results
+        context.validation_results["phase16"] = phase17_results
+        context.validation_results["phase15_2"] = phase17_results
+        context.validation_results["phase15"] = phase17_results
+        context.validation_results["phase14"] = phase17_results
+        context.validation_results["phase13"] = phase17_results
+        context.validation_results["phase12"] = phase17_results
+        context.validation_results["phase11"] = phase17_results
+        context.validation_results["phase9"] = phase17_results
+    return phase17_results
+
+
 def validate_phase12(context: GenerationContext, store: bool = True) -> dict[str, Any]:
     results = validate_phase15(context, store=False)
     if store:
@@ -2508,7 +2544,7 @@ def validate_phase9(context: GenerationContext, store: bool = True) -> dict[str,
 
 
 def validate_phase8(context: GenerationContext, scope: str = "full") -> dict[str, Any]:
-    results = validate_phase16(context, scope=scope, store=False)
+    results = validate_phase17(context, scope=scope, store=False)
     exceptions = list(results["exceptions"])
 
     if context.settings.anomaly_mode != "none" and not context.anomaly_log:

@@ -87,6 +87,28 @@ Requisitions and purchase orders do not post to the ledger. Receiving, supplier 
 - `PurchaseInvoiceLine.AccrualJournalEntryID` is the authoritative link for direct accrued-service invoice settlement.
 - P2P flow is multi-period in the current generator. Receiving, invoicing, and payment do not need to occur in the same month.
 
+## Subprocess Spotlight: Receipt-Matched AP vs Accrued-Service Settlement
+
+```mermaid
+flowchart LR
+    GR[GoodsReceiptLine]
+    PIL1[PurchaseInvoiceLine with GoodsReceiptLineID]
+    AP1[AP for inventory flow]
+    AC[Accrual Journal]
+    PIL2[PurchaseInvoiceLine with AccrualJournalEntryID]
+    AP2[AP for service-settlement flow]
+
+    GR --> PIL1 --> AP1
+    AC --> PIL2 --> AP2
+```
+
+This branch is one of the most important teaching details in P2P:
+
+- inventory and material invoices follow the receipt-matched path
+- accrued-service invoices intentionally clear prior accruals without receipt linkage
+
+Students should treat both as valid AP behavior, but not as the same control path.
+
 ## Where to Go Next
 
 - Read [../database-guide.md](../database-guide.md) for navigation patterns.

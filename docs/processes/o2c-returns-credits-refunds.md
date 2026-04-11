@@ -77,6 +77,30 @@ This process starts from something that was already shipped and billed. It does 
 - `CreditMemo.OriginalSalesInvoiceID` ties the credit back to the earlier invoice.
 - Refunds are generated only for paid-return scenarios that leave customer credit to be cleared in cash.
 
+## Subprocess Spotlight: Returned Invoice to Credit to Refund
+
+```mermaid
+flowchart LR
+    INV[Original SalesInvoice]
+    PAY[Cash Applied]
+    RET[SalesReturn]
+    CM[CreditMemo]
+    CC[Customer Credit]
+    RF[CustomerRefund]
+
+    INV --> RET --> CM
+    PAY --> CM
+    CM -->|Open invoice still exists| INV
+    CM -->|Invoice already paid| CC --> RF
+```
+
+This view separates two outcomes that students often mix together:
+
+- a credit memo can reduce open receivables
+- or it can create customer credit that is later refunded in cash
+
+That distinction matters for AR analysis, cash analysis, and audit testing.
+
 ## Where to Go Next
 
 - Read [o2c.md](o2c.md) for the main revenue cycle.

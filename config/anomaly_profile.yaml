@@ -12,11 +12,17 @@ profiles:
     missing_approvals_per_year: 2
     invoice_before_shipment_per_year: 3
     duplicate_vendor_payments_per_year: 2
+    duplicate_supplier_invoice_numbers_per_year: 2
     threshold_adjacent_entries_per_year: 3
     related_party_address_matches_per_year: 2
+    missing_payroll_payments_per_year: 1
+    payroll_payment_before_approval_per_year: 1
     missing_reversal_links_per_year: 1
     late_reversals_per_year: 1
     round_dollar_manual_journals_per_year: 2
+    missing_work_order_operations_per_year: 1
+    invalid_direct_labor_operation_links_per_year: 1
+    overlapping_operation_sequence_per_year: 1
     scheduled_on_nonworking_day_per_year: 1
     overbooked_work_center_day_per_year: 1
     completion_before_operation_end_per_year: 1

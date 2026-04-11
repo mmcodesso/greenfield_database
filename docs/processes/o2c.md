@@ -90,6 +90,40 @@ The diagram shows the basic revenue cycle. Orders do not post to the GL. Shippin
 - `CashReceipt.SalesInvoiceID` is compatibility metadata only and should not be treated as the main settlement link.
 - Some receipts remain temporarily unapplied, which supports customer-deposit and cash-application analysis.
 
+## Subprocess Spotlight: Cash Application and Customer Deposits
+
+```mermaid
+flowchart LR
+    CR[CashReceipt]
+    DEP[Customer Deposits and Unapplied Cash]
+    CRA[CashReceiptApplication]
+    INV[SalesInvoice]
+    GL[GLEntry]
+
+    CR --> DEP --> CRA --> INV
+    CR -. Cash receipt posts cash and deposit liability .-> GL
+    CRA -. Application clears deposit liability into AR settlement .-> GL
+```
+
+The key teaching idea is that customer money can arrive before accounting applies it to one or more invoices. That makes `CashReceipt` a cash event and `CashReceiptApplication` the true settlement event.
+
+## Subprocess Spotlight: Backorder to Shipment Lag
+
+```mermaid
+flowchart LR
+    SO[SalesOrderLine]
+    AV[Available Inventory]
+    BO[Backordered Quantity]
+    SH[Later ShipmentLine]
+    SI[Later SalesInvoiceLine]
+
+    SO --> AV
+    AV -->|Enough stock| SH --> SI
+    AV -->|Short stock| BO --> SH
+```
+
+This mini-flow helps students see why order date, shipment date, and invoice date do not always match. Inventory availability drives fulfillment timing, and later shipments create later billing.
+
 ## Where to Go Next
 
 - Read [o2c-returns-credits-refunds.md](o2c-returns-credits-refunds.md) for the return and refund path.

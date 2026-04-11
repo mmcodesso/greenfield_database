@@ -242,6 +242,31 @@ Payroll creates several accounting events:
 - The clean model uses one approved time-clock row per worked day rather than a separate punch-event table.
 - The manufacturing model remains standard-cost based even though payroll provides actual labor detail.
 
+## Subprocess Spotlight: Gross-to-Net and Liability Remittance
+
+```mermaid
+flowchart LR
+    REG[PayrollRegister]
+    NET[Net Pay Liability 2030]
+    TAX[Tax and Deduction Liabilities 2031 2032 2033]
+    PAY[PayrollPayment]
+    REM[PayrollLiabilityRemittance]
+    GL[GLEntry]
+
+    REG --> NET --> PAY
+    REG --> TAX --> REM
+    REG -. Payroll posting .-> GL
+    PAY -. Clears accrued payroll .-> GL
+    REM -. Clears tax and deduction liabilities .-> GL
+```
+
+This subflow helps students split payroll into two separate settlement paths:
+
+- employees are paid through `PayrollPayment`
+- agencies and benefit vendors are cleared later through `PayrollLiabilityRemittance`
+
+That distinction is essential for both financial accounting and payroll-control analytics.
+
 ## Where to Go Next
 
 - Read [manufacturing.md](manufacturing.md) for the production side of labor integration.

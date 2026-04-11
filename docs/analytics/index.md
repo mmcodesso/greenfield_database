@@ -24,3 +24,12 @@
 | Auditing | [audit.md](audit.md) | [queries/audit](../../queries/audit) | operational document sheets, payroll sheets, `TimeClockEntry`, `AttendanceException`, `GLEntry`, `JournalEntry`, `AnomalyLog`, `ValidationSummary` |
 | SQL workflow | [sql-guide.md](sql-guide.md) | All starter SQL folders | SQLite database |
 | Excel workflow | [excel-guide.md](excel-guide.md) | Use SQL results as a comparison point | Excel workbook |
+| Guided walkthroughs | [cases/index.md](cases/index.md) | Mix financial, managerial, and audit packs in sequence | SQLite plus workbook side-by-side |
+
+## Recommended Starter Build
+
+For normal student, instructor, and analyst use, start with the default build:
+
+- `config/settings.yaml`
+
+That build already covers five fiscal years, exports both SQLite and Excel, and turns on the `standard` anomaly pack so the audit starter queries return useful review hits. When you want a narrower exercise, filter the SQL results or workbook to a single fiscal year rather than generating a separate teaching-only profile.

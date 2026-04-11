@@ -38,6 +38,10 @@
 | Accrued expense roll-forward | [12_accrued_expense_rollforward.sql](../../queries/financial/12_accrued_expense_rollforward.sql) |
 | Accrual versus invoice versus payment timing | [13_accrued_vs_invoiced_vs_paid_timing.sql](../../queries/financial/13_accrued_vs_invoiced_vs_paid_timing.sql) |
 | Hourly payroll hours to paid earnings bridge | [14_hourly_payroll_hours_to_paid_earnings_bridge.sql](../../queries/financial/14_hourly_payroll_hours_to_paid_earnings_bridge.sql) |
+| Customer deposits and unapplied cash aging | [15_customer_deposits_and_unapplied_cash_aging.sql](../../queries/financial/15_customer_deposits_and_unapplied_cash_aging.sql) |
+| Retained earnings and close-entry impact | [16_retained_earnings_and_close_entry_impact.sql](../../queries/financial/16_retained_earnings_and_close_entry_impact.sql) |
+| Manufacturing cost-component bridge | [17_manufacturing_cost_component_bridge.sql](../../queries/financial/17_manufacturing_cost_component_bridge.sql) |
+| Payroll expense mix by cost center and pay class | [18_payroll_expense_mix_by_cost_center_and_pay_class.sql](../../queries/financial/18_payroll_expense_mix_by_cost_center_and_pay_class.sql) |
 
 ## Interpretation Notes
 
@@ -46,5 +50,6 @@
 - Payroll register activity records liabilities first; cash leaves through payroll payments and remittances later.
 - For hourly employees, approved `TimeClockEntry` rows are the evidence behind regular and overtime earnings.
 - Manufacturing balance analysis should focus on `1046`, `1090`, and `5080`.
+- Customer deposits and unapplied cash analysis should start from `CashReceipt` and `CashReceiptApplication`, not only from AR.
 - Accrued-expense analysis should focus on `2040`, `PurchaseInvoiceLine.AccrualJournalEntryID`, and the service-item lines that settle those estimates.
 - Year-end close entries are real posted journals and should be filtered when you want raw multi-year P&L activity.

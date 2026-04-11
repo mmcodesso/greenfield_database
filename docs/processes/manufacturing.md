@@ -239,6 +239,34 @@ Manufacturing creates both operational and journal-driven accounting:
 - Raw-material replenishment uses the existing P2P flow instead of a separate procurement subsystem.
 - Manufacturing remains standard-cost based even though payroll now provides actual labor detail, direct labor is assigned at the operation level, hourly attendance is captured, and operations are scheduled against finite daily work-center hours.
 
+## Subprocess Spotlight: Operation Schedule to Time Clock to Payroll to Cost
+
+```mermaid
+flowchart LR
+    WOS[WorkOrderOperationSchedule]
+    TCE[TimeClockEntry]
+    LTE[LaborTimeEntry]
+    PR[PayrollRegister]
+    DR[Direct Labor Reclass]
+    PC[ProductionCompletionLine]
+    WOC[WorkOrderClose]
+
+    WOS --> TCE --> LTE --> PR --> DR
+    LTE --> PC
+    DR --> WOC
+    PC --> WOC
+```
+
+This mini-flow is the bridge students need for product-cost teaching:
+
+- scheduling explains when work should happen
+- time clocks show when hourly labor was approved
+- labor entries allocate that approved time to production
+- payroll turns labor into pay and later manufacturing reclass activity
+- completion and work-order close tie those pieces back into product cost and variance
+
+That is how the dataset supports DL + overhead analysis without switching inventory to full actual costing.
+
 ## Where to Go Next
 
 - Read [payroll.md](payroll.md) to see how labor enters the manufacturing flow.
