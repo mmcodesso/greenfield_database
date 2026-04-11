@@ -1,3 +1,9 @@
+---
+title: Company Story
+description: Business context for students before they move into tables, SQL, or analytics.
+sidebar_label: Company Story
+---
+
 # Company Story
 
 **Audience:** Students, instructors, and analysts who need business context before reading tables or SQL.  

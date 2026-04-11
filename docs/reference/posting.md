@@ -1,3 +1,9 @@
+---
+title: Posting Reference
+description: Technical guide to how business events become posted ledger entries in Greenfield.
+sidebar_label: Posting Reference
+---
+
 # Posting Reference
 
 **Audience:** Contributors, advanced students, and instructors who need the implemented accounting logic in technical form.  

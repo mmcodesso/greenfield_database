@@ -1,3 +1,9 @@
+---
+title: Roadmap
+description: Planned future expansion areas for the Greenfield dataset and documentation.
+sidebar_label: Roadmap
+---
+
 # Roadmap
 
 **Audience:** Maintainers, contributors, and instructors tracking planned expansion of the dataset.  

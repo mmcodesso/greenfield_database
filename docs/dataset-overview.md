@@ -1,3 +1,10 @@
+---
+title: Dataset Overview
+description: Scope, structure, deliverables, and teaching purpose of the Greenfield dataset.
+slug: /dataset-overview
+sidebar_label: Dataset Overview
+---
+
 # Dataset Overview
 
 **Audience:** Students, instructors, and analysts using the dataset in AIS, accounting analytics, managerial accounting, and auditing courses.  

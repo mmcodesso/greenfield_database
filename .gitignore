@@ -2,5 +2,9 @@
 .pytest_cache/
 __pycache__/
 *.py[cod]
+node_modules/
+.docusaurus/
+build/
 outputs/*
 !outputs/.gitkeep
+.DS_Store

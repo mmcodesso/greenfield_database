@@ -1,3 +1,9 @@
+---
+title: Technical Guide
+description: System-level guide for contributors and advanced users working with the generator.
+sidebar_label: Technical Guide
+---
+
 # Technical Guide
 
 **Audience:** Contributors, advanced users, teaching assistants, and instructors who need a durable technical description of the dataset and generator.  

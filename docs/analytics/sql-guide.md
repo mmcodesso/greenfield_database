@@ -1,3 +1,9 @@
+---
+title: SQL Guide
+description: How to use the starter SQL packs against the Greenfield SQLite export.
+sidebar_label: SQL Guide
+---
+
 # SQL Starter Guide
 
 **Audience:** Students, instructors, and analysts running the starter analytics pack against the SQLite export.  
@@ -12,9 +18,9 @@
 
 | Folder | Coverage |
 |---|---|
-| [../../queries/financial](../../queries/financial) | Revenue, margin, AR, AP, accrued expenses, payroll liabilities, trial balance, control-account work, and manufacturing balance review |
-| [../../queries/managerial](../../queries/managerial) | Budgeting, cost centers, sales mix, inventory movement, purchasing, BOMs, work orders, labor, unit cost, and profitability |
-| [../../queries/audit](../../queries/audit) | Document-chain completeness, approvals, cut-off, duplicate checks, anomaly review, manufacturing controls, and payroll controls |
+| [queries/financial](https://github.com/mmcodesso/greenfield_database/tree/main/queries/financial) | Revenue, margin, AR, AP, accrued expenses, payroll liabilities, trial balance, control-account work, and manufacturing balance review |
+| [queries/managerial](https://github.com/mmcodesso/greenfield_database/tree/main/queries/managerial) | Budgeting, cost centers, sales mix, inventory movement, purchasing, BOMs, work orders, labor, unit cost, and profitability |
+| [queries/audit](https://github.com/mmcodesso/greenfield_database/tree/main/queries/audit) | Document-chain completeness, approvals, cut-off, duplicate checks, anomaly review, manufacturing controls, and payroll controls |
 
 Each file is a single SQLite-friendly `SELECT` statement with short comment headers that explain:
 

@@ -1,3 +1,9 @@
+---
+title: Code Architecture
+description: Module-level map of the Python generator and supporting systems.
+sidebar_label: Code Architecture
+---
+
 # Code Architecture
 
 **Audience:** Contributors, teaching assistants, and advanced users who want to understand how the generator works.  

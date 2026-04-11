@@ -1,3 +1,10 @@
+---
+title: Process Flows
+description: Hub for understanding how the main business cycles move through the database and into the ledger.
+slug: /process-flows
+sidebar_label: Process Flows
+---
+
 # Process Flows
 
 **Audience:** Students, instructors, and analysts who need a plain-language explanation of how transactions move through the database.  

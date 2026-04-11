@@ -1,3 +1,9 @@
+---
+title: Schema Reference
+description: Compact reference for the 55 implemented Greenfield tables and key column patterns.
+sidebar_label: Schema Reference
+---
+
 # Schema Reference
 
 **Audience:** Contributors, advanced users, and instructors who need the implemented schema in a compact technical form.  

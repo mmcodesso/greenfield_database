@@ -1,3 +1,9 @@
+---
+title: Row Volume Reference
+description: Reference page for deterministic row-volume expectations in the current dataset.
+sidebar_label: Row Volume
+---
+
 # Row Volume Reference
 
 **Audience:** Contributors, instructors, and advanced users who need current scale expectations for the dataset.  

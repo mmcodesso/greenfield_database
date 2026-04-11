@@ -1,3 +1,9 @@
+---
+title: Audit Exception Lab
+description: Guided audit lab focused on anomaly review and control testing in Greenfield.
+sidebar_label: Audit Exception Lab
+---
+
 # Audit Exception Lab
 
 **Audience:** Students and instructors using the anomaly-enabled build for controls and exception analysis.  
@@ -27,12 +33,12 @@ The finance and audit team receives the standard five-year build with a moderate
 
 ## Recommended Query Sequence
 
-1. Run [../../../queries/audit/22_anomaly_log_to_source_document_tie_out.sql](../../../queries/audit/22_anomaly_log_to_source_document_tie_out.sql).
-2. Run [../../../queries/audit/05_duplicate_payment_reference_review.sql](../../../queries/audit/05_duplicate_payment_reference_review.sql).
-3. Run [../../../queries/audit/11_payroll_control_review.sql](../../../queries/audit/11_payroll_control_review.sql).
-4. Run [../../../queries/audit/14_missing_routing_or_operation_link_review.sql](../../../queries/audit/14_missing_routing_or_operation_link_review.sql).
-5. Run [../../../queries/audit/15_operation_sequence_and_final_completion_review.sql](../../../queries/audit/15_operation_sequence_and_final_completion_review.sql).
-6. Run [../../../queries/audit/19_time_clock_exceptions_by_employee_supervisor_work_center.sql](../../../queries/audit/19_time_clock_exceptions_by_employee_supervisor_work_center.sql).
+1. Run [../../../queries/audit/22_anomaly_log_to_source_document_tie_out.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/22_anomaly_log_to_source_document_tie_out.sql).
+2. Run [../../../queries/audit/05_duplicate_payment_reference_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/05_duplicate_payment_reference_review.sql).
+3. Run [../../../queries/audit/11_payroll_control_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/11_payroll_control_review.sql).
+4. Run [../../../queries/audit/14_missing_routing_or_operation_link_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/14_missing_routing_or_operation_link_review.sql).
+5. Run [../../../queries/audit/15_operation_sequence_and_final_completion_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/15_operation_sequence_and_final_completion_review.sql).
+6. Run [../../../queries/audit/19_time_clock_exceptions_by_employee_supervisor_work_center.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/19_time_clock_exceptions_by_employee_supervisor_work_center.sql).
 
 ## Suggested Excel Sequence
 

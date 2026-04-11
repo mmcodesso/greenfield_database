@@ -1,3 +1,9 @@
+---
+title: P2P Accrual Settlement Case
+description: Guided walkthrough for tracing accruals, invoices, and payment timing in the P2P cycle.
+sidebar_label: P2P Accrual Case
+---
+
 # P2P and Accrued-Expense Settlement Case
 
 **Audience:** Students and instructors using the dataset to compare inventory AP with direct service-accrual settlement.  
@@ -28,11 +34,11 @@ Greenfield buys inventory and materials through the normal P2P process, but fina
 
 ## Recommended Query Sequence
 
-1. Run [../../../queries/audit/02_p2p_document_chain_completeness.sql](../../../queries/audit/02_p2p_document_chain_completeness.sql).
-2. Run [../../../queries/financial/03_ap_aging_open_invoices.sql](../../../queries/financial/03_ap_aging_open_invoices.sql).
-3. Run [../../../queries/financial/12_accrued_expense_rollforward.sql](../../../queries/financial/12_accrued_expense_rollforward.sql).
-4. Run [../../../queries/financial/13_accrued_vs_invoiced_vs_paid_timing.sql](../../../queries/financial/13_accrued_vs_invoiced_vs_paid_timing.sql).
-5. For audit follow-up, run [../../../queries/audit/23_accrued_service_settlement_exception_review.sql](../../../queries/audit/23_accrued_service_settlement_exception_review.sql).
+1. Run [../../../queries/audit/02_p2p_document_chain_completeness.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/02_p2p_document_chain_completeness.sql).
+2. Run [../../../queries/financial/03_ap_aging_open_invoices.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/financial/03_ap_aging_open_invoices.sql).
+3. Run [../../../queries/financial/12_accrued_expense_rollforward.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/financial/12_accrued_expense_rollforward.sql).
+4. Run [../../../queries/financial/13_accrued_vs_invoiced_vs_paid_timing.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/financial/13_accrued_vs_invoiced_vs_paid_timing.sql).
+5. For audit follow-up, run [../../../queries/audit/23_accrued_service_settlement_exception_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/23_accrued_service_settlement_exception_review.sql).
 
 ## Suggested Excel Sequence
 

@@ -1,0 +1,80 @@
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap");
+
+:root {
+  --ifm-color-primary: #1f6b52;
+  --ifm-color-primary-dark: #195842;
+  --ifm-color-primary-darker: #154a38;
+  --ifm-color-primary-darkest: #10372a;
+  --ifm-color-primary-light: #287c60;
+  --ifm-color-primary-lighter: #319070;
+  --ifm-color-primary-lightest: #44ab86;
+  --ifm-background-color: #f6f2e8;
+  --ifm-background-surface-color: #fffdf8;
+  --ifm-font-family-base: "IBM Plex Sans", "Trebuchet MS", sans-serif;
+  --ifm-heading-font-family: "Fraunces", "Georgia", serif;
+  --ifm-code-font-size: 95%;
+  --ifm-navbar-background-color: rgba(255, 253, 248, 0.9);
+  --ifm-navbar-link-hover-color: #154a38;
+  --ifm-footer-background-color: #173a2f;
+  --ifm-footer-color: #e8eee9;
+  --ifm-footer-link-color: #d4e7da;
+  --ifm-footer-title-color: #fff6de;
+  --ifm-link-color: #155b45;
+  --ifm-menu-color-active: #155b45;
+  --ifm-breadcrumb-color-active: #155b45;
+  --ifm-toc-border-color: rgba(31, 107, 82, 0.2);
+}
+
+html[data-theme="dark"] {
+  --ifm-background-color: #16261f;
+  --ifm-background-surface-color: #1c3028;
+  --ifm-navbar-background-color: rgba(22, 38, 31, 0.94);
+  --ifm-font-color-base: #ecf4ef;
+  --ifm-heading-color: #fff7e5;
+  --ifm-color-primary: #84c9a8;
+  --ifm-color-primary-dark: #6fbc98;
+  --ifm-color-primary-darker: #5cad88;
+  --ifm-color-primary-darkest: #43856a;
+  --ifm-color-primary-light: #95d2b4;
+  --ifm-color-primary-lighter: #abdcc3;
+  --ifm-color-primary-lightest: #c8ead8;
+  --ifm-link-color: #abdcc3;
+  --ifm-footer-background-color: #102019;
+}
+
+.navbar {
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(31, 107, 82, 0.12);
+}
+
+.navbar__title,
+.hero__title,
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--ifm-heading-font-family);
+  letter-spacing: -0.02em;
+}
+
+.theme-doc-markdown header h1 {
+  margin-bottom: 0.75rem;
+}
+
+.theme-doc-sidebar-container {
+  border-right-color: rgba(31, 107, 82, 0.14);
+}
+
+.theme-doc-markdown table {
+  display: table;
+  width: 100%;
+}
+
+.theme-doc-markdown blockquote {
+  border-left: 4px solid rgba(31, 107, 82, 0.3);
+  background: rgba(255, 248, 230, 0.55);
+}
+
+html[data-theme="dark"] .theme-doc-markdown blockquote {
+  background: rgba(132, 201, 168, 0.08);
+}

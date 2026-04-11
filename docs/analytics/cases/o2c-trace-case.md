@@ -1,3 +1,9 @@
+---
+title: O2C Trace Case
+description: Guided walkthrough for tracing a customer sale from order through settlement.
+sidebar_label: O2C Trace Case
+---
+
 # O2C Trace Case
 
 **Audience:** Students and instructors using the dataset to learn revenue-cycle traceability.  
@@ -27,10 +33,10 @@ A customer places an order for finished goods. Greenfield ships what inventory a
 
 ## Recommended Query Sequence
 
-1. Run [../../../queries/audit/01_o2c_document_chain_completeness.sql](../../../queries/audit/01_o2c_document_chain_completeness.sql).
-2. Run [../../../queries/financial/01_monthly_revenue_and_gross_margin.sql](../../../queries/financial/01_monthly_revenue_and_gross_margin.sql).
-3. Run [../../../queries/financial/02_ar_aging_open_invoices.sql](../../../queries/financial/02_ar_aging_open_invoices.sql).
-4. If you want the exception follow-up, run [../../../queries/audit/07_backorder_and_return_review.sql](../../../queries/audit/07_backorder_and_return_review.sql).
+1. Run [../../../queries/audit/01_o2c_document_chain_completeness.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/01_o2c_document_chain_completeness.sql).
+2. Run [../../../queries/financial/01_monthly_revenue_and_gross_margin.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/financial/01_monthly_revenue_and_gross_margin.sql).
+3. Run [../../../queries/financial/02_ar_aging_open_invoices.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/financial/02_ar_aging_open_invoices.sql).
+4. If you want the exception follow-up, run [../../../queries/audit/07_backorder_and_return_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/07_backorder_and_return_review.sql).
 
 ## Suggested Excel Sequence
 

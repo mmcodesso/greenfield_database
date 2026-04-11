@@ -1,3 +1,9 @@
+---
+title: Excel Guide
+description: How to use the Greenfield Excel workbook for student and classroom analysis.
+sidebar_label: Excel Guide
+---
+
 # Excel Starter Guide
 
 **Audience:** Students, instructors, and analysts using the Excel export for classroom analysis.  

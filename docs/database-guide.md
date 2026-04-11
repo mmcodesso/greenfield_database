@@ -1,3 +1,10 @@
+---
+title: Database Guide
+description: Student-friendly guide to table groups, joins, and traceability patterns.
+slug: /database-guide
+sidebar_label: Database Guide
+---
+
 # Database Guide
 
 **Audience:** Students, instructors, and analysts who want to navigate the tables without starting from code.  

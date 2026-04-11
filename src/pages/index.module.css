@@ -1,0 +1,249 @@
+.page {
+  background:
+    radial-gradient(circle at top left, rgba(245, 202, 115, 0.22), transparent 28rem),
+    linear-gradient(180deg, rgba(31, 107, 82, 0.06), transparent 30rem);
+}
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: 6rem 1.5rem 4rem;
+}
+
+.heroBackdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 18% 20%, rgba(252, 211, 77, 0.32), transparent 22rem),
+    radial-gradient(circle at 84% 18%, rgba(31, 107, 82, 0.24), transparent 24rem),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(247, 242, 231, 0.92));
+}
+
+html[data-theme="dark"] .heroBackdrop {
+  background:
+    radial-gradient(circle at 18% 20%, rgba(240, 186, 56, 0.2), transparent 22rem),
+    radial-gradient(circle at 84% 18%, rgba(132, 201, 168, 0.18), transparent 24rem),
+    linear-gradient(135deg, rgba(22, 38, 31, 0.96), rgba(16, 32, 25, 0.98));
+}
+
+.heroContent {
+  position: relative;
+  max-width: 72rem;
+  margin: 0 auto;
+}
+
+.kicker,
+.sectionLabel {
+  margin: 0 0 0.8rem;
+  color: #8b5c15;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+html[data-theme="dark"] .kicker,
+html[data-theme="dark"] .sectionLabel {
+  color: #f0d38e;
+}
+
+.title {
+  max-width: 48rem;
+  margin: 0;
+  color: #183126;
+  font-size: clamp(2.6rem, 6vw, 5rem);
+  line-height: 0.95;
+}
+
+html[data-theme="dark"] .title {
+  color: #fff8ea;
+}
+
+.lede {
+  max-width: 44rem;
+  margin: 1.4rem 0 0;
+  color: #355244;
+  font-size: 1.15rem;
+  line-height: 1.7;
+}
+
+html[data-theme="dark"] .lede {
+  color: #d7e8de;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.ribbon {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 2rem;
+}
+
+.ribbon span {
+  padding: 0.5rem 0.9rem;
+  border: 1px solid rgba(31, 107, 82, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.64);
+  color: #214637;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+html[data-theme="dark"] .ribbon span {
+  border-color: rgba(171, 220, 195, 0.22);
+  background: rgba(255, 255, 255, 0.06);
+  color: #e7f3ec;
+}
+
+.section {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 1.5rem 1.5rem 4rem;
+}
+
+.sectionHeader {
+  max-width: 42rem;
+  margin-bottom: 1.75rem;
+}
+
+.sectionHeader h2 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.05;
+}
+
+.cardGrid,
+.pathGrid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.cardGrid {
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+}
+
+.card,
+.panel,
+.pathCard,
+.repoBanner {
+  border: 1px solid rgba(31, 107, 82, 0.12);
+  border-radius: 1.5rem;
+  background: rgba(255, 253, 248, 0.78);
+  box-shadow: 0 1.25rem 3rem rgba(23, 58, 47, 0.08);
+}
+
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .panel,
+html[data-theme="dark"] .pathCard,
+html[data-theme="dark"] .repoBanner {
+  border-color: rgba(132, 201, 168, 0.18);
+  background: rgba(28, 48, 40, 0.84);
+  box-shadow: none;
+}
+
+.card {
+  padding: 1.5rem;
+}
+
+.card h3,
+.panel h2,
+.pathCard strong,
+.repoBanner h2 {
+  margin: 0 0 0.9rem;
+}
+
+.card p {
+  margin: 0 0 1rem;
+  line-height: 1.65;
+}
+
+.cardLink {
+  font-weight: 700;
+}
+
+.splitSection {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+}
+
+.panel {
+  padding: 1.5rem;
+}
+
+.list {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.list li + li {
+  margin-top: 0.75rem;
+}
+
+.panelNote {
+  margin: 1rem 0 0;
+  color: var(--ifm-color-emphasis-700);
+}
+
+.pathGrid {
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+}
+
+.pathCard {
+  display: block;
+  padding: 1.4rem;
+  color: inherit;
+  text-decoration: none;
+  transition: transform 0.18s ease, border-color 0.18s ease;
+}
+
+.pathCard:hover {
+  border-color: rgba(31, 107, 82, 0.4);
+  transform: translateY(-2px);
+  text-decoration: none;
+}
+
+.pathCard strong {
+  display: block;
+  font-size: 1.1rem;
+}
+
+.pathCard span {
+  display: block;
+  line-height: 1.6;
+}
+
+.repoBanner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.6rem;
+}
+
+.repoActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+@media (max-width: 996px) {
+  .hero {
+    padding-top: 5rem;
+  }
+
+  .title {
+    max-width: 32rem;
+  }
+
+  .repoBanner {
+    align-items: flex-start;
+  }
+}

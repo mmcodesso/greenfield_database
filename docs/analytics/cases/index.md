@@ -1,3 +1,9 @@
+---
+title: Analytics Cases
+description: Guided walkthroughs that connect business context, starter SQL, and classroom interpretation.
+sidebar_label: Analytics Cases
+---
+
 # Analytics Walkthrough Cases
 
 **Audience:** Students, instructors, and analysts who want guided practice instead of starting from a blank query window.  
