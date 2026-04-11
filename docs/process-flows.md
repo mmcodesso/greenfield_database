@@ -134,4 +134,4 @@ The most important traceability fields are:
 ## Where to Go Next
 
 - Read [Dataset Guide](dataset-overview.md) for joins and table families.
-- Read [Posting Reference](reference/posting.md) for the technical posting rules.
+- Read [GLEntry Posting Reference](reference/posting.md) for the technical posting rules.

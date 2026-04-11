@@ -96,4 +96,4 @@ That distinction matters for AR analysis, cash analysis, and audit testing.
 ## Where to Go Next
 
 - Read [O2C](o2c.md) for the main revenue cycle.
-- Read [Posting Reference](../reference/posting.md) for the detailed posting reference.
+- Read [GLEntry Posting Reference](../reference/posting.md) for the detailed posting reference.

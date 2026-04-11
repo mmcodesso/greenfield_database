@@ -69,7 +69,7 @@ const config = {
       title: "Greenfield",
       items: [
         { to: "/docs/", label: "Start Here", position: "left" },
-        { to: "/docs/student-quickstart", label: "Students", position: "left" },
+        { to: "/docs/quick-start", label: "Quick Start", position: "left" },
         { to: "/docs/analytics", label: "Analytics", position: "left" },
         {
           to: "/docs/teach-with-greenfield/instructor-adoption",
@@ -95,7 +95,7 @@ const config = {
           title: "Start Here",
           items: [
             { label: "Documentation Home", to: "/docs/" },
-            { label: "Student Quick Start", to: "/docs/student-quickstart" },
+            { label: "Quick Start", to: "/docs/quick-start" },
             { label: "Dataset Overview", to: "/docs/dataset-overview" },
           ],
         },

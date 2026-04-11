@@ -5,7 +5,7 @@ Greenfield Accounting Dataset is a synthetic business database for undergraduate
 The documentation website is the primary starting point:
 
 - [Greenfield documentation site](https://mmcodesso.github.io/greenfield_database/)
-- [Student quick start](https://mmcodesso.github.io/greenfield_database/docs/student-quickstart)
+- [Quick Start](https://mmcodesso.github.io/greenfield_database/docs/quick-start)
 - [Instructor adoption guide](https://mmcodesso.github.io/greenfield_database/docs/teach-with-greenfield/instructor-adoption)
 
 Most students should begin with the documentation site and the packaged output files rather than the Python generator.

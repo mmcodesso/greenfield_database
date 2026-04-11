@@ -1,10 +1,10 @@
 ---
-title: Student Quick Start
-description: Start using the Greenfield Accounting Dataset as a student without getting stuck in technical detail.
-slug: /student-quickstart
+title: Quick Start
+description: Start using the Greenfield Accounting Dataset without getting stuck in technical detail.
+slug: /quick-start
 ---
 
-# Student Quick Start
+# Quick Start
 
 Use this page if you want the shortest path from “What is this database?” to “I can answer course questions with it.”
 
@@ -63,7 +63,7 @@ If you do not want to start from a blank page, use the guided walkthroughs in [A
 These pages are normal student resources when you need to trace a process, check a join path, or confirm what posts to the ledger:
 
 - [Schema Reference](reference/schema.md)
-- [Posting Reference](reference/posting.md)
+- [GLEntry Posting Reference](reference/posting.md)
 
 Use the deeper system page only when an assignment needs generator detail:
 

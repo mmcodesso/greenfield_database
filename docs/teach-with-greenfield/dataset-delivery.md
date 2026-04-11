@@ -29,7 +29,7 @@ For most courses, share these files:
 
 Then point students to:
 
-- [Student Quick Start](../student-quickstart.md)
+- [Quick Start](../student-quickstart.md)
 - [Dataset Guide](../dataset-overview.md)
 - [Analytics Hub](../analytics/index.md)
 

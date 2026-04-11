@@ -105,4 +105,4 @@ Students should treat both as valid AP behavior, but not as the same control pat
 ## Where to Go Next
 
 - Read [Dataset Guide](../dataset-overview.md) for navigation patterns.
-- Read [Posting Reference](../reference/posting.md) for the technical posting rules.
+- Read [GLEntry Posting Reference](../reference/posting.md) for the technical posting rules.

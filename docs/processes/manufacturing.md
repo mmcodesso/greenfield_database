@@ -266,4 +266,4 @@ That is how the dataset supports DL + overhead analysis without switching invent
 - Read [Time Clocks](time-clocks.md) to see how hourly attendance supports payroll and operation-level labor analysis.
 - Read [P2P](p2p.md) to see how materials enter inventory.
 - Read [O2C](o2c.md) to see how finished goods leave inventory.
-- Read [Posting Reference](../reference/posting.md) for the detailed accounting rules.
+- Read [GLEntry Posting Reference](../reference/posting.md) for the detailed accounting rules.

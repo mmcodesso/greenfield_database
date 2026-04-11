@@ -135,7 +135,7 @@ Major posting triggers:
 - `PayrollLiabilityRemittance`
 - `JournalEntry`
 
-The detailed posting reference lives in [Posting Reference](reference/posting.md).
+The detailed posting reference lives in [GLEntry Posting Reference](reference/posting.md).
 
 ## Validation and Control Model
 

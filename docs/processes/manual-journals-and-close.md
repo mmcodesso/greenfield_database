@@ -124,5 +124,5 @@ The teaching point is that accrued expenses are now expected to survive into lat
 ## Where to Go Next
 
 - Read [Payroll](payroll.md) for the operational payroll process.
-- Read [Posting Reference](../reference/posting.md) for the detailed posting logic.
+- Read [GLEntry Posting Reference](../reference/posting.md) for the detailed posting logic.
 - Read [Financial Analytics](../analytics/financial.md) for journal and close-cycle analysis examples.

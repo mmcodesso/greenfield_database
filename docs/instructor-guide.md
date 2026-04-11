@@ -27,8 +27,8 @@ Use [Dataset Delivery and Build Setup](/docs/technical/dataset-delivery) when yo
 | If your course emphasizes... | Start with | Then assign |
 |---|---|---|
 | AIS or business processes | [Company Story](company-story.md), [Process Flows](process-flows.md) | document tracing, process mapping, source-to-ledger explanations |
-| SQL and accounting analytics | [Student Quick Start](student-quickstart.md), [SQL Guide](analytics/sql-guide.md) | starter SQL packs and guided cases |
-| Excel-based analytics | [Student Quick Start](student-quickstart.md), [Excel Guide](analytics/excel-guide.md) | workbook-based pivots, charts, and interpretation work |
+| SQL and accounting analytics | [Quick Start](student-quickstart.md), [SQL Guide](analytics/sql-guide.md) | starter SQL packs and guided cases |
+| Excel-based analytics | [Quick Start](student-quickstart.md), [Excel Guide](analytics/excel-guide.md) | workbook-based pivots, charts, and interpretation work |
 | Auditing and controls | [Audit Analytics](analytics/audit.md) | anomaly-focused labs and control-review exercises |
 | Managerial or cost accounting | [Managerial Analytics](analytics/managerial.md) | BOM, labor, variance, cost-center, and capacity analysis |
 
@@ -38,7 +38,7 @@ The recommended rule is simple: process understanding first, analytics second.
 
 Suggested student sequence:
 
-1. [Student Quick Start](student-quickstart.md)
+1. [Quick Start](student-quickstart.md)
 2. [Company Story](company-story.md)
 3. [Process Flows](process-flows.md)
 4. [Dataset Guide](dataset-overview.md)
@@ -58,12 +58,12 @@ Suggested student sequence:
 
 Share these directly with students:
 
-- [Student Quick Start](student-quickstart.md)
+- [Quick Start](student-quickstart.md)
 - [Company Story](company-story.md)
 - [Dataset Guide](dataset-overview.md)
 - [Process Flows](process-flows.md)
 - [Schema Reference](reference/schema.md)
-- [Posting Reference](reference/posting.md)
+- [GLEntry Posting Reference](reference/posting.md)
 - [Analytics Hub](analytics/index.md)
 - [Financial Analytics](analytics/financial.md)
 - [Managerial Analytics](analytics/managerial.md)
@@ -86,7 +86,7 @@ Use these when you need local build setup, generator context, or release-plannin
 
 | Week or module | Teaching goal | Main docs | Main starter assets |
 |---|---|---|---|
-| 1. Orientation | Explain the company, dataset purpose, and student workflow | [Student Quick Start](student-quickstart.md), [Company Story](company-story.md), [Dataset Guide](dataset-overview.md) | SQLite or Excel teaching package |
+| 1. Orientation | Explain the company, dataset purpose, and student workflow | [Quick Start](student-quickstart.md), [Company Story](company-story.md), [Dataset Guide](dataset-overview.md) | SQLite or Excel teaching package |
 | 2. Process mapping | Show O2C, P2P, manufacturing, payroll, and close-cycle flow | [Process Flows](process-flows.md) and process guides | None yet |
 | 3. Table navigation | Teach keys, joins, and traceability | [Dataset Guide](dataset-overview.md) | Introductory ad hoc joins |
 | 4. Financial analytics | Connect operational activity to accounting review | [Financial Analytics](analytics/financial.md) | `queries/financial/` |
@@ -116,6 +116,6 @@ This sequence compresses cleanly into fewer modules or expands into a full semes
 
 ## Where to Go Next
 
-- Use [Student Quick Start](student-quickstart.md) as the student-facing launch page.
+- Use [Quick Start](student-quickstart.md) as the primary student launch page.
 - Use [Analytics Hub](analytics/index.md) to choose the first topic pack.
-- Use [Schema Reference](reference/schema.md) and [Posting Reference](reference/posting.md) as shared student and instructor references during assignments.
+- Use [Schema Reference](reference/schema.md) and [GLEntry Posting Reference](reference/posting.md) as shared student and instructor references during assignments.

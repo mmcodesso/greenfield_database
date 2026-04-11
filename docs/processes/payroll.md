@@ -263,5 +263,5 @@ That distinction is essential for both financial accounting and payroll-control 
 
 - Read [Manufacturing](manufacturing.md) for the production side of labor integration.
 - Read [Time Clocks](time-clocks.md) for the shift and attendance process that feeds hourly payroll.
-- Read [Posting Reference](../reference/posting.md) for exact payroll posting rules.
+- Read [GLEntry Posting Reference](../reference/posting.md) for exact payroll posting rules.
 - Read [Financial Analytics](../analytics/financial.md), [Managerial Analytics](../analytics/managerial.md), and [Audit Analytics](../analytics/audit.md) for starter analytics.

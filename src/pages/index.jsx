@@ -7,9 +7,9 @@ import styles from "./index.module.css";
 const audienceCards = [
   {
     title: "Students",
-    text: "Start with the company story, process guides, schema reference, and posting reference before moving into starter SQL or Excel paths.",
-    href: "/docs/student-quickstart",
-    cta: "Open the student quick start",
+    text: "Start with the company story, process guides, schema reference, and GLEntry posting reference before moving into starter SQL or Excel paths.",
+    href: "/docs/quick-start",
+    cta: "Open the quick start",
   },
   {
     title: "Instructors",
@@ -49,8 +49,8 @@ export default function Home() {
               Excel, and audit-style analysis in one place.
             </p>
             <div className={styles.actions}>
-              <Link className="button button--primary button--lg" to="/docs/student-quickstart">
-                Start as a student
+              <Link className="button button--primary button--lg" to="/docs/quick-start">
+                Open quick start
               </Link>
               <Link className="button button--secondary button--lg" to="/docs/teach-with-greenfield/instructor-adoption">
                 Adopt it in a course

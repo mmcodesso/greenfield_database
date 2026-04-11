@@ -7,36 +7,36 @@ sidebar_label: Docs Home
 
 # Documentation Home
 
-Greenfield Accounting Dataset is a synthetic business database for accounting analytics courses. This site is organized to help students understand the business first, then use the schema and posting references alongside SQL, Excel, controls, and teaching materials.
+Greenfield Accounting Dataset is a synthetic business database for accounting analytics courses. This site is organized to help students understand the business first, then use the schema and GLEntry posting references alongside SQL, Excel, controls, and teaching materials.
 
 ## Start by Audience
 
 | If you are a... | Start here | Then continue with |
 |---|---|---|
-| Student | [Student Quick Start](student-quickstart.md) | [Company Story](company-story.md), [Process Flows](process-flows.md), [Schema Reference](reference/schema.md), [Posting Reference](reference/posting.md), [Analytics Hub](analytics/index.md) |
-| Instructor | [Instructor Adoption Guide](instructor-guide.md) | [Student Quick Start](student-quickstart.md), [Schema Reference](reference/schema.md), [Posting Reference](reference/posting.md), [Analytics Hub](analytics/index.md) |
-| Analyst | [Dataset Guide](dataset-overview.md) | [Analytics Hub](analytics/index.md), [Schema Reference](reference/schema.md), [Posting Reference](reference/posting.md) |
-| Contributor | [Technical Guide](technical-guide.md) | [Code Architecture](code-architecture.md), [Schema Reference](reference/schema.md), [Posting Reference](reference/posting.md) |
+| Student | [Quick Start](student-quickstart.md) | [Company Story](company-story.md), [Process Flows](process-flows.md), [Schema Reference](reference/schema.md), [GLEntry Posting Reference](reference/posting.md), [Analytics Hub](analytics/index.md) |
+| Instructor | [Instructor Adoption Guide](instructor-guide.md) | [Quick Start](student-quickstart.md), [Schema Reference](reference/schema.md), [GLEntry Posting Reference](reference/posting.md), [Analytics Hub](analytics/index.md) |
+| Analyst | [Dataset Guide](dataset-overview.md) | [Analytics Hub](analytics/index.md), [Schema Reference](reference/schema.md), [GLEntry Posting Reference](reference/posting.md) |
+| Contributor | [Technical Guide](technical-guide.md) | [Code Architecture](code-architecture.md), [Schema Reference](reference/schema.md), [GLEntry Posting Reference](reference/posting.md) |
 
 ## Recommended Student Reading Order
 
 If you are new to the dataset, use this sequence:
 
-1. [Student Quick Start](student-quickstart.md)
+1. [Quick Start](student-quickstart.md)
 2. [Company Story](company-story.md)
 3. [Process Flows](process-flows.md)
 4. [Dataset Guide](dataset-overview.md)
 5. [Schema Reference](reference/schema.md)
-6. [Posting Reference](reference/posting.md)
+6. [GLEntry Posting Reference](reference/posting.md)
 7. [Analytics Hub](analytics/index.md)
 
-That path gives students the business context first, then the table and posting references they need to trace documents into the ledger.
+That path gives students the business context first, then the table and GLEntry posting references they need to trace documents into the ledger.
 
 ## Site Map
 
 ### Start Here
 
-- [Student Quick Start](student-quickstart.md)
+- [Quick Start](student-quickstart.md)
 - [Dataset Guide](dataset-overview.md)
 
 ### Learn the Business
@@ -64,7 +64,7 @@ That path gives students the business context first, then the table and posting 
 ### Reference
 
 - [Schema Reference](reference/schema.md)
-- [Posting Reference](reference/posting.md)
+- [GLEntry Posting Reference](reference/posting.md)
 
 ### Teach With Greenfield
 
