@@ -1,9 +1,5 @@
 # Procure-to-Pay Process
 
-**Audience:** Students, instructors, and analysts who want the purchasing cycle explained in business language.  
-**Purpose:** Show how Greenfield moves from internal demand to supplier payment.  
-**What you will learn:** The business storyline, the main P2P tables, when accounting happens, and what questions the P2P data can answer.
-
 
 ## Business Storyline
 
@@ -108,5 +104,5 @@ Students should treat both as valid AP behavior, but not as the same control pat
 
 ## Where to Go Next
 
-- Read [../dataset-overview.md](../dataset-overview.md) for navigation patterns.
-- Read [../reference/posting.md](../reference/posting.md) for the technical posting rules.
+- Read [Dataset Guide](../dataset-overview.md) for navigation patterns.
+- Read [Posting Reference](../reference/posting.md) for the technical posting rules.

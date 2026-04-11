@@ -6,10 +6,6 @@ sidebar_label: Managerial Analytics
 
 # Managerial Analytics Starter Guide
 
-**Audience:** Students, instructors, and analysts using the dataset for planning, operational, and performance analysis.  
-**Purpose:** Show how to work with budgets, cost centers, product mix, inventory movement, purchasing activity, BOMs, work orders, labor, and manufacturing variance.  
-**What you will learn:** Which tables to use, how to join them, and which starter queries answer the most useful managerial questions.
-
 
 ## Relevant Tables
 

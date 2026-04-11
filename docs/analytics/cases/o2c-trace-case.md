@@ -6,9 +6,6 @@ sidebar_label: O2C Trace Case
 
 # O2C Trace Case
 
-**Audience:** Students and instructors using the dataset to learn revenue-cycle traceability.  
-**Purpose:** Walk through one customer sale from order through shipment, invoice, receipt, and cash application.  
-**What you will learn:** How the O2C tables connect, where accounting happens, and how to explain timing differences between demand, fulfillment, billing, and settlement.
 
 ## Business Scenario
 

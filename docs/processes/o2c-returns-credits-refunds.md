@@ -1,10 +1,5 @@
 # Returns, Credit Memos, and Refunds
 
-**Audience:** Students, instructors, and analysts who need the O2C exception path explained clearly.  
-**Purpose:** Show how a shipped and billed sale can reverse through returns, credits, and refunds.  
-**What you will learn:** The business storyline, the key tables, when accounting happens, and how to trace a returned sale through the database.
-
-
 ## Business Storyline
 
 Some customer sales do not end with the original invoice. Goods may come back because they were damaged, incorrect, or no longer needed. Warehouse staff receive the goods back. Accounting issues a credit memo. If the invoice is still open, the credit reduces receivables. If the customer already paid, the credit can become customer credit and may later be refunded in cash.
@@ -100,5 +95,5 @@ That distinction matters for AR analysis, cash analysis, and audit testing.
 
 ## Where to Go Next
 
-- Read [o2c.md](o2c.md) for the main revenue cycle.
-- Read [../reference/posting.md](../reference/posting.md) for the detailed posting reference.
+- Read [O2C](o2c.md) for the main revenue cycle.
+- Read [Posting Reference](../reference/posting.md) for the detailed posting reference.

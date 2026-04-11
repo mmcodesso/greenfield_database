@@ -6,9 +6,6 @@ sidebar_label: Audit Exception Lab
 
 # Audit Exception Lab
 
-**Audience:** Students and instructors using the anomaly-enabled build for controls and exception analysis.  
-**Purpose:** Provide a guided lab that turns the `standard` anomaly build into a practical audit-review exercise.  
-**What you will learn:** How to move from anomaly logs to source documents, how to interpret planted exceptions, and how to separate clean-process understanding from anomaly review.
 
 ## Business Scenario
 

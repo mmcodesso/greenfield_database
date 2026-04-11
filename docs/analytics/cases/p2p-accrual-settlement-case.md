@@ -6,9 +6,6 @@ sidebar_label: P2P Accrual Case
 
 # P2P and Accrued-Expense Settlement Case
 
-**Audience:** Students and instructors using the dataset to compare inventory AP with direct service-accrual settlement.  
-**Purpose:** Show both the receipt-matched AP path and the accrued-service settlement branch.  
-**What you will learn:** How supplier activity moves through requisition, PO, receipt, invoice, payment, accrual, and later settlement.
 
 ## Business Scenario
 

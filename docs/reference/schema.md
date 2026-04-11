@@ -6,9 +6,6 @@ sidebar_label: Schema Reference
 
 # Schema Reference
 
-**Audience:** Contributors, advanced users, and instructors who need the implemented schema in a compact technical form.  
-**Purpose:** Summarize the executable schema that the generator currently creates.  
-**What you will learn:** The implemented table groups, key columns, and the patterns that matter for joins and traceability.
 
 The canonical schema lives in `src/greenfield_dataset/schema.py` as `TABLE_COLUMNS`.
 

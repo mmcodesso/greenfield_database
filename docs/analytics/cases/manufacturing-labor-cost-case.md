@@ -6,9 +6,6 @@ sidebar_label: Manufacturing Labor Case
 
 # Manufacturing and Labor Cost Case
 
-**Audience:** Students and instructors using the dataset for product-cost and manufacturing analytics.  
-**Purpose:** Walk through how BOM, routing, scheduling, time clocks, labor time, payroll, and work-order close fit into product-cost analysis.  
-**What you will learn:** How direct material, direct labor, overhead, and variance appear across both operational and accounting tables.
 
 ## Business Scenario
 

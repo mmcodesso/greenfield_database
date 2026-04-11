@@ -1,10 +1,5 @@
 # Order-to-Cash Process
 
-**Audience:** Students, instructors, and analysts who want the revenue cycle explained in business language.  
-**Purpose:** Show how a sale moves from customer order to shipment, billing, and cash application.  
-**What you will learn:** The business storyline, the key tables, when accounting happens, and what questions the O2C data can answer.
-
-
 ## Business Storyline
 
 A customer places an order with Greenfield. Sales records the demand. Warehouse operations ship the goods when inventory is available. Those finished goods may come from purchased inventory or from Greenfield's own production completions. Accounting bills the customer from the shipped lines, not from the original order alone. Treasury records the cash receipt, and accounting applies that cash to one or more invoices.
@@ -123,5 +118,5 @@ This mini-flow helps students see why order date, shipment date, and invoice dat
 
 ## Where to Go Next
 
-- Read [o2c-returns-credits-refunds.md](o2c-returns-credits-refunds.md) for the return and refund path.
-- Read [../dataset-overview.md](../dataset-overview.md) for the main joins used in analysis.
+- Read [Returns, Credits, and Refunds](o2c-returns-credits-refunds.md) for the return and refund path.
+- Read [Dataset Guide](../dataset-overview.md) for the main joins used in analysis.

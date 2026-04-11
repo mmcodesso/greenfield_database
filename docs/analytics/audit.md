@@ -6,10 +6,6 @@ sidebar_label: Audit Analytics
 
 # Audit Analytics Starter Guide
 
-**Audience:** Students, instructors, and analysts using the dataset for controls, exception review, and process-traceability work.  
-**Purpose:** Show how to use the dataset for document-chain testing, approval review, cut-off analysis, duplicate detection, manufacturing-control exercises, and payroll-control review.  
-**What you will learn:** Which document links matter most and which audit-oriented SQL files to run first.
-
 
 ## Relevant Tables
 

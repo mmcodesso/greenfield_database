@@ -6,16 +6,12 @@ sidebar_label: Code Architecture
 
 # Code Architecture
 
-**Audience:** Contributors, teaching assistants, and advanced users who want to understand how the generator works.  
-**Purpose:** Explain the codebase from entrypoint to export using the current implementation.  
-**What you will learn:** The orchestration flow, the role of each module, the runtime profiles, and where the next extension should plug in.
-
 
 ## Entrypoints
 
 - `generate_dataset.py` is the simplest way to run the project from the repository root.
 - `src/greenfield_dataset/main.py` contains the orchestration logic for the full build.
-- [technical-guide.md](technical-guide.md) is the best system-level companion to this page.
+- [Technical Guide](technical-guide.md) is the best system-level companion to this page.
 
 ## End-to-End Build Flow
 

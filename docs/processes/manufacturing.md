@@ -1,9 +1,5 @@
 # Manufacturing Process
 
-**Audience:** Students, instructors, analysts, and contributors who need to understand how production works in the current dataset.  
-**Purpose:** Explain the manufacturing flow in plain language and connect it to the database tables and accounting entries.  
-**What you will learn:** How Greenfield plans production, issues materials, captures labor, completes finished goods, closes work orders, and links manufacturing to purchasing, payroll, inventory, and the ledger.
-
 
 ## Business Storyline
 
@@ -266,8 +262,8 @@ That is how the dataset supports DL + overhead analysis without switching invent
 
 ## Where to Go Next
 
-- Read [payroll.md](payroll.md) to see how labor enters the manufacturing flow.
-- Read [time-clocks.md](time-clocks.md) to see how hourly attendance supports payroll and operation-level labor analysis.
-- Read [p2p.md](p2p.md) to see how materials enter inventory.
-- Read [o2c.md](o2c.md) to see how finished goods leave inventory.
-- Read [../reference/posting.md](../reference/posting.md) for the detailed accounting rules.
+- Read [Payroll](payroll.md) to see how labor enters the manufacturing flow.
+- Read [Time Clocks](time-clocks.md) to see how hourly attendance supports payroll and operation-level labor analysis.
+- Read [P2P](p2p.md) to see how materials enter inventory.
+- Read [O2C](o2c.md) to see how finished goods leave inventory.
+- Read [Posting Reference](../reference/posting.md) for the detailed accounting rules.

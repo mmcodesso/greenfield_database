@@ -6,10 +6,6 @@ sidebar_label: Excel Guide
 
 # Excel Starter Guide
 
-**Audience:** Students, instructors, and analysts using the Excel export for classroom analysis.  
-**Purpose:** Show how to turn the generated workbook into a practical starter environment for pivots, charts, aging schedules, payroll review, and anomaly analysis.  
-**What you will learn:** Which sheets matter for each analytics area, how to structure pivots, and how to separate clean analysis from anomaly-focused review.
-
 
 ## Workbook Setup
 
@@ -605,5 +601,5 @@ Those are future teaching extensions, not missing pieces of the current workbook
 
 ## Where to Go Next
 
-- Read [financial.md](financial.md), [managerial.md](managerial.md), or [audit.md](audit.md) for topic-specific workflows.
-- Read [../instructor-guide.md](../instructor-guide.md) for how to sequence these workflows in class.
+- Read [Financial Analytics](financial.md), [Managerial Analytics](managerial.md), or [Audit Analytics](audit.md) for topic-specific workflows.
+- Read [Instructor Adoption Guide](../instructor-guide.md) for how to sequence these workflows in class.

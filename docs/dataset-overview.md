@@ -7,10 +7,6 @@ sidebar_label: Dataset Guide
 
 # Dataset Guide
 
-**Audience:** Students, instructors, and analysts who want one clear guide to what the dataset is and how to use it.  
-**Purpose:** Combine the former overview and database-navigation material into one student-facing reference.  
-**What you will learn:** What the dataset covers, how the tables are organized, which keys matter most, and how to move from business activity to accounting analysis.
-
 ## What This Project Is
 
 Greenfield Accounting Dataset is a teachable business database for **Greenfield Home Furnishings, Inc.**
@@ -44,7 +40,7 @@ The current dataset models a company that:
 - assigns shifts, records approved daily time clocks for hourly employees, and runs payroll
 - records recurring journals, manufacturing reclasses, and year-end close
 
-Read [company-story.md](company-story.md) for the full narrative version of that operating model.
+Read [Company Story](company-story.md) for the full narrative version of that operating model.
 
 ## What the Dataset Contains
 
@@ -315,6 +311,6 @@ Those topics are future roadmap items, not hidden functionality.
 
 ## Where to Go Next
 
-- Read [company-story.md](company-story.md) for the business narrative.
-- Read [process-flows.md](process-flows.md) for O2C, P2P, manufacturing, journals, and ledger traceability.
-- Read [analytics/index.md](analytics/index.md) for the starter analytics layer.
+- Read [Company Story](company-story.md) for the business narrative.
+- Read [Process Flows](process-flows.md) for O2C, P2P, manufacturing, journals, and ledger traceability.
+- Read [Analytics Hub](analytics/index.md) for the starter analytics layer.

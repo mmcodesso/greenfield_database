@@ -7,9 +7,6 @@ sidebar_label: Row Counts
 
 # Row Counts and Volume
 
-**Audience:** Contributors, instructors, and advanced users who need current scale expectations for the dataset.  
-**Purpose:** Compare historical design-intent row ranges with the current deterministic default build.  
-**What you will learn:** Which tables are already at useful teaching scale, which ones now exceed the original design bands, and how payroll and manufacturing changed total volume.
 
 The default configuration uses:
 

@@ -6,9 +6,6 @@ sidebar_label: Posting Reference
 
 # Posting Reference
 
-**Audience:** Contributors, advanced students, and instructors who need the implemented accounting logic in technical form.  
-**Purpose:** Document the event-based posting rules used by the current generator.  
-**What you will learn:** Which documents post, which accounts are affected, and how postings are traced back to source transactions.
 
 Posting logic is implemented across `src/greenfield_dataset/journals.py`, `src/greenfield_dataset/payroll.py`, and `src/greenfield_dataset/posting_engine.py`.
 

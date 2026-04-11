@@ -6,10 +6,6 @@ sidebar_label: SQL Guide
 
 # SQL Starter Guide
 
-**Audience:** Students, instructors, and analysts running the starter analytics pack against the SQLite export.  
-**Purpose:** Explain how the starter SQL files are organized, how to run them, and how to adapt them without breaking alignment to the current dataset.  
-**What you will learn:** Where the starter queries live, how to execute them, and how to extend them safely for class use.
-
 
 ## Starter SQL Package Layout
 
@@ -31,10 +27,10 @@ Each file is a single SQLite-friendly `SELECT` statement with short comment head
 1. Open the SQLite file shared for your course or section.
 2. If you are preparing the dataset yourself, use [Dataset Delivery and Build Setup](/docs/technical/dataset-delivery).
 3. Start with one topic area:
-   - [financial.md](financial.md)
-   - [managerial.md](managerial.md)
-   - [audit.md](audit.md)
-   - [cases/index.md](cases/index.md)
+   - [Financial Analytics](financial.md)
+   - [Managerial Analytics](managerial.md)
+   - [Audit Analytics](audit.md)
+   - [Analytics Cases](cases/index.md)
 4. Run the corresponding `.sql` files.
 5. Export results or compare them to the Excel workbook.
 
@@ -161,5 +157,5 @@ Changes to avoid in this phase:
 
 ## Where to Go Next
 
-- Read [excel-guide.md](excel-guide.md) to recreate similar analyses in the workbook.
-- Read [../instructor-guide.md](../instructor-guide.md) for topic sequencing in class.
+- Read [Excel Guide](excel-guide.md) to recreate similar analyses in the workbook.
+- Read [Instructor Adoption Guide](../instructor-guide.md) for topic sequencing in class.

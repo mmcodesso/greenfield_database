@@ -6,19 +6,15 @@ sidebar_label: Analytics Cases
 
 # Analytics Walkthrough Cases
 
-**Audience:** Students, instructors, and analysts who want guided practice instead of starting from a blank query window.  
-**Purpose:** Connect the business story, process docs, starter SQL, and Excel workflows into short, teachable walkthroughs.  
-**What you will learn:** Which build to use, which tables and queries to open first, and what patterns to notice in a guided analytics exercise.
-
 
 ## Walkthrough Set
 
 | Case | Recommended build mode | Best paired query packs |
 |---|---|---|
-| [o2c-trace-case.md](o2c-trace-case.md) | Clean or default | financial + audit |
-| [p2p-accrual-settlement-case.md](p2p-accrual-settlement-case.md) | Clean or default | financial + audit |
-| [manufacturing-labor-cost-case.md](manufacturing-labor-cost-case.md) | Clean or default | managerial + financial |
-| [audit-exception-lab.md](audit-exception-lab.md) | Default anomaly-enabled | audit |
+| [O2C Trace Case](o2c-trace-case.md) | Clean or default | financial + audit |
+| [P2P Accrual Case](p2p-accrual-settlement-case.md) | Clean or default | financial + audit |
+| [Manufacturing Labor Case](manufacturing-labor-cost-case.md) | Clean or default | managerial + financial |
+| [Audit Exception Lab](audit-exception-lab.md) | Default anomaly-enabled | audit |
 
 ## Suggested Use
 
@@ -30,5 +26,5 @@ sidebar_label: Analytics Cases
 
 ## Where to Go Next
 
-- Read [../financial.md](../financial.md), [../managerial.md](../managerial.md), and [../audit.md](../audit.md) for the broader starter maps.
-- Read [../../process-flows.md](../../process-flows.md) if students need the full business-process context first.
+- Read [Financial Analytics](../financial.md), [Managerial Analytics](../managerial.md), and [Audit Analytics](../audit.md) for the broader starter maps.
+- Read [Process Flows](../../process-flows.md) if students need the full business-process context first.

@@ -1,10 +1,5 @@
 # Payroll Process
 
-**Audience:** Students, instructors, analysts, and contributors who need to understand how payroll now works in the dataset.  
-**Purpose:** Explain the payroll cycle, how labor time connects to manufacturing, and how payroll liabilities clear.  
-**What you will learn:** How pay periods, labor time, payroll registers, payments, remittances, and manufacturing labor reclasses work together.
-
-
 ## Business Storyline
 
 Greenfield now runs payroll as an operational process instead of only a journal simulation.
@@ -266,7 +261,7 @@ That distinction is essential for both financial accounting and payroll-control 
 
 ## Where to Go Next
 
-- Read [manufacturing.md](manufacturing.md) for the production side of labor integration.
-- Read [time-clocks.md](time-clocks.md) for the shift and attendance process that feeds hourly payroll.
-- Read [../reference/posting.md](../reference/posting.md) for exact payroll posting rules.
-- Read [../analytics/financial.md](../analytics/financial.md), [../analytics/managerial.md](../analytics/managerial.md), and [../analytics/audit.md](../analytics/audit.md) for starter analytics.
+- Read [Manufacturing](manufacturing.md) for the production side of labor integration.
+- Read [Time Clocks](time-clocks.md) for the shift and attendance process that feeds hourly payroll.
+- Read [Posting Reference](../reference/posting.md) for exact payroll posting rules.
+- Read [Financial Analytics](../analytics/financial.md), [Managerial Analytics](../analytics/managerial.md), and [Audit Analytics](../analytics/audit.md) for starter analytics.

@@ -1,10 +1,5 @@
 # Manual Journals and Close Cycle
 
-**Audience:** Students, instructors, and analysts who need the finance-team activity explained alongside the operational cycles.  
-**Purpose:** Show how recurring journals, accrued-expense estimates, manufacturing reclasses, and year-end close work in the current dataset.  
-**What you will learn:** The journal storyline, the journal categories, when entries occur, and how those entries affect analysis.
-
-
 ## Business Storyline
 
 Greenfield is not just an operational database. The finance team also records recurring activity that students expect in a real accounting system:
@@ -128,6 +123,6 @@ The teaching point is that accrued expenses are now expected to survive into lat
 
 ## Where to Go Next
 
-- Read [payroll.md](payroll.md) for the operational payroll process.
-- Read [../reference/posting.md](../reference/posting.md) for the detailed posting logic.
-- Read [../analytics/financial.md](../analytics/financial.md) for journal and close-cycle analysis examples.
+- Read [Payroll](payroll.md) for the operational payroll process.
+- Read [Posting Reference](../reference/posting.md) for the detailed posting logic.
+- Read [Financial Analytics](../analytics/financial.md) for journal and close-cycle analysis examples.

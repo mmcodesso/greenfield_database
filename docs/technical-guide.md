@@ -6,11 +6,6 @@ sidebar_label: Technical Guide
 
 # Technical Guide
 
-**Audience:** Contributors, advanced users, teaching assistants, and instructors who need a durable technical description of the dataset and generator.  
-**Purpose:** Provide a current, implementation-aligned guide to how the database and code work.  
-**What you will learn:** The system architecture, data-model layers, build flow, posting model, validation model, runtime profiles, outputs, and the next extension points.
-
-
 ## What This Guide Covers
 
 Use this page when you need the current design view of:
@@ -20,7 +15,7 @@ Use this page when you need the current design view of:
 - how processes map to postings
 - how validations and exports fit together
 
-Use [code-architecture.md](code-architecture.md) for a more code-centric, module-by-module explanation.
+Use [Code Architecture](code-architecture.md) for a more code-centric, module-by-module explanation.
 
 ## Current System at a Glance
 
@@ -140,7 +135,7 @@ Major posting triggers:
 - `PayrollLiabilityRemittance`
 - `JournalEntry`
 
-The detailed posting reference lives in [reference/posting.md](reference/posting.md).
+The detailed posting reference lives in [Posting Reference](reference/posting.md).
 
 ## Validation and Control Model
 

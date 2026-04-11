@@ -1,10 +1,5 @@
 # Time Clocks and Shift Labor
 
-**Audience:** Students, instructors, analysts, and contributors who need to understand how time and attendance now work in the dataset.  
-**Purpose:** Explain shift assignment, daily time-clock capture, approval, and how approved hours feed payroll and manufacturing labor analysis.  
-**What you will learn:** How Greenfield assigns hourly employees to shifts, records approved daily time clocks, turns those clocks into payroll hours, and links direct manufacturing labor to work-order operations.
-
-
 ## Business Storyline
 
 Greenfield now models time and attendance as an operational layer between workforce planning and payroll.
@@ -188,6 +183,6 @@ The posting events still happen at:
 
 ## Where to Go Next
 
-- Read [payroll.md](payroll.md) for the payroll-cycle view of the same data.
-- Read [manufacturing.md](manufacturing.md) for the production side of direct labor.
-- Read [../analytics/managerial.md](../analytics/managerial.md) and [../analytics/audit.md](../analytics/audit.md) for starter time-clock analysis.
+- Read [Payroll](payroll.md) for the payroll-cycle view of the same data.
+- Read [Manufacturing](manufacturing.md) for the production side of direct labor.
+- Read [Managerial Analytics](../analytics/managerial.md) and [Audit Analytics](../analytics/audit.md) for starter time-clock analysis.

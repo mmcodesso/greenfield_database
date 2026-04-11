@@ -7,11 +7,6 @@ sidebar_label: Instructor Adoption
 
 # Instructor Adoption Guide
 
-**Audience:** Instructors, course designers, and teaching assistants adopting the dataset for AIS, accounting analytics, auditing analytics, SQL, or Excel-based coursework.  
-**Purpose:** Show how to adopt Greenfield as a teaching package without forcing students to learn implementation details before they learn the business.  
-**What you will learn:** How to package the database for students, how to stage the material in a course, and how to choose the right starter analytics path.
-
-
 ## Adopt Greenfield in 4 Steps
 
 ### 1. Choose the student entry point

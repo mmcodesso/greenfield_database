@@ -6,10 +6,6 @@ sidebar_label: Financial Analytics
 
 # Financial Analytics Starter Guide
 
-**Audience:** Students, instructors, and analysts starting with financial accounting questions in the dataset.  
-**Purpose:** Show how to study revenue, COGS, receivables, payables, payroll liabilities, manufacturing balances, and journal activity.  
-**What you will learn:** Which tables matter most, which joins are common, which starter SQL files to run, and how to reproduce the same ideas in Excel.
-
 
 ## Relevant Tables
 

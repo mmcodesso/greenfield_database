@@ -7,9 +7,6 @@ sidebar_label: Dataset Delivery
 
 # Dataset Delivery and Build Setup
 
-**Audience:** Instructors, teaching assistants, and contributors preparing a classroom-ready Greenfield package.  
-**Purpose:** Keep all dataset-generation and package-prep instructions in one place.  
-**What you will learn:** Which build profile to use, how to generate the files locally, and what to share with students.
 
 ## When to Use This Page
 

@@ -6,9 +6,6 @@ sidebar_label: Roadmap
 
 # Roadmap
 
-**Audience:** Maintainers, contributors, and instructors tracking planned expansion of the dataset.  
-**Purpose:** Serve as the single place for current delivered scope and planned future expansion.  
-**What you will learn:** What has been delivered, what should be built next, and why.
 
 Use this page for current-versus-future scope. The rest of the documentation is intentionally focused on present behavior and present teaching use.
 
