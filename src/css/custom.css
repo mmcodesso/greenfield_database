@@ -78,3 +78,36 @@ h4 {
 html[data-theme="dark"] .theme-doc-markdown blockquote {
   background: rgba(132, 201, 168, 0.08);
 }
+
+.theme-doc-markdown .docusaurus-mermaid-container {
+  display: flex;
+  justify-content: center;
+  overflow-x: auto;
+  margin: 1.5rem 0;
+  padding: 1.1rem;
+  border: 1px solid rgba(31, 107, 82, 0.16);
+  border-radius: 1rem;
+  background:
+    linear-gradient(180deg, rgba(255, 253, 248, 0.96), rgba(246, 242, 232, 0.92));
+  box-shadow: 0 0.7rem 1.8rem rgba(23, 58, 47, 0.06);
+}
+
+.theme-doc-markdown .docusaurus-mermaid-container svg {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+}
+
+.theme-doc-markdown .docusaurus-mermaid-container svg text,
+.theme-doc-markdown .docusaurus-mermaid-container svg tspan,
+.theme-doc-markdown .docusaurus-mermaid-container .nodeLabel {
+  font-family: var(--ifm-font-family-base);
+}
+
+html[data-theme="dark"] .theme-doc-markdown .docusaurus-mermaid-container {
+  border-color: rgba(132, 201, 168, 0.18);
+  background:
+    linear-gradient(180deg, rgba(24, 43, 35, 0.96), rgba(20, 35, 28, 0.92));
+  box-shadow: none;
+}

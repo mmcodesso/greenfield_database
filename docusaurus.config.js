@@ -48,6 +48,23 @@ const config = {
       disableSwitch: false,
       respectPrefersColorScheme: false,
     },
+    mermaid: {
+      theme: {
+        light: "neutral",
+        dark: "forest",
+      },
+      options: {
+        fontFamily: "IBM Plex Sans, Trebuchet MS, sans-serif",
+        flowchart: {
+          useMaxWidth: true,
+          htmlLabels: true,
+          curve: "linear",
+        },
+        sequence: {
+          useMaxWidth: true,
+        },
+      },
+    },
     navbar: {
       title: "Greenfield",
       items: [
