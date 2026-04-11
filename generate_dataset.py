@@ -14,4 +14,5 @@ from greenfield_dataset.main import main
 
 if __name__ == "__main__":
     config_path = sys.argv[1] if len(sys.argv) > 1 else "config/settings.yaml"
-    main(config_path)
+    validation_scope = sys.argv[2] if len(sys.argv) > 2 else "full"
+    main(config_path, validation_scope)

@@ -6,7 +6,7 @@
 
 > **Implemented in current generator:** Revenue-cycle postings, receipt applications, customer deposits, returns and refunds, P2P liability postings, payroll liability postings, recurring manual journals, manufacturing balance flows, and a full `GLEntry` ledger suitable for multi-period analysis.
 
-> **Planned future extension:** More advanced cash-flow, planning, and payroll-anomaly packs.
+> **Planned future extension:** More advanced cash-flow forecasting, raw punch-event detail, and deeper payroll-anomaly packs.
 
 ## Relevant Tables
 
@@ -16,7 +16,7 @@
 | AR | `SalesInvoice`, `CashReceipt`, `CashReceiptApplication`, `CreditMemo`, `CustomerRefund`, `Customer`, `GLEntry` |
 | AP | `PurchaseInvoice`, `DisbursementPayment`, `Supplier`, `GLEntry` |
 | Accrued expenses | `JournalEntry`, `PurchaseInvoice`, `PurchaseInvoiceLine`, `DisbursementPayment`, `GLEntry`, `Account`, `Supplier`, `Item` |
-| Payroll liabilities | `PayrollPeriod`, `PayrollRegister`, `PayrollRegisterLine`, `PayrollPayment`, `PayrollLiabilityRemittance`, `GLEntry`, `Account` |
+| Payroll liabilities and support | `PayrollPeriod`, `TimeClockEntry`, `LaborTimeEntry`, `PayrollRegister`, `PayrollRegisterLine`, `PayrollPayment`, `PayrollLiabilityRemittance`, `GLEntry`, `Account` |
 | Manufacturing balances | `WorkOrderClose`, `ProductionCompletionLine`, `MaterialIssueLine`, `JournalEntry`, `GLEntry`, `Account` |
 | Trial balance and journals | `GLEntry`, `JournalEntry`, `Account` |
 
@@ -37,12 +37,14 @@
 | Payroll cash payments and remittances | [11_payroll_cash_payments_and_remittances.sql](../../queries/financial/11_payroll_cash_payments_and_remittances.sql) |
 | Accrued expense roll-forward | [12_accrued_expense_rollforward.sql](../../queries/financial/12_accrued_expense_rollforward.sql) |
 | Accrual versus invoice versus payment timing | [13_accrued_vs_invoiced_vs_paid_timing.sql](../../queries/financial/13_accrued_vs_invoiced_vs_paid_timing.sql) |
+| Hourly payroll hours to paid earnings bridge | [14_hourly_payroll_hours_to_paid_earnings_bridge.sql](../../queries/financial/14_hourly_payroll_hours_to_paid_earnings_bridge.sql) |
 
 ## Interpretation Notes
 
 - Revenue posts at invoicing. COGS posts at shipment.
 - `CashReceipt` does not equal settled AR by itself. Use `CashReceiptApplication`.
 - Payroll register activity records liabilities first; cash leaves through payroll payments and remittances later.
+- For hourly employees, approved `TimeClockEntry` rows are the evidence behind regular and overtime earnings.
 - Manufacturing balance analysis should focus on `1046`, `1090`, and `5080`.
 - Accrued-expense analysis should focus on `2040`, `PurchaseInvoiceLine.AccrualJournalEntryID`, and the service-item lines that settle those estimates.
 - Year-end close entries are real posted journals and should be filtered when you want raw multi-year P&L activity.

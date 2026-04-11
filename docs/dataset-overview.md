@@ -24,9 +24,9 @@ The project is built for:
 - auditing and controls analytics
 - document tracing and business-process understanding
 
-> **Implemented in current generator:** A five-year dataset with 51 tables covering O2C, P2P, manufacturing, payroll, accounting core, master data, budgets, recurring journals, year-end close, validations, anomalies, and exports.
+> **Implemented in current generator:** A five-year dataset with 55 tables covering O2C, P2P, manufacturing, payroll, time and attendance, accounting core, master data, budgets, recurring journals, year-end close, validations, anomalies, and exports.
 
-> **Planned future extension:** Time-clock detail, richer labor analytics, and deeper cost-accounting detail.
+> **Planned future extension:** Raw punch-event detail, richer shift planning, and deeper cost-accounting detail.
 
 ## Business Context
 
@@ -38,13 +38,14 @@ The current dataset models a company that:
 - buys finished goods, raw materials, and packaging from suppliers
 - manufactures selected finished goods internally
 - ships, invoices, collects cash, processes returns, and issues credit memos and refunds
+- assigns shifts, records approved daily time clocks for hourly employees, and runs payroll
 - records recurring journals, manufacturing reclasses, and year-end close
 
 Read [company-story.md](company-story.md) for the narrative version of that operating model.
 
 ## What the Database Contains
 
-The current implementation contains **51 tables** across seven areas:
+The current implementation contains **55 tables** across seven areas:
 
 | Area | Example tables | Count |
 |---|---|---:|
@@ -52,7 +53,7 @@ The current implementation contains **51 tables** across seven areas:
 | Order-to-cash | `Customer`, `SalesOrder`, `Shipment`, `SalesInvoice`, `CashReceiptApplication`, `SalesReturn`, `CreditMemo`, `CustomerRefund` | 14 |
 | Procure-to-pay | `Supplier`, `PurchaseRequisition`, `PurchaseOrder`, `GoodsReceipt`, `PurchaseInvoice`, `DisbursementPayment` | 9 |
 | Manufacturing | `BillOfMaterial`, `BillOfMaterialLine`, `WorkCenter`, `WorkCenterCalendar`, `Routing`, `RoutingOperation`, `WorkOrder`, `WorkOrderOperation`, `WorkOrderOperationSchedule`, `MaterialIssue`, `ProductionCompletion`, `WorkOrderClose` | 14 |
-| Payroll | `PayrollPeriod`, `LaborTimeEntry`, `PayrollRegister`, `PayrollRegisterLine`, `PayrollPayment`, `PayrollLiabilityRemittance` | 6 |
+| Payroll and time | `ShiftDefinition`, `EmployeeShiftAssignment`, `TimeClockEntry`, `AttendanceException`, `PayrollPeriod`, `LaborTimeEntry`, `PayrollRegister`, `PayrollRegisterLine`, `PayrollPayment`, `PayrollLiabilityRemittance` | 10 |
 | Master data | `Item`, `Warehouse`, `Employee` | 3 |
 | Organizational planning | `CostCenter`, `Budget` | 2 |
 
@@ -73,7 +74,7 @@ Students can:
 - reconcile AR using invoices, cash applications, credit memos, and refunds
 - reconcile AP using purchase invoices and disbursements
 - review WIP, manufacturing clearing, and manufacturing variance balances
-- review payroll liabilities, gross-to-net payroll, and payroll cash flows
+- review payroll liabilities, gross-to-net payroll, time-clock-to-payroll support, and payroll cash flows
 - trace source transactions into `GLEntry`
 
 ### Managerial accounting
@@ -92,7 +93,7 @@ Students can:
 Students can:
 
 - test O2C, P2P, and manufacturing document chains
-- test payroll approvals, time-entry linkage, and payroll-control behavior
+- test payroll approvals, time-clock support, time-entry linkage, and payroll-control behavior
 - review approvals and segregation-of-duties patterns
 - examine timing and cut-off behavior
 - detect duplicate references and planted anomalies
@@ -102,9 +103,9 @@ Students can:
 
 The current generator does **not** yet include:
 
-- time clocks or shift scheduling
+- raw punch-event tables beneath the current approved daily time-clock rows
+- rotating shift rosters or shift-level capacity calendars
 - multi-level BOMs or subassemblies
-- detailed labor planning beyond the current payroll-period model
 
 Those topics are future roadmap items, not hidden functionality.
 

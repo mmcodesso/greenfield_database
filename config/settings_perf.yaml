@@ -1,0 +1,17 @@
+random_seed: 20260401
+fiscal_year_start: "2026-01-01"
+fiscal_year_end: "2027-12-31"
+company_name: "Greenfield Home Furnishings, Inc."
+tax_rate: 0.065
+employee_count: 32
+customer_count: 90
+supplier_count: 55
+item_count: 140
+warehouse_count: 2
+export_sqlite: false
+export_excel: false
+anomaly_mode: "none"
+sqlite_path: "outputs/greenfield_perf.sqlite"
+excel_path: "outputs/greenfield_perf.xlsx"
+validation_report_path: "outputs/perf_validation_report.json"
+generation_log_path: "outputs/generation_perf.log"

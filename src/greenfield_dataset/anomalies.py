@@ -6,8 +6,9 @@ from typing import Any
 import pandas as pd
 import yaml
 
+from greenfield_dataset.schema import TABLE_COLUMNS
 from greenfield_dataset.settings import GenerationContext
-from greenfield_dataset.utils import money
+from greenfield_dataset.utils import money, next_id
 
 
 def fiscal_years(context: GenerationContext) -> list[int]:
@@ -27,7 +28,7 @@ def load_anomaly_profile(
     with path.open("r", encoding="utf-8") as handle:
         raw = yaml.safe_load(handle) or {}
 
-    mode = raw.get("mode", context.settings.anomaly_mode)
+    mode = context.settings.anomaly_mode or raw.get("mode", "none")
     return raw.get("profiles", {}).get(mode, {"enabled": False})
 
 
@@ -111,6 +112,38 @@ def update_journal_posting_date(context: GenerationContext, journal_entry_id: in
     context.tables["GLEntry"].loc[gl_mask, "FiscalPeriod"] = int(posting_timestamp.month)
     context.tables["GLEntry"].loc[gl_mask, "CreatedDate"] = created_dates.apply(
         lambda value: compose_timestamp(posting_date, value, "08:00:00")
+    )
+
+
+def append_attendance_exception(
+    context: GenerationContext,
+    employee_id: int,
+    payroll_period_id: int,
+    work_date: str,
+    shift_definition_id: int | None,
+    time_clock_entry_id: int | None,
+    exception_type: str,
+    severity: str,
+    minutes_variance: float,
+) -> None:
+    row = {
+        "AttendanceExceptionID": next_id(context, "AttendanceException"),
+        "EmployeeID": int(employee_id),
+        "PayrollPeriodID": int(payroll_period_id),
+        "WorkDate": str(work_date),
+        "ShiftDefinitionID": shift_definition_id,
+        "TimeClockEntryID": time_clock_entry_id,
+        "ExceptionType": exception_type,
+        "Severity": severity,
+        "MinutesVariance": money(minutes_variance),
+        "Status": "Open",
+        "ReviewedByEmployeeID": None,
+        "ReviewedDate": None,
+    }
+    new_rows = pd.DataFrame([row], columns=TABLE_COLUMNS["AttendanceException"])
+    context.tables["AttendanceException"] = pd.concat(
+        [context.tables["AttendanceException"], new_rows],
+        ignore_index=True,
     )
 
 
@@ -592,6 +625,257 @@ def inject_completion_before_operation_end(context: GenerationContext, count_per
                 break
 
 
+def inject_missing_clock_out(context: GenerationContext, count_per_year: int) -> None:
+    time_clocks = context.tables["TimeClockEntry"]
+    if time_clocks.empty or count_per_year <= 0:
+        return
+
+    for year in fiscal_years(context):
+        candidates = rows_for_year(time_clocks, "WorkDate", year).copy()
+        used_ids = used_primary_keys(context, "TimeClockEntry", "missing_clock_out")
+        if used_ids:
+            candidates = candidates[~candidates["TimeClockEntryID"].astype(int).isin(used_ids)]
+        for row in candidates.head(count_per_year).itertuples(index=False):
+            mask = context.tables["TimeClockEntry"]["TimeClockEntryID"].astype(int).eq(int(row.TimeClockEntryID))
+            context.tables["TimeClockEntry"].loc[mask, "ClockOutTime"] = None
+            context.tables["TimeClockEntry"].loc[mask, "ClockStatus"] = "Pending"
+            append_attendance_exception(
+                context,
+                int(row.EmployeeID),
+                int(row.PayrollPeriodID),
+                str(row.WorkDate),
+                None if pd.isna(row.ShiftDefinitionID) else int(row.ShiftDefinitionID),
+                int(row.TimeClockEntryID),
+                "Missing Clock Out",
+                "High",
+                0.0,
+            )
+            log_anomaly(
+                context,
+                "missing_clock_out",
+                "TimeClockEntry",
+                int(row.TimeClockEntryID),
+                year,
+                "Time-clock entry is missing ClockOutTime.",
+                "Time-clock records with null ClockOutTime.",
+            )
+
+
+def inject_duplicate_time_clock_day(context: GenerationContext, count_per_year: int) -> None:
+    time_clocks = context.tables["TimeClockEntry"]
+    if time_clocks.empty or count_per_year <= 0:
+        return
+
+    for year in fiscal_years(context):
+        year_rows = rows_for_year(time_clocks, "WorkDate", year).copy()
+        if year_rows.empty:
+            continue
+        used_ids = used_primary_keys(context, "TimeClockEntry", "duplicate_time_clock_day")
+        if used_ids:
+            year_rows = year_rows[~year_rows["TimeClockEntryID"].astype(int).isin(used_ids)]
+        grouped = year_rows.groupby(["EmployeeID", "PayrollPeriodID"])
+        injected = 0
+        for (_, _), rows in grouped:
+            if len(rows) < 2:
+                continue
+            first = rows.sort_values(["WorkDate", "TimeClockEntryID"]).iloc[0]
+            second = rows.sort_values(["WorkDate", "TimeClockEntryID"]).iloc[1]
+            target_date = str(first["WorkDate"])
+            second_mask = context.tables["TimeClockEntry"]["TimeClockEntryID"].astype(int).eq(int(second["TimeClockEntryID"]))
+            context.tables["TimeClockEntry"].loc[second_mask, "WorkDate"] = target_date
+            context.tables["TimeClockEntry"].loc[second_mask, "ClockInTime"] = compose_timestamp(target_date, second["ClockInTime"], "08:00:00")
+            context.tables["TimeClockEntry"].loc[second_mask, "ClockOutTime"] = compose_timestamp(target_date, second["ClockOutTime"], "16:00:00")
+            append_attendance_exception(
+                context,
+                int(second["EmployeeID"]),
+                int(second["PayrollPeriodID"]),
+                target_date,
+                None if pd.isna(second["ShiftDefinitionID"]) else int(second["ShiftDefinitionID"]),
+                int(second["TimeClockEntryID"]),
+                "Duplicate Clock Day",
+                "High",
+                0.0,
+            )
+            log_anomaly(
+                context,
+                "duplicate_time_clock_day",
+                "TimeClockEntry",
+                int(second["TimeClockEntryID"]),
+                year,
+                "Employee has more than one time-clock entry on the same work date.",
+                "Duplicate time-clock day query by employee and WorkDate.",
+            )
+            injected += 1
+            if injected >= count_per_year:
+                break
+
+
+def inject_off_shift_clocking(context: GenerationContext, count_per_year: int) -> None:
+    time_clocks = context.tables["TimeClockEntry"]
+    shifts = context.tables["ShiftDefinition"]
+    if time_clocks.empty or shifts.empty or count_per_year <= 0:
+        return
+
+    shift_lookup = shifts.set_index("ShiftDefinitionID").to_dict("index")
+    for year in fiscal_years(context):
+        candidates = rows_for_year(time_clocks, "WorkDate", year).copy()
+        used_ids = used_primary_keys(context, "TimeClockEntry", "off_shift_clocking")
+        if used_ids:
+            candidates = candidates[~candidates["TimeClockEntryID"].astype(int).isin(used_ids)]
+        injected = 0
+        for row in candidates.itertuples(index=False):
+            if pd.isna(row.ShiftDefinitionID):
+                continue
+            shift = shift_lookup.get(int(row.ShiftDefinitionID))
+            if shift is None:
+                continue
+            late_clock_in = pd.Timestamp(f"{row.WorkDate} {shift['StartTime']}") + pd.Timedelta(hours=2)
+            total_minutes = int(round((float(row.RegularHours) + float(row.OvertimeHours)) * 60)) + int(row.BreakMinutes)
+            late_clock_out = late_clock_in + pd.Timedelta(minutes=total_minutes)
+            mask = context.tables["TimeClockEntry"]["TimeClockEntryID"].astype(int).eq(int(row.TimeClockEntryID))
+            context.tables["TimeClockEntry"].loc[mask, "ClockInTime"] = late_clock_in.strftime("%Y-%m-%d %H:%M:%S")
+            context.tables["TimeClockEntry"].loc[mask, "ClockOutTime"] = late_clock_out.strftime("%Y-%m-%d %H:%M:%S")
+            append_attendance_exception(
+                context,
+                int(row.EmployeeID),
+                int(row.PayrollPeriodID),
+                str(row.WorkDate),
+                int(row.ShiftDefinitionID),
+                int(row.TimeClockEntryID),
+                "Off Shift Clocking",
+                "Medium",
+                120.0,
+            )
+            log_anomaly(
+                context,
+                "off_shift_clocking",
+                "TimeClockEntry",
+                int(row.TimeClockEntryID),
+                year,
+                "Time-clock entry was moved materially outside its assigned shift.",
+                "Clock-in or clock-out materially outside shift definition.",
+            )
+            injected += 1
+            if injected >= count_per_year:
+                break
+
+
+def inject_paid_without_clock(context: GenerationContext, count_per_year: int) -> None:
+    register_lines = context.tables["PayrollRegisterLine"]
+    labor_entries = context.tables["LaborTimeEntry"]
+    time_clocks = context.tables["TimeClockEntry"]
+    if register_lines.empty or labor_entries.empty or time_clocks.empty or count_per_year <= 0:
+        return
+
+    labor_lookup = labor_entries.set_index("LaborTimeEntryID").to_dict("index")
+    register_lookup = context.tables["PayrollRegister"].set_index("PayrollRegisterID").to_dict("index")
+    candidates = register_lines[register_lines["LineType"].isin(["Regular Earnings", "Overtime Earnings"])].copy()
+
+    for year in fiscal_years(context):
+        year_candidates = []
+        for row in candidates.itertuples(index=False):
+            register = register_lookup.get(int(row.PayrollRegisterID))
+            labor_entry = None if pd.isna(row.LaborTimeEntryID) else labor_lookup.get(int(row.LaborTimeEntryID))
+            if register is None or labor_entry is None or pd.isna(labor_entry.get("TimeClockEntryID")):
+                continue
+            approved_date = pd.Timestamp(register["ApprovedDate"])
+            if approved_date.year != year:
+                continue
+            year_candidates.append((row, register, labor_entry))
+        injected = 0
+        used_ids = used_primary_keys(context, "PayrollRegisterLine", "paid_without_clock")
+        for row, register, labor_entry in year_candidates:
+            if int(row.PayrollRegisterLineID) in used_ids:
+                continue
+            time_clock_id = int(labor_entry["TimeClockEntryID"])
+            mask = context.tables["TimeClockEntry"]["TimeClockEntryID"].astype(int).eq(time_clock_id)
+            context.tables["TimeClockEntry"].loc[mask, "ClockStatus"] = "Pending"
+            context.tables["TimeClockEntry"].loc[mask, "ApprovedDate"] = None
+            append_attendance_exception(
+                context,
+                int(labor_entry["EmployeeID"]),
+                int(labor_entry["PayrollPeriodID"]),
+                str(labor_entry["WorkDate"]),
+                None,
+                time_clock_id,
+                "Paid Without Approved Clock",
+                "High",
+                0.0,
+            )
+            log_anomaly(
+                context,
+                "paid_without_clock",
+                "PayrollRegisterLine",
+                int(row.PayrollRegisterLineID),
+                year,
+                "Hourly payroll line remains paid while the supporting time clock is no longer approved.",
+                "Hourly payroll earnings without approved time-clock support.",
+            )
+            injected += 1
+            if injected >= count_per_year:
+                break
+
+
+def inject_labor_after_operation_close(context: GenerationContext, count_per_year: int) -> None:
+    labor_entries = context.tables["LaborTimeEntry"]
+    work_orders = context.tables["WorkOrder"]
+    time_clocks = context.tables["TimeClockEntry"]
+    if labor_entries.empty or work_orders.empty or time_clocks.empty or count_per_year <= 0:
+        return
+
+    work_order_lookup = work_orders.set_index("WorkOrderID").to_dict("index")
+    time_clock_mask_series = context.tables["TimeClockEntry"]["TimeClockEntryID"].astype(int)
+    candidates = labor_entries[
+        labor_entries["LaborType"].eq("Direct Manufacturing")
+        & labor_entries["WorkOrderID"].notna()
+        & labor_entries["TimeClockEntryID"].notna()
+    ].copy()
+
+    for year in fiscal_years(context):
+        year_candidates = candidates[pd.to_datetime(candidates["WorkDate"]).dt.year.eq(year)].copy()
+        used_ids = used_primary_keys(context, "LaborTimeEntry", "labor_after_operation_close")
+        if used_ids:
+            year_candidates = year_candidates[~year_candidates["LaborTimeEntryID"].astype(int).isin(used_ids)]
+        injected = 0
+        for row in year_candidates.itertuples(index=False):
+            work_order = work_order_lookup.get(int(row.WorkOrderID))
+            if work_order is None or pd.isna(work_order.get("ClosedDate")):
+                continue
+            shifted_date = (pd.Timestamp(work_order["ClosedDate"]) + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
+            labor_mask = context.tables["LaborTimeEntry"]["LaborTimeEntryID"].astype(int).eq(int(row.LaborTimeEntryID))
+            context.tables["LaborTimeEntry"].loc[labor_mask, "WorkDate"] = shifted_date
+            time_clock_id = int(row.TimeClockEntryID)
+            time_clock_mask = time_clock_mask_series.eq(time_clock_id)
+            original_clock_in = context.tables["TimeClockEntry"].loc[time_clock_mask, "ClockInTime"].iloc[0]
+            original_clock_out = context.tables["TimeClockEntry"].loc[time_clock_mask, "ClockOutTime"].iloc[0]
+            context.tables["TimeClockEntry"].loc[time_clock_mask, "WorkDate"] = shifted_date
+            context.tables["TimeClockEntry"].loc[time_clock_mask, "ClockInTime"] = compose_timestamp(shifted_date, original_clock_in, "08:00:00")
+            context.tables["TimeClockEntry"].loc[time_clock_mask, "ClockOutTime"] = compose_timestamp(shifted_date, original_clock_out, "16:00:00")
+            append_attendance_exception(
+                context,
+                int(row.EmployeeID),
+                int(row.PayrollPeriodID),
+                shifted_date,
+                None,
+                time_clock_id,
+                "Labor After Close",
+                "High",
+                0.0,
+            )
+            log_anomaly(
+                context,
+                "labor_after_operation_close",
+                "LaborTimeEntry",
+                int(row.LaborTimeEntryID),
+                year,
+                "Direct labor date was moved after the related work order was closed.",
+                "Direct labor or time-clock rows after work-order close.",
+            )
+            injected += 1
+            if injected >= count_per_year:
+                break
+
+
 def inject_anomalies(context: GenerationContext) -> None:
     profile = load_anomaly_profile(context)
     if not profile.get("enabled", False):
@@ -611,3 +895,8 @@ def inject_anomalies(context: GenerationContext) -> None:
     inject_scheduled_on_nonworking_day(context, int(profile.get("scheduled_on_nonworking_day_per_year", 0)))
     inject_overbooked_work_center_day(context, int(profile.get("overbooked_work_center_day_per_year", 0)))
     inject_completion_before_operation_end(context, int(profile.get("completion_before_operation_end_per_year", 0)))
+    inject_missing_clock_out(context, int(profile.get("missing_clock_out_per_year", 0)))
+    inject_duplicate_time_clock_day(context, int(profile.get("duplicate_time_clock_day_per_year", 0)))
+    inject_off_shift_clocking(context, int(profile.get("off_shift_clocking_per_year", 0)))
+    inject_paid_without_clock(context, int(profile.get("paid_without_clock_per_year", 0)))
+    inject_labor_after_operation_close(context, int(profile.get("labor_after_operation_close_per_year", 0)))

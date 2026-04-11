@@ -330,7 +330,9 @@ def generate_employees(context: GenerationContext) -> None:
         cost_center_name = cost_center_names[cost_center_id]
         employee_id = next_id(context, "Employee")
 
-        if cost_center_name == "Executive" or index < 4:
+        if index < len(cost_center_ids):
+            authorization_level = "Executive" if cost_center_name == "Executive" else "Manager"
+        elif cost_center_name == "Executive" or index < 4:
             authorization_level = "Executive"
         elif index % 5 == 0:
             authorization_level = "Manager"

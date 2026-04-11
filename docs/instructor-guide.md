@@ -4,9 +4,9 @@
 **Purpose:** Show how the dataset can be adopted as a teaching package and how the starter analytics layer fits into class delivery.  
 **What you will learn:** A recommended teaching sequence, how to map learning goals to documents and query sets, and how to separate student-ready materials from instructor enrichment notes.
 
-> **Implemented in current generator:** Five years of O2C, P2P, manufacturing, and payroll data, opening balances, recurring manual journals, year-end close, budgets, ledger postings, anomalies, and starter analytics materials for financial, managerial, and audit analytics.
+> **Implemented in current generator:** Five years of O2C, P2P, manufacturing, payroll, shift-assignment, and time-clock data, opening balances, recurring manual journals, year-end close, budgets, ledger postings, anomalies, and starter analytics materials for financial, managerial, and audit analytics.
 
-> **Planned future extension:** Time clocks, shift planning, and richer labor-planning detail.
+> **Planned future extension:** Raw punch-event detail, rotating shift rosters, and shift-level workforce planning.
 
 ## How to Position the Dataset
 
@@ -34,6 +34,7 @@ Use these directly with students:
 - [processes/o2c-returns-credits-refunds.md](processes/o2c-returns-credits-refunds.md)
 - [processes/p2p.md](processes/p2p.md)
 - [processes/manufacturing.md](processes/manufacturing.md)
+- [processes/time-clocks.md](processes/time-clocks.md)
 - [processes/payroll.md](processes/payroll.md)
 - [processes/manual-journals-and-close.md](processes/manual-journals-and-close.md)
 - [database-guide.md](database-guide.md)
@@ -63,8 +64,8 @@ Use these to frame the course and answer implementation questions:
 | Week or module | Teaching goal | Main docs | Main starter assets |
 |---|---|---|---|
 | 1. Business orientation | Explain the company, scope, and why the dataset exists | [company-story.md](company-story.md), [dataset-overview.md](dataset-overview.md) | None yet |
-| 2. Process mapping | Show O2C, returns, P2P, manufacturing, payroll, and close-cycle flow | [process-flows.md](process-flows.md), [processes/o2c.md](processes/o2c.md), [processes/p2p.md](processes/p2p.md), [processes/manufacturing.md](processes/manufacturing.md), [processes/payroll.md](processes/payroll.md) | None yet |
-| 3. Exception paths | Show returns, credits, refunds, payroll liability clearance, and manual journal activity | [processes/o2c-returns-credits-refunds.md](processes/o2c-returns-credits-refunds.md), [processes/payroll.md](processes/payroll.md), [processes/manual-journals-and-close.md](processes/manual-journals-and-close.md) | None yet |
+| 2. Process mapping | Show O2C, returns, P2P, manufacturing, time clocks, payroll, and close-cycle flow | [process-flows.md](process-flows.md), [processes/o2c.md](processes/o2c.md), [processes/p2p.md](processes/p2p.md), [processes/manufacturing.md](processes/manufacturing.md), [processes/time-clocks.md](processes/time-clocks.md), [processes/payroll.md](processes/payroll.md) | None yet |
+| 3. Exception paths | Show returns, credits, refunds, attendance exceptions, payroll liability clearance, and manual journal activity | [processes/o2c-returns-credits-refunds.md](processes/o2c-returns-credits-refunds.md), [processes/time-clocks.md](processes/time-clocks.md), [processes/payroll.md](processes/payroll.md), [processes/manual-journals-and-close.md](processes/manual-journals-and-close.md) | None yet |
 | 4. Table navigation and joins | Teach keys, header-line patterns, and traceability | [database-guide.md](database-guide.md) | Introductory ad hoc joins |
 | 5. Source-to-ledger bridge | Show how operational activity becomes accounting data | [reference/posting.md](reference/posting.md) | Ledger-oriented examples |
 | 6. Financial analytics | Teach revenue, AR, AP, payroll liabilities, trial balance, and close cycle | [analytics/financial.md](analytics/financial.md) | `queries/financial/` |
@@ -103,6 +104,7 @@ The current dataset works well for:
 The current workbook works well for:
 
 - pivots by month, customer segment, supplier category, account, cost center, and pay period
+- shift adherence and overtime analysis by work center and month
 - budget-versus-actual analysis
 - aging views for receivables and payables
 - payroll cash-flow and liability analysis
@@ -176,8 +178,8 @@ Use the starter layer for:
 
 The current dataset does **not** yet include:
 
-- time clocks or shift scheduling
-- labor planning beyond the payroll-period model
+- raw punch-event tables beneath the current approved daily time-clock rows
+- rotating shift rosters or shift-level capacity calendars
 
 These are future expansion areas, not hidden parts of the current model.
 

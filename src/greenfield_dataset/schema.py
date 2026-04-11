@@ -192,8 +192,27 @@ TABLE_COLUMNS = {
     ],
     "LaborTimeEntry": [
         "LaborTimeEntryID", "PayrollPeriodID", "EmployeeID", "WorkOrderID", "WorkOrderOperationID",
-        "WorkDate", "LaborType", "RegularHours", "OvertimeHours", "HourlyRateUsed",
+        "TimeClockEntryID", "WorkDate", "LaborType", "RegularHours", "OvertimeHours", "HourlyRateUsed",
         "ExtendedLaborCost", "ApprovedByEmployeeID", "ApprovedDate",
+    ],
+    "ShiftDefinition": [
+        "ShiftDefinitionID", "ShiftCode", "ShiftName", "Department", "WorkCenterID", "StartTime",
+        "EndTime", "StandardBreakMinutes", "ShiftType", "IsOvernight", "IsActive",
+    ],
+    "EmployeeShiftAssignment": [
+        "EmployeeShiftAssignmentID", "EmployeeID", "ShiftDefinitionID", "EffectiveStartDate",
+        "EffectiveEndDate", "WorkCenterID", "IsPrimary",
+    ],
+    "TimeClockEntry": [
+        "TimeClockEntryID", "EmployeeID", "PayrollPeriodID", "WorkDate", "ShiftDefinitionID",
+        "WorkCenterID", "WorkOrderID", "WorkOrderOperationID", "ClockInTime", "ClockOutTime",
+        "BreakMinutes", "RegularHours", "OvertimeHours", "ClockStatus", "ApprovedByEmployeeID",
+        "ApprovedDate",
+    ],
+    "AttendanceException": [
+        "AttendanceExceptionID", "EmployeeID", "PayrollPeriodID", "WorkDate", "ShiftDefinitionID",
+        "TimeClockEntryID", "ExceptionType", "Severity", "MinutesVariance", "Status",
+        "ReviewedByEmployeeID", "ReviewedDate",
     ],
     "PayrollRegister": [
         "PayrollRegisterID", "PayrollPeriodID", "EmployeeID", "CostCenterID", "GrossPay",

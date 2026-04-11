@@ -93,7 +93,7 @@ Safe ways to extend the starter pack:
 
 Changes to avoid in this phase:
 
-- rewriting queries around future capacity-calendar or time-clock flows
+- rewriting queries around future raw punch-event or shift-level capacity flows
 - assuming anomaly rows will always exist
 - assuming every control-account or balance-sheet line carries a cost center
 
@@ -114,9 +114,10 @@ Changes to avoid in this phase:
 5. gross-to-net payroll review
 6. accrued expense roll-forward
 7. accrued versus invoiced versus paid timing
-8. trial balance
-9. journal and close-cycle review
-10. control-account reconciliation
+8. hourly payroll hours to paid earnings bridge
+9. trial balance
+10. journal and close-cycle review
+11. control-account reconciliation
 
 ### Managerial
 
@@ -132,6 +133,8 @@ Changes to avoid in this phase:
 10. unit-cost bridge
 11. absorption vs contribution margin
 12. labor efficiency and rate variance
+13. shift adherence and overtime by work center
+14. approved clock hours versus labor allocation
 
 ### Audit
 
@@ -147,6 +150,9 @@ Changes to avoid in this phase:
 10. payroll control review
 11. labor-time-after-close and paid-without-time review
 12. over and under accrual review
+13. time-clock exception review
+14. labor outside scheduled operation window review
+15. paid-without-clock and clock-without-pay review
 
 ## Where to Go Next
 

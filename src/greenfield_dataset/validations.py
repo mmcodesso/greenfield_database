@@ -44,11 +44,13 @@ from greenfield_dataset.p2p import (
     purchase_invoice_line_matched_basis_map,
 )
 from greenfield_dataset.payroll import (
+    approved_time_clock_hours_by_employee_period,
     monthly_direct_labor_reclass_amount,
     monthly_factory_overhead_amount,
     monthly_manufacturing_overhead_pool_amount,
     payroll_liability_recorded_amounts,
     payroll_liability_remitted_amounts,
+    time_clock_entry_lookup,
 )
 from greenfield_dataset.schema import TABLE_COLUMNS
 from greenfield_dataset.settings import GenerationContext
@@ -2092,6 +2094,201 @@ def validate_payroll_controls(context: GenerationContext) -> dict[str, Any]:
     }
 
 
+def validate_time_clock_controls(context: GenerationContext) -> dict[str, Any]:
+    employees = context.tables["Employee"]
+    time_clocks = context.tables["TimeClockEntry"]
+    labor_entries = context.tables["LaborTimeEntry"]
+    registers = context.tables["PayrollRegister"]
+    register_lines = context.tables["PayrollRegisterLine"]
+    work_orders = context.tables["WorkOrder"]
+    work_order_operations = context.tables["WorkOrderOperation"]
+    shift_definitions = context.tables["ShiftDefinition"]
+    exceptions: list[dict[str, Any]] = []
+
+    if employees.empty:
+        return {"exception_count": 0, "exceptions": []}
+
+    employee_lookup = employees.set_index("EmployeeID").to_dict("index")
+    hourly_employee_ids = set(
+        employees.loc[employees["PayClass"].eq("Hourly"), "EmployeeID"].astype(int).tolist()
+    )
+    salary_employee_ids = set(
+        employees.loc[employees["PayClass"].eq("Salary"), "EmployeeID"].astype(int).tolist()
+    )
+    shift_lookup = shift_definitions.set_index("ShiftDefinitionID").to_dict("index") if not shift_definitions.empty else {}
+    time_clock_lookup = time_clock_entry_lookup(context)
+    labor_lookup = labor_entries.set_index("LaborTimeEntryID").to_dict("index") if not labor_entries.empty else {}
+    work_order_lookup = work_orders.set_index("WorkOrderID").to_dict("index") if not work_orders.empty else {}
+    operation_lookup = work_order_operations.set_index("WorkOrderOperationID").to_dict("index") if not work_order_operations.empty else {}
+
+    if not time_clocks.empty:
+        duplicate_day_rows = (
+            time_clocks.groupby(["EmployeeID", "WorkDate"]).size().reset_index(name="RowCount")
+        )
+        duplicate_day_rows = duplicate_day_rows[duplicate_day_rows["RowCount"].gt(1)]
+        if not duplicate_day_rows.empty:
+            exceptions.append({
+                "type": "duplicate_time_clock_day",
+                "message": f"Duplicate time-clock days found: {duplicate_day_rows.head(5).to_dict(orient='records')}.",
+            })
+
+        for row in time_clocks.itertuples(index=False):
+            employee_id = int(row.EmployeeID)
+            if employee_id in salary_employee_ids:
+                exceptions.append({
+                    "type": "salary_employee_time_clock",
+                    "time_clock_entry_id": int(row.TimeClockEntryID),
+                    "message": f"Salaried employee {employee_id} has a routine time-clock entry.",
+                })
+
+            if row.ClockOutTime is None or pd.isna(row.ClockOutTime):
+                exceptions.append({
+                    "type": "missing_clock_out",
+                    "time_clock_entry_id": int(row.TimeClockEntryID),
+                    "message": f"Time-clock entry {int(row.TimeClockEntryID)} is missing ClockOutTime.",
+                })
+                continue
+
+            total_minutes = (
+                pd.Timestamp(row.ClockOutTime) - pd.Timestamp(row.ClockInTime)
+            ).total_seconds() / 60.0
+            span_hours = round(max(total_minutes - float(row.BreakMinutes), 0.0) / 60.0, 2)
+            expected_hours = round(float(row.RegularHours) + float(row.OvertimeHours), 2)
+            if abs(span_hours - expected_hours) > 0.02:
+                exceptions.append({
+                    "type": "time_clock_span_mismatch",
+                    "time_clock_entry_id": int(row.TimeClockEntryID),
+                    "message": f"Time-clock span {span_hours} does not match recorded hours {expected_hours}.",
+                })
+
+            shift_definition = shift_lookup.get(int(row.ShiftDefinitionID)) if pd.notna(row.ShiftDefinitionID) else None
+            if shift_definition is not None:
+                shift_start = pd.Timestamp(f"{row.WorkDate} {shift_definition['StartTime']}")
+                shift_end = pd.Timestamp(f"{row.WorkDate} {shift_definition['EndTime']}")
+                clock_in = pd.Timestamp(row.ClockInTime)
+                clock_out = pd.Timestamp(row.ClockOutTime)
+                if abs((clock_in - shift_start).total_seconds() / 60.0) > 45:
+                    exceptions.append({
+                        "type": "off_shift_clock_in",
+                        "time_clock_entry_id": int(row.TimeClockEntryID),
+                        "message": f"Clock-in time falls materially outside the assigned shift for entry {int(row.TimeClockEntryID)}.",
+                    })
+                if clock_out < shift_start or clock_out > shift_end + pd.Timedelta(hours=4):
+                    exceptions.append({
+                        "type": "off_shift_clock_out",
+                        "time_clock_entry_id": int(row.TimeClockEntryID),
+                        "message": f"Clock-out time falls materially outside the assigned shift for entry {int(row.TimeClockEntryID)}.",
+                    })
+
+            if pd.notna(row.WorkOrderOperationID):
+                operation = operation_lookup.get(int(row.WorkOrderOperationID))
+                if operation is None:
+                    exceptions.append({
+                        "type": "invalid_operation_link",
+                        "time_clock_entry_id": int(row.TimeClockEntryID),
+                        "message": f"Time-clock entry {int(row.TimeClockEntryID)} references a missing work-order operation.",
+                    })
+                    continue
+                if pd.notna(row.WorkOrderID) and int(operation["WorkOrderID"]) != int(row.WorkOrderID):
+                    exceptions.append({
+                        "type": "time_clock_work_order_mismatch",
+                        "time_clock_entry_id": int(row.TimeClockEntryID),
+                        "message": f"Time-clock entry {int(row.TimeClockEntryID)} links to an operation outside its work order.",
+                    })
+                if pd.notna(row.WorkCenterID) and int(operation["WorkCenterID"]) != int(row.WorkCenterID):
+                    exceptions.append({
+                        "type": "time_clock_work_center_mismatch",
+                        "time_clock_entry_id": int(row.TimeClockEntryID),
+                        "message": f"Time-clock entry {int(row.TimeClockEntryID)} links to an operation outside its work center.",
+                    })
+                work_date = pd.Timestamp(row.WorkDate)
+                lower_bound = pd.Timestamp(operation["ActualStartDate"]) if pd.notna(operation["ActualStartDate"]) else pd.Timestamp(operation["PlannedStartDate"])
+                upper_bound = pd.Timestamp(operation["ActualEndDate"]) if pd.notna(operation["ActualEndDate"]) else pd.Timestamp(operation["PlannedEndDate"])
+                if work_date < lower_bound or work_date > upper_bound:
+                    exceptions.append({
+                        "type": "time_clock_outside_operation_window",
+                        "time_clock_entry_id": int(row.TimeClockEntryID),
+                        "message": f"Time-clock entry {int(row.TimeClockEntryID)} falls outside the operation window.",
+                    })
+                work_order = work_order_lookup.get(int(operation["WorkOrderID"]))
+                if work_order is not None and pd.notna(work_order.get("ClosedDate")) and work_date > pd.Timestamp(work_order["ClosedDate"]):
+                    exceptions.append({
+                        "type": "labor_after_work_order_close",
+                        "time_clock_entry_id": int(row.TimeClockEntryID),
+                        "message": f"Time-clock entry {int(row.TimeClockEntryID)} occurs after work-order close.",
+                    })
+
+    if not registers.empty and not register_lines.empty:
+        hourly_registers = registers[registers["EmployeeID"].astype(int).isin(hourly_employee_ids)].copy()
+        approved_hours = approved_time_clock_hours_by_employee_period(context)
+        earnings_lines = register_lines[
+            register_lines["LineType"].isin(["Regular Earnings", "Overtime Earnings"])
+        ].copy()
+        hourly_register_lookup = hourly_registers.set_index("PayrollRegisterID").to_dict("index")
+        for line in earnings_lines.itertuples(index=False):
+            register = hourly_register_lookup.get(int(line.PayrollRegisterID))
+            if register is None:
+                continue
+            if pd.isna(line.LaborTimeEntryID):
+                exceptions.append({
+                    "type": "hourly_pay_without_labor_entry",
+                    "payroll_register_line_id": int(line.PayrollRegisterLineID),
+                    "message": f"Hourly payroll line {int(line.PayrollRegisterLineID)} is missing LaborTimeEntryID.",
+                })
+                continue
+            labor_entry = labor_lookup.get(int(line.LaborTimeEntryID))
+            if labor_entry is None:
+                exceptions.append({
+                    "type": "hourly_pay_missing_labor_entry",
+                    "payroll_register_line_id": int(line.PayrollRegisterLineID),
+                    "message": f"Hourly payroll line {int(line.PayrollRegisterLineID)} references a missing labor entry.",
+                })
+                continue
+            time_clock_id = labor_entry.get("TimeClockEntryID")
+            if pd.isna(time_clock_id):
+                exceptions.append({
+                    "type": "paid_without_clock",
+                    "payroll_register_line_id": int(line.PayrollRegisterLineID),
+                    "message": f"Hourly payroll line {int(line.PayrollRegisterLineID)} does not trace to a time-clock entry.",
+                })
+                continue
+            time_clock = time_clock_lookup.get(int(time_clock_id))
+            if time_clock is None or str(time_clock.get("ClockStatus")) != "Approved":
+                exceptions.append({
+                    "type": "paid_without_approved_clock",
+                    "payroll_register_line_id": int(line.PayrollRegisterLineID),
+                    "message": f"Hourly payroll line {int(line.PayrollRegisterLineID)} does not trace to an approved time clock.",
+                })
+                continue
+            line_hours = round(float(line.Hours or 0.0), 2)
+            if str(line.LineType) == "Regular Earnings":
+                entry_hours = round(float(labor_entry["RegularHours"]), 2)
+            else:
+                entry_hours = round(float(labor_entry["OvertimeHours"]), 2)
+            if line_hours != entry_hours:
+                exceptions.append({
+                    "type": "payroll_line_hours_mismatch",
+                    "payroll_register_line_id": int(line.PayrollRegisterLineID),
+                    "message": f"Payroll hours {line_hours} do not match labor-entry hours {entry_hours}.",
+                })
+
+        for register in hourly_registers.itertuples(index=False):
+            if round(float(register.GrossPay), 2) <= 0:
+                continue
+            approved_total = float(approved_hours.get((int(register.EmployeeID), int(register.PayrollPeriodID)), 0.0))
+            if round(approved_total, 2) <= 0:
+                exceptions.append({
+                    "type": "hourly_register_without_clock_coverage",
+                    "payroll_register_id": int(register.PayrollRegisterID),
+                    "message": f"Hourly payroll register {int(register.PayrollRegisterID)} has pay but no approved time-clock coverage.",
+                })
+
+    return {
+        "exception_count": len(exceptions),
+        "exceptions": exceptions,
+    }
+
+
 def validate_phase13(context: GenerationContext, store: bool = True) -> dict[str, Any]:
     results = validate_phase6(context)
     exceptions = list(results["exceptions"])
@@ -2167,16 +2364,104 @@ def validate_phase14(context: GenerationContext, store: bool = True) -> dict[str
 
 
 def validate_phase15(context: GenerationContext, store: bool = True) -> dict[str, Any]:
-    results = validate_phase14(context, store=False)
+    return validate_phase15_2(context, scope="full", store=store)
+
+
+def validate_phase15_2(
+    context: GenerationContext,
+    scope: str = "full",
+    store: bool = True,
+) -> dict[str, Any]:
+    normalized_scope = str(scope).strip().lower()
+    if normalized_scope not in {"core", "operational", "full"}:
+        raise ValueError(f"Unsupported validation scope: {scope}")
+
+    results = validate_phase6(context)
     exceptions = list(results["exceptions"])
 
-    capacity_controls = validate_capacity_controls(context)
-    if capacity_controls["exception_count"]:
-        exceptions.append(f"Capacity control exceptions: {capacity_controls['exception_count']}.")
+    empty_control = {"exception_count": 0, "exceptions": []}
+    o2c_controls: dict[str, Any] = empty_control
+    p2p_controls: dict[str, Any] = empty_control
+    journal_controls: dict[str, Any] = empty_control
+    manufacturing_controls: dict[str, Any] = empty_control
+    payroll_controls: dict[str, Any] = empty_control
+    routing_controls: dict[str, Any] = empty_control
+    capacity_controls: dict[str, Any] = empty_control
 
-    phase15_results: dict[str, Any] = {
+    if normalized_scope in {"operational", "full"}:
+        o2c_controls = validate_o2c_phase11_controls(context)
+        if o2c_controls["exception_count"]:
+            exceptions.append(f"O2C control exceptions: {o2c_controls['exception_count']}.")
+
+        p2p_controls = validate_p2p_phase9_controls(context)
+        if p2p_controls["exception_count"]:
+            exceptions.append(f"P2P control exceptions: {p2p_controls['exception_count']}.")
+
+        journal_controls = validate_journal_controls(context)
+        if journal_controls["exception_count"]:
+            exceptions.append(f"Journal control exceptions: {journal_controls['exception_count']}.")
+
+        manufacturing_controls = validate_manufacturing_controls(context)
+        if manufacturing_controls["exception_count"]:
+            exceptions.append(f"Manufacturing control exceptions: {manufacturing_controls['exception_count']}.")
+
+        payroll_controls = validate_payroll_controls(context)
+        if payroll_controls["exception_count"]:
+            exceptions.append(f"Payroll control exceptions: {payroll_controls['exception_count']}.")
+
+        routing_controls = validate_routing_controls(context)
+        if routing_controls["exception_count"]:
+            exceptions.append(f"Routing control exceptions: {routing_controls['exception_count']}.")
+
+        capacity_controls = validate_capacity_controls(context)
+        if capacity_controls["exception_count"]:
+            exceptions.append(f"Capacity control exceptions: {capacity_controls['exception_count']}.")
+
+    phase15_2_results: dict[str, Any] = {
         "row_counts": {table: int(len(df)) for table, df in context.tables.items()},
         "exceptions": exceptions,
+        "validation_scope": normalized_scope,
+        "gl_balance": results["gl_balance"],
+        "trial_balance_difference": results["trial_balance_difference"],
+        "account_rollforward": results["account_rollforward"],
+        "o2c_controls": o2c_controls,
+        "p2p_controls": p2p_controls,
+        "journal_controls": journal_controls,
+        "manufacturing_controls": manufacturing_controls,
+        "payroll_controls": payroll_controls,
+        "routing_controls": routing_controls,
+        "capacity_controls": capacity_controls,
+    }
+    if store:
+        context.validation_results["phase15_2"] = phase15_2_results
+        context.validation_results["phase15"] = phase15_2_results
+        context.validation_results["phase14"] = phase15_2_results
+        context.validation_results["phase13"] = phase15_2_results
+        context.validation_results["phase12"] = phase15_2_results
+        context.validation_results["phase11"] = phase15_2_results
+        context.validation_results["phase9"] = phase15_2_results
+    return phase15_2_results
+
+
+def validate_phase16(
+    context: GenerationContext,
+    scope: str = "full",
+    store: bool = True,
+) -> dict[str, Any]:
+    results = validate_phase15_2(context, scope=scope, store=False)
+    exceptions = list(results["exceptions"])
+
+    normalized_scope = str(scope).strip().lower()
+    time_clock_controls: dict[str, Any] = {"exception_count": 0, "exceptions": []}
+    if normalized_scope in {"operational", "full"}:
+        time_clock_controls = validate_time_clock_controls(context)
+        if time_clock_controls["exception_count"]:
+            exceptions.append(f"Time-clock control exceptions: {time_clock_controls['exception_count']}.")
+
+    phase16_results: dict[str, Any] = {
+        "row_counts": {table: int(len(df)) for table, df in context.tables.items()},
+        "exceptions": exceptions,
+        "validation_scope": normalized_scope,
         "gl_balance": results["gl_balance"],
         "trial_balance_difference": results["trial_balance_difference"],
         "account_rollforward": results["account_rollforward"],
@@ -2186,16 +2471,19 @@ def validate_phase15(context: GenerationContext, store: bool = True) -> dict[str
         "manufacturing_controls": results["manufacturing_controls"],
         "payroll_controls": results["payroll_controls"],
         "routing_controls": results["routing_controls"],
-        "capacity_controls": capacity_controls,
+        "capacity_controls": results["capacity_controls"],
+        "time_clock_controls": time_clock_controls,
     }
     if store:
-        context.validation_results["phase15"] = phase15_results
-        context.validation_results["phase14"] = phase15_results
-        context.validation_results["phase13"] = phase15_results
-        context.validation_results["phase12"] = phase15_results
-        context.validation_results["phase11"] = phase15_results
-        context.validation_results["phase9"] = phase15_results
-    return phase15_results
+        context.validation_results["phase16"] = phase16_results
+        context.validation_results["phase15_2"] = phase16_results
+        context.validation_results["phase15"] = phase16_results
+        context.validation_results["phase14"] = phase16_results
+        context.validation_results["phase13"] = phase16_results
+        context.validation_results["phase12"] = phase16_results
+        context.validation_results["phase11"] = phase16_results
+        context.validation_results["phase9"] = phase16_results
+    return phase16_results
 
 
 def validate_phase12(context: GenerationContext, store: bool = True) -> dict[str, Any]:
@@ -2219,8 +2507,8 @@ def validate_phase9(context: GenerationContext, store: bool = True) -> dict[str,
     return results
 
 
-def validate_phase8(context: GenerationContext) -> dict[str, Any]:
-    results = validate_phase15(context, store=False)
+def validate_phase8(context: GenerationContext, scope: str = "full") -> dict[str, Any]:
+    results = validate_phase16(context, scope=scope, store=False)
     exceptions = list(results["exceptions"])
 
     if context.settings.anomaly_mode != "none" and not context.anomaly_log:
@@ -2240,6 +2528,7 @@ def validate_phase8(context: GenerationContext) -> dict[str, Any]:
         "payroll_controls": results["payroll_controls"],
         "routing_controls": results["routing_controls"],
         "capacity_controls": results["capacity_controls"],
+        "time_clock_controls": results.get("time_clock_controls", {"exception_count": 0, "exceptions": []}),
     }
     context.validation_results["phase8"] = phase8_results
     return phase8_results

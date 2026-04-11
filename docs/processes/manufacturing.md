@@ -4,9 +4,9 @@
 **Purpose:** Explain the manufacturing flow in plain language and connect it to the database tables and accounting entries.  
 **What you will learn:** How Greenfield plans production, issues materials, captures labor, completes finished goods, closes work orders, and links manufacturing to purchasing, payroll, inventory, and the ledger.
 
-> **Implemented in current generator:** Single-level BOMs, work centers, work-center capacity calendars, active routings, work-order operations, operation schedules, manufacturing work orders, material issues, production completions, work-order close, payroll-driven direct-labor integration, factory-overhead journals, manufacturing labor / overhead reclasses, and manufacturing variance accounting.
+> **Implemented in current generator:** Single-level BOMs, work centers, work-center capacity calendars, active routings, work-order operations, operation schedules, manufacturing work orders, material issues, production completions, work-order close, payroll-driven direct-labor integration, approved daily time clocks for hourly labor, factory-overhead journals, manufacturing labor / overhead reclasses, and manufacturing variance accounting.
 
-> **Planned future extension:** Time clocks, shift detail, capacity calendars by shift, and richer production scheduling detail beyond the current work-center schedule foundation.
+> **Planned future extension:** Raw punch-event detail, rotating shift rosters, and shift-level capacity planning beyond the current work-center schedule foundation.
 
 ## Business Storyline
 
@@ -98,7 +98,7 @@ Main table:
 
 - `WorkOrder`
 
-At release time the generator also creates work-order operation rows for the routing sequence that item uses. Phase 15 adds a capacity-aware daily schedule for each operation, based on the assigned work center's calendar and available hours.
+At release time the generator also creates work-order operation rows for the routing sequence that item uses. The current generator also creates a capacity-aware daily schedule for each operation, based on the assigned work center's calendar and available hours.
 
 Main linked table:
 
@@ -130,12 +130,15 @@ Accounting event:
 - debit `1046` Inventory - Work in Process
 - credit `1045` Inventory - Materials and Packaging
 
-### 6. Capture labor and overhead inputs
+### 6. Capture time clocks, labor, and overhead inputs
 
-Manufacturing direct workers record `LaborTimeEntry` rows tied to both the work order and the specific work-order operation where labor was consumed. Payroll later turns those time entries into direct-labor and manufacturing-overhead reclass journals.
+Manufacturing direct workers are assigned to shifts and record approved daily `TimeClockEntry` rows. Those approved clock rows then feed `LaborTimeEntry` records tied to both the work order and the specific work-order operation where labor was consumed. Payroll later turns those labor records into direct-labor and manufacturing-overhead reclass journals.
 
 Main linked tables:
 
+- `TimeClockEntry`
+- `ShiftDefinition`
+- `EmployeeShiftAssignment`
 - `LaborTimeEntry`
 - `PayrollRegister`
 - `WorkOrderOperation`
@@ -186,6 +189,9 @@ Once finished goods are in inventory, normal O2C shipments can consume them.
 | `WorkOrder` | Production order for a manufactured item |
 | `WorkOrderOperation` | Operation-level execution plan and actual start/end progression for a work order |
 | `WorkOrderOperationSchedule` | Daily scheduled hours for each work-order operation |
+| `ShiftDefinition` | Standard shift template used by hourly manufacturing labor |
+| `EmployeeShiftAssignment` | Primary shift assignment for hourly employees |
+| `TimeClockEntry` | Approved daily time and attendance row for hourly labor |
 | `MaterialIssue` | Header for component issue to production |
 | `MaterialIssueLine` | Component issue detail |
 | `ProductionCompletion` | Header for finished-goods completion |
@@ -212,6 +218,8 @@ Manufacturing creates both operational and journal-driven accounting:
 - Which operations and work centers are used for each manufactured item?
 - How much direct labor is tied to each work order and operation?
 - Which work centers look busiest by month?
+- Which work centers generate the most overtime?
+- Which operation schedules and direct time clocks do not line up cleanly?
 - Which work centers are capacity constrained or fully booked?
 - Which work orders spilled into later months because schedule capacity was tight?
 - Which work orders stayed open at period end?
@@ -224,15 +232,17 @@ Manufacturing creates both operational and journal-driven accounting:
 - The current model is intentionally a foundation:
   - single-level BOMs only
   - no multi-level BOMs or subassemblies
-  - no time-clock or shift-attendance layer
-- Phase 15 adds work-center-level capacity calendars and daily operation schedules.
+  - no raw punch-event table or shift-level capacity calendar
+- Phase 15 introduced work-center-level capacity calendars and daily operation schedules.
+- Phase 16 introduced shift assignments and approved daily time clocks for hourly employees.
 - Manufacturing demand is linked to sales backlog and finished-goods inventory logic.
 - Raw-material replenishment uses the existing P2P flow instead of a separate procurement subsystem.
-- Manufacturing remains standard-cost based even though payroll now provides actual labor detail, direct labor is assigned at the operation level, and operations are now scheduled against finite daily work-center hours.
+- Manufacturing remains standard-cost based even though payroll now provides actual labor detail, direct labor is assigned at the operation level, hourly attendance is captured, and operations are scheduled against finite daily work-center hours.
 
 ## Where to Go Next
 
 - Read [payroll.md](payroll.md) to see how labor enters the manufacturing flow.
+- Read [time-clocks.md](time-clocks.md) to see how hourly attendance supports payroll and operation-level labor analysis.
 - Read [p2p.md](p2p.md) to see how materials enter inventory.
 - Read [o2c.md](o2c.md) to see how finished goods leave inventory.
 - Read [../reference/posting.md](../reference/posting.md) for the detailed accounting rules.

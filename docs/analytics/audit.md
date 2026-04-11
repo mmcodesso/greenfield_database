@@ -4,7 +4,7 @@
 **Purpose:** Show how to use the dataset for document-chain testing, approval review, cut-off analysis, duplicate detection, manufacturing-control exercises, and payroll-control review.  
 **What you will learn:** Which document links matter most and which audit-oriented SQL files to run first.
 
-> **Implemented in current generator:** O2C, P2P, manufacturing, and payroll process chains; approval fields; detailed posting traceability; validation outputs; and planted anomalies in the default `standard` mode.
+> **Implemented in current generator:** O2C, P2P, manufacturing, payroll, and time-clock process chains; approval fields; detailed posting traceability; validation outputs; and planted anomalies in the default `standard` mode.
 
 > **Planned future extension:** More advanced payroll and production-control anomaly packs.
 
@@ -16,7 +16,7 @@
 | P2P completeness | P2P header and line tables |
 | Approvals and SOD | `PurchaseRequisition`, `PurchaseOrder`, `PurchaseInvoice`, `JournalEntry`, `CreditMemo`, `CustomerRefund`, `Employee`, `PayrollRegister` |
 | Manufacturing controls | `Item`, `BillOfMaterial`, `BillOfMaterialLine`, `Routing`, `RoutingOperation`, `WorkCenter`, `WorkCenterCalendar`, `WorkOrder`, `WorkOrderOperation`, `WorkOrderOperationSchedule`, `MaterialIssueLine`, `ProductionCompletionLine`, `WorkOrderClose` |
-| Payroll controls | `PayrollPeriod`, `LaborTimeEntry`, `PayrollRegister`, `PayrollRegisterLine`, `PayrollPayment`, `PayrollLiabilityRemittance`, `Employee` |
+| Payroll and time-clock controls | `ShiftDefinition`, `EmployeeShiftAssignment`, `TimeClockEntry`, `AttendanceException`, `PayrollPeriod`, `LaborTimeEntry`, `PayrollRegister`, `PayrollRegisterLine`, `PayrollPayment`, `PayrollLiabilityRemittance`, `Employee` |
 | Cut-off and timing | operational header and line tables plus date fields |
 | Duplicate and anomaly review | `DisbursementPayment`, `PurchaseInvoice`, `JournalEntry`, `SalesInvoice`, `CreditMemo`, `PayrollPayment`, Excel `AnomalyLog` |
 
@@ -42,6 +42,9 @@
 | Schedule on non-working day review | [16_schedule_on_nonworking_day_review.sql](../../queries/audit/16_schedule_on_nonworking_day_review.sql) |
 | Over-capacity day review | [17_over_capacity_day_review.sql](../../queries/audit/17_over_capacity_day_review.sql) |
 | Completion before scheduled operation end review | [18_completion_before_scheduled_operation_end.sql](../../queries/audit/18_completion_before_scheduled_operation_end.sql) |
+| Time-clock exceptions by employee, supervisor, and work center | [19_time_clock_exceptions_by_employee_supervisor_work_center.sql](../../queries/audit/19_time_clock_exceptions_by_employee_supervisor_work_center.sql) |
+| Labor outside scheduled operation window review | [20_labor_outside_scheduled_operation_window_review.sql](../../queries/audit/20_labor_outside_scheduled_operation_window_review.sql) |
+| Paid-without-clock and clock-without-pay review | [21_paid_without_clock_and_clock_without_pay_review.sql](../../queries/audit/21_paid_without_clock_and_clock_without_pay_review.sql) |
 
 ## Interpretation Notes
 
@@ -50,4 +53,5 @@
 - O2C completeness should be checked at the line and application level.
 - Manufacturing controls should now start from BOM, routing, and schedule integrity before moving to work-order close timing and ledger balances.
 - Payroll-control review should distinguish between normal processing lag and true exceptions such as missing payment, time after close, or hourly pay without time.
+- Time-clock review should distinguish clean scheduling variance from planted attendance anomalies such as missing clock-out or off-shift clocking.
 - Accrued-expense review should distinguish receipt-matched inventory AP from direct service invoices that intentionally clear prior accruals.

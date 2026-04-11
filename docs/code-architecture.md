@@ -2,11 +2,11 @@
 
 **Audience:** Contributors, teaching assistants, and advanced users who want to understand how the generator works.  
 **Purpose:** Explain the codebase from entrypoint to export using the current implementation.  
-**What you will learn:** The orchestration flow, the role of each module, and where the next extension should plug in.
+**What you will learn:** The orchestration flow, the role of each module, the runtime profiles, and where the next extension should plug in.
 
-> **Implemented in current generator:** Config loading, shared generation context, schema registry, master data, BOMs, routings, work centers, budgets, monthly O2C/P2P/manufacturing/payroll generation, recurring manual journals, year-end close, posting, validations, anomaly injection, SQLite/Excel export, JSON reporting, and generation logging.
+> **Implemented in current generator:** Config loading, shared generation context, schema registry, master data, BOMs, routings, work centers, shift definitions, time clocks, budgets, monthly O2C/P2P/manufacturing/payroll generation, recurring manual journals, year-end close, posting, validations, anomaly injection, SQLite/Excel export, JSON reporting, and generation logging.
 
-> **Planned future extension:** Time-clock detail, employee-shift scheduling, and richer labor-timing detail.
+> **Planned future extension:** Raw punch-event detail, rotating shift rosters, and richer labor-timing detail.
 
 ## Entrypoints
 
@@ -26,7 +26,7 @@ flowchart LR
     T[Generate Monthly O2C Demand]
     R[Generate Monthly P2P Demand]
     F[Generate Monthly Manufacturing Activity]
-    L[Generate Monthly Payroll and Labor Activity]
+    L[Generate Monthly Time Clocks, Labor, and Payroll Activity]
     J[Generate Recurring Journals]
     S1[Generate Accrued-Service Settlements]
     A1[Generate Accrual Adjustments]
@@ -72,7 +72,7 @@ Also defined in `settings.py`. This object carries:
 | `schema.py` | Defines `TABLE_COLUMNS` and creates empty DataFrames |
 | `master_data.py` | Loads accounts and generates cost centers, employees, warehouses, items, customers, and suppliers |
 | `manufacturing.py` | Generates BOMs, work centers, routings, work orders, work-order operations, material issues, completions, work-order close, and manufacturing state helpers |
-| `payroll.py` | Generates payroll periods, labor time, payroll registers, payroll payments, remittances, and operation-aware manufacturing labor allocations |
+| `payroll.py` | Generates shift definitions, employee shift assignments, time clocks, payroll periods, labor time, payroll registers, payroll payments, remittances, and operation-aware manufacturing labor allocations |
 | `budgets.py` | Generates the opening balance journal and budget rows |
 | `o2c.py` | Generates sales orders, shipments, sales invoices, cash receipts, applications, sales returns, credit memos, refunds, and O2C state maps |
 | `p2p.py` | Generates requisitions, purchase orders, goods receipts, purchase invoices, disbursements, and P2P state maps |
@@ -80,6 +80,7 @@ Also defined in `settings.py`. This object carries:
 | `posting_engine.py` | Converts operational and payroll events into balanced GL entries |
 | `validations.py` | Runs schema, document, payroll, ledger, and manufacturing checks |
 | `anomalies.py` | Applies configurable anomaly patterns and records them in `context.anomaly_log` |
+| `state_cache.py` | Provides shared lazy-build cache helpers used by generation and validation |
 | `exporters.py` | Writes SQLite, Excel, and JSON outputs |
 | `utils.py` | Supports numbering, rounding, and helper logic used across modules |
 | `main.py` | Orchestrates the end-to-end run and writes the generation log |
@@ -132,6 +133,7 @@ Current validations include:
 - P2P controls
 - manufacturing controls
 - payroll controls
+- time-clock controls
 - routing controls
 - voucher balance
 - trial balance equality
@@ -150,6 +152,22 @@ The full run also writes `generation.log`, which records:
 - validation summaries
 - export locations
 
+## Runtime Profiles and Validation Scopes
+
+The current build supports three common config profiles:
+
+- `config/settings.yaml` for release-grade full builds
+- `config/settings_validation.yaml` for fast one-year validation
+- `config/settings_perf.yaml` for short-horizon performance profiling
+
+The main entrypoint also accepts validation scopes:
+
+- `core`
+- `operational`
+- `full`
+
+That Phase 15.2 split lets contributors shorten validation feedback loops without changing the release path.
+
 ## Outputs
 
 The current generator exports:
@@ -161,6 +179,6 @@ The current generator exports:
 
 ## Next Extension Point
 
-The next clean extension point is time clocks and shift labor on top of the routing and capacity foundation.
+The next clean extension point is deeper workforce planning on top of the routing, capacity, and time-clock foundation.
 
-That work should extend the current work-center, routing, capacity, payroll, and manufacturing model without rewriting the O2C, P2P, or payroll subledger layers.
+That work should extend the current work-center, routing, capacity, attendance, payroll, and manufacturing model without rewriting the O2C, P2P, or payroll subledger layers.

@@ -4,9 +4,9 @@
 **Purpose:** Explain the payroll cycle, how labor time connects to manufacturing, and how payroll liabilities clear.  
 **What you will learn:** How pay periods, labor time, payroll registers, payments, remittances, and manufacturing labor reclasses work together.
 
-> **Implemented in current generator:** Biweekly payroll periods, labor-time capture, payroll registers, payroll payments, liability remittances, operation-level direct-labor assignment, schedule-aware manufacturing labor timing, and direct-labor / manufacturing-overhead integration.
+> **Implemented in current generator:** Biweekly payroll periods, shift assignments, approved daily time clocks for hourly employees, labor-time capture, payroll registers, payroll payments, liability remittances, operation-level direct-labor assignment, schedule-aware manufacturing labor timing, and direct-labor / manufacturing-overhead integration.
 
-> **Planned future extension:** Time clocks, shift attendance, and richer labor-scheduling detail below the current work-center schedule level.
+> **Planned future extension:** Raw punch-event detail, rotating shift rosters, and richer workforce-planning detail below the current daily time-clock model.
 
 ## Business Storyline
 
@@ -33,6 +33,9 @@ That makes payroll useful for:
 ```mermaid
 flowchart LR
     PP[PayrollPeriod]
+    SD[ShiftDefinition]
+    ESA[EmployeeShiftAssignment]
+    TCE[TimeClockEntry]
     LTE[LaborTimeEntry]
     WOO[WorkOrderOperation]
     PR[PayrollRegister]
@@ -44,9 +47,15 @@ flowchart LR
     GL[GLEntry]
     WO[WorkOrderClose]
 
+    SD --> ESA
+    ESA --> TCE
     PP --> LTE
+    PP --> TCE
+    TCE --> LTE
     WOO --> LTE
+    WOO --> TCE
     PP --> PR
+    TCE --> PR
     LTE --> PR
     PR --> PL
     PR --> PAY
@@ -64,6 +73,8 @@ flowchart LR
 In plain language:
 
 - `PayrollPeriod` organizes the pay calendar
+- `ShiftDefinition` and `EmployeeShiftAssignment` define where hourly employees are expected to work
+- `TimeClockEntry` supplies approved regular and overtime hours for hourly payroll
 - `LaborTimeEntry` captures work effort, especially direct labor tied to work orders and work-order operations
 - `PayrollRegister` and `PayrollRegisterLine` calculate gross-to-net payroll
 - `PayrollPayment` clears net-pay liability
@@ -80,9 +91,21 @@ Main table:
 
 - `PayrollPeriod`
 
-### 2. Capture labor time
+### 2. Assign shifts and record approved time clocks
 
-Hourly manufacturing workers create labor-time records. Direct manufacturing time is tied to both `WorkOrderID` and `WorkOrderOperationID`. In Phase 15 the manufacturing side also schedules those operations against work-center calendars, so payroll-linked labor can now be compared to scheduled operation windows. Indirect manufacturing and nonmanufacturing time remain untied to production orders.
+Hourly employees now receive a primary shift assignment. For each worked day, the generator creates one approved `TimeClockEntry` row with clock-in time, clock-out time, break minutes, regular hours, and overtime hours.
+
+Direct manufacturing time clocks can also point to the specific `WorkOrderOperationID` where labor was consumed.
+
+Main tables:
+
+- `ShiftDefinition`
+- `EmployeeShiftAssignment`
+- `TimeClockEntry`
+
+### 3. Capture labor time
+
+Approved time clocks then feed `LaborTimeEntry`. Direct manufacturing time is tied to both `WorkOrderID` and `WorkOrderOperationID`. Manufacturing-side capacity scheduling provides the operation window that payroll-linked labor can be compared against. Indirect manufacturing and nonmanufacturing time remain untied to production orders.
 
 Main table:
 
@@ -99,9 +122,9 @@ Important labor types:
 - `Indirect Manufacturing`
 - `NonManufacturing`
 
-### 3. Build the payroll register
+### 4. Build the payroll register
 
-For each employee in the period, the generator creates payroll-register lines for earnings and payroll deductions or burdens.
+For each employee in the period, the generator creates payroll-register lines for earnings and payroll deductions or burdens. Hourly earnings come from approved clock hours. Salaried earnings remain salary-based.
 
 Main tables:
 
@@ -118,7 +141,7 @@ Typical line types:
 - `Employer Payroll Tax`
 - `Employer Benefits`
 
-### 4. Post payroll accounting
+### 5. Post payroll accounting
 
 The payroll register creates the main payroll accounting entry.
 
@@ -133,7 +156,7 @@ Accounting effects:
   - `2032` Employer Payroll Taxes Payable
   - `2033` Employee Benefits and Other Deductions Payable
 
-### 5. Pay employees
+### 6. Pay employees
 
 Treasury clears employee net pay through payroll payments.
 
@@ -146,7 +169,7 @@ Accounting effect:
 - debit `2030`
 - credit cash
 
-### 6. Remit payroll liabilities
+### 7. Remit payroll liabilities
 
 The company later clears withholding, employer-tax, and deduction liabilities.
 
@@ -159,7 +182,7 @@ Accounting effect:
 - debit `2031`, `2032`, or `2033`
 - credit cash
 
-### 7. Reclass manufacturing labor and overhead
+### 8. Reclass manufacturing labor and overhead
 
 Payroll is also part of manufacturing costing.
 
@@ -172,6 +195,9 @@ This is how payroll integrates with product cost for manufactured items.
 | Table | Role |
 |---|---|
 | `PayrollPeriod` | Biweekly payroll calendar |
+| `ShiftDefinition` | Standard shift structure for hourly work |
+| `EmployeeShiftAssignment` | Primary shift assignment by employee |
+| `TimeClockEntry` | Approved daily attendance row that drives hourly payroll hours |
 | `LaborTimeEntry` | Operational labor-time detail, including operation-linked direct labor |
 | `WorkCenterCalendar` | Capacity calendar used to stage production timing before labor is consumed |
 | `WorkOrderOperationSchedule` | Daily operation schedule that payroll-linked direct labor can be compared against analytically |
@@ -199,6 +225,8 @@ Payroll creates several accounting events:
 - How does gross pay turn into net pay?
 - Which liabilities remain open after payroll is posted?
 - Which employees contribute direct labor to each work-order operation?
+- Which hourly payroll earnings were supported by approved time-clock hours?
+- Which work centers are generating the most overtime?
 - How much direct labor cost is tied to each manufactured item, work order, or work center?
 - How do payroll payments differ from payroll liability remittances?
 - How does payroll feed product costing without switching the dataset to full actual-cost inventory?
@@ -207,13 +235,16 @@ Payroll creates several accounting events:
 
 - Payroll is now an operational subledger, not only a recurring journal pattern.
 - The clean build no longer uses payroll accrual or payroll settlement journals.
+- Hourly payroll hours are sourced from approved `TimeClockEntry` rows.
 - Direct labor affects manufacturing through reclass journals and work-order close, not through a separate job-cost ledger.
 - Direct labor is now assigned at the routing-operation level for manufactured work orders.
 - Manufacturing operations are now scheduled against daily work-center capacity, which gives payroll and labor analytics a schedule baseline.
+- The clean model uses one approved time-clock row per worked day rather than a separate punch-event table.
 - The manufacturing model remains standard-cost based even though payroll provides actual labor detail.
 
 ## Where to Go Next
 
 - Read [manufacturing.md](manufacturing.md) for the production side of labor integration.
+- Read [time-clocks.md](time-clocks.md) for the shift and attendance process that feeds hourly payroll.
 - Read [../reference/posting.md](../reference/posting.md) for exact payroll posting rules.
 - Read [../analytics/financial.md](../analytics/financial.md), [../analytics/managerial.md](../analytics/managerial.md), and [../analytics/audit.md](../analytics/audit.md) for starter analytics.

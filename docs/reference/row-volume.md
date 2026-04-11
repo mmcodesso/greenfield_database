@@ -10,9 +10,9 @@ The default configuration uses:
 - fiscal years `2026-01-01` through `2030-12-31`
 - random seed `20260401`
 
-> **Implemented in current generator:** A deterministic five-year hybrid manufacturer-distributor dataset with payroll, manufacturing, and posted-ledger detail whose default counts are stable unless configuration or generation logic changes.
+> **Implemented in current generator:** A deterministic five-year hybrid manufacturer-distributor dataset with payroll, time clocks, manufacturing, and posted-ledger detail whose default counts are stable unless configuration or generation logic changes.
 
-> **Planned future extension:** Capacity planning, scheduling, and additional scenario packs that may increase operational and ledger volume further.
+> **Planned future extension:** Raw punch-event detail, shift-level capacity planning, and additional scenario packs that may increase operational and ledger volume further.
 
 ## Current Default Build vs Historical Design Intent
 
@@ -22,46 +22,51 @@ The target ranges below come from the project's earlier design-planning model. T
 |---|---|---:|---:|
 | Accounting core | Account | 75 to 95 | 98 |
 | Accounting core | JournalEntry | 900 to 1,500 | 736 |
-| Accounting core | GLEntry | 60,000 to 110,000 | 643,141 |
+| Accounting core | GLEntry | 60,000 to 110,000 | 518,636 |
 | O2C | Customer | 150 to 300 | 220 |
-| O2C | SalesOrder | 4,500 to 9,000 | 6,916 |
-| O2C | SalesOrderLine | 13,000 to 30,000 | 26,795 |
-| O2C | Shipment | 4,200 to 8,500 | 23,440 |
-| O2C | ShipmentLine | 12,000 to 28,000 | 32,942 |
-| O2C | SalesInvoice | 4,200 to 8,500 | 30,008 |
-| O2C | SalesInvoiceLine | 12,000 to 28,000 | 32,895 |
-| O2C | CashReceipt | 4,000 to 9,500 | 9,271 |
-| O2C | CashReceiptApplication | Not specified in original design | 18,106 |
-| O2C | SalesReturn | Not specified in original design | 922 |
-| O2C | SalesReturnLine | Not specified in original design | 929 |
-| O2C | CreditMemo | Not specified in original design | 922 |
-| O2C | CreditMemoLine | Not specified in original design | 929 |
-| O2C | CustomerRefund | Not specified in original design | 56 |
+| O2C | SalesOrder | 4,500 to 9,000 | 6,811 |
+| O2C | SalesOrderLine | 13,000 to 30,000 | 26,470 |
+| O2C | Shipment | 4,200 to 8,500 | 20,203 |
+| O2C | ShipmentLine | 12,000 to 28,000 | 27,191 |
+| O2C | SalesInvoice | 4,200 to 8,500 | 24,806 |
+| O2C | SalesInvoiceLine | 12,000 to 28,000 | 27,135 |
+| O2C | CashReceipt | 4,000 to 9,500 | 8,869 |
+| O2C | CashReceiptApplication | Not specified in original design | 17,059 |
+| O2C | SalesReturn | Not specified in original design | 756 |
+| O2C | SalesReturnLine | Not specified in original design | 763 |
+| O2C | CreditMemo | Not specified in original design | 756 |
+| O2C | CreditMemoLine | Not specified in original design | 763 |
+| O2C | CustomerRefund | Not specified in original design | 63 |
 | P2P | Supplier | 80 to 160 | 110 |
-| P2P | PurchaseRequisition | 2,500 to 6,000 | 15,023 |
-| P2P | PurchaseOrder | 2,200 to 5,500 | 12,133 |
-| P2P | PurchaseOrderLine | 7,000 to 18,000 | 14,787 |
-| P2P | GoodsReceipt | 2,100 to 5,000 | 24,355 |
-| P2P | GoodsReceiptLine | 6,500 to 17,000 | 24,512 |
-| P2P | PurchaseInvoice | 2,100 to 5,000 | 34,015 |
-| P2P | PurchaseInvoiceLine | 6,500 to 17,000 | 34,388 |
-| P2P | DisbursementPayment | 2,300 to 5,500 | 35,784 |
+| P2P | PurchaseRequisition | 2,500 to 6,000 | 11,969 |
+| P2P | PurchaseOrder | 2,200 to 5,500 | 10,257 |
+| P2P | PurchaseOrderLine | 7,000 to 18,000 | 11,703 |
+| P2P | GoodsReceipt | 2,100 to 5,000 | 19,244 |
+| P2P | GoodsReceiptLine | 6,500 to 17,000 | 19,333 |
+| P2P | PurchaseInvoice | 2,100 to 5,000 | 26,736 |
+| P2P | PurchaseInvoiceLine | 6,500 to 17,000 | 26,982 |
+| P2P | DisbursementPayment | 2,300 to 5,500 | 28,261 |
 | Manufacturing | BillOfMaterial | Not specified in original design | 77 |
 | Manufacturing | BillOfMaterialLine | Not specified in original design | 281 |
 | Manufacturing | WorkCenter | Not specified in original design | 5 |
 | Manufacturing | Routing | Not specified in original design | 77 |
 | Manufacturing | RoutingOperation | Not specified in original design | 291 |
-| Manufacturing | WorkOrder | Not specified in original design | 3,981 |
-| Manufacturing | WorkOrderOperation | Not specified in original design | 15,183 |
-| Manufacturing | MaterialIssue | Not specified in original design | 7,132 |
-| Manufacturing | MaterialIssueLine | Not specified in original design | 26,314 |
-| Manufacturing | ProductionCompletion | Not specified in original design | 6,980 |
-| Manufacturing | ProductionCompletionLine | Not specified in original design | 6,980 |
-| Manufacturing | WorkOrderClose | Not specified in original design | 2,943 |
+| Manufacturing | WorkOrder | Not specified in original design | 3,964 |
+| Manufacturing | WorkOrderOperation | Not specified in original design | 15,122 |
+| Manufacturing | WorkOrderOperationSchedule | Not specified in original design | 11,053 |
+| Manufacturing | MaterialIssue | Not specified in original design | 3,552 |
+| Manufacturing | MaterialIssueLine | Not specified in original design | 13,214 |
+| Manufacturing | ProductionCompletion | Not specified in original design | 3,141 |
+| Manufacturing | ProductionCompletionLine | Not specified in original design | 3,141 |
+| Manufacturing | WorkOrderClose | Not specified in original design | 514 |
+| Payroll and time | ShiftDefinition | Not specified in original design | 4 |
+| Payroll and time | EmployeeShiftAssignment | Not specified in original design | 21 |
+| Payroll and time | TimeClockEntry | Not specified in original design | 27,142 |
+| Payroll and time | AttendanceException | Not specified in original design | 0 |
 | Payroll | PayrollPeriod | Not specified in original design | 131 |
-| Payroll | LaborTimeEntry | Not specified in original design | 32,935 |
+| Payroll | LaborTimeEntry | Not specified in original design | 27,142 |
 | Payroll | PayrollRegister | Not specified in original design | 8,320 |
-| Payroll | PayrollRegisterLine | Not specified in original design | 74,145 |
+| Payroll | PayrollRegisterLine | Not specified in original design | 77,288 |
 | Payroll | PayrollPayment | Not specified in original design | 8,320 |
 | Payroll | PayrollLiabilityRemittance | Not specified in original design | 387 |
 | Master data | Item | 180 to 350 | 243 |
@@ -90,6 +95,24 @@ Phase 14 added a planning and execution layer inside manufacturing without chang
 - substantially more `LaborTimeEntry` rows because direct labor is now assigned at the operation level
 - higher `PayrollRegisterLine` and `GLEntry` volumes because the routing-aware labor layer increased payroll and downstream posting detail
 
+## What Changed in Phase 15
+
+Phase 15 added finite work-center scheduling:
+
+- `WorkCenterCalendar` rows across the full fiscal range
+- `WorkOrderOperationSchedule` rows that spread planned operation hours across business days
+- additional operation and backlog detail that increased manufacturing-planning row volume
+
+## What Changed in Phase 16
+
+Phase 16 added the time-and-attendance layer:
+
+- `ShiftDefinition` rows for the core hourly shifts
+- `EmployeeShiftAssignment` rows for hourly employees
+- one approved `TimeClockEntry` row per worked day in the clean build
+- lower `LaborTimeEntry` volume than the earlier synthetic-hour model, but tighter one-to-one traceability from hourly labor to approved time clocks
+- higher `PayrollRegisterLine` volume because hourly earnings now bridge cleanly through approved regular and overtime hours
+
 ## What Changed in the Accrued-Expense Rework
 
 The accrued-expense settlement rework changed row volume in a narrower but important way:
@@ -105,4 +128,5 @@ The accrued-expense settlement rework changed row volume in a narrower but impor
 - Treat the target ranges as historical design guidance, not strict quality thresholds.
 - Expect counts to change if you alter settings, anomaly behavior, or later phases.
 - The historical journal-entry target assumed journal-mode payroll. Phase 13 moved payroll into operational tables, so `JournalEntry` is now lower while payroll tables and `GLEntry` are materially higher.
-- Phase 14 added routing and operation tables plus denser labor detail, so manufacturing-planning and payroll row counts are materially above the earlier manufacturing-foundation baseline.
+- Phase 15 added work-center schedules, which materially increased planning-table volume.
+- Phase 16 added daily time-clock detail, which increased payroll-and-attendance rows while making hourly payroll support more traceable.

@@ -27,6 +27,7 @@ The docs are organized for two broad uses:
 | [processes/o2c-returns-credits-refunds.md](processes/o2c-returns-credits-refunds.md) | Return, credit, and refund process explained step by step |
 | [processes/p2p.md](processes/p2p.md) | Procure-to-pay process explained step by step |
 | [processes/manufacturing.md](processes/manufacturing.md) | Manufacturing process explained step by step |
+| [processes/time-clocks.md](processes/time-clocks.md) | Shift definitions, employee assignments, time clocks, and attendance exceptions |
 | [processes/payroll.md](processes/payroll.md) | Payroll process, labor time, and manufacturing labor integration |
 | [processes/manual-journals-and-close.md](processes/manual-journals-and-close.md) | Recurring journal and close-cycle process explained step by step |
 | [database-guide.md](database-guide.md) | Table families, key joins, and navigation patterns |
@@ -59,18 +60,18 @@ The docs are organized for two broad uses:
 ### Implemented in current generator
 
 - five fiscal years from 2026 through 2030
-- 51 tables across O2C, P2P, manufacturing, payroll, accounting core, master data, and planning
+- 55 tables across O2C, P2P, manufacturing, payroll, time and attendance, accounting core, master data, and planning
 - returns, credit memos, refunds, receipt applications, and customer-credit behavior in O2C
 - batched and matched multi-period P2P flows
 - BOMs, routings, work centers, work orders, work-order operations, material issues, completions, and work-order close
-- payroll periods, labor time, payroll registers, payroll payments, and liability remittances
+- payroll periods, shift assignments, approved daily time clocks, labor time, payroll registers, payroll payments, and liability remittances
 - recurring manual journals, manufacturing labor / overhead reclasses, and year-end close
 - analytics starter docs, SQL packs, Excel workflow guidance, and exports
 
 ### Planned future extension
 
-- deeper manufacturing and cost-accounting detail beyond the current foundation
-- richer payroll controls, scheduling, and labor-planning detail
+- raw punch-event detail and rotating shift rosters beyond the current one-row-per-workday time-clock model
+- shift-level capacity planning and deeper workforce-planning detail
 
 ## Root-Level Entry Points
 

@@ -20,3 +20,8 @@ profiles:
     scheduled_on_nonworking_day_per_year: 1
     overbooked_work_center_day_per_year: 1
     completion_before_operation_end_per_year: 1
+    missing_clock_out_per_year: 1
+    duplicate_time_clock_day_per_year: 1
+    off_shift_clocking_per_year: 1
+    paid_without_clock_per_year: 1
+    labor_after_operation_close_per_year: 1

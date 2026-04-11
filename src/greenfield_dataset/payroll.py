@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 from greenfield_dataset.schema import TABLE_COLUMNS
+from greenfield_dataset.state_cache import drop_context_attributes, get_or_build_cache
 from greenfield_dataset.settings import GenerationContext
 from greenfield_dataset.utils import format_doc_number, money, next_id, qty
 
@@ -47,6 +48,81 @@ EMPLOYEE_TAX_WITHHOLDING_RANGE = (0.11, 0.16)
 BENEFITS_DEDUCTION_RANGE = (0.02, 0.05)
 EMPLOYER_BENEFIT_RATE_RANGE = (0.04, 0.08)
 EMPLOYER_PAYROLL_TAX_RATE = 0.0765
+SHIFT_DEFINITION_ROWS = (
+    {
+        "ShiftCode": "MFG-DAY",
+        "ShiftName": "Manufacturing Day Shift",
+        "Department": "Manufacturing",
+        "WorkCenterCode": "ASSEMBLY",
+        "StartTime": "07:00:00",
+        "EndTime": "15:30:00",
+        "StandardBreakMinutes": 30,
+        "ShiftType": "Day",
+        "IsOvernight": 0,
+    },
+    {
+        "ShiftCode": "MFG-LATE",
+        "ShiftName": "Manufacturing Late Shift",
+        "Department": "Manufacturing",
+        "WorkCenterCode": "ASSEMBLY",
+        "StartTime": "15:00:00",
+        "EndTime": "23:30:00",
+        "StandardBreakMinutes": 30,
+        "ShiftType": "Late",
+        "IsOvernight": 0,
+    },
+    {
+        "ShiftCode": "WH-DAY",
+        "ShiftName": "Warehouse Day Shift",
+        "Department": "Warehouse",
+        "WorkCenterCode": None,
+        "StartTime": "08:00:00",
+        "EndTime": "16:30:00",
+        "StandardBreakMinutes": 30,
+        "ShiftType": "Day",
+        "IsOvernight": 0,
+    },
+    {
+        "ShiftCode": "CS-DAY",
+        "ShiftName": "Customer Service Day Shift",
+        "Department": "Customer Service",
+        "WorkCenterCode": None,
+        "StartTime": "08:30:00",
+        "EndTime": "17:00:00",
+        "StandardBreakMinutes": 30,
+        "ShiftType": "Day",
+        "IsOvernight": 0,
+    },
+)
+JOB_TITLE_SHIFT_CODE = {
+    "Assembler": "MFG-DAY",
+    "Machine Operator": "MFG-LATE",
+    "Quality Technician": "MFG-DAY",
+    "Shipping Clerk": "WH-DAY",
+    "Inventory Specialist": "WH-DAY",
+    "Customer Service Representative": "CS-DAY",
+    "Administrative Specialist": "CS-DAY",
+}
+JOB_TITLE_WORK_CENTER_CODES = {
+    "Assembler": ("ASSEMBLY", "FINISH", "PACK"),
+    "Machine Operator": ("CUT", "ASSEMBLY"),
+    "Quality Technician": ("QA", "FINISH", "ASSEMBLY"),
+}
+DIRECT_WORK_CENTER_TITLE_PREFERENCE = {
+    "ASSEMBLY": ("Assembler", "Machine Operator", "Quality Technician"),
+    "CUT": ("Machine Operator", "Assembler", "Quality Technician"),
+    "FINISH": ("Assembler", "Quality Technician", "Machine Operator"),
+    "PACK": ("Assembler", "Machine Operator", "Quality Technician"),
+    "QA": ("Quality Technician", "Assembler", "Machine Operator"),
+}
+SHIFT_CLOCK_IN_VARIANCE_MINUTES = (-12, 10)
+SHIFT_CLOCK_OUT_VARIANCE_MINUTES = (-8, 18)
+SHIFT_OFF_TOLERANCE_MINUTES = 45
+STANDARD_SHIFT_REGULAR_HOURS_RANGE = (7.5, 8.25)
+STANDARD_SHIFT_OVERTIME_RANGE = (0.0, 2.25)
+DIRECT_SUPPORT_TOPUP_HOURS_RANGE = (74.0, 82.0)
+MAX_CLOCK_HOURS_PER_DAY = 11.5
+TIMECLOCK_APPROVED_STATUS = "Approved"
 
 
 def append_rows(context: GenerationContext, table_name: str, rows: list[dict[str, Any]]) -> None:
@@ -54,6 +130,43 @@ def append_rows(context: GenerationContext, table_name: str, rows: list[dict[str
         return
     new_rows = pd.DataFrame(rows, columns=TABLE_COLUMNS[table_name])
     context.tables[table_name] = pd.concat([context.tables[table_name], new_rows], ignore_index=True)
+    invalidate_payroll_caches(context, table_name)
+
+
+def invalidate_payroll_caches(context: GenerationContext, table_name: str) -> None:
+    cache_keys_by_table = {
+        "PayrollPeriod": [
+            "_payroll_period_lookup_cache",
+            "_payroll_period_month_lookup_cache",
+            "_shift_assignment_map_cache",
+        ],
+        "ShiftDefinition": ["_shift_definition_by_code_cache", "_shift_definition_lookup_cache"],
+        "EmployeeShiftAssignment": ["_shift_assignment_map_cache"],
+        "TimeClockEntry": [
+            "_time_clock_entries_cache",
+            "_time_clock_entry_lookup_cache",
+            "_approved_time_clock_hours_by_employee_period_cache",
+        ],
+        "LaborTimeEntry": [
+            "_labor_time_entries_cache",
+            "_labor_time_direct_cost_by_work_order_cache",
+            "_direct_labor_cost_by_month_work_order_cache",
+            "_work_order_overhead_cost_map_cache",
+            "_approved_time_clock_hours_by_employee_period_cache",
+        ],
+        "PayrollRegister": [
+            "_payroll_register_lookup_cache",
+            "_payroll_register_lines_with_headers_cache",
+            "_work_order_overhead_cost_map_cache",
+        ],
+        "PayrollRegisterLine": [
+            "_payroll_register_lines_cache",
+            "_payroll_register_lines_with_headers_cache",
+            "_work_order_overhead_cost_map_cache",
+        ],
+        "PayrollLiabilityRemittance": ["_payroll_liability_remitted_amounts_cache"],
+    }
+    drop_context_attributes(context, cache_keys_by_table.get(table_name, []))
 
 
 def month_bounds(year: int, month: int) -> tuple[pd.Timestamp, pd.Timestamp]:
@@ -93,10 +206,13 @@ def accounting_manager_id(context: GenerationContext) -> int:
 
 
 def payroll_period_lookup(context: GenerationContext) -> dict[int, dict[str, Any]]:
-    periods = context.tables["PayrollPeriod"]
-    if periods.empty:
-        return {}
-    return periods.set_index("PayrollPeriodID").to_dict("index")
+    def builder() -> dict[int, dict[str, Any]]:
+        periods = context.tables["PayrollPeriod"]
+        if periods.empty:
+            return {}
+        return periods.set_index("PayrollPeriodID").to_dict("index")
+
+    return get_or_build_cache(context, "_payroll_period_lookup_cache", builder)
 
 
 def payroll_period_month(period: dict[str, Any]) -> tuple[int, int]:
@@ -132,6 +248,168 @@ def manufacturing_cost_center_id(context: GenerationContext) -> int:
     if matches.empty:
         raise ValueError("Manufacturing cost center is required for payroll generation.")
     return int(matches.iloc[0])
+
+
+def shift_definition_by_code(context: GenerationContext) -> dict[str, dict[str, Any]]:
+    def builder() -> dict[str, dict[str, Any]]:
+        shift_definitions = context.tables["ShiftDefinition"]
+        if shift_definitions.empty:
+            return {}
+        return {
+            str(row.ShiftCode): row._asdict()
+            for row in shift_definitions.itertuples(index=False)
+        }
+
+    return get_or_build_cache(context, "_shift_definition_by_code_cache", builder)
+
+
+def shift_definition_lookup(context: GenerationContext) -> dict[int, dict[str, Any]]:
+    def builder() -> dict[int, dict[str, Any]]:
+        shift_definitions = context.tables["ShiftDefinition"]
+        if shift_definitions.empty:
+            return {}
+        return shift_definitions.set_index("ShiftDefinitionID").to_dict("index")
+
+    return get_or_build_cache(context, "_shift_definition_lookup_cache", builder)
+
+
+def work_center_ids_by_code(context: GenerationContext) -> dict[str, int]:
+    work_centers = context.tables["WorkCenter"]
+    if work_centers.empty:
+        return {}
+    return {
+        str(row.WorkCenterCode): int(row.WorkCenterID)
+        for row in work_centers.itertuples(index=False)
+    }
+
+
+def primary_work_center_id_for_title(context: GenerationContext, job_title: str) -> int | None:
+    work_center_ids = work_center_ids_by_code(context)
+    for work_center_code in JOB_TITLE_WORK_CENTER_CODES.get(str(job_title), ()):
+        work_center_id = work_center_ids.get(str(work_center_code))
+        if work_center_id is not None:
+            return int(work_center_id)
+    return None
+
+
+def generate_shift_definitions_and_assignments(context: GenerationContext) -> None:
+    generate_shift_definitions(context)
+    generate_employee_shift_assignments(context)
+
+
+def generate_shift_definitions(context: GenerationContext) -> None:
+    if not context.tables["ShiftDefinition"].empty:
+        return
+
+    work_center_ids = work_center_ids_by_code(context)
+    shift_rows: list[dict[str, Any]] = []
+    for shift_definition in SHIFT_DEFINITION_ROWS:
+        work_center_code = shift_definition["WorkCenterCode"]
+        shift_rows.append({
+            "ShiftDefinitionID": next_id(context, "ShiftDefinition"),
+            "ShiftCode": shift_definition["ShiftCode"],
+            "ShiftName": shift_definition["ShiftName"],
+            "Department": shift_definition["Department"],
+            "WorkCenterID": None if work_center_code is None else work_center_ids.get(str(work_center_code)),
+            "StartTime": shift_definition["StartTime"],
+            "EndTime": shift_definition["EndTime"],
+            "StandardBreakMinutes": int(shift_definition["StandardBreakMinutes"]),
+            "ShiftType": shift_definition["ShiftType"],
+            "IsOvernight": int(shift_definition["IsOvernight"]),
+            "IsActive": 1,
+        })
+
+    append_rows(context, "ShiftDefinition", shift_rows)
+
+
+def generate_employee_shift_assignments(context: GenerationContext) -> None:
+    if not context.tables["EmployeeShiftAssignment"].empty:
+        return
+
+    generate_shift_definitions(context)
+    employees = context.tables["Employee"]
+    if employees.empty:
+        return
+
+    shift_by_code = shift_definition_by_code(context)
+    assignment_rows: list[dict[str, Any]] = []
+    start_date = context.settings.fiscal_year_start
+    end_date = context.settings.fiscal_year_end
+
+    for employee in employees.sort_values("EmployeeID").itertuples(index=False):
+        if str(employee.PayClass) != "Hourly":
+            continue
+        shift_code = JOB_TITLE_SHIFT_CODE.get(str(employee.JobTitle))
+        if shift_code is None:
+            if int(employee.CostCenterID) == manufacturing_cost_center_id(context):
+                shift_code = "MFG-DAY"
+            else:
+                shift_code = "WH-DAY"
+        shift_definition = shift_by_code.get(str(shift_code))
+        if shift_definition is None:
+            continue
+        assignment_rows.append({
+            "EmployeeShiftAssignmentID": next_id(context, "EmployeeShiftAssignment"),
+            "EmployeeID": int(employee.EmployeeID),
+            "ShiftDefinitionID": int(shift_definition["ShiftDefinitionID"]),
+            "EffectiveStartDate": start_date,
+            "EffectiveEndDate": end_date,
+            "WorkCenterID": primary_work_center_id_for_title(context, str(employee.JobTitle)),
+            "IsPrimary": 1,
+        })
+
+    append_rows(context, "EmployeeShiftAssignment", assignment_rows)
+
+
+def primary_shift_assignment_map(context: GenerationContext) -> dict[int, dict[str, Any]]:
+    def builder() -> dict[int, dict[str, Any]]:
+        assignments = context.tables["EmployeeShiftAssignment"]
+        if assignments.empty:
+            return {}
+        active_assignments = assignments[assignments["IsPrimary"].astype(int).eq(1)].copy()
+        if active_assignments.empty:
+            active_assignments = assignments.copy()
+        active_assignments = active_assignments.sort_values(["EmployeeID", "EmployeeShiftAssignmentID"])
+        active_assignments = active_assignments.drop_duplicates("EmployeeID", keep="first")
+        return active_assignments.set_index("EmployeeID").to_dict("index")
+
+    return get_or_build_cache(context, "_shift_assignment_map_cache", builder)
+
+
+def combine_timestamp(date_value: pd.Timestamp | str, time_text: str) -> str:
+    date_text = pd.Timestamp(date_value).strftime("%Y-%m-%d")
+    return f"{date_text} {time_text}"
+
+
+def apply_minutes_to_time(time_text: str, offset_minutes: int) -> str:
+    timestamp = pd.Timestamp(f"2000-01-01 {time_text}") + pd.Timedelta(minutes=int(offset_minutes))
+    return timestamp.strftime("%H:%M:%S")
+
+
+def time_span_hours(clock_in_time: str | None, clock_out_time: str | None, break_minutes: int | float) -> float:
+    if clock_in_time is None or clock_out_time is None:
+        return 0.0
+    total_minutes = (pd.Timestamp(clock_out_time) - pd.Timestamp(clock_in_time)).total_seconds() / 60.0
+    total_minutes = max(total_minutes - float(break_minutes), 0.0)
+    return qty(total_minutes / 60.0)
+
+
+def employee_clock_approver_id(employee: pd.Series | dict[str, Any]) -> int | None:
+    manager_id = employee.get("ManagerID") if isinstance(employee, dict) else employee["ManagerID"]
+    if pd.notna(manager_id):
+        return int(manager_id)
+    return None
+
+
+def payroll_period_month_lookup(context: GenerationContext) -> dict[int, tuple[int, int]]:
+    def builder() -> dict[int, tuple[int, int]]:
+        period_lookup = payroll_period_lookup(context)
+        return {
+            int(payroll_period_id): payroll_period_month(period)
+            for payroll_period_id, period in period_lookup.items()
+        }
+
+    return get_or_build_cache(context, "_payroll_period_month_lookup_cache", builder)
 
 
 def generate_payroll_periods(context: GenerationContext) -> None:
@@ -332,41 +610,171 @@ def work_order_operation_targets_for_period(
     return target_map
 
 
-def build_direct_labor_time_entries(
+def working_dates_for_period(
+    context: GenerationContext,
+    period_start: pd.Timestamp,
+    period_end: pd.Timestamp,
+    work_center_id: int | None = None,
+) -> list[pd.Timestamp]:
+    calendar = pd.date_range(start=period_start, end=period_end, freq="D")
+    if work_center_id is None or context.tables["WorkCenterCalendar"].empty:
+        return [day for day in calendar if day.day_name() not in {"Saturday", "Sunday"}]
+
+    work_center_calendar = context.tables["WorkCenterCalendar"]
+    working_rows = work_center_calendar[
+        work_center_calendar["WorkCenterID"].astype(float).eq(float(work_center_id))
+        & pd.to_datetime(work_center_calendar["CalendarDate"]).between(period_start, period_end)
+        & work_center_calendar["IsWorkingDay"].astype(int).eq(1)
+    ].sort_values("CalendarDate")
+    return [pd.Timestamp(value) for value in working_rows["CalendarDate"].tolist()]
+
+
+def direct_worker_candidates_by_work_center(
+    context: GenerationContext,
+    direct_workers: pd.DataFrame,
+) -> dict[int | None, list[int]]:
+    assignments = primary_shift_assignment_map(context)
+    lookup = direct_workers.set_index("EmployeeID").to_dict("index")
+    by_work_center: dict[int | None, list[int]] = defaultdict(list)
+
+    for employee_id, employee in lookup.items():
+        assignment = assignments.get(int(employee_id), {})
+        work_center_id = assignment.get("WorkCenterID")
+        by_work_center[None].append(int(employee_id))
+        if pd.notna(work_center_id):
+            by_work_center[int(work_center_id)].append(int(employee_id))
+
+    work_center_ids = work_center_ids_by_code(context)
+    for work_center_code, preferred_titles in DIRECT_WORK_CENTER_TITLE_PREFERENCE.items():
+        work_center_id = work_center_ids.get(str(work_center_code))
+        if work_center_id is None:
+            continue
+        ordered_ids = [
+            int(employee_id)
+            for employee_id, employee in lookup.items()
+            if str(employee["JobTitle"]) in preferred_titles
+        ]
+        if ordered_ids:
+            existing = by_work_center.get(int(work_center_id), [])
+            by_work_center[int(work_center_id)] = list(dict.fromkeys(existing + ordered_ids))
+
+    return {
+        work_center_id: sorted(employee_ids)
+        for work_center_id, employee_ids in by_work_center.items()
+        if employee_ids
+    }
+
+
+def add_time_clock_spec(
+    context: GenerationContext,
+    specs: dict[tuple[int, str], dict[str, Any]],
+    employee_lookup: dict[int, dict[str, Any]],
+    employee_id: int,
+    payroll_period_id: int,
+    work_date: pd.Timestamp,
+    work_center_id: int | None,
+    labor_type: str,
+    regular_hours: float,
+    overtime_hours: float,
+    work_order_id: int | None = None,
+    work_order_operation_id: int | None = None,
+) -> None:
+    total_hours = qty(float(regular_hours) + float(overtime_hours))
+    if total_hours <= 0:
+        return
+
+    date_text = pd.Timestamp(work_date).strftime("%Y-%m-%d")
+    key = (int(employee_id), date_text)
+    assignment = primary_shift_assignment_map(context).get(int(employee_id), {})
+    employee = employee_lookup[int(employee_id)]
+    approver_id = employee_clock_approver_id(employee) or accounting_manager_id(context)
+
+    if key not in specs:
+        specs[key] = {
+            "EmployeeID": int(employee_id),
+            "PayrollPeriodID": int(payroll_period_id),
+            "WorkDate": date_text,
+            "ShiftDefinitionID": assignment.get("ShiftDefinitionID"),
+            "WorkCenterID": None if work_center_id is None else int(work_center_id),
+            "WorkOrderID": None if work_order_id is None else int(work_order_id),
+            "WorkOrderOperationID": None if work_order_operation_id is None else int(work_order_operation_id),
+            "RegularHours": qty(regular_hours),
+            "OvertimeHours": qty(overtime_hours),
+            "LaborType": labor_type,
+            "ClockStatus": TIMECLOCK_APPROVED_STATUS,
+            "ApprovedByEmployeeID": int(approver_id),
+            "ApprovedDate": date_text,
+        }
+        return
+
+    spec = specs[key]
+    spec["RegularHours"] = qty(float(spec["RegularHours"]) + float(regular_hours))
+    spec["OvertimeHours"] = qty(float(spec["OvertimeHours"]) + float(overtime_hours))
+    if spec["WorkOrderID"] is None and work_order_id is not None:
+        spec["WorkOrderID"] = int(work_order_id)
+    if spec["WorkOrderOperationID"] is None and work_order_operation_id is not None:
+        spec["WorkOrderOperationID"] = int(work_order_operation_id)
+    if spec["WorkCenterID"] is None and work_center_id is not None:
+        spec["WorkCenterID"] = int(work_center_id)
+    if spec["LaborType"] != "Direct Manufacturing" and labor_type == "Direct Manufacturing":
+        spec["LaborType"] = labor_type
+
+
+def regular_and_overtime_split(existing_hours: float, added_hours: float) -> tuple[float, float]:
+    regular_capacity = max(0.0, 8.0 - float(existing_hours))
+    regular_hours = qty(min(float(added_hours), regular_capacity))
+    overtime_hours = qty(max(float(added_hours) - regular_hours, 0.0))
+    return regular_hours, overtime_hours
+
+
+def build_direct_time_clock_specs(
     context: GenerationContext,
     payroll_period_id: int,
     period_start: pd.Timestamp,
     period_end: pd.Timestamp,
     employees: pd.DataFrame,
-) -> list[dict[str, Any]]:
+    specs: dict[tuple[int, str], dict[str, Any]],
+) -> None:
     work_orders = context.tables["WorkOrder"]
     if work_orders.empty:
-        return []
+        return
 
     direct_workers = employees[
         employees["JobTitle"].isin(DIRECT_MANUFACTURING_TITLES)
         & employees["PayClass"].eq("Hourly")
     ].copy()
     if direct_workers.empty:
-        return []
+        return
 
-    targets = direct_labor_targets_for_period(context, period_start, period_end)
     operation_targets = work_order_operation_targets_for_period(context, period_start, period_end)
-    approver = accounting_manager_id(context)
-    direct_rows: list[dict[str, Any]] = []
-    assigned_hours: dict[int, float] = defaultdict(float)
-    employee_lookup = direct_workers.set_index("EmployeeID").to_dict("index")
-    ordered_worker_ids = sorted(employee_lookup)
+    if not operation_targets:
+        return
 
-    for work_order_id in sorted(targets):
+    work_order_operations = context.tables["WorkOrderOperation"]
+    operation_lookup = work_order_operations.set_index("WorkOrderOperationID").to_dict("index") if not work_order_operations.empty else {}
+    work_order_lookup = work_orders.set_index("WorkOrderID").to_dict("index")
+    employee_lookup = direct_workers.set_index("EmployeeID").to_dict("index")
+    worker_ids_by_work_center = direct_worker_candidates_by_work_center(context, direct_workers)
+    assigned_period_hours: dict[int, float] = defaultdict(float)
+
+    for work_order_id in sorted(operation_targets):
         operation_target_rows = operation_targets.get(int(work_order_id), [])
         if not operation_target_rows:
             continue
 
         for operation_target in operation_target_rows:
             work_date = next_business_day(pd.Timestamp(operation_target["WorkDate"]))
+            if work_date < period_start or work_date > period_end:
+                continue
             target_cost = float(operation_target["TargetCost"])
             if target_cost <= 0:
+                continue
+
+            operation_id = operation_target["WorkOrderOperationID"]
+            operation = operation_lookup.get(int(operation_id)) if operation_id is not None else None
+            work_center_id = int(operation["WorkCenterID"]) if operation is not None else None
+            candidate_workers = worker_ids_by_work_center.get(work_center_id) or worker_ids_by_work_center.get(None, [])
+            if not candidate_workers:
                 continue
 
             rng = stable_rng(
@@ -374,128 +782,245 @@ def build_direct_labor_time_entries(
                 "direct-work-order-operation",
                 payroll_period_id,
                 work_order_id,
-                operation_target["WorkOrderOperationID"],
+                operation_id,
+                work_date.strftime("%Y-%m-%d"),
             )
-            worker_count = min(len(ordered_worker_ids), choose_count(rng, DIRECT_WORKER_SPLIT_OPTIONS))
+            worker_count = min(len(candidate_workers), choose_count(rng, DIRECT_WORKER_SPLIT_OPTIONS))
             candidate_workers = sorted(
-                ordered_worker_ids,
-                key=lambda employee_id: (assigned_hours.get(employee_id, 0.0), employee_id),
+                candidate_workers,
+                key=lambda employee_id: (
+                    float(specs.get((int(employee_id), work_date.strftime("%Y-%m-%d")), {}).get("RegularHours", 0.0))
+                    + float(specs.get((int(employee_id), work_date.strftime("%Y-%m-%d")), {}).get("OvertimeHours", 0.0)),
+                    assigned_period_hours.get(int(employee_id), 0.0),
+                    int(employee_id),
+                ),
             )[:worker_count]
             split_weights = rng.dirichlet(np.ones(worker_count))
 
             for employee_id, split_weight in zip(candidate_workers, split_weights, strict=False):
                 employee = employee_lookup[int(employee_id)]
                 hourly_rate = implied_hourly_rate(employee, work_date.year)
-                entry_cost = money(target_cost * float(split_weight))
-                if entry_cost <= 0 or hourly_rate <= 0:
+                if hourly_rate <= 0:
                     continue
-
-                raw_hours = entry_cost / hourly_rate
-                regular_capacity = max(0.0, 80.0 - assigned_hours.get(int(employee_id), 0.0))
-                regular_hours = qty(min(raw_hours, regular_capacity))
-                overtime_hours = qty(max(raw_hours - regular_hours, 0.0))
-                extended_labor_cost = money(regular_hours * hourly_rate + overtime_hours * hourly_rate * 1.5)
-                if extended_labor_cost <= 0:
+                raw_hours = max(target_cost * float(split_weight) / hourly_rate, 0.0)
+                existing_spec = specs.get((int(employee_id), work_date.strftime("%Y-%m-%d")))
+                existing_hours = 0.0 if existing_spec is None else (
+                    float(existing_spec["RegularHours"]) + float(existing_spec["OvertimeHours"])
+                )
+                available_hours = max(MAX_CLOCK_HOURS_PER_DAY - existing_hours, 0.0)
+                additional_hours = qty(min(raw_hours, available_hours))
+                if additional_hours <= 0:
                     continue
-
-                direct_rows.append({
-                    "LaborTimeEntryID": next_id(context, "LaborTimeEntry"),
-                    "PayrollPeriodID": payroll_period_id,
-                    "EmployeeID": int(employee_id),
-                    "WorkOrderID": int(work_order_id),
-                    "WorkOrderOperationID": operation_target["WorkOrderOperationID"],
-                    "WorkDate": work_date.strftime("%Y-%m-%d"),
-                    "LaborType": "Direct Manufacturing",
-                    "RegularHours": regular_hours,
-                    "OvertimeHours": overtime_hours,
-                    "HourlyRateUsed": hourly_rate,
-                    "ExtendedLaborCost": extended_labor_cost,
-                    "ApprovedByEmployeeID": approver,
-                    "ApprovedDate": work_date.strftime("%Y-%m-%d"),
-                })
-                assigned_hours[int(employee_id)] = round(
-                    assigned_hours.get(int(employee_id), 0.0) + regular_hours + overtime_hours,
-                    2,
+                regular_hours, overtime_hours = regular_and_overtime_split(existing_hours, additional_hours)
+                work_order = work_order_lookup.get(int(work_order_id), {})
+                add_time_clock_spec(
+                    context,
+                    specs,
+                    employee_lookup,
+                    int(employee_id),
+                    int(payroll_period_id),
+                    work_date,
+                    work_center_id,
+                    "Direct Manufacturing",
+                    regular_hours,
+                    overtime_hours,
+                    work_order_id=int(work_order_id),
+                    work_order_operation_id=None if operation_id is None else int(operation_id),
+                )
+                assigned_period_hours[int(employee_id)] = qty(
+                    assigned_period_hours.get(int(employee_id), 0.0) + regular_hours + overtime_hours
                 )
 
     for employee in direct_workers.itertuples(index=False):
         rng = stable_rng(context, "direct-worker-topup", payroll_period_id, int(employee.EmployeeID))
-        target_hours = float(rng.uniform(*HOURLY_PERIOD_HOURS_RANGE))
-        overtime_target = float(rng.uniform(*HOURLY_PERIOD_OVERTIME_RANGE))
-        existing_hours = float(assigned_hours.get(int(employee.EmployeeID), 0.0))
-        remaining_regular = qty(max(target_hours - existing_hours, 0.0))
-        if remaining_regular <= 0 and overtime_target <= 0:
+        target_hours = float(rng.uniform(*DIRECT_SUPPORT_TOPUP_HOURS_RANGE))
+        assigned_hours = sum(
+            float(spec["RegularHours"]) + float(spec["OvertimeHours"])
+            for (employee_id, _), spec in specs.items()
+            if int(employee_id) == int(employee.EmployeeID)
+        )
+        remaining_hours = qty(max(target_hours - assigned_hours, 0.0))
+        if remaining_hours <= 0:
             continue
 
-        hourly_rate = implied_hourly_rate(employee._asdict(), period_end.year)
-        work_date = next_business_day(period_end)
-        extended_labor_cost = money(remaining_regular * hourly_rate + overtime_target * hourly_rate * 1.5)
-        if extended_labor_cost <= 0:
-            continue
+        assignment = primary_shift_assignment_map(context).get(int(employee.EmployeeID), {})
+        working_dates = working_dates_for_period(
+            context,
+            period_start,
+            period_end,
+            None if pd.isna(assignment.get("WorkCenterID")) else int(assignment["WorkCenterID"]),
+        )
+        for work_date in working_dates:
+            key = (int(employee.EmployeeID), work_date.strftime("%Y-%m-%d"))
+            if key in specs:
+                continue
+            daily_regular = qty(min(float(rng.uniform(*STANDARD_SHIFT_REGULAR_HOURS_RANGE)), remaining_hours))
+            daily_overtime = 0.0
+            if remaining_hours > daily_regular and int(employee.OvertimeEligible) == 1:
+                daily_overtime = qty(min(float(rng.uniform(0.0, 1.5)), remaining_hours - daily_regular))
+            add_time_clock_spec(
+                context,
+                specs,
+                direct_workers.set_index("EmployeeID").to_dict("index"),
+                int(employee.EmployeeID),
+                int(payroll_period_id),
+                work_date,
+                None if pd.isna(assignment.get("WorkCenterID")) else int(assignment["WorkCenterID"]),
+                "Indirect Manufacturing",
+                daily_regular,
+                daily_overtime,
+            )
+            remaining_hours = qty(max(remaining_hours - daily_regular - daily_overtime, 0.0))
+            if remaining_hours <= 0:
+                break
 
-        direct_rows.append({
-            "LaborTimeEntryID": next_id(context, "LaborTimeEntry"),
-            "PayrollPeriodID": payroll_period_id,
-            "EmployeeID": int(employee.EmployeeID),
-            "WorkOrderID": None,
-            "WorkOrderOperationID": None,
-            "WorkDate": work_date.strftime("%Y-%m-%d"),
-            "LaborType": "Indirect Manufacturing",
-            "RegularHours": remaining_regular,
-            "OvertimeHours": qty(overtime_target),
-            "HourlyRateUsed": hourly_rate,
-            "ExtendedLaborCost": extended_labor_cost,
-            "ApprovedByEmployeeID": approver,
-            "ApprovedDate": work_date.strftime("%Y-%m-%d"),
-        })
 
-    return direct_rows
-
-
-def build_indirect_and_nonmanufacturing_time_entries(
+def build_hourly_support_time_clock_specs(
     context: GenerationContext,
     payroll_period_id: int,
+    period_start: pd.Timestamp,
     period_end: pd.Timestamp,
     employees: pd.DataFrame,
-) -> list[dict[str, Any]]:
-    approver = accounting_manager_id(context)
-    rows: list[dict[str, Any]] = []
-    work_date = next_business_day(period_end)
+    specs: dict[tuple[int, str], dict[str, Any]],
+) -> None:
+    hourly_support = employees[
+        employees["PayClass"].eq("Hourly")
+        & ~employees["JobTitle"].isin(DIRECT_MANUFACTURING_TITLES)
+    ].copy()
+    if hourly_support.empty:
+        return
 
-    for employee in employees.itertuples(index=False):
-        title = str(employee.JobTitle)
-        is_hourly = str(employee.PayClass) == "Hourly"
-        if title in DIRECT_MANUFACTURING_TITLES:
-            continue
-        if not is_hourly and title not in INDIRECT_MANUFACTURING_TITLES:
-            continue
+    employee_lookup = hourly_support.set_index("EmployeeID").to_dict("index")
+    assignments = primary_shift_assignment_map(context)
 
-        rng = stable_rng(context, "time-entry", payroll_period_id, int(employee.EmployeeID))
-        regular_hours = qty(float(rng.uniform(*HOURLY_PERIOD_HOURS_RANGE)))
-        overtime_hours = qty(float(rng.uniform(0.0, 2.5)) if int(employee.OvertimeEligible) == 1 else 0.0)
-        hourly_rate = implied_hourly_rate(employee._asdict(), period_end.year)
+    for employee in hourly_support.itertuples(index=False):
+        rng = stable_rng(context, "hourly-support-clock", payroll_period_id, int(employee.EmployeeID))
+        assignment = assignments.get(int(employee.EmployeeID), {})
+        work_center_id = None if pd.isna(assignment.get("WorkCenterID")) else int(assignment["WorkCenterID"])
         labor_type = (
             "Indirect Manufacturing"
             if int(employee.CostCenterID) == manufacturing_cost_center_id(context)
             else "NonManufacturing"
         )
-        rows.append({
+        working_dates = working_dates_for_period(context, period_start, period_end, work_center_id)
+        if not working_dates:
+            continue
+
+        target_regular_hours = float(rng.uniform(*HOURLY_PERIOD_HOURS_RANGE))
+        target_overtime_hours = float(rng.uniform(*HOURLY_PERIOD_OVERTIME_RANGE)) if int(employee.OvertimeEligible) == 1 else 0.0
+        remaining_regular = qty(target_regular_hours)
+        remaining_overtime = qty(target_overtime_hours)
+
+        for work_date in working_dates:
+            if remaining_regular <= 0 and remaining_overtime <= 0:
+                break
+            regular_hours = qty(min(float(rng.uniform(*STANDARD_SHIFT_REGULAR_HOURS_RANGE)), remaining_regular))
+            overtime_hours = 0.0
+            if remaining_overtime > 0:
+                overtime_hours = qty(min(float(rng.uniform(0.0, 1.75)), remaining_overtime))
+            add_time_clock_spec(
+                context,
+                specs,
+                employee_lookup,
+                int(employee.EmployeeID),
+                int(payroll_period_id),
+                work_date,
+                work_center_id,
+                labor_type,
+                regular_hours,
+                overtime_hours,
+            )
+            remaining_regular = qty(max(remaining_regular - regular_hours, 0.0))
+            remaining_overtime = qty(max(remaining_overtime - overtime_hours, 0.0))
+
+
+def materialize_time_clocks_and_labor_entries(
+    context: GenerationContext,
+    specs: dict[tuple[int, str], dict[str, Any]],
+    employees: pd.DataFrame,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    if not specs:
+        return [], []
+
+    employee_lookup = employees.set_index("EmployeeID").to_dict("index")
+    shift_lookup = shift_definition_lookup(context)
+    time_clock_rows: list[dict[str, Any]] = []
+    labor_rows: list[dict[str, Any]] = []
+
+    for spec in sorted(specs.values(), key=lambda row: (row["WorkDate"], row["EmployeeID"])):
+        employee = employee_lookup[int(spec["EmployeeID"])]
+        shift_definition = shift_lookup.get(int(spec["ShiftDefinitionID"])) if pd.notna(spec["ShiftDefinitionID"]) else None
+        base_start_time = "08:00:00" if shift_definition is None else str(shift_definition["StartTime"])
+        break_minutes = 30 if shift_definition is None else int(shift_definition["StandardBreakMinutes"])
+        rng = stable_rng(
+            context,
+            "time-clock",
+            int(spec["EmployeeID"]),
+            int(spec["PayrollPeriodID"]),
+            str(spec["WorkDate"]),
+            spec.get("WorkOrderOperationID"),
+        )
+        clock_in_time = apply_minutes_to_time(base_start_time, int(rng.integers(*SHIFT_CLOCK_IN_VARIANCE_MINUTES)))
+        total_hours = float(spec["RegularHours"]) + float(spec["OvertimeHours"])
+        scheduled_minutes = int(round(total_hours * 60.0)) + int(break_minutes)
+        clock_out_base = pd.Timestamp(combine_timestamp(spec["WorkDate"], clock_in_time)) + pd.Timedelta(minutes=scheduled_minutes)
+        clock_out_time = clock_out_base.strftime("%Y-%m-%d %H:%M:%S")
+        clock_in_timestamp = combine_timestamp(spec["WorkDate"], clock_in_time)
+        hourly_rate = implied_hourly_rate(employee, pd.Timestamp(spec["WorkDate"]).year)
+        time_clock_entry_id = next_id(context, "TimeClockEntry")
+
+        time_clock_rows.append({
+            "TimeClockEntryID": time_clock_entry_id,
+            "EmployeeID": int(spec["EmployeeID"]),
+            "PayrollPeriodID": int(spec["PayrollPeriodID"]),
+            "WorkDate": str(spec["WorkDate"]),
+            "ShiftDefinitionID": spec["ShiftDefinitionID"],
+            "WorkCenterID": spec["WorkCenterID"],
+            "WorkOrderID": spec["WorkOrderID"],
+            "WorkOrderOperationID": spec["WorkOrderOperationID"],
+            "ClockInTime": clock_in_timestamp,
+            "ClockOutTime": clock_out_time,
+            "BreakMinutes": int(break_minutes),
+            "RegularHours": qty(spec["RegularHours"]),
+            "OvertimeHours": qty(spec["OvertimeHours"]),
+            "ClockStatus": str(spec["ClockStatus"]),
+            "ApprovedByEmployeeID": int(spec["ApprovedByEmployeeID"]),
+            "ApprovedDate": str(spec["ApprovedDate"]),
+        })
+        labor_rows.append({
             "LaborTimeEntryID": next_id(context, "LaborTimeEntry"),
-            "PayrollPeriodID": payroll_period_id,
-            "EmployeeID": int(employee.EmployeeID),
-            "WorkOrderID": None,
-            "WorkOrderOperationID": None,
-            "WorkDate": work_date.strftime("%Y-%m-%d"),
-            "LaborType": labor_type,
-            "RegularHours": regular_hours,
-            "OvertimeHours": overtime_hours,
+            "PayrollPeriodID": int(spec["PayrollPeriodID"]),
+            "EmployeeID": int(spec["EmployeeID"]),
+            "WorkOrderID": spec["WorkOrderID"],
+            "WorkOrderOperationID": spec["WorkOrderOperationID"],
+            "TimeClockEntryID": int(time_clock_entry_id),
+            "WorkDate": str(spec["WorkDate"]),
+            "LaborType": str(spec["LaborType"]),
+            "RegularHours": qty(spec["RegularHours"]),
+            "OvertimeHours": qty(spec["OvertimeHours"]),
             "HourlyRateUsed": hourly_rate,
-            "ExtendedLaborCost": money(regular_hours * hourly_rate + overtime_hours * hourly_rate * 1.5),
-            "ApprovedByEmployeeID": approver,
-            "ApprovedDate": work_date.strftime("%Y-%m-%d"),
+            "ExtendedLaborCost": money(
+                float(spec["RegularHours"]) * hourly_rate
+                + float(spec["OvertimeHours"]) * hourly_rate * 1.5
+            ),
+            "ApprovedByEmployeeID": int(spec["ApprovedByEmployeeID"]),
+            "ApprovedDate": str(spec["ApprovedDate"]),
         })
 
-    return rows
+    return time_clock_rows, labor_rows
+
+
+def build_time_clock_and_labor_rows_for_period(
+    context: GenerationContext,
+    payroll_period_id: int,
+    period_start: pd.Timestamp,
+    period_end: pd.Timestamp,
+    employees: pd.DataFrame,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    specs: dict[tuple[int, str], dict[str, Any]] = {}
+    build_direct_time_clock_specs(context, payroll_period_id, period_start, period_end, employees, specs)
+    build_hourly_support_time_clock_specs(context, payroll_period_id, period_start, period_end, employees, specs)
+    return materialize_time_clocks_and_labor_entries(context, specs, employees)
 
 
 def labor_entries_by_employee(
@@ -697,6 +1222,7 @@ def build_liability_remittances_for_period(
 
 def generate_month_payroll(context: GenerationContext, year: int, month: int) -> None:
     generate_payroll_periods(context)
+    generate_shift_definitions_and_assignments(context)
     periods = payroll_periods_for_pay_month(context, year, month)
     if periods.empty:
         return
@@ -705,9 +1231,14 @@ def generate_month_payroll(context: GenerationContext, year: int, month: int) ->
         period_start = pd.Timestamp(period["PeriodStartDate"])
         period_end = pd.Timestamp(period["PeriodEndDate"])
         employees = active_employees_for_period(context, period_end)
-        labor_rows: list[dict[str, Any]] = []
-        labor_rows.extend(build_direct_labor_time_entries(context, int(period["PayrollPeriodID"]), period_start, period_end, employees))
-        labor_rows.extend(build_indirect_and_nonmanufacturing_time_entries(context, int(period["PayrollPeriodID"]), period_end, employees))
+        time_clock_rows, labor_rows = build_time_clock_and_labor_rows_for_period(
+            context,
+            int(period["PayrollPeriodID"]),
+            period_start,
+            period_end,
+            employees,
+        )
+        append_rows(context, "TimeClockEntry", time_clock_rows)
         append_rows(context, "LaborTimeEntry", labor_rows)
 
         register_rows, register_line_rows = build_payroll_registers_for_period(context, period, employees, labor_rows)
@@ -731,74 +1262,109 @@ def generate_month_payroll(context: GenerationContext, year: int, month: int) ->
 
 
 def payroll_register_lookup(context: GenerationContext) -> dict[int, dict[str, Any]]:
-    registers = context.tables["PayrollRegister"]
-    if registers.empty:
-        return {}
-    return registers.set_index("PayrollRegisterID").to_dict("index")
+    def builder() -> dict[int, dict[str, Any]]:
+        registers = context.tables["PayrollRegister"]
+        if registers.empty:
+            return {}
+        return registers.set_index("PayrollRegisterID").to_dict("index")
+
+    return get_or_build_cache(context, "_payroll_register_lookup_cache", builder)
 
 
 def payroll_register_lines(context: GenerationContext) -> pd.DataFrame:
-    return context.tables["PayrollRegisterLine"].copy()
+    def builder() -> pd.DataFrame:
+        return context.tables["PayrollRegisterLine"].copy()
+
+    return get_or_build_cache(context, "_payroll_register_lines_cache", builder).copy()
 
 
 def labor_time_entries(context: GenerationContext) -> pd.DataFrame:
-    return context.tables["LaborTimeEntry"].copy()
+    def builder() -> pd.DataFrame:
+        return context.tables["LaborTimeEntry"].copy()
+
+    return get_or_build_cache(context, "_labor_time_entries_cache", builder).copy()
+
+
+def time_clock_entries(context: GenerationContext) -> pd.DataFrame:
+    def builder() -> pd.DataFrame:
+        return context.tables["TimeClockEntry"].copy()
+
+    return get_or_build_cache(context, "_time_clock_entries_cache", builder).copy()
+
+
+def time_clock_entry_lookup(context: GenerationContext) -> dict[int, dict[str, Any]]:
+    def builder() -> dict[int, dict[str, Any]]:
+        time_clocks = context.tables["TimeClockEntry"]
+        if time_clocks.empty:
+            return {}
+        return time_clocks.set_index("TimeClockEntryID").to_dict("index")
+
+    return get_or_build_cache(context, "_time_clock_entry_lookup_cache", builder)
 
 
 def payroll_register_lines_with_headers(context: GenerationContext) -> pd.DataFrame:
-    registers = context.tables["PayrollRegister"]
-    lines = context.tables["PayrollRegisterLine"]
-    periods = context.tables["PayrollPeriod"]
-    if registers.empty or lines.empty:
-        return lines.head(0)
-    merged = lines.merge(
-        registers[["PayrollRegisterID", "EmployeeID", "CostCenterID", "PayrollPeriodID"]],
-        on="PayrollRegisterID",
-        how="left",
-    )
-    if not periods.empty:
-        merged = merged.merge(
-            periods[["PayrollPeriodID", "PayDate", "FiscalYear", "FiscalPeriod"]],
-            on="PayrollPeriodID",
+    def builder() -> pd.DataFrame:
+        registers = context.tables["PayrollRegister"]
+        lines = context.tables["PayrollRegisterLine"]
+        periods = context.tables["PayrollPeriod"]
+        if registers.empty or lines.empty:
+            return lines.head(0)
+        merged = lines.merge(
+            registers[["PayrollRegisterID", "EmployeeID", "CostCenterID", "PayrollPeriodID"]],
+            on="PayrollRegisterID",
             how="left",
         )
-    return merged
+        if not periods.empty:
+            merged = merged.merge(
+                periods[["PayrollPeriodID", "PayDate", "FiscalYear", "FiscalPeriod"]],
+                on="PayrollPeriodID",
+                how="left",
+            )
+        return merged
+
+    return get_or_build_cache(context, "_payroll_register_lines_with_headers_cache", builder).copy()
 
 
 def labor_time_direct_cost_by_work_order(context: GenerationContext) -> dict[int, float]:
-    time_entries = labor_time_entries(context)
-    if time_entries.empty:
-        return {}
-    direct_entries = time_entries[
-        time_entries["LaborType"].eq("Direct Manufacturing")
-        & time_entries["WorkOrderID"].notna()
-    ]
-    if direct_entries.empty:
-        return {}
-    grouped = direct_entries.groupby("WorkOrderID")["ExtendedLaborCost"].sum()
-    return {int(work_order_id): money(float(amount)) for work_order_id, amount in grouped.items()}
+    def builder() -> dict[int, float]:
+        time_entries = labor_time_entries(context)
+        if time_entries.empty:
+            return {}
+        direct_entries = time_entries[
+            time_entries["LaborType"].eq("Direct Manufacturing")
+            & time_entries["WorkOrderID"].notna()
+        ]
+        if direct_entries.empty:
+            return {}
+        grouped = direct_entries.groupby("WorkOrderID")["ExtendedLaborCost"].sum()
+        return {int(work_order_id): money(float(amount)) for work_order_id, amount in grouped.items()}
+
+    return get_or_build_cache(context, "_labor_time_direct_cost_by_work_order_cache", builder)
 
 
 def direct_labor_cost_by_month_work_order(context: GenerationContext) -> dict[tuple[int, int], dict[int, float]]:
-    time_entries = labor_time_entries(context)
-    if time_entries.empty:
-        return {}
-    period_lookup = payroll_period_lookup(context)
-    grouped: dict[tuple[int, int], dict[int, float]] = defaultdict(lambda: defaultdict(float))
-    direct_entries = time_entries[
-        time_entries["LaborType"].eq("Direct Manufacturing")
-        & time_entries["WorkOrderID"].notna()
-    ]
-    for entry in direct_entries.itertuples(index=False):
-        period = period_lookup.get(int(entry.PayrollPeriodID))
-        if period is None:
-            continue
-        key = payroll_period_month(period)
-        grouped[key][int(entry.WorkOrderID)] += float(entry.ExtendedLaborCost)
-    return {
-        key: {int(work_order_id): money(amount) for work_order_id, amount in work_order_map.items()}
-        for key, work_order_map in grouped.items()
-    }
+    def builder() -> dict[tuple[int, int], dict[int, float]]:
+        time_entries = labor_time_entries(context)
+        if time_entries.empty:
+            return {}
+        period_lookup = payroll_period_lookup(context)
+        grouped: dict[tuple[int, int], dict[int, float]] = defaultdict(lambda: defaultdict(float))
+        direct_entries = time_entries[
+            time_entries["LaborType"].eq("Direct Manufacturing")
+            & time_entries["WorkOrderID"].notna()
+        ]
+        for entry in direct_entries.itertuples(index=False):
+            period = period_lookup.get(int(entry.PayrollPeriodID))
+            if period is None:
+                continue
+            key = payroll_period_month(period)
+            grouped[key][int(entry.WorkOrderID)] += float(entry.ExtendedLaborCost)
+        return {
+            key: {int(work_order_id): money(amount) for work_order_id, amount in work_order_map.items()}
+            for key, work_order_map in grouped.items()
+        }
+
+    return get_or_build_cache(context, "_direct_labor_cost_by_month_work_order_cache", builder)
 
 
 def monthly_direct_labor_reclass_amount(context: GenerationContext, year: int, month: int) -> float:
@@ -862,23 +1428,26 @@ def monthly_manufacturing_overhead_pool_amount(context: GenerationContext, year:
 
 
 def work_order_overhead_cost_map(context: GenerationContext) -> dict[int, float]:
-    direct_by_month = direct_labor_cost_by_month_work_order(context)
-    totals: dict[int, float] = defaultdict(float)
-    for (year, month), direct_map in direct_by_month.items():
-        month_overhead = float(monthly_manufacturing_overhead_pool_amount(context, year, month))
-        total_direct = sum(float(amount) for amount in direct_map.values())
-        if month_overhead <= 0 or total_direct <= 0:
-            continue
-        allocated = 0.0
-        ordered_entries = sorted(direct_map.items())
-        for index, (work_order_id, direct_amount) in enumerate(ordered_entries, start=1):
-            if index == len(ordered_entries):
-                allocation = money(month_overhead - allocated)
-            else:
-                allocation = money(month_overhead * float(direct_amount) / total_direct)
-                allocated = money(allocated + allocation)
-            totals[int(work_order_id)] += float(allocation)
-    return {int(work_order_id): money(amount) for work_order_id, amount in totals.items()}
+    def builder() -> dict[int, float]:
+        direct_by_month = direct_labor_cost_by_month_work_order(context)
+        totals: dict[int, float] = defaultdict(float)
+        for (year, month), direct_map in direct_by_month.items():
+            month_overhead = float(monthly_manufacturing_overhead_pool_amount(context, year, month))
+            total_direct = sum(float(amount) for amount in direct_map.values())
+            if month_overhead <= 0 or total_direct <= 0:
+                continue
+            allocated = 0.0
+            ordered_entries = sorted(direct_map.items())
+            for index, (work_order_id, direct_amount) in enumerate(ordered_entries, start=1):
+                if index == len(ordered_entries):
+                    allocation = money(month_overhead - allocated)
+                else:
+                    allocation = money(month_overhead * float(direct_amount) / total_direct)
+                    allocated = money(allocated + allocation)
+                totals[int(work_order_id)] += float(allocation)
+        return {int(work_order_id): money(amount) for work_order_id, amount in totals.items()}
+
+    return get_or_build_cache(context, "_work_order_overhead_cost_map_cache", builder)
 
 
 def payroll_liability_recorded_amounts(context: GenerationContext) -> dict[str, float]:
@@ -897,18 +1466,39 @@ def payroll_liability_recorded_amounts(context: GenerationContext) -> dict[str, 
 
 
 def payroll_liability_remitted_amounts(context: GenerationContext) -> dict[str, float]:
-    remittances = context.tables["PayrollLiabilityRemittance"]
-    if remittances.empty:
-        return {"2031": 0.0, "2032": 0.0, "2033": 0.0}
-    liability_map = {
-        "Employee Tax Withholding": "2031",
-        "Employer Payroll Tax": "2032",
-        "Benefits and Other Deductions": "2033",
-    }
-    totals: dict[str, float] = defaultdict(float)
-    for remittance in remittances.itertuples(index=False):
-        totals[liability_map[str(remittance.LiabilityType)]] += float(remittance.Amount)
-    return {account_number: money(amount) for account_number, amount in totals.items()}
+    def builder() -> dict[str, float]:
+        remittances = context.tables["PayrollLiabilityRemittance"]
+        if remittances.empty:
+            return {"2031": 0.0, "2032": 0.0, "2033": 0.0}
+        liability_map = {
+            "Employee Tax Withholding": "2031",
+            "Employer Payroll Tax": "2032",
+            "Benefits and Other Deductions": "2033",
+        }
+        totals: dict[str, float] = defaultdict(float)
+        for remittance in remittances.itertuples(index=False):
+            totals[liability_map[str(remittance.LiabilityType)]] += float(remittance.Amount)
+        return {account_number: money(amount) for account_number, amount in totals.items()}
+
+    return get_or_build_cache(context, "_payroll_liability_remitted_amounts_cache", builder)
+
+
+def approved_time_clock_hours_by_employee_period(context: GenerationContext) -> dict[tuple[int, int], float]:
+    def builder() -> dict[tuple[int, int], float]:
+        time_clocks = time_clock_entries(context)
+        if time_clocks.empty:
+            return {}
+        approved = time_clocks[time_clocks["ClockStatus"].eq(TIMECLOCK_APPROVED_STATUS)].copy()
+        if approved.empty:
+            return {}
+        approved["TotalHours"] = approved["RegularHours"].astype(float) + approved["OvertimeHours"].astype(float)
+        grouped = approved.groupby(["EmployeeID", "PayrollPeriodID"])["TotalHours"].sum()
+        return {
+            (int(employee_id), int(payroll_period_id)): qty(float(total_hours))
+            for (employee_id, payroll_period_id), total_hours in grouped.items()
+        }
+
+    return get_or_build_cache(context, "_approved_time_clock_hours_by_employee_period_cache", builder)
 
 
 def monthly_payroll_state(context: GenerationContext, year: int, month: int) -> dict[str, float]:
@@ -916,6 +1506,7 @@ def monthly_payroll_state(context: GenerationContext, year: int, month: int) -> 
     if periods.empty:
         return {
             "periods_processed": 0.0,
+            "time_clock_entries_created": 0.0,
             "labor_entries_created": 0.0,
             "payroll_registers_created": 0.0,
             "payroll_payments_created": 0.0,
@@ -931,6 +1522,7 @@ def monthly_payroll_state(context: GenerationContext, year: int, month: int) -> 
     if not period_ids:
         return {
             "periods_processed": 0.0,
+            "time_clock_entries_created": 0.0,
             "labor_entries_created": 0.0,
             "payroll_registers_created": 0.0,
             "payroll_payments_created": 0.0,
@@ -940,6 +1532,7 @@ def monthly_payroll_state(context: GenerationContext, year: int, month: int) -> 
         }
 
     labor_entries = context.tables["LaborTimeEntry"]
+    time_clocks = context.tables["TimeClockEntry"]
     payroll_registers = context.tables["PayrollRegister"]
     payroll_payments = context.tables["PayrollPayment"]
     remittances = context.tables["PayrollLiabilityRemittance"]
@@ -950,6 +1543,7 @@ def monthly_payroll_state(context: GenerationContext, year: int, month: int) -> 
 
     return {
         "periods_processed": float(len(period_ids)),
+        "time_clock_entries_created": float(len(time_clocks[time_clocks["PayrollPeriodID"].astype(int).isin(period_ids)])),
         "labor_entries_created": float(len(labor_entries[labor_entries["PayrollPeriodID"].astype(int).isin(period_ids)])),
         "payroll_registers_created": float(len(register_ids)),
         "payroll_payments_created": float(len(payroll_payments[payroll_payments["PayrollRegisterID"].astype(int).isin(register_ids)])),

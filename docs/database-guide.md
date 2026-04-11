@@ -6,7 +6,7 @@
 
 ## How the Database Is Organized
 
-The current implementation contains **51 tables** grouped into seven areas:
+The current implementation contains **55 tables** grouped into seven areas:
 
 | Area | Tables |
 |---|---|
@@ -14,7 +14,7 @@ The current implementation contains **51 tables** grouped into seven areas:
 | O2C | `Customer`, `SalesOrder`, `SalesOrderLine`, `Shipment`, `ShipmentLine`, `SalesInvoice`, `SalesInvoiceLine`, `CashReceipt`, `CashReceiptApplication`, `SalesReturn`, `SalesReturnLine`, `CreditMemo`, `CreditMemoLine`, `CustomerRefund` |
 | P2P | `Supplier`, `PurchaseRequisition`, `PurchaseOrder`, `PurchaseOrderLine`, `GoodsReceipt`, `GoodsReceiptLine`, `PurchaseInvoice`, `PurchaseInvoiceLine`, `DisbursementPayment` |
 | Manufacturing | `BillOfMaterial`, `BillOfMaterialLine`, `WorkCenter`, `WorkCenterCalendar`, `Routing`, `RoutingOperation`, `WorkOrder`, `WorkOrderOperation`, `WorkOrderOperationSchedule`, `MaterialIssue`, `MaterialIssueLine`, `ProductionCompletion`, `ProductionCompletionLine`, `WorkOrderClose` |
-| Payroll | `PayrollPeriod`, `LaborTimeEntry`, `PayrollRegister`, `PayrollRegisterLine`, `PayrollPayment`, `PayrollLiabilityRemittance` |
+| Payroll and time | `ShiftDefinition`, `EmployeeShiftAssignment`, `TimeClockEntry`, `AttendanceException`, `PayrollPeriod`, `LaborTimeEntry`, `PayrollRegister`, `PayrollRegisterLine`, `PayrollPayment`, `PayrollLiabilityRemittance` |
 | Master data | `Item`, `Warehouse`, `Employee` |
 | Organizational planning | `CostCenter`, `Budget` |
 
@@ -58,6 +58,8 @@ Many business documents use a header table and a line table.
 | `BOMLineID` | Connect component issues back to BOM detail |
 | `WorkOrderID` | Connect work-order activity across issue, completion, close, and direct labor |
 | `WorkOrderOperationID` | Connect operation-level schedules and direct labor to one work-order operation |
+| `ShiftDefinitionID` | Connect shift templates to employee assignments and time-clock rows |
+| `TimeClockEntryID` | Connect approved time-clock support to labor allocation and attendance exceptions |
 | `PayrollPeriodID` | Connect labor time, payroll registers, and liability remittances to a pay period |
 | `PayrollRegisterID` | Connect payroll headers to line detail and payroll payments |
 | `ItemID` | Analyze quantities, prices, standard costs, supply mode, and account mappings |
@@ -98,7 +100,7 @@ Manufacturing also touches P2P, payroll, and O2C:
 
 ### Payroll path
 
-`PayrollPeriod -> LaborTimeEntry -> PayrollRegister -> PayrollRegisterLine -> PayrollPayment`
+`ShiftDefinition -> EmployeeShiftAssignment -> TimeClockEntry -> LaborTimeEntry -> PayrollPeriod -> PayrollRegister -> PayrollRegisterLine -> PayrollPayment`
 
 Liability clearance is tracked through:
 
@@ -129,6 +131,9 @@ Not every operational document posts to the general ledger.
 | Purchase orders | No | External commitment document |
 | Bills of material | No | Standard manufacturing structure |
 | Work orders | No | Production planning document |
+| Shift definitions and assignments | No | Workforce planning metadata |
+| Time-clock entries | No | Approved daily attendance rows that support hourly payroll and labor analysis |
+| Attendance exceptions | No | Control and anomaly evidence |
 | Labor time entries | No | Operational labor detail that feeds payroll and costing |
 | Payroll periods | No | Calendar/control structure |
 | Shipments | Yes | Posts COGS and inventory relief |
@@ -199,7 +204,8 @@ Start with:
 - `CashReceiptApplication` is the authoritative invoice-settlement link in O2C.
 - For P2P traceability, prefer `PurchaseOrderLine.RequisitionID`, `PurchaseInvoiceLine.GoodsReceiptLineID`, and `PurchaseInvoiceLine.AccrualJournalEntryID`.
 - For manufacturing traceability, start from `WorkOrderID`.
-- For payroll traceability, start from `PayrollPeriodID` and `PayrollRegisterID`.
+- For time-and-attendance traceability, start from `TimeClockEntryID` or `ShiftDefinitionID`.
+- For payroll traceability, start from `PayrollPeriodID`, `PayrollRegisterID`, and then move back to `LaborTimeEntry` and `TimeClockEntry` for hourly earnings support.
 - For raw multi-year income-statement analysis, exclude the two year-end close entry types.
 
 ## Where to Go Next

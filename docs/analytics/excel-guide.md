@@ -6,7 +6,7 @@
 
 > **Implemented in current generator:** A workbook with one sheet per table plus `AnomalyLog` and `ValidationSummary`, suitable for Excel-based starter analytics across O2C, P2P, manufacturing, payroll, and journals.
 
-> **Planned future extension:** More advanced workbook guidance for time clocks, shift detail, and richer employee-level scheduling analysis.
+> **Planned future extension:** More advanced workbook guidance for raw punch-event detail, rotating shifts, and richer employee-level workforce-planning analysis.
 
 ## Workbook Setup
 
@@ -138,11 +138,30 @@ Suggested pivot layout:
 - rows: `FiscalYear`, `FiscalPeriod`
 - columns: liability type or cost center
 - values:
-  - gross pay
-  - withholdings
-  - employer taxes
-  - employer benefits
-  - net pay
+- gross pay
+- withholdings
+- employer taxes
+- employer benefits
+- net pay
+
+### Hourly payroll hours to paid earnings bridge
+
+Use:
+
+- `TimeClockEntry`
+- `LaborTimeEntry`
+- `PayrollRegister`
+- `PayrollRegisterLine`
+- `PayrollPayment`
+- `Employee`
+- `PayrollPeriod`
+
+Recommended outputs:
+
+- approved regular and overtime hours by employee and pay period
+- hourly earnings by employee and pay period
+- first payroll payment date by register
+- clock-hours-to-paid-earnings bridge for hourly employees
 
 ### Journal and close-cycle analysis
 
@@ -320,6 +339,28 @@ Suggested charts:
 - stacked column of scheduled versus remaining hours
 - backlog-aging bar chart by work center
 
+### Shift adherence and overtime workflows
+
+Use:
+
+- `ShiftDefinition`
+- `EmployeeShiftAssignment`
+- `TimeClockEntry`
+- `WorkCenter`
+- `Employee`
+
+Suggested outputs:
+
+- monthly overtime hours by work center and shift
+- average start-time variance from assigned shift by work center
+- late-start counts by shift and month
+- employee-level shift adherence review
+
+Suggested charts:
+
+- overtime trend by work center
+- average clock-in variance by shift
+
 ## Audit Analytics Workflows
 
 ### Document-chain completeness
@@ -403,6 +444,25 @@ Suggested workflow:
 3. trace the related document back into the operational sheets
 4. compare the anomaly to the clean process expectation
 
+### Time-clock exception review
+
+Use:
+
+- `AttendanceException`
+- `TimeClockEntry`
+- `ShiftDefinition`
+- `Employee`
+- `WorkCenter`
+- `PayrollRegisterLine`
+
+Recommended outputs:
+
+- exception counts by employee, supervisor, and work center
+- missing clock-out review
+- off-shift clocking review
+- paid-without-clock and clock-without-pay review
+- labor outside scheduled operation windows
+
 ## Clean Analysis vs Anomaly Analysis
 
 - For clean baseline analysis, use a build with `anomaly_mode: none`.
@@ -414,7 +474,7 @@ Suggested workflow:
 The Excel starter layer does **not** assume:
 
 - prebuilt pivot tables inside the exported workbook
-- time-clock or shift-level labor detail
+- raw punch-event tables beneath the current approved daily time-clock rows
 
 Those are future teaching extensions, not missing pieces of the current workbook.
 

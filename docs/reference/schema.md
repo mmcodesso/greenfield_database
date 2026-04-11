@@ -6,9 +6,9 @@
 
 The canonical schema lives in `src/greenfield_dataset/schema.py` as `TABLE_COLUMNS`.
 
-> **Implemented in current generator:** 51 tables across accounting, O2C, P2P, manufacturing, payroll, master data, and organizational planning.
+> **Implemented in current generator:** 55 tables across accounting, O2C, P2P, manufacturing, payroll and time, master data, and organizational planning.
 
-> **Planned future extension:** Time clocks, employee-shift planning, and deeper production detail beyond the current routing-and-capacity foundation.
+> **Planned future extension:** Raw punch-event detail, rotating shift rosters, and deeper workforce-planning detail beyond the current routing, capacity, and time-clock foundation.
 
 ## Table Groups
 
@@ -18,10 +18,10 @@ The canonical schema lives in `src/greenfield_dataset/schema.py` as `TABLE_COLUM
 | O2C | `Customer`, `SalesOrder`, `SalesOrderLine`, `Shipment`, `ShipmentLine`, `SalesInvoice`, `SalesInvoiceLine`, `CashReceipt`, `CashReceiptApplication`, `SalesReturn`, `SalesReturnLine`, `CreditMemo`, `CreditMemoLine`, `CustomerRefund` | 14 |
 | P2P | `Supplier`, `PurchaseRequisition`, `PurchaseOrder`, `PurchaseOrderLine`, `GoodsReceipt`, `GoodsReceiptLine`, `PurchaseInvoice`, `PurchaseInvoiceLine`, `DisbursementPayment` | 9 |
 | Manufacturing | `BillOfMaterial`, `BillOfMaterialLine`, `WorkCenter`, `WorkCenterCalendar`, `Routing`, `RoutingOperation`, `WorkOrder`, `WorkOrderOperation`, `WorkOrderOperationSchedule`, `MaterialIssue`, `MaterialIssueLine`, `ProductionCompletion`, `ProductionCompletionLine`, `WorkOrderClose` | 14 |
-| Payroll | `PayrollPeriod`, `LaborTimeEntry`, `PayrollRegister`, `PayrollRegisterLine`, `PayrollPayment`, `PayrollLiabilityRemittance` | 6 |
+| Payroll and time | `ShiftDefinition`, `EmployeeShiftAssignment`, `TimeClockEntry`, `AttendanceException`, `PayrollPeriod`, `LaborTimeEntry`, `PayrollRegister`, `PayrollRegisterLine`, `PayrollPayment`, `PayrollLiabilityRemittance` | 10 |
 | Master data | `Item`, `Warehouse`, `Employee` | 3 |
 | Organizational planning | `CostCenter`, `Budget` | 2 |
-| Total |  | 51 |
+| Total |  | 55 |
 
 ## Design Patterns That Matter
 
@@ -29,7 +29,7 @@ The canonical schema lives in `src/greenfield_dataset/schema.py` as `TABLE_COLUM
 - `GLEntry` is the reporting bridge between operational events and accounting analysis.
 - `Item` carries account-mapping fields plus manufacturing and costing attributes such as `SupplyMode`, `ProductionLeadTimeDays`, `RoutingID`, `StandardLaborHoursPerUnit`, and `StandardConversionCost`.
 - `JournalEntry` and `GLEntry` together represent opening, recurring, manufacturing, accrual-adjustment, and close-cycle activity without a separate journal-line table.
-- Payroll is now operationally modeled through payroll-period, register, payment, and remittance tables rather than clean-build payroll accrual journals.
+- Payroll is now operationally modeled through shift-assignment, time-clock, payroll-period, register, payment, and remittance tables rather than clean-build payroll accrual journals.
 
 ## Accounting Core
 
@@ -95,8 +95,12 @@ The canonical schema lives in `src/greenfield_dataset/schema.py` as `TABLE_COLUM
 
 | Table | Purpose | High-value columns |
 |---|---|---|
+| `ShiftDefinition` | Standard shift template for hourly work | `ShiftCode`, `ShiftName`, `Department`, `WorkCenterID`, `StartTime`, `EndTime`, `StandardBreakMinutes`, `ShiftType`, `IsOvernight` |
+| `EmployeeShiftAssignment` | Employee-to-shift assignment | `EmployeeID`, `ShiftDefinitionID`, `EffectiveStartDate`, `EffectiveEndDate`, `WorkCenterID`, `IsPrimary` |
+| `TimeClockEntry` | Approved daily time and attendance row | `EmployeeID`, `PayrollPeriodID`, `WorkDate`, `ShiftDefinitionID`, `WorkCenterID`, `WorkOrderID`, `WorkOrderOperationID`, `ClockInTime`, `ClockOutTime`, `RegularHours`, `OvertimeHours`, `ClockStatus` |
+| `AttendanceException` | Logged time-and-attendance issue | `EmployeeID`, `PayrollPeriodID`, `WorkDate`, `ShiftDefinitionID`, `TimeClockEntryID`, `ExceptionType`, `Severity`, `MinutesVariance`, `Status` |
 | `PayrollPeriod` | Biweekly payroll calendar | `PeriodNumber`, `PeriodStartDate`, `PeriodEndDate`, `PayDate`, `FiscalYear`, `FiscalPeriod`, `Status` |
-| `LaborTimeEntry` | Employee labor detail used for payroll and costing | `PayrollPeriodID`, `EmployeeID`, `WorkOrderID`, `WorkOrderOperationID`, `WorkDate`, `LaborType`, `RegularHours`, `OvertimeHours`, `HourlyRateUsed`, `ExtendedLaborCost` |
+| `LaborTimeEntry` | Employee labor detail used for payroll and costing | `PayrollPeriodID`, `EmployeeID`, `TimeClockEntryID`, `WorkOrderID`, `WorkOrderOperationID`, `WorkDate`, `LaborType`, `RegularHours`, `OvertimeHours`, `HourlyRateUsed`, `ExtendedLaborCost` |
 | `PayrollRegister` | Employee payroll header | `PayrollPeriodID`, `EmployeeID`, `CostCenterID`, `GrossPay`, `EmployeeWithholdings`, `EmployerPayrollTax`, `EmployerBenefits`, `NetPay`, `Status` |
 | `PayrollRegisterLine` | Earnings and deduction detail | `PayrollRegisterID`, `LineType`, `Hours`, `Rate`, `Amount`, `WorkOrderID`, `LaborTimeEntryID` |
 | `PayrollPayment` | Net-pay settlement record | `PayrollRegisterID`, `PaymentDate`, `PaymentMethod`, `ReferenceNumber`, `ClearedDate` |
@@ -135,11 +139,16 @@ The most important lineage fields in the implementation are:
 - `WorkOrder.RoutingID`
 - `WorkOrderOperation.RoutingOperationID`
 - `WorkOrderOperationSchedule.WorkOrderOperationID`
+- `EmployeeShiftAssignment.ShiftDefinitionID`
+- `TimeClockEntry.ShiftDefinitionID`
+- `TimeClockEntry.WorkOrderOperationID`
+- `AttendanceException.TimeClockEntryID`
 - `MaterialIssueLine.BOMLineID`
 - `ProductionCompletion.WorkOrderID`
 - `WorkOrderClose.WorkOrderID`
 - `LaborTimeEntry.WorkOrderID`
 - `LaborTimeEntry.WorkOrderOperationID`
+- `LaborTimeEntry.TimeClockEntryID`
 - `PayrollRegister.PayrollPeriodID`
 - `PayrollRegisterLine.PayrollRegisterID`
 - `PayrollRegisterLine.LaborTimeEntryID`
@@ -159,5 +168,6 @@ The most important lineage fields in the implementation are:
 - The manufacturing foundation uses single-level BOMs plus one active routing per manufactured item.
 - `WorkCenterCalendar` and `WorkOrderOperationSchedule` add daily work-center capacity and scheduled-load detail.
 - `WorkOrderOperation` is the operation-level planning and actual-flow bridge between routing design, scheduling, and payroll labor detail.
+- Approved `TimeClockEntry` rows are the clean-build hour source for hourly payroll.
 - Payroll is operationally modeled, but manufacturing still uses standard-cost valuation rather than full actual-cost inventory.
 - For exact column order and names, use `TABLE_COLUMNS` in `src/greenfield_dataset/schema.py`.

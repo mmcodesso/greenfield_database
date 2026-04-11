@@ -4,9 +4,9 @@
 **Purpose:** Explain who Greenfield Home Furnishings is and how the company operates.  
 **What you will learn:** The company narrative, why the processes exist, and how the operating model supports accounting analytics coursework.
 
-> **Implemented in current generator:** A hybrid manufacturer-distributor with O2C, P2P, manufacturing, payroll, recurring journals, and year-end close.
+> **Implemented in current generator:** A hybrid manufacturer-distributor with O2C, P2P, manufacturing, shift assignments, daily time clocks, payroll, recurring journals, and year-end close.
 
-> **Planned future extension:** Time clocks, richer shift planning, and deeper production-planning detail beyond the current routing-and-capacity foundation.
+> **Planned future extension:** Raw punch-event detail, rotating shift rosters, and shift-level workforce planning beyond the current daily time-clock and work-center-capacity foundation.
 
 ## The Company in Plain Language
 
@@ -64,7 +64,7 @@ The manufacturing team plans work orders for selected finished goods. Raw materi
 
 ### 5. Run payroll and connect labor to cost
 
-Greenfield now processes payroll operationally. Employees are paid on a biweekly cycle, payroll liabilities are remitted later, and manufacturing labor is traced into product cost through labor-time entries and reclass journals.
+Greenfield now processes payroll operationally. Hourly employees are assigned to shifts and receive approved daily time-clock records, employees are paid on a biweekly cycle, payroll liabilities are remitted later, and manufacturing labor is traced into product cost through labor-time entries and reclass journals.
 
 This matters because the same dataset can now support:
 
@@ -98,9 +98,9 @@ The current dataset is a teaching model, not a full ERP simulation.
 
 The current implementation does **not** include:
 
-- time clocks or shift scheduling
+- raw punch-event tables beneath the current approved daily time-clock rows
+- rotating shift rosters or shift-level capacity calendars
 - subassemblies or multi-level BOMs
-- detailed labor planning beyond the payroll-period model
 
 Those topics remain future extensions.
 

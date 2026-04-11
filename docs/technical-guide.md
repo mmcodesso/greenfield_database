@@ -2,11 +2,11 @@
 
 **Audience:** Contributors, advanced users, teaching assistants, and instructors who need a durable technical description of the dataset and generator.  
 **Purpose:** Provide a current, implementation-aligned guide to how the database and code work.  
-**What you will learn:** The system architecture, data-model layers, build flow, posting model, validation model, outputs, and the next extension point.
+**What you will learn:** The system architecture, data-model layers, build flow, posting model, validation model, runtime profiles, outputs, and the next extension points.
 
-> **Implemented in current generator:** A 51-table hybrid manufacturer-distributor dataset with O2C, P2P, manufacturing, payroll, capacity-aware operation scheduling, recurring journals, year-end close, posting, validation, anomaly injection, and export logic.
+> **Implemented in current generator:** A 55-table hybrid manufacturer-distributor dataset with O2C, P2P, manufacturing, time and attendance, payroll, capacity-aware operation scheduling, recurring journals, year-end close, posting, validation, anomaly injection, and export logic.
 
-> **Planned future extension:** Time-clock detail, employee-shift planning, and deeper cost-accounting detail.
+> **Planned future extension:** Raw punch-event detail, rotating shift rosters, and deeper workforce-planning detail.
 
 ## What This Guide Covers
 
@@ -27,7 +27,7 @@ The current implementation has seven layers:
 |---|---|
 | Business context | Greenfield Home Furnishings, company story, and operating processes |
 | Operational tables | O2C, P2P, and manufacturing documents plus master data |
-| Payroll layer | Payroll periods, labor time, payroll registers, payments, and remittances |
+| Payroll layer | Shift definitions, shift assignments, time clocks, payroll periods, labor time, payroll registers, payments, and remittances |
 | Accounting layer | `JournalEntry`, `GLEntry`, and the chart of accounts |
 | Planning layer | Budgets, cost centers, payroll periods, and manufacturing standard structures |
 | Control layer | Validations, anomaly injection, and reporting |
@@ -101,7 +101,7 @@ In plain language, the build works like this:
 | `schema.py` | Define `TABLE_COLUMNS` and create empty tables |
 | `master_data.py` | Generate accounts, cost centers, employees, warehouses, items, customers, and suppliers |
 | `manufacturing.py` | Generate BOMs, work centers, work-center calendars, routings, operation schedules, manufacturing-driven requisitions, work orders, material issues, completions, and work-order close |
-| `payroll.py` | Generate payroll periods, labor time, payroll registers, payroll payments, liability remittances, and manufacturing labor helpers |
+| `payroll.py` | Generate shift definitions, shift assignments, time clocks, labor time, payroll periods, payroll registers, payroll payments, liability remittances, and manufacturing labor helpers |
 | `budgets.py` | Generate opening balances and budgets |
 | `o2c.py` | Generate orders, shipments, invoices, receipts, applications, returns, credits, and refunds |
 | `p2p.py` | Generate requisitions, purchase orders, receipts, supplier invoices, and disbursements |
@@ -109,6 +109,7 @@ In plain language, the build works like this:
 | `posting_engine.py` | Convert source events into balanced GL entries |
 | `validations.py` | Run document, accounting, payroll, manufacturing, and roll-forward checks |
 | `anomalies.py` | Inject configured anomalies and log them |
+| `state_cache.py` | Provide shared lazy-build cache helpers used by generation and validation |
 | `exporters.py` | Write SQLite, Excel, and JSON outputs |
 | `main.py` | Orchestrate the full build and write the generation log |
 
@@ -148,11 +149,29 @@ Clean-build validations cover:
 - over-shipment, over-receipt, over-invoicing, overpayment, and over-return checks
 - receipt-application and refund integrity
 - payroll gross-to-net, payment, remittance, and labor-linkage integrity
+- hourly payroll support from approved time clocks
 - status consistency checks
 - voucher balance and trial balance
 - control-account roll-forwards for AR, AP, inventory, GRNI, sales tax, customer deposits, payroll liabilities, WIP, manufacturing clearing, and manufacturing variance
 - journal header-to-GL agreement and close-cycle coverage
 - manufacturing checks for BOM structure, work-order flow, issue tolerance, completion limits, close timing, and shadow inventory
+- time-and-attendance checks for shift alignment, approved clock coverage, operation-window timing, and post-close labor
+
+## Runtime Profiles and Validation Scopes
+
+The current implementation supports three useful execution profiles:
+
+- `config/settings.yaml` for release-grade full builds
+- `config/settings_validation.yaml` for one-year fast validation
+- `config/settings_perf.yaml` for short-horizon profiling runs
+
+The main entrypoint also supports validation scopes:
+
+- `core`
+- `operational`
+- `full`
+
+That split came from Phase 15.2 and helps contributors shorten development feedback loops without changing the clean release build.
 
 ## Outputs
 
@@ -167,10 +186,10 @@ Most course users should start with those generated files rather than the Python
 
 ## Extension Point
 
-The next clean extension point is deeper manufacturing and labor planning.
+The next clean extension points are deeper workforce planning and richer attendance detail.
 
 Likely next additions:
 
-- time-clock and shift detail
-- richer labor-timing and attendance analytics
-- deeper bottleneck and backlog analysis
+- raw punch-event detail beneath the current daily time-clock row
+- rotating shift rosters and richer attendance planning
+- shift-level capacity and labor-availability analysis

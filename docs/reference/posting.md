@@ -6,9 +6,9 @@
 
 Posting logic is implemented across `src/greenfield_dataset/journals.py`, `src/greenfield_dataset/payroll.py`, and `src/greenfield_dataset/posting_engine.py`.
 
-> **Implemented in current generator:** Event-based postings for O2C, P2P, manufacturing, payroll, opening balances, recurring manual journals, accrued-expense settlement invoices, rare accrual-adjustment journals, manufacturing reclasses, and year-end close.
+> **Implemented in current generator:** Event-based postings for O2C, P2P, manufacturing, payroll, opening balances, recurring manual journals, accrued-expense settlement invoices, rare accrual-adjustment journals, manufacturing reclasses, and year-end close, with hourly payroll sourced from approved time clocks.
 
-> **Planned future extension:** Time-clock and employee-shift events beyond the current routing, capacity, and payroll foundation.
+> **Planned future extension:** Raw punch-event detail and shift-level planning beyond the current daily time-clock and payroll foundation.
 
 ## Non-Posting Documents
 
@@ -28,8 +28,14 @@ These documents are generated for process analysis but do **not** create `GLEntr
 - `WorkOrder`
 - `WorkOrderOperation`
 - `WorkOrderOperationSchedule`
+- `ShiftDefinition`
+- `EmployeeShiftAssignment`
+- `TimeClockEntry`
+- `AttendanceException`
 - `PayrollPeriod`
 - `LaborTimeEntry`
+
+Approved time-clock and shift rows drive hourly payroll logic and labor analysis, but they do **not** post directly to `GLEntry`.
 
 ## Posting Matrix
 
@@ -112,12 +118,14 @@ Each operational posting written to `GLEntry` includes:
 - inventory roll-forward
 - customer deposit and unapplied cash roll-forward
 - payroll liability roll-forwards for `2030`, `2031`, `2032`, and `2033`
+- hourly-payroll-to-approved-time-clock agreement
 - sales tax and contra-revenue roll-forwards
 - GRNI roll-forward
 - WIP roll-forward
 - manufacturing clearing roll-forward
 - manufacturing variance roll-forward
 - work-center calendar and operation-schedule controls
+- time-clock and attendance controls
 - journal header-to-GL agreement
 - accrued-expense roll-forward on `2040`
 - accrual-adjustment linkage and timing
