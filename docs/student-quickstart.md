@@ -17,7 +17,7 @@ The core files are:
 - `greenfield_2026_2030.sqlite` for SQL work
 - `greenfield_2026_2030.xlsx` for Excel pivots, charts, and workbook-based analysis
 - `validation_report.json` for control and validation review
-- `generation.log` for run diagnostics and row-volume checkpoints
+- `generation.log` for run diagnostics and build checkpoints
 
 If your instructor already shared those files, start there first.
 

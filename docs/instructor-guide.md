@@ -77,9 +77,7 @@ Share these directly with students:
 Use these when you need local build setup, generator context, or release-planning detail:
 
 - [Dataset Delivery and Build Setup](/docs/technical/dataset-delivery)
-- [Row Counts and Volume](reference/row-volume.md)
 - [Technical Guide](technical-guide.md)
-- [Code Architecture](code-architecture.md)
 - [Roadmap](roadmap.md)
 
 ## Recommended Course Delivery Pattern

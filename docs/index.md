@@ -16,7 +16,7 @@ Greenfield Accounting Dataset is a synthetic business database for accounting an
 | Student | [Quick Start](student-quickstart.md) | [Company Story](company-story.md), [Process Flows](process-flows.md), [Schema Reference](reference/schema.md), [GLEntry Posting Reference](reference/posting.md), [Analytics Hub](analytics/index.md) |
 | Instructor | [Instructor Adoption Guide](instructor-guide.md) | [Quick Start](student-quickstart.md), [Schema Reference](reference/schema.md), [GLEntry Posting Reference](reference/posting.md), [Analytics Hub](analytics/index.md) |
 | Analyst | [Dataset Guide](dataset-overview.md) | [Analytics Hub](analytics/index.md), [Schema Reference](reference/schema.md), [GLEntry Posting Reference](reference/posting.md) |
-| Contributor | [Technical Guide](technical-guide.md) | [Code Architecture](code-architecture.md), [Schema Reference](reference/schema.md), [GLEntry Posting Reference](reference/posting.md) |
+| Contributor | [Technical Guide](technical-guide.md) | [Schema Reference](reference/schema.md), [GLEntry Posting Reference](reference/posting.md), [Roadmap](roadmap.md) |
 
 ## Recommended Student Reading Order
 
@@ -73,9 +73,7 @@ That path gives students the business context first, then the table and GLEntry 
 ### Technical
 
 - [Technical Guide](technical-guide.md)
-- [Code Architecture](code-architecture.md)
 - [Dataset Delivery and Build Setup](/docs/technical/dataset-delivery)
-- [Row Counts and Volume](reference/row-volume.md)
 - [Roadmap](roadmap.md)
 
 ## Repository Resources
