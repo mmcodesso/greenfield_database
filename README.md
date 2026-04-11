@@ -4,9 +4,9 @@ Greenfield Accounting Dataset is a synthetic business database for undergraduate
 
 The documentation website is the primary starting point:
 
-- [Greenfield documentation site](https://mmcodesso.github.io/greenfield_database/)
-- [Quick Start](https://mmcodesso.github.io/greenfield_database/docs/quick-start)
-- [Instructor adoption guide](https://mmcodesso.github.io/greenfield_database/docs/teach-with-greenfield/instructor-adoption)
+- [Greenfield documentation site](https://greenfield.accountinganalyticshub.com/)
+- [Quick Start](https://greenfield.accountinganalyticshub.com/docs/quick-start)
+- [Instructor adoption guide](https://greenfield.accountinganalyticshub.com/docs/teach-with-greenfield/instructor-adoption)
 
 Most students should begin with the documentation site and the packaged output files rather than the Python generator.
 
@@ -41,10 +41,10 @@ npm run build
 
 If you need to generate or refresh the classroom dataset locally, use the teaching guide:
 
-- [Dataset Delivery and Build Setup](https://mmcodesso.github.io/greenfield_database/docs/technical/dataset-delivery)
+- [Dataset Delivery and Build Setup](https://greenfield.accountinganalyticshub.com/docs/technical/dataset-delivery)
 
 ## Repository Links
 
-- [Documentation website](https://mmcodesso.github.io/greenfield_database/)
+- [Documentation website](https://greenfield.accountinganalyticshub.com/)
 - [Contributing guide](CONTRIBUTING.md)
 - [License](LICENSE)
