@@ -33,10 +33,8 @@ sidebar_label: Analytics Hub
 | Excel workflow | [excel-guide.md](excel-guide.md) | Use SQL results as a comparison point | Excel workbook |
 | Guided walkthroughs | [cases/index.md](cases/index.md) | Mix financial, managerial, and audit packs in sequence | SQLite plus workbook side-by-side |
 
-## Recommended Starter Build
+## Recommended Starter Package
 
-For normal student, instructor, and analyst use, start with the default build:
+For normal student, instructor, and analyst use, start with the standard course package shared for your class.
 
-- `config/settings.yaml`
-
-That build already covers five fiscal years, exports both SQLite and Excel, and turns on the `standard` anomaly pack so the audit starter queries return useful review hits. When you want a narrower exercise, filter the SQL results or workbook to a single fiscal year rather than generating a separate teaching-only profile.
+If you are the instructor preparing that package yourself, use [Dataset Delivery and Build Setup](../teach-with-greenfield/dataset-delivery.md).

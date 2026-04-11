@@ -136,9 +136,9 @@ The most important traceability fields are:
 5. Read [processes/time-clocks.md](processes/time-clocks.md) for shift and attendance flow.
 6. Read [processes/payroll.md](processes/payroll.md) for payroll and labor-cost flow.
 7. Read [processes/manual-journals-and-close.md](processes/manual-journals-and-close.md) for finance-team activity outside the operational cycles.
-8. Read [database-guide.md](database-guide.md) once you are ready to navigate tables and joins.
+8. Read [dataset-overview.md](dataset-overview.md) once you are ready to navigate tables and joins.
 
 ## Where to Go Next
 
-- Read [database-guide.md](database-guide.md) for joins and table families.
+- Read [dataset-overview.md](dataset-overview.md) for joins and table families.
 - Read [reference/posting.md](reference/posting.md) for the technical posting rules.

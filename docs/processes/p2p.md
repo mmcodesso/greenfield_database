@@ -111,5 +111,5 @@ Students should treat both as valid AP behavior, but not as the same control pat
 
 ## Where to Go Next
 
-- Read [../database-guide.md](../database-guide.md) for navigation patterns.
+- Read [../dataset-overview.md](../dataset-overview.md) for navigation patterns.
 - Read [../reference/posting.md](../reference/posting.md) for the technical posting rules.

@@ -1,6 +1,6 @@
 ---
 title: Student Quick Start
-description: Start using the Greenfield Accounting Dataset as a student without digging through the generator code.
+description: Start using the Greenfield Accounting Dataset as a student without getting stuck in technical detail.
 slug: /student-quickstart
 ---
 
@@ -10,7 +10,7 @@ Use this page if you want the shortest path from “What is this database?” to
 
 ## 1. Start With the Right Files
 
-Most students should begin with the generated teaching package, not the Python generator.
+Most students should begin with the teaching package shared for their course.
 
 The core files are:
 
@@ -19,7 +19,7 @@ The core files are:
 - `validation_report.json` for control and validation review
 - `generation.log` for run diagnostics and row-volume checkpoints
 
-If your instructor already shared those files, use that package first. If you are working from the repository, the generator writes them to `outputs/`.
+If your instructor already shared those files, start there first.
 
 ## 2. Learn the Story Before the Tables
 
@@ -27,8 +27,7 @@ Read these pages in order:
 
 1. [Company Story](company-story.md)
 2. [Process Flows](process-flows.md)
-3. [Dataset Overview](dataset-overview.md)
-4. [Database Guide](database-guide.md)
+3. [Dataset Guide](dataset-overview.md)
 
 That sequence gives you the business context before you start writing joins or building pivots.
 
@@ -61,7 +60,7 @@ If you do not want to start from a blank page, use the guided walkthroughs in [A
 
 ## When You Need More Technical Detail
 
-Most students do not need the generator internals first. Reach for the technical material only when an assignment requires it:
+Most students do not need the technical reference first. Reach for it only when an assignment requires it:
 
 - [Schema Reference](reference/schema.md)
 - [Posting Reference](reference/posting.md)

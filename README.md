@@ -37,16 +37,11 @@ To build the production site:
 npm run build
 ```
 
-## Generate the Dataset Locally
+## Teaching Package Setup
 
-```bash
-python3 -m venv .venv
-. .venv/bin/activate
-python3 -m pip install -r requirements.txt
-python3 generate_dataset.py
-```
+If you need to generate or refresh the classroom dataset locally, use the teaching guide:
 
-Generated files are written to `outputs/`.
+- [Dataset Delivery and Build Setup](https://mmcodesso.github.io/greenfield_database/docs/teach-with-greenfield/dataset-delivery)
 
 ## Repository Links
 

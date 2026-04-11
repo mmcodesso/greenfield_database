@@ -112,6 +112,6 @@ Those topics remain future extensions.
 
 ## Recommended Next Reading
 
-1. Read [dataset-overview.md](dataset-overview.md) for scope and glossary.
+1. Read [dataset-overview.md](dataset-overview.md) for scope, glossary, and navigation.
 2. Read [process-flows.md](process-flows.md) for the process map.
-3. Read [database-guide.md](database-guide.md) when you are ready to navigate the tables.
+3. Read [analytics/index.md](analytics/index.md) when you are ready to start the analysis layer.

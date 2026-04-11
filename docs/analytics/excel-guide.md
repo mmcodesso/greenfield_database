@@ -16,7 +16,7 @@ sidebar_label: Excel Guide
 
 ## Workbook Setup
 
-The generated workbook contains:
+The workbook contains:
 
 - one worksheet for each dataset table
 - `AnomalyLog`
@@ -24,13 +24,13 @@ The generated workbook contains:
 
 Recommended first steps:
 
-1. open `outputs/greenfield_2026_2030.xlsx`
+1. open `greenfield_2026_2030.xlsx`
 2. convert the most-used sheets into Excel Tables
 3. freeze the top row on large sheets
 4. format date and amount columns consistently
 5. add slicers or timeline filters for year and month where helpful
 
-For anomaly-focused teaching, use the default workbook from `config/settings.yaml` and then filter pivots or tables to one fiscal year when you want a narrower lab. The default workbook already includes `AnomalyLog`.
+For anomaly-focused teaching, use the standard course workbook and then filter pivots or tables to one fiscal year when you want a narrower lab. If you are preparing that workbook yourself, use [Dataset Delivery and Build Setup](../teach-with-greenfield/dataset-delivery.md).
 
 ## Financial Accounting Workflows
 

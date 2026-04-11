@@ -127,4 +127,4 @@ This mini-flow helps students see why order date, shipment date, and invoice dat
 ## Where to Go Next
 
 - Read [o2c-returns-credits-refunds.md](o2c-returns-credits-refunds.md) for the return and refund path.
-- Read [../database-guide.md](../database-guide.md) for the main joins used in analysis.
+- Read [../dataset-overview.md](../dataset-overview.md) for the main joins used in analysis.

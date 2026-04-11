@@ -16,7 +16,9 @@ The finance and audit team receives the standard five-year build with a moderate
 
 ## Recommended Build Mode
 
-- `config/settings.yaml`
+- standard anomaly-enabled teaching package
+
+If you are preparing that package yourself, use [Dataset Delivery and Build Setup](../../teach-with-greenfield/dataset-delivery.md).
 
 ## Main Tables and Worksheets
 

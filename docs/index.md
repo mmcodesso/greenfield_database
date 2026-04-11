@@ -15,7 +15,7 @@ Greenfield Accounting Dataset is a synthetic business database for accounting an
 |---|---|---|
 | Student | [Student Quick Start](student-quickstart.md) | [Company Story](company-story.md), [Process Flows](process-flows.md), [Analytics Hub](analytics/index.md) |
 | Instructor | [Instructor Adoption Guide](instructor-guide.md) | [Student Quick Start](student-quickstart.md), [Analytics Hub](analytics/index.md), [Schema Reference](reference/schema.md) |
-| Analyst | [Dataset Overview](dataset-overview.md) | [Database Guide](database-guide.md), [Analytics Hub](analytics/index.md), [Schema Reference](reference/schema.md) |
+| Analyst | [Dataset Guide](dataset-overview.md) | [Analytics Hub](analytics/index.md), [Schema Reference](reference/schema.md), [Posting Reference](reference/posting.md) |
 | Contributor | [Technical Guide](technical-guide.md) | [Code Architecture](code-architecture.md), [Schema Reference](reference/schema.md), [Posting Reference](reference/posting.md) |
 
 ## Recommended Student Reading Order
@@ -25,9 +25,8 @@ If you are new to the dataset, use this sequence:
 1. [Student Quick Start](student-quickstart.md)
 2. [Company Story](company-story.md)
 3. [Process Flows](process-flows.md)
-4. [Dataset Overview](dataset-overview.md)
-5. [Database Guide](database-guide.md)
-6. [Analytics Hub](analytics/index.md)
+4. [Dataset Guide](dataset-overview.md)
+5. [Analytics Hub](analytics/index.md)
 
 That path is designed to keep students out of implementation detail until they actually need it.
 
@@ -36,8 +35,7 @@ That path is designed to keep students out of implementation detail until they a
 ### Start Here
 
 - [Student Quick Start](student-quickstart.md)
-- [Dataset Overview](dataset-overview.md)
-- [Database Guide](database-guide.md)
+- [Dataset Guide](dataset-overview.md)
 
 ### Learn the Business
 
@@ -64,6 +62,7 @@ That path is designed to keep students out of implementation detail until they a
 ### Teach With Greenfield
 
 - [Instructor Adoption Guide](instructor-guide.md)
+- [Dataset Delivery and Build Setup](teach-with-greenfield/dataset-delivery.md)
 
 ### Reference and Technical
 

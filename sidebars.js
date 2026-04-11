@@ -4,7 +4,7 @@ const sidebars = {
     {
       type: "category",
       label: "Start Here",
-      items: ["index", "student-quickstart", "dataset-overview", "database-guide"],
+      items: ["index", "student-quickstart", "dataset-overview"],
     },
     {
       type: "category",
@@ -41,7 +41,7 @@ const sidebars = {
     {
       type: "category",
       label: "Teach With Greenfield",
-      items: ["instructor-guide"],
+      items: ["instructor-guide", "teach-with-greenfield/dataset-delivery"],
     },
     {
       type: "category",

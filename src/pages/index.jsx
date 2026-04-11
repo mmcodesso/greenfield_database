@@ -7,7 +7,7 @@ import styles from "./index.module.css";
 const audienceCards = [
   {
     title: "Students",
-    text: "Start with the company story, process guides, and starter SQL or Excel paths instead of the generator internals.",
+    text: "Start with the company story, process guides, and starter SQL or Excel paths without getting pulled into implementation detail.",
     href: "/docs/student-quickstart",
     cta: "Open the student quick start",
   },
@@ -100,7 +100,7 @@ export default function Home() {
             </ul>
             <p className={styles.panelNote}>
               Most students should begin with the packaged outputs provided by their
-              course or generated locally from the repository.
+              course.
             </p>
           </div>
         </section>
@@ -130,14 +130,14 @@ export default function Home() {
           <div className={styles.repoBanner}>
             <div>
               <p className={styles.sectionLabel}>Repository</p>
-              <h2>Need the generator, source files, or contribution notes?</h2>
+              <h2>Need teaching setup notes, source files, or contribution guidance?</h2>
             </div>
             <div className={styles.repoActions}>
               <Link className="button button--primary" href="https://github.com/mmcodesso/greenfield_database">
                 Open GitHub
               </Link>
-              <Link className="button button--secondary" to="/docs/technical-guide">
-                Technical guide
+              <Link className="button button--secondary" to="/docs/teach-with-greenfield/dataset-delivery">
+                Build and delivery guide
               </Link>
             </div>
           </div>

@@ -8,7 +8,7 @@ sidebar_label: Instructor Adoption
 # Instructor Adoption Guide
 
 **Audience:** Instructors, course designers, and teaching assistants adopting the dataset for AIS, accounting analytics, auditing analytics, SQL, or Excel-based coursework.  
-**Purpose:** Show how to adopt Greenfield as a teaching package without forcing students to learn the generator before they learn the business.  
+**Purpose:** Show how to adopt Greenfield as a teaching package without forcing students to learn implementation details before they learn the business.  
 **What you will learn:** How to package the database for students, how to stage the material in a course, and how to choose the right starter analytics path.
 
 > **Implemented in current generator:** Five fiscal years of O2C, P2P, manufacturing, payroll, time clocks, budgeting, recurring journals, year-end close, validations, anomalies, and starter analytics across a 55-table dataset.
@@ -19,7 +19,7 @@ sidebar_label: Instructor Adoption
 
 ### 1. Choose the student entry point
 
-For most classes, students should start with the generated files and the website, not the codebase.
+For most classes, students should start with the teaching files and the website, not the codebase.
 
 Give students:
 
@@ -28,6 +28,7 @@ Give students:
 - the documentation site for orientation and guided reading
 
 Use the generator itself mainly for instructor prep, custom builds, or contribution work.
+Use [Dataset Delivery and Build Setup](teach-with-greenfield/dataset-delivery.md) when you need to produce or package those files locally.
 
 ### 2. Pick the course emphasis
 
@@ -48,15 +49,16 @@ Suggested student sequence:
 1. [Student Quick Start](student-quickstart.md)
 2. [Company Story](company-story.md)
 3. [Process Flows](process-flows.md)
-4. [Database Guide](database-guide.md)
+4. [Dataset Guide](dataset-overview.md)
 5. [Analytics Hub](analytics/index.md)
 6. topic-specific analytics pages and cases
 
 ### 4. Decide whether you want a clean or anomaly-enabled experience
 
-- Use the default configuration in `config/settings.yaml` when you want the standard five-year anomaly-enabled teaching build.
-- Use `config/settings_validation.yaml` when you want a faster clean baseline for prep or demonstration.
+- Use the standard teaching package when you want the normal five-year anomaly-enabled build.
+- Use the clean baseline package when you want a faster, cleaner setup for prep or demonstration.
 - Make the distinction explicit to students. Some audit queries are supposed to return exceptions only when the anomaly-enabled build is used.
+- Use [Dataset Delivery and Build Setup](teach-with-greenfield/dataset-delivery.md) for the exact local build commands and profile choices.
 
 ## What to Share With Students vs Keep as Instructor Reference
 
@@ -66,9 +68,8 @@ Share these directly with students:
 
 - [Student Quick Start](student-quickstart.md)
 - [Company Story](company-story.md)
-- [Dataset Overview](dataset-overview.md)
+- [Dataset Guide](dataset-overview.md)
 - [Process Flows](process-flows.md)
-- [Database Guide](database-guide.md)
 - [Analytics Hub](analytics/index.md)
 - [Financial Analytics](analytics/financial.md)
 - [Managerial Analytics](analytics/managerial.md)
@@ -81,6 +82,7 @@ Share these directly with students:
 
 Use these when you need implementation detail, schema precision, or generator context:
 
+- [Dataset Delivery and Build Setup](teach-with-greenfield/dataset-delivery.md)
 - [Schema Reference](reference/schema.md)
 - [Posting Reference](reference/posting.md)
 - [Row Volume Reference](reference/row-volume.md)
@@ -92,9 +94,9 @@ Use these when you need implementation detail, schema precision, or generator co
 
 | Week or module | Teaching goal | Main docs | Main starter assets |
 |---|---|---|---|
-| 1. Orientation | Explain the company, dataset purpose, and student workflow | [Student Quick Start](student-quickstart.md), [Company Story](company-story.md), [Dataset Overview](dataset-overview.md) | SQLite or Excel teaching package |
+| 1. Orientation | Explain the company, dataset purpose, and student workflow | [Student Quick Start](student-quickstart.md), [Company Story](company-story.md), [Dataset Guide](dataset-overview.md) | SQLite or Excel teaching package |
 | 2. Process mapping | Show O2C, P2P, manufacturing, payroll, and close-cycle flow | [Process Flows](process-flows.md) and process guides | None yet |
-| 3. Table navigation | Teach keys, joins, and traceability | [Database Guide](database-guide.md) | Introductory ad hoc joins |
+| 3. Table navigation | Teach keys, joins, and traceability | [Dataset Guide](dataset-overview.md) | Introductory ad hoc joins |
 | 4. Financial analytics | Connect operational activity to accounting review | [Financial Analytics](analytics/financial.md) | `queries/financial/` |
 | 5. Managerial analytics | Analyze costs, labor, inventory, and operations | [Managerial Analytics](analytics/managerial.md) | `queries/managerial/` |
 | 6. Audit analytics | Review completeness, controls, cut-off, and anomalies | [Audit Analytics](analytics/audit.md) | `queries/audit/` |
@@ -106,6 +108,7 @@ This sequence compresses cleanly into fewer modules or expands into a full semes
 
 - Decide whether students will work primarily in SQL, Excel, or both.
 - Share the packaged output files before asking students to inspect code.
+- Use [Dataset Delivery and Build Setup](teach-with-greenfield/dataset-delivery.md) when you need to build or refresh the package locally.
 - Assign the company and process reading before the first query exercise.
 - Pick one analytics track first: financial, managerial, or audit.
 - Use guided cases before open-ended student prompts if the class is new to integrated business datasets.
