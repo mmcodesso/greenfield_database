@@ -31,10 +31,6 @@ The dataset is built for:
 - auditing and controls analytics
 - document tracing and business-process understanding
 
-> **Implemented now:** A five-year dataset with 55 tables covering O2C, P2P, manufacturing, payroll, time and attendance, accounting core, master data, budgets, recurring journals, year-end close, validations, anomalies, and exports.
-
-> **Planned future extension:** Raw punch-event detail, richer shift planning, and deeper cost-accounting detail.
-
 ## Business Context
 
 Greenfield is a hybrid manufacturer-distributor with two warehouses and one manufacturing cost center.

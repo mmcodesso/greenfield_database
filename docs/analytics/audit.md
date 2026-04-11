@@ -10,9 +10,6 @@ sidebar_label: Audit Analytics
 **Purpose:** Show how to use the dataset for document-chain testing, approval review, cut-off analysis, duplicate detection, manufacturing-control exercises, and payroll-control review.  
 **What you will learn:** Which document links matter most and which audit-oriented SQL files to run first.
 
-> **Implemented in current generator:** O2C, P2P, manufacturing, payroll, and time-clock process chains; approval fields; detailed posting traceability; validation outputs; and planted anomalies in the default `standard` mode.
-
-> **Planned future extension:** More advanced payroll and production-control anomaly packs.
 
 ## Relevant Tables
 

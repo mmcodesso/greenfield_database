@@ -1,10 +1,11 @@
 ---
-title: Row Volume Reference
+title: Row Counts and Volume
 description: Reference page for deterministic row-volume expectations in the current dataset.
-sidebar_label: Row Volume
+slug: /technical/row-counts
+sidebar_label: Row Counts
 ---
 
-# Row Volume Reference
+# Row Counts and Volume
 
 **Audience:** Contributors, instructors, and advanced users who need current scale expectations for the dataset.  
 **Purpose:** Compare historical design-intent row ranges with the current deterministic default build.  
@@ -16,9 +17,6 @@ The default configuration uses:
 - fiscal years `2026-01-01` through `2030-12-31`
 - random seed `20260401`
 
-> **Implemented in current generator:** A deterministic five-year hybrid manufacturer-distributor dataset with payroll, time clocks, manufacturing, and posted-ledger detail whose default counts are stable unless configuration or generation logic changes.
-
-> **Planned future extension:** Raw punch-event detail, shift-level capacity planning, and additional scenario packs that may increase operational and ledger volume further.
 
 ## Current Default Build vs Historical Design Intent
 

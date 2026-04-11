@@ -4,9 +4,6 @@
 **Purpose:** Show how a shipped and billed sale can reverse through returns, credits, and refunds.  
 **What you will learn:** The business storyline, the key tables, when accounting happens, and how to trace a returned sale through the database.
 
-> **Implemented in current generator:** Sales returns, credit memos, customer-credit behavior, and customer refunds tied back to the original revenue-side documents.
-
-> **Planned future extension:** Broader customer-service exception patterns beyond the current return-credit-refund model.
 
 ## Business Storyline
 

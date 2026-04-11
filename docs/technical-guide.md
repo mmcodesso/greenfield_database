@@ -10,9 +10,6 @@ sidebar_label: Technical Guide
 **Purpose:** Provide a current, implementation-aligned guide to how the database and code work.  
 **What you will learn:** The system architecture, data-model layers, build flow, posting model, validation model, runtime profiles, outputs, and the next extension points.
 
-> **Implemented in current generator:** A 55-table hybrid manufacturer-distributor dataset with O2C, P2P, manufacturing, time and attendance, payroll, capacity-aware operation scheduling, recurring journals, year-end close, posting, validation, anomaly injection, and export logic.
-
-> **Planned future extension:** Raw punch-event detail, rotating shift rosters, and deeper workforce-planning detail.
 
 ## What This Guide Covers
 

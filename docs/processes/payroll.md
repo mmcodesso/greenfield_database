@@ -4,9 +4,6 @@
 **Purpose:** Explain the payroll cycle, how labor time connects to manufacturing, and how payroll liabilities clear.  
 **What you will learn:** How pay periods, labor time, payroll registers, payments, remittances, and manufacturing labor reclasses work together.
 
-> **Implemented in current generator:** Biweekly payroll periods, shift assignments, approved daily time clocks for hourly employees, labor-time capture, payroll registers, payroll payments, liability remittances, operation-level direct-labor assignment, schedule-aware manufacturing labor timing, and direct-labor / manufacturing-overhead integration.
-
-> **Planned future extension:** Raw punch-event detail, rotating shift rosters, and richer workforce-planning detail below the current daily time-clock model.
 
 ## Business Storyline
 

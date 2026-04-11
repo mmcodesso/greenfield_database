@@ -1,7 +1,7 @@
 ---
 title: Dataset Delivery and Build Setup
 description: Instructor-focused guide for generating, packaging, and sharing the Greenfield teaching dataset.
-slug: /teach-with-greenfield/dataset-delivery
+slug: /technical/dataset-delivery
 sidebar_label: Dataset Delivery
 ---
 

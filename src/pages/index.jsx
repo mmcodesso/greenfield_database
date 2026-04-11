@@ -121,7 +121,7 @@ export default function Home() {
             </Link>
             <Link className={styles.pathCard} to="/docs/reference/schema">
               <strong>Reference the model</strong>
-              <span>Schema groups, posting behavior, and row-volume expectations.</span>
+              <span>Schema groups, posting behavior, and technical scale expectations.</span>
             </Link>
           </div>
         </section>
@@ -136,7 +136,7 @@ export default function Home() {
               <Link className="button button--primary" href="https://github.com/mmcodesso/greenfield_database">
                 Open GitHub
               </Link>
-              <Link className="button button--secondary" to="/docs/teach-with-greenfield/dataset-delivery">
+              <Link className="button button--secondary" to="/docs/technical/dataset-delivery">
                 Build and delivery guide
               </Link>
             </div>

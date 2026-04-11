@@ -4,9 +4,6 @@
 **Purpose:** Show how recurring journals, accrued-expense estimates, manufacturing reclasses, and year-end close work in the current dataset.  
 **What you will learn:** The journal storyline, the journal categories, when entries occur, and how those entries affect analysis.
 
-> **Implemented in current generator:** Opening balance, recurring monthly operating journals, factory-overhead journals, direct-labor reclass journals, manufacturing-overhead reclass journals, month-end accruals, rare accrual adjustments, and year-end close entries.
-
-> **Planned future extension:** More advanced journal sources that may come from future planning or scheduling layers.
 
 ## Business Storyline
 

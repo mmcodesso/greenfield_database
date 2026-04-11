@@ -11,9 +11,6 @@ sidebar_label: Process Flows
 **Purpose:** Organize the business-process documentation and explain how operational events connect to accounting entries.  
 **What you will learn:** Which process guides to read, how the major business cycles fit together, and how learners can trace source documents into `GLEntry`.
 
-> **Implemented in current generator:** O2C, returns and credits, P2P, manufacturing, payroll, time clocks and shift labor, recurring journals, year-end close, and event-based posting into `GLEntry`.
-
-> **Planned future extension:** Raw punch-event detail, rotating shift rosters, and shift-level planning beyond the current daily time-clock model.
 
 ## How to Use This Section
 

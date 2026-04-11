@@ -7,10 +7,12 @@ sidebar_label: Roadmap
 # Roadmap
 
 **Audience:** Maintainers, contributors, and instructors tracking planned expansion of the dataset.  
-**Purpose:** Define the next implementation phase and capture the remaining roadmap sequence.  
+**Purpose:** Serve as the single place for current delivered scope and planned future expansion.  
 **What you will learn:** What has been delivered, what should be built next, and why.
 
-## Current Status
+Use this page for current-versus-future scope. The rest of the documentation is intentionally focused on present behavior and present teaching use.
+
+## Current Delivered Scope
 
 The current generator already delivers:
 
@@ -73,7 +75,7 @@ Phase 15 delivered:
 
 This phase turned the routing-aware manufacturing model into a capacity-aware scheduling foundation without changing standard-cost valuation.
 
-## Next Planning Focus
+## Planned Extensions
 
 The next major phase is not locked yet, but the most likely follow-on work is deeper workforce-planning detail beneath the current daily time-clock model.
 

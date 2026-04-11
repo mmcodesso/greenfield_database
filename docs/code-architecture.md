@@ -10,9 +10,6 @@ sidebar_label: Code Architecture
 **Purpose:** Explain the codebase from entrypoint to export using the current implementation.  
 **What you will learn:** The orchestration flow, the role of each module, the runtime profiles, and where the next extension should plug in.
 
-> **Implemented in current generator:** Config loading, shared generation context, schema registry, master data, BOMs, routings, work centers, shift definitions, time clocks, budgets, monthly O2C/P2P/manufacturing/payroll generation, recurring manual journals, year-end close, posting, validations, anomaly injection, SQLite/Excel export, JSON reporting, and generation logging.
-
-> **Planned future extension:** Raw punch-event detail, rotating shift rosters, and richer labor-timing detail.
 
 ## Entrypoints
 

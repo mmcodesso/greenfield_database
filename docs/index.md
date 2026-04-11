@@ -62,15 +62,18 @@ That path is designed to keep students out of implementation detail until they a
 ### Teach With Greenfield
 
 - [Instructor Adoption Guide](instructor-guide.md)
-- [Dataset Delivery and Build Setup](teach-with-greenfield/dataset-delivery.md)
 
-### Reference and Technical
+### Reference
 
 - [Schema Reference](reference/schema.md)
 - [Posting Reference](reference/posting.md)
-- [Row Volume Reference](reference/row-volume.md)
+
+### Technical
+
 - [Technical Guide](technical-guide.md)
 - [Code Architecture](code-architecture.md)
+- [Dataset Delivery and Build Setup](/docs/technical/dataset-delivery)
+- [Row Counts and Volume](reference/row-volume.md)
 - [Roadmap](roadmap.md)
 
 ## Repository Resources

@@ -10,9 +10,6 @@ sidebar_label: Managerial Analytics
 **Purpose:** Show how to work with budgets, cost centers, product mix, inventory movement, purchasing activity, BOMs, work orders, labor, and manufacturing variance.  
 **What you will learn:** Which tables to use, how to join them, and which starter queries answer the most useful managerial questions.
 
-> **Implemented in current generator:** Budget rows, cost centers, detailed O2C and P2P volume, item master data, warehouse movement, BOMs, routings, work centers, work-center calendars, work orders, work-order operations, work-order operation schedules, shift assignments, approved daily time clocks, labor time, production completions, payroll-driven direct labor, and manufacturing variance.
-
-> **Planned future extension:** Raw punch-event detail, shift-level capacity analysis, and richer workforce-scheduling detail beyond the current work-center-hour model.
 
 ## Relevant Tables
 

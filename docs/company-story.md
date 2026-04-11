@@ -10,9 +10,6 @@ sidebar_label: Company Story
 **Purpose:** Explain who Greenfield Home Furnishings is and how the company operates.  
 **What you will learn:** The company narrative, why the processes exist, and how the operating model supports accounting analytics coursework.
 
-> **Implemented in current generator:** A hybrid manufacturer-distributor with O2C, P2P, manufacturing, shift assignments, daily time clocks, payroll, recurring journals, and year-end close.
-
-> **Planned future extension:** Raw punch-event detail, rotating shift rosters, and shift-level workforce planning beyond the current daily time-clock and work-center-capacity foundation.
 
 ## The Company in Plain Language
 

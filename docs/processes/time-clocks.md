@@ -4,9 +4,6 @@
 **Purpose:** Explain shift assignment, daily time-clock capture, approval, and how approved hours feed payroll and manufacturing labor analysis.  
 **What you will learn:** How Greenfield assigns hourly employees to shifts, records approved daily time clocks, turns those clocks into payroll hours, and links direct manufacturing labor to work-order operations.
 
-> **Implemented in current generator:** Shift definitions, employee shift assignments, approved daily time-clock rows for hourly employees, attendance exceptions in anomaly mode, payroll-hour sourcing from approved time clocks, and operation-level direct-labor linkage for manufacturing employees.
-
-> **Planned future extension:** Raw punch-event detail, rotating shift rosters, and shift-level capacity planning beyond the current one-row-per-workday model.
 
 ## Business Storyline
 

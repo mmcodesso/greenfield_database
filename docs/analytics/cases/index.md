@@ -10,9 +10,6 @@ sidebar_label: Analytics Cases
 **Purpose:** Connect the business story, process docs, starter SQL, and Excel workflows into short, teachable walkthroughs.  
 **What you will learn:** Which build to use, which tables and queries to open first, and what patterns to notice in a guided analytics exercise.
 
-> **Implemented in current generator:** Four walkthrough cases that map directly to the current O2C, P2P, manufacturing, payroll, and anomaly-enabled audit starter materials.
-
-> **Planned future extension:** More advanced cases built on deeper workforce-planning and raw punch-event detail.
 
 ## Walkthrough Set
 

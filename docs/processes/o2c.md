@@ -4,9 +4,6 @@
 **Purpose:** Show how a sale moves from customer order to shipment, billing, and cash application.  
 **What you will learn:** The business storyline, the key tables, when accounting happens, and what questions the O2C data can answer.
 
-> **Implemented in current generator:** Customer orders, inventory-constrained shipments, backorders, sales invoices from shipment lines, customer-level cash receipts, and receipt applications.
-
-> **Planned future extension:** Payroll-driven customer-service analytics and other non-core O2C extensions.
 
 ## Business Storyline
 

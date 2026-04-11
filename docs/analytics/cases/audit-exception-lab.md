@@ -18,7 +18,7 @@ The finance and audit team receives the standard five-year build with a moderate
 
 - standard anomaly-enabled teaching package
 
-If you are preparing that package yourself, use [Dataset Delivery and Build Setup](../../teach-with-greenfield/dataset-delivery.md).
+If you are preparing that package yourself, use [Dataset Delivery and Build Setup](/docs/technical/dataset-delivery).
 
 ## Main Tables and Worksheets
 

@@ -10,9 +10,6 @@ sidebar_label: Financial Analytics
 **Purpose:** Show how to study revenue, COGS, receivables, payables, payroll liabilities, manufacturing balances, and journal activity.  
 **What you will learn:** Which tables matter most, which joins are common, which starter SQL files to run, and how to reproduce the same ideas in Excel.
 
-> **Implemented in current generator:** Revenue-cycle postings, receipt applications, customer deposits, returns and refunds, P2P liability postings, payroll liability postings, recurring manual journals, manufacturing balance flows, and a full `GLEntry` ledger suitable for multi-period analysis.
-
-> **Planned future extension:** More advanced cash-flow forecasting, raw punch-event detail, and deeper payroll-anomaly packs.
 
 ## Relevant Tables
 

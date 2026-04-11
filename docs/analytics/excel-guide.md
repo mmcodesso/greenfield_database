@@ -10,9 +10,6 @@ sidebar_label: Excel Guide
 **Purpose:** Show how to turn the generated workbook into a practical starter environment for pivots, charts, aging schedules, payroll review, and anomaly analysis.  
 **What you will learn:** Which sheets matter for each analytics area, how to structure pivots, and how to separate clean analysis from anomaly-focused review.
 
-> **Implemented in current generator:** A workbook with one sheet per table plus `AnomalyLog` and `ValidationSummary`, suitable for Excel-based starter analytics across O2C, P2P, manufacturing, payroll, and journals.
-
-> **Planned future extension:** More advanced workbook guidance for raw punch-event detail, rotating shifts, and richer employee-level workforce-planning analysis.
 
 ## Workbook Setup
 
@@ -30,7 +27,7 @@ Recommended first steps:
 4. format date and amount columns consistently
 5. add slicers or timeline filters for year and month where helpful
 
-For anomaly-focused teaching, use the standard course workbook and then filter pivots or tables to one fiscal year when you want a narrower lab. If you are preparing that workbook yourself, use [Dataset Delivery and Build Setup](../teach-with-greenfield/dataset-delivery.md).
+For anomaly-focused teaching, use the standard course workbook and then filter pivots or tables to one fiscal year when you want a narrower lab. If you are preparing that workbook yourself, use [Dataset Delivery and Build Setup](/docs/technical/dataset-delivery).
 
 ## Financial Accounting Workflows
 

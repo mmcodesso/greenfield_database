@@ -12,9 +12,6 @@ sidebar_label: Schema Reference
 
 The canonical schema lives in `src/greenfield_dataset/schema.py` as `TABLE_COLUMNS`.
 
-> **Implemented in current generator:** 55 tables across accounting, O2C, P2P, manufacturing, payroll and time, master data, and organizational planning.
-
-> **Planned future extension:** Raw punch-event detail, rotating shift rosters, and deeper workforce-planning detail beyond the current routing, capacity, and time-clock foundation.
 
 ## Table Groups
 

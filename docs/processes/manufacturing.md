@@ -4,9 +4,6 @@
 **Purpose:** Explain the manufacturing flow in plain language and connect it to the database tables and accounting entries.  
 **What you will learn:** How Greenfield plans production, issues materials, captures labor, completes finished goods, closes work orders, and links manufacturing to purchasing, payroll, inventory, and the ledger.
 
-> **Implemented in current generator:** Single-level BOMs, work centers, work-center capacity calendars, active routings, work-order operations, operation schedules, manufacturing work orders, material issues, production completions, work-order close, payroll-driven direct-labor integration, approved daily time clocks for hourly labor, factory-overhead journals, manufacturing labor / overhead reclasses, and manufacturing variance accounting.
-
-> **Planned future extension:** Raw punch-event detail, rotating shift rosters, and shift-level capacity planning beyond the current work-center schedule foundation.
 
 ## Business Storyline
 

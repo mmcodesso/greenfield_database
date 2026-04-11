@@ -12,9 +12,6 @@ sidebar_label: Posting Reference
 
 Posting logic is implemented across `src/greenfield_dataset/journals.py`, `src/greenfield_dataset/payroll.py`, and `src/greenfield_dataset/posting_engine.py`.
 
-> **Implemented in current generator:** Event-based postings for O2C, P2P, manufacturing, payroll, opening balances, recurring manual journals, accrued-expense settlement invoices, rare accrual-adjustment journals, manufacturing reclasses, and year-end close, with hourly payroll sourced from approved time clocks.
-
-> **Planned future extension:** Raw punch-event detail and shift-level planning beyond the current daily time-clock and payroll foundation.
 
 ## Non-Posting Documents
 

@@ -4,9 +4,6 @@
 **Purpose:** Show how Greenfield moves from internal demand to supplier payment.  
 **What you will learn:** The business storyline, the main P2P tables, when accounting happens, and what questions the P2P data can answer.
 
-> **Implemented in current generator:** Requisitions, batched purchase orders, manufacturing-driven material demand, partial goods receipts across periods, matched supplier invoices, direct accrued-service invoices, and split disbursement settlement.
-
-> **Planned future extension:** More advanced supplier planning and sourcing behavior.
 
 ## Business Storyline
 

@@ -41,7 +41,7 @@ npm run build
 
 If you need to generate or refresh the classroom dataset locally, use the teaching guide:
 
-- [Dataset Delivery and Build Setup](https://mmcodesso.github.io/greenfield_database/docs/teach-with-greenfield/dataset-delivery)
+- [Dataset Delivery and Build Setup](https://mmcodesso.github.io/greenfield_database/docs/technical/dataset-delivery)
 
 ## Repository Links
 

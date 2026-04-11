@@ -10,9 +10,6 @@ sidebar_label: SQL Guide
 **Purpose:** Explain how the starter SQL files are organized, how to run them, and how to adapt them without breaking alignment to the current dataset.  
 **What you will learn:** Where the starter queries live, how to execute them, and how to extend them safely for class use.
 
-> **Implemented in current generator:** SQLite-first starter SQL files for financial accounting, managerial accounting, and auditing analytics, including payroll and manufacturing-focused starter analysis.
-
-> **Planned future extension:** Additional advanced planning and anomaly packs built on the same starter structure.
 
 ## Starter SQL Package Layout
 
@@ -32,7 +29,7 @@ Each file is a single SQLite-friendly `SELECT` statement with short comment head
 ## Recommended Workflow
 
 1. Open the SQLite file shared for your course or section.
-2. If you are preparing the dataset yourself, use [Dataset Delivery and Build Setup](../teach-with-greenfield/dataset-delivery.md).
+2. If you are preparing the dataset yourself, use [Dataset Delivery and Build Setup](/docs/technical/dataset-delivery).
 3. Start with one topic area:
    - [financial.md](financial.md)
    - [managerial.md](managerial.md)

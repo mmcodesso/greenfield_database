@@ -11,9 +11,6 @@ sidebar_label: Instructor Adoption
 **Purpose:** Show how to adopt Greenfield as a teaching package without forcing students to learn implementation details before they learn the business.  
 **What you will learn:** How to package the database for students, how to stage the material in a course, and how to choose the right starter analytics path.
 
-> **Implemented in current generator:** Five fiscal years of O2C, P2P, manufacturing, payroll, time clocks, budgeting, recurring journals, year-end close, validations, anomalies, and starter analytics across a 55-table dataset.
-
-> **Planned future extension:** Raw punch-event detail, rotating shift rosters, and deeper workforce-planning detail.
 
 ## Adopt Greenfield in 4 Steps
 
@@ -28,7 +25,7 @@ Give students:
 - the documentation site for orientation and guided reading
 
 Use the generator itself mainly for instructor prep, custom builds, or contribution work.
-Use [Dataset Delivery and Build Setup](teach-with-greenfield/dataset-delivery.md) when you need to produce or package those files locally.
+Use [Dataset Delivery and Build Setup](/docs/technical/dataset-delivery) when you need to produce or package those files locally.
 
 ### 2. Pick the course emphasis
 
@@ -58,7 +55,7 @@ Suggested student sequence:
 - Use the standard teaching package when you want the normal five-year anomaly-enabled build.
 - Use the clean baseline package when you want a faster, cleaner setup for prep or demonstration.
 - Make the distinction explicit to students. Some audit queries are supposed to return exceptions only when the anomaly-enabled build is used.
-- Use [Dataset Delivery and Build Setup](teach-with-greenfield/dataset-delivery.md) for the exact local build commands and profile choices.
+- Use [Dataset Delivery and Build Setup](/docs/technical/dataset-delivery) for the exact local build commands and profile choices.
 
 ## What to Share With Students vs Keep as Instructor Reference
 
@@ -82,10 +79,10 @@ Share these directly with students:
 
 Use these when you need implementation detail, schema precision, or generator context:
 
-- [Dataset Delivery and Build Setup](teach-with-greenfield/dataset-delivery.md)
+- [Dataset Delivery and Build Setup](/docs/technical/dataset-delivery)
 - [Schema Reference](reference/schema.md)
 - [Posting Reference](reference/posting.md)
-- [Row Volume Reference](reference/row-volume.md)
+- [Row Counts and Volume](reference/row-volume.md)
 - [Technical Guide](technical-guide.md)
 - [Code Architecture](code-architecture.md)
 - [Roadmap](roadmap.md)
@@ -108,7 +105,7 @@ This sequence compresses cleanly into fewer modules or expands into a full semes
 
 - Decide whether students will work primarily in SQL, Excel, or both.
 - Share the packaged output files before asking students to inspect code.
-- Use [Dataset Delivery and Build Setup](teach-with-greenfield/dataset-delivery.md) when you need to build or refresh the package locally.
+- Use [Dataset Delivery and Build Setup](/docs/technical/dataset-delivery) when you need to build or refresh the package locally.
 - Assign the company and process reading before the first query exercise.
 - Pick one analytics track first: financial, managerial, or audit.
 - Use guided cases before open-ended student prompts if the class is new to integrated business datasets.

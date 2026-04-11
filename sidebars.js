@@ -41,17 +41,23 @@ const sidebars = {
     {
       type: "category",
       label: "Teach With Greenfield",
-      items: ["instructor-guide", "teach-with-greenfield/dataset-delivery"],
+      items: ["instructor-guide"],
     },
     {
       type: "category",
       label: "Reference",
-      items: ["reference/schema", "reference/posting", "reference/row-volume"],
+      items: ["reference/schema", "reference/posting"],
     },
     {
       type: "category",
       label: "Technical",
-      items: ["technical-guide", "code-architecture", "roadmap"],
+      items: [
+        "technical-guide",
+        "code-architecture",
+        "teach-with-greenfield/dataset-delivery",
+        "reference/row-volume",
+        "roadmap",
+      ],
     },
   ],
 };

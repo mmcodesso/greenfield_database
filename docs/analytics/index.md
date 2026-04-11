@@ -11,9 +11,6 @@ sidebar_label: Analytics Hub
 **Purpose:** Organize the starter analytics materials by topic and show where to begin in SQL and Excel.  
 **What you will learn:** Which documents and query packs cover financial, managerial, and audit analytics, and how to move from the generated database to classroom-ready analysis.
 
-> **Implemented in current generator:** Starter analytics documentation, runnable SQLite query files, and Excel workflow guidance for financial accounting, managerial accounting, auditing, payroll, time-clock, and manufacturing-related analysis.
-
-> **Planned future extension:** Raw punch-event detail, shift-level capacity analysis, and richer workforce-planning analysis.
 
 ## What This Starter Layer Includes
 
@@ -37,4 +34,4 @@ sidebar_label: Analytics Hub
 
 For normal student, instructor, and analyst use, start with the standard course package shared for your class.
 
-If you are the instructor preparing that package yourself, use [Dataset Delivery and Build Setup](../teach-with-greenfield/dataset-delivery.md).
+If you are the instructor preparing that package yourself, use [Dataset Delivery and Build Setup](/docs/technical/dataset-delivery).
