@@ -94,6 +94,25 @@ WORK_CENTER_DEFINITIONS = (
     },
 )
 
+WORK_CENTER_NOMINAL_HOURS = {
+    "CUT": 16.0,
+    "ASSEMBLY": 24.0,
+    "FINISH": 16.0,
+    "PACK": 12.0,
+    "QA": 8.0,
+}
+
+REDUCED_CAPACITY_FACTOR_RANGE = {
+    "CUT": (0.78, 0.90),
+    "ASSEMBLY": (0.72, 0.86),
+    "FINISH": (0.70, 0.84),
+    "PACK": (0.82, 0.92),
+    "QA": (0.80, 0.90),
+}
+
+WORK_CENTER_BOTTLENECK_CODES = {"ASSEMBLY", "FINISH"}
+CAPACITY_EXCEPTION_REASONS = {"Normal", "Weekend", "Holiday", "Maintenance", "Reduced Capacity"}
+
 ROUTING_PATTERN_BY_GROUP = {
     "Furniture": [
         ("CUT", "Cut Components"),
@@ -150,12 +169,160 @@ def append_rows(context: GenerationContext, table_name: str, rows: list[dict[str
 
     new_rows = pd.DataFrame(rows, columns=TABLE_COLUMNS[table_name])
     context.tables[table_name] = pd.concat([context.tables[table_name], new_rows], ignore_index=True)
+    invalidate_manufacturing_caches(context, table_name)
+
+
+def drop_context_attributes(context: GenerationContext, attribute_names: list[str]) -> None:
+    for attribute_name in attribute_names:
+        if hasattr(context, attribute_name):
+            delattr(context, attribute_name)
+
+
+def invalidate_manufacturing_caches(context: GenerationContext, table_name: str) -> None:
+    cache_map = {
+        "BillOfMaterialLine": ["_bom_lines_by_bom_cache"],
+        "RoutingOperation": ["_routing_operations_by_routing_cache"],
+        "WorkCenterCalendar": ["_work_center_calendar_lookup", "_work_center_schedule_usage"],
+        "WorkOrderOperation": [
+            "_work_order_operation_index_map",
+            "_work_order_schedule_bounds",
+            "_operation_target_windows",
+        ],
+        "WorkOrderOperationSchedule": [
+            "_work_center_schedule_usage",
+            "_work_order_operation_schedule_index_map",
+        ],
+        "ProductionCompletion": [
+            "_work_order_completed_quantity_map_cache",
+            "_work_order_standard_material_cost_map_cache",
+            "_work_order_standard_conversion_cost_map_cache",
+            "_work_order_standard_direct_labor_cost_map_cache",
+            "_work_order_standard_overhead_cost_map_cache",
+        ],
+        "ProductionCompletionLine": [
+            "_work_order_completed_quantity_map_cache",
+            "_work_order_standard_material_cost_map_cache",
+            "_work_order_standard_conversion_cost_map_cache",
+            "_work_order_standard_direct_labor_cost_map_cache",
+            "_work_order_standard_overhead_cost_map_cache",
+        ],
+        "MaterialIssue": ["_work_order_material_issue_cost_map_cache"],
+        "MaterialIssueLine": ["_work_order_material_issue_cost_map_cache"],
+    }
+    drop_context_attributes(context, cache_map.get(table_name, []))
 
 
 def month_bounds(year: int, month: int) -> tuple[pd.Timestamp, pd.Timestamp]:
     start = pd.Timestamp(year=year, month=month, day=1)
     end = start + pd.offsets.MonthEnd(1)
     return start, end
+
+
+def capacity_rng(context: GenerationContext, *parts: object) -> np.random.Generator:
+    seed = context.settings.random_seed
+    for part in parts:
+        seed = (seed * 31 + sum(ord(char) for char in str(part))) % (2**32 - 1)
+    return np.random.default_rng(seed)
+
+
+def nth_weekday_of_month(year: int, month: int, weekday: int, occurrence: int) -> pd.Timestamp:
+    candidate = pd.Timestamp(year=year, month=month, day=1)
+    while candidate.weekday() != weekday:
+        candidate = candidate + pd.Timedelta(days=1)
+    return candidate + pd.Timedelta(days=7 * max(occurrence - 1, 0))
+
+
+def last_weekday_of_month(year: int, month: int, weekday: int) -> pd.Timestamp:
+    candidate = pd.Timestamp(year=year, month=month, day=1) + pd.offsets.MonthEnd(1)
+    while candidate.weekday() != weekday:
+        candidate = candidate - pd.Timedelta(days=1)
+    return candidate
+
+
+def holiday_dates_for_year(year: int) -> set[str]:
+    return {
+        pd.Timestamp(year=year, month=1, day=1).strftime("%Y-%m-%d"),
+        last_weekday_of_month(year, 5, 0).strftime("%Y-%m-%d"),
+        pd.Timestamp(year=year, month=7, day=4).strftime("%Y-%m-%d"),
+        nth_weekday_of_month(year, 9, 0, 1).strftime("%Y-%m-%d"),
+        nth_weekday_of_month(year, 11, 3, 4).strftime("%Y-%m-%d"),
+        pd.Timestamp(year=year, month=12, day=25).strftime("%Y-%m-%d"),
+    }
+
+
+def holiday_dates_for_context(context: GenerationContext) -> set[str]:
+    years = sorted(pd.to_datetime(context.calendar["Date"]).dt.year.unique().tolist())
+    holidays: set[str] = set()
+    for year in years:
+        holidays.update(holiday_dates_for_year(int(year)))
+    return holidays
+
+
+def work_center_calendar_lookup(context: GenerationContext) -> dict[tuple[int, str], dict[str, Any]]:
+    cached = getattr(context, "_work_center_calendar_lookup", None)
+    if cached is not None:
+        return cached
+
+    work_center_calendar = context.tables["WorkCenterCalendar"]
+    if work_center_calendar.empty:
+        cached = {}
+    else:
+        cached = {
+            (int(row.WorkCenterID), str(row.CalendarDate)): {
+                "WorkCenterCalendarID": int(row.WorkCenterCalendarID),
+                "IsWorkingDay": int(row.IsWorkingDay),
+                "AvailableHours": float(row.AvailableHours),
+                "ExceptionReason": str(row.ExceptionReason),
+            }
+            for row in work_center_calendar.itertuples(index=False)
+        }
+    setattr(context, "_work_center_calendar_lookup", cached)
+    return cached
+
+
+def schedule_usage_map(context: GenerationContext) -> dict[tuple[int, str], float]:
+    cached = getattr(context, "_work_center_schedule_usage", None)
+    if cached is not None:
+        return cached
+
+    schedules = context.tables["WorkOrderOperationSchedule"]
+    if schedules.empty:
+        usage: dict[tuple[int, str], float] = {}
+    else:
+        grouped = schedules.groupby(["WorkCenterID", "ScheduleDate"])["ScheduledHours"].sum().round(2)
+        usage = {
+            (int(work_center_id), str(schedule_date)): float(hours)
+            for (work_center_id, schedule_date), hours in grouped.items()
+        }
+    setattr(context, "_work_center_schedule_usage", usage)
+    return usage
+
+
+def next_schedulable_day(context: GenerationContext, work_center_id: int, candidate_date: pd.Timestamp) -> pd.Timestamp:
+    lookup = work_center_calendar_lookup(context)
+    current = pd.Timestamp(candidate_date)
+    end_date = pd.Timestamp(context.settings.fiscal_year_end)
+    while current <= end_date:
+        date_key = current.strftime("%Y-%m-%d")
+        calendar_row = lookup.get((int(work_center_id), date_key))
+        if calendar_row is not None and float(calendar_row["AvailableHours"]) > 0:
+            return current
+        current = current + pd.Timedelta(days=1)
+    return end_date
+
+
+def add_schedulable_days(
+    context: GenerationContext,
+    work_center_id: int,
+    candidate_date: pd.Timestamp,
+    business_days: int,
+) -> pd.Timestamp:
+    current = next_schedulable_day(context, int(work_center_id), pd.Timestamp(candidate_date))
+    remaining_days = int(max(business_days, 0))
+    while remaining_days > 0:
+        current = next_schedulable_day(context, int(work_center_id), current + pd.Timedelta(days=1))
+        remaining_days -= 1
+    return current
 
 
 def random_date_between(rng: np.random.Generator, start: pd.Timestamp, end: pd.Timestamp) -> pd.Timestamp:
@@ -227,10 +394,15 @@ def bom_lines_by_bom(context: GenerationContext) -> dict[int, pd.DataFrame]:
     bom_lines = context.tables["BillOfMaterialLine"]
     if bom_lines.empty:
         return {}
-    return {
+    cached = getattr(context, "_bom_lines_by_bom_cache", None)
+    if cached is not None:
+        return cached
+    cached = {
         int(bom_id): rows.sort_values("LineNumber").reset_index(drop=True)
         for bom_id, rows in bom_lines.groupby("BOMID")
     }
+    setattr(context, "_bom_lines_by_bom_cache", cached)
+    return cached
 
 
 def active_routing_by_item(context: GenerationContext) -> dict[int, dict[str, Any]]:
@@ -248,10 +420,34 @@ def routing_operations_by_routing(context: GenerationContext) -> dict[int, pd.Da
     operations = context.tables["RoutingOperation"]
     if operations.empty:
         return {}
-    return {
+    cached = getattr(context, "_routing_operations_by_routing_cache", None)
+    if cached is not None:
+        return cached
+    cached = {
         int(routing_id): rows.sort_values("OperationSequence").reset_index(drop=True)
         for routing_id, rows in operations.groupby("RoutingID")
     }
+    setattr(context, "_routing_operations_by_routing_cache", cached)
+    return cached
+
+
+def work_order_operation_index_map(context: GenerationContext) -> dict[int, list[int]]:
+    cached = getattr(context, "_work_order_operation_index_map", None)
+    if cached is not None:
+        return cached
+
+    operations = context.tables["WorkOrderOperation"]
+    if operations.empty:
+        cached = {}
+    else:
+        ordered = operations[["WorkOrderID", "OperationSequence"]].copy()
+        ordered["__row_index"] = ordered.index
+        ordered = ordered.sort_values(["WorkOrderID", "OperationSequence", "__row_index"])
+        grouped = ordered.groupby("WorkOrderID")["__row_index"].apply(list)
+        cached = {int(work_order_id): [int(index) for index in indexes] for work_order_id, indexes in grouped.items()}
+
+    setattr(context, "_work_order_operation_index_map", cached)
+    return cached
 
 
 def work_order_operations_by_work_order(context: GenerationContext) -> dict[int, pd.DataFrame]:
@@ -259,9 +455,16 @@ def work_order_operations_by_work_order(context: GenerationContext) -> dict[int,
     if operations.empty:
         return {}
     return {
-        int(work_order_id): rows.sort_values("OperationSequence").reset_index(drop=True)
-        for work_order_id, rows in operations.groupby("WorkOrderID")
+        int(work_order_id): operations.loc[indexes].copy().reset_index(drop=True)
+        for work_order_id, indexes in work_order_operation_index_map(context).items()
     }
+
+
+def work_order_operations_for_work_order(context: GenerationContext, work_order_id: int) -> pd.DataFrame:
+    indexes = work_order_operation_index_map(context).get(int(work_order_id), [])
+    if not indexes:
+        return context.tables["WorkOrderOperation"].head(0).copy()
+    return context.tables["WorkOrderOperation"].loc[indexes].copy()
 
 
 def work_center_id_by_code(context: GenerationContext) -> dict[str, int]:
@@ -437,6 +640,7 @@ def generate_work_centers_and_routings(context: GenerationContext) -> None:
             "Department": definition["Department"],
             "WarehouseID": int(warehouses[index % len(warehouses)]),
             "ManagerEmployeeID": manager_for_titles(context, definition["ManagerTitles"]),
+            "NominalDailyCapacityHours": float(WORK_CENTER_NOMINAL_HOURS[definition["WorkCenterCode"]]),
             "IsActive": 1,
         })
     append_rows(context, "WorkCenter", work_center_rows)
@@ -482,6 +686,96 @@ def generate_work_centers_and_routings(context: GenerationContext) -> None:
     context.tables["Item"] = items[TABLE_COLUMNS["Item"]]
     append_rows(context, "Routing", routing_rows)
     append_rows(context, "RoutingOperation", routing_operation_rows)
+
+
+def reset_capacity_caches(context: GenerationContext) -> None:
+    drop_context_attributes(context, ["_work_center_calendar_lookup", "_work_center_schedule_usage"])
+
+
+def generate_work_center_calendars(context: GenerationContext) -> None:
+    if not context.tables["WorkCenterCalendar"].empty or context.tables["WorkCenter"].empty:
+        return
+
+    work_centers = context.tables["WorkCenter"].copy()
+    base_calendar = context.calendar.copy()
+    base_calendar["DateTS"] = pd.to_datetime(base_calendar["Date"])
+    holiday_dates = holiday_dates_for_context(context)
+    calendar_rows: list[dict[str, Any]] = []
+
+    for work_center in work_centers.itertuples(index=False):
+        work_center_id = int(work_center.WorkCenterID)
+        work_center_code = str(work_center.WorkCenterCode)
+        nominal_capacity = float(work_center.NominalDailyCapacityHours)
+        maintenance_dates: set[str] = set()
+        reduced_capacity_dates: dict[str, float] = {}
+
+        for year in sorted(base_calendar["DateTS"].dt.year.unique().tolist()):
+            for quarter in [1, 2, 3, 4]:
+                candidates = base_calendar[
+                    base_calendar["DateTS"].dt.year.eq(int(year))
+                    & base_calendar["Quarter"].eq(int(quarter))
+                    & base_calendar["IsWeekend"].eq(0)
+                    & ~base_calendar["Date"].isin(holiday_dates)
+                ].sort_values("DateTS")
+                if candidates.empty:
+                    continue
+                maintenance_rng = capacity_rng(context, "maintenance-day", work_center_id, int(year), int(quarter))
+                maintenance_date = str(candidates.iloc[int(maintenance_rng.integers(0, len(candidates)))]["Date"])
+                maintenance_dates.add(maintenance_date)
+
+            for month in range(1, 13):
+                month_candidates = base_calendar[
+                    base_calendar["DateTS"].dt.year.eq(int(year))
+                    & base_calendar["DateTS"].dt.month.eq(int(month))
+                    & base_calendar["IsWeekend"].eq(0)
+                    & ~base_calendar["Date"].isin(holiday_dates)
+                ].sort_values("DateTS")
+                if month_candidates.empty:
+                    continue
+                month_candidates = month_candidates[~month_candidates["Date"].isin(maintenance_dates)]
+                if month_candidates.empty:
+                    continue
+                reduced_rng = capacity_rng(context, "reduced-capacity-day", work_center_id, int(year), int(month))
+                reduced_date = str(month_candidates.iloc[int(reduced_rng.integers(0, len(month_candidates)))]["Date"])
+                capacity_low, capacity_high = REDUCED_CAPACITY_FACTOR_RANGE[work_center_code]
+                reduced_capacity_dates[reduced_date] = money(
+                    nominal_capacity * float(reduced_rng.uniform(capacity_low, capacity_high))
+                )
+
+        for date_row in base_calendar.itertuples(index=False):
+            date_value = str(date_row.Date)
+            if int(date_row.IsWeekend) == 1:
+                is_working_day = 0
+                available_hours = 0.0
+                exception_reason = "Weekend"
+            elif date_value in holiday_dates:
+                is_working_day = 0
+                available_hours = 0.0
+                exception_reason = "Holiday"
+            elif date_value in maintenance_dates:
+                is_working_day = 1
+                available_hours = money(nominal_capacity * 0.50)
+                exception_reason = "Maintenance"
+            elif date_value in reduced_capacity_dates:
+                is_working_day = 1
+                available_hours = float(reduced_capacity_dates[date_value])
+                exception_reason = "Reduced Capacity"
+            else:
+                is_working_day = 1
+                available_hours = money(nominal_capacity)
+                exception_reason = "Normal"
+
+            calendar_rows.append({
+                "WorkCenterCalendarID": next_id(context, "WorkCenterCalendar"),
+                "WorkCenterID": work_center_id,
+                "CalendarDate": date_value,
+                "IsWorkingDay": is_working_day,
+                "AvailableHours": available_hours,
+                "ExceptionReason": exception_reason,
+            })
+
+    append_rows(context, "WorkCenterCalendar", calendar_rows)
+    reset_capacity_caches(context)
 
 
 def material_inventory_state(context: GenerationContext) -> dict[tuple[int, int], float]:
@@ -540,6 +834,9 @@ def work_order_completed_quantity_map(context: GenerationContext) -> dict[int, f
     completion_lines = context.tables["ProductionCompletionLine"]
     if completions.empty or completion_lines.empty:
         return {}
+    cached = getattr(context, "_work_order_completed_quantity_map_cache", None)
+    if cached is not None:
+        return cached
     work_order_lookup = completions.set_index("ProductionCompletionID")["WorkOrderID"].astype(int).to_dict()
     totals: dict[int, float] = defaultdict(float)
     for line in completion_lines.itertuples(index=False):
@@ -547,7 +844,9 @@ def work_order_completed_quantity_map(context: GenerationContext) -> dict[int, f
         if work_order_id is None:
             continue
         totals[int(work_order_id)] += float(line.QuantityCompleted)
-    return {key: qty(value) for key, value in totals.items()}
+    cached = {key: qty(value) for key, value in totals.items()}
+    setattr(context, "_work_order_completed_quantity_map_cache", cached)
+    return cached
 
 
 def work_order_material_issue_cost_map(context: GenerationContext) -> dict[int, float]:
@@ -555,6 +854,9 @@ def work_order_material_issue_cost_map(context: GenerationContext) -> dict[int, 
     issue_lines = context.tables["MaterialIssueLine"]
     if issues.empty or issue_lines.empty:
         return {}
+    cached = getattr(context, "_work_order_material_issue_cost_map_cache", None)
+    if cached is not None:
+        return cached
     work_order_lookup = issues.set_index("MaterialIssueID")["WorkOrderID"].astype(int).to_dict()
     totals: dict[int, float] = defaultdict(float)
     for line in issue_lines.itertuples(index=False):
@@ -562,7 +864,9 @@ def work_order_material_issue_cost_map(context: GenerationContext) -> dict[int, 
         if work_order_id is None:
             continue
         totals[int(work_order_id)] += float(line.ExtendedStandardCost)
-    return {key: money(value) for key, value in totals.items()}
+    cached = {key: money(value) for key, value in totals.items()}
+    setattr(context, "_work_order_material_issue_cost_map_cache", cached)
+    return cached
 
 
 def work_order_standard_material_cost_map(context: GenerationContext) -> dict[int, float]:
@@ -570,6 +874,9 @@ def work_order_standard_material_cost_map(context: GenerationContext) -> dict[in
     completion_lines = context.tables["ProductionCompletionLine"]
     if completions.empty or completion_lines.empty:
         return {}
+    cached = getattr(context, "_work_order_standard_material_cost_map_cache", None)
+    if cached is not None:
+        return cached
     work_order_lookup = completions.set_index("ProductionCompletionID")["WorkOrderID"].astype(int).to_dict()
     totals: dict[int, float] = defaultdict(float)
     for line in completion_lines.itertuples(index=False):
@@ -577,7 +884,9 @@ def work_order_standard_material_cost_map(context: GenerationContext) -> dict[in
         if work_order_id is None:
             continue
         totals[int(work_order_id)] += float(line.ExtendedStandardMaterialCost)
-    return {key: money(value) for key, value in totals.items()}
+    cached = {key: money(value) for key, value in totals.items()}
+    setattr(context, "_work_order_standard_material_cost_map_cache", cached)
+    return cached
 
 
 def work_order_standard_conversion_cost_map(context: GenerationContext) -> dict[int, float]:
@@ -585,6 +894,9 @@ def work_order_standard_conversion_cost_map(context: GenerationContext) -> dict[
     completion_lines = context.tables["ProductionCompletionLine"]
     if completions.empty or completion_lines.empty:
         return {}
+    cached = getattr(context, "_work_order_standard_conversion_cost_map_cache", None)
+    if cached is not None:
+        return cached
     work_order_lookup = completions.set_index("ProductionCompletionID")["WorkOrderID"].astype(int).to_dict()
     totals: dict[int, float] = defaultdict(float)
     for line in completion_lines.itertuples(index=False):
@@ -592,7 +904,9 @@ def work_order_standard_conversion_cost_map(context: GenerationContext) -> dict[
         if work_order_id is None:
             continue
         totals[int(work_order_id)] += float(line.ExtendedStandardConversionCost)
-    return {key: money(value) for key, value in totals.items()}
+    cached = {key: money(value) for key, value in totals.items()}
+    setattr(context, "_work_order_standard_conversion_cost_map_cache", cached)
+    return cached
 
 
 def work_order_standard_direct_labor_cost_map(context: GenerationContext) -> dict[int, float]:
@@ -600,6 +914,9 @@ def work_order_standard_direct_labor_cost_map(context: GenerationContext) -> dic
     completion_lines = context.tables["ProductionCompletionLine"]
     if completions.empty or completion_lines.empty:
         return {}
+    cached = getattr(context, "_work_order_standard_direct_labor_cost_map_cache", None)
+    if cached is not None:
+        return cached
 
     work_order_lookup = completions.set_index("ProductionCompletionID")["WorkOrderID"].astype(int).to_dict()
     totals: dict[int, float] = defaultdict(float)
@@ -608,7 +925,9 @@ def work_order_standard_direct_labor_cost_map(context: GenerationContext) -> dic
         if work_order_id is None:
             continue
         totals[int(work_order_id)] += float(line.ExtendedStandardDirectLaborCost)
-    return {key: money(value) for key, value in totals.items()}
+    cached = {key: money(value) for key, value in totals.items()}
+    setattr(context, "_work_order_standard_direct_labor_cost_map_cache", cached)
+    return cached
 
 
 def work_order_standard_overhead_cost_map(context: GenerationContext) -> dict[int, float]:
@@ -616,6 +935,9 @@ def work_order_standard_overhead_cost_map(context: GenerationContext) -> dict[in
     completion_lines = context.tables["ProductionCompletionLine"]
     if completions.empty or completion_lines.empty:
         return {}
+    cached = getattr(context, "_work_order_standard_overhead_cost_map_cache", None)
+    if cached is not None:
+        return cached
 
     work_order_lookup = completions.set_index("ProductionCompletionID")["WorkOrderID"].astype(int).to_dict()
     totals: dict[int, float] = defaultdict(float)
@@ -627,7 +949,9 @@ def work_order_standard_overhead_cost_map(context: GenerationContext) -> dict[in
             float(line.ExtendedStandardVariableOverheadCost)
             + float(line.ExtendedStandardFixedOverheadCost)
         )
-    return {key: money(value) for key, value in totals.items()}
+    cached = {key: money(value) for key, value in totals.items()}
+    setattr(context, "_work_order_standard_overhead_cost_map_cache", cached)
+    return cached
 
 
 def work_order_actual_conversion_cost_map(context: GenerationContext) -> dict[int, float]:
@@ -669,6 +993,8 @@ def standard_material_unit_cost(context: GenerationContext, bom_id: int) -> floa
 def manufacturing_open_state(context: GenerationContext) -> dict[str, float]:
     work_orders = context.tables["WorkOrder"]
     closes = context.tables["WorkOrderClose"]
+    work_center_calendar = context.tables["WorkCenterCalendar"]
+    schedules = context.tables["WorkOrderOperationSchedule"]
     issue_cost = work_order_material_issue_cost_map(context)
     standard_material = work_order_standard_material_cost_map(context)
     actual_conversion = work_order_actual_conversion_cost_map(context)
@@ -697,13 +1023,111 @@ def manufacturing_open_state(context: GenerationContext) -> dict[str, float]:
         "bom_count": float(len(context.tables["BillOfMaterial"])),
         "bom_line_count": float(len(context.tables["BillOfMaterialLine"])),
         "work_center_count": float(len(context.tables["WorkCenter"])),
+        "work_center_calendar_count": float(len(work_center_calendar)),
         "routing_count": float(len(context.tables["Routing"])),
         "routing_operation_count": float(len(context.tables["RoutingOperation"])),
         "work_order_operation_count": float(len(context.tables["WorkOrderOperation"])),
+        "work_order_operation_schedule_count": float(len(schedules)),
         "open_work_order_count": float(open_work_orders),
         "wip_balance": money(wip_balance),
         "manufacturing_clearing_balance": money(clearing_balance),
         "manufacturing_variance_posted": money(variance_posted),
+    }
+
+
+def manufacturing_capacity_state(context: GenerationContext, year: int, month: int) -> dict[str, float]:
+    month_start, month_end = month_bounds(year, month)
+    calendars = context.tables["WorkCenterCalendar"]
+    schedules = context.tables["WorkOrderOperationSchedule"]
+    work_orders = context.tables["WorkOrder"]
+    work_order_operations = context.tables["WorkOrderOperation"]
+
+    if calendars.empty:
+        return {
+            "available_work_center_hours": 0.0,
+            "scheduled_work_center_hours": 0.0,
+            "utilization_pct": 0.0,
+            "fully_booked_days": 0.0,
+            "late_operations": 0.0,
+            "late_work_orders": 0.0,
+            "open_backlog_hours": 0.0,
+        }
+
+    month_calendars = calendars[
+        pd.to_datetime(calendars["CalendarDate"]).between(month_start, month_end)
+    ].copy()
+    available_hours = round(float(month_calendars["AvailableHours"].astype(float).sum()), 2)
+
+    month_schedules = schedules[
+        pd.to_datetime(schedules["ScheduleDate"]).between(month_start, month_end)
+    ].copy() if not schedules.empty else schedules.copy()
+    scheduled_hours = round(float(month_schedules["ScheduledHours"].astype(float).sum()), 2) if not month_schedules.empty else 0.0
+
+    fully_booked_days = 0
+    if not month_schedules.empty:
+        scheduled_by_day = month_schedules.groupby(["WorkCenterID", "ScheduleDate"])["ScheduledHours"].sum().round(2)
+        for (work_center_id, schedule_date), hours in scheduled_by_day.items():
+            available = month_calendars[
+                month_calendars["WorkCenterID"].astype(int).eq(int(work_center_id))
+                & month_calendars["CalendarDate"].eq(str(schedule_date))
+            ]["AvailableHours"].astype(float)
+            if not available.empty and round(float(hours), 2) >= round(float(available.iloc[0]), 2) and float(available.iloc[0]) > 0:
+                fully_booked_days += 1
+
+    late_operations = 0
+    if not work_order_operations.empty:
+        operations = work_order_operations.copy()
+        operations["PlannedEndDateTS"] = pd.to_datetime(operations["PlannedEndDate"], errors="coerce")
+        operations["ActualEndDateTS"] = pd.to_datetime(operations["ActualEndDate"], errors="coerce")
+        late_operations = int(
+            (
+                operations["ActualEndDateTS"].notna()
+                & operations["PlannedEndDateTS"].notna()
+                & operations["ActualEndDateTS"].gt(operations["PlannedEndDateTS"])
+                & operations["ActualEndDateTS"].between(month_start, month_end)
+            ).sum()
+        )
+
+    late_work_orders = 0
+    if not work_orders.empty:
+        work_order_rows = work_orders.copy()
+        work_order_rows["DueDateTS"] = pd.to_datetime(work_order_rows["DueDate"], errors="coerce")
+        work_order_rows["CompletedDateTS"] = pd.to_datetime(work_order_rows["CompletedDate"], errors="coerce")
+        completed_late = (
+            work_order_rows["CompletedDateTS"].notna()
+            & work_order_rows["DueDateTS"].notna()
+            & work_order_rows["CompletedDateTS"].gt(work_order_rows["DueDateTS"])
+            & work_order_rows["CompletedDateTS"].between(month_start, month_end)
+        )
+        open_late = (
+            work_order_rows["CompletedDateTS"].isna()
+            & work_order_rows["DueDateTS"].notna()
+            & work_order_rows["DueDateTS"].lt(month_end)
+            & work_order_rows["Status"].isin(["Released", "In Progress"])
+        )
+        late_work_orders = int(completed_late.sum() + open_late.sum())
+
+    open_backlog_hours = 0.0
+    if not work_order_operations.empty:
+        operation_rows = work_order_operations.copy()
+        operation_rows["PlannedEndDateTS"] = pd.to_datetime(operation_rows["PlannedEndDate"], errors="coerce")
+        open_backlog_hours = round(float(
+            operation_rows.loc[
+                operation_rows["Status"].isin(["Released", "In Progress"])
+                & operation_rows["PlannedEndDateTS"].gt(month_end),
+                "PlannedLoadHours",
+            ].astype(float).sum()
+        ), 2)
+
+    utilization_pct = round((scheduled_hours / available_hours) * 100, 2) if available_hours > 0 else 0.0
+    return {
+        "available_work_center_hours": available_hours,
+        "scheduled_work_center_hours": scheduled_hours,
+        "utilization_pct": utilization_pct,
+        "fully_booked_days": float(fully_booked_days),
+        "late_operations": float(late_operations),
+        "late_work_orders": float(late_work_orders),
+        "open_backlog_hours": open_backlog_hours,
     }
 
 
@@ -771,6 +1195,42 @@ def finished_goods_shortage_by_item(context: GenerationContext, month_end: pd.Ti
     return shortages
 
 
+def schedule_operation_rows(
+    context: GenerationContext,
+    work_order_operation_id: int,
+    work_center_id: int,
+    earliest_start: pd.Timestamp,
+    planned_load_hours: float,
+) -> list[dict[str, Any]]:
+    lookup = work_center_calendar_lookup(context)
+    usage = schedule_usage_map(context)
+    end_date = pd.Timestamp(context.settings.fiscal_year_end)
+    current_date = next_schedulable_day(context, int(work_center_id), pd.Timestamp(earliest_start))
+    remaining_hours = money(planned_load_hours)
+    schedule_rows: list[dict[str, Any]] = []
+
+    while remaining_hours > 0 and current_date <= end_date:
+        date_key = current_date.strftime("%Y-%m-%d")
+        calendar_row = lookup.get((int(work_center_id), date_key))
+        available_hours = float(calendar_row["AvailableHours"]) if calendar_row is not None else 0.0
+        used_hours = float(usage.get((int(work_center_id), date_key), 0.0))
+        free_hours = money(max(available_hours - used_hours, 0.0))
+        if free_hours > 0:
+            scheduled_hours = money(min(remaining_hours, free_hours))
+            schedule_rows.append({
+                "WorkOrderOperationScheduleID": next_id(context, "WorkOrderOperationSchedule"),
+                "WorkOrderOperationID": int(work_order_operation_id),
+                "WorkCenterID": int(work_center_id),
+                "ScheduleDate": date_key,
+                "ScheduledHours": scheduled_hours,
+            })
+            usage[(int(work_center_id), date_key)] = money(used_hours + scheduled_hours)
+            remaining_hours = money(remaining_hours - scheduled_hours)
+        current_date = current_date + pd.Timedelta(days=1)
+
+    return schedule_rows
+
+
 def build_work_order_operations(
     context: GenerationContext,
     work_order_id: int,
@@ -778,101 +1238,209 @@ def build_work_order_operations(
     planned_quantity: float,
     release_date: pd.Timestamp,
     due_date: pd.Timestamp,
-) -> list[dict[str, Any]]:
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     routing_rows = routing_operations_by_routing(context).get(int(routing_id))
     if routing_rows is None or routing_rows.empty:
-        return []
+        return [], []
 
-    planning_anchor = pd.Timestamp(release_date)
-    due = pd.Timestamp(due_date)
-    if due < planning_anchor:
-        due = planning_anchor
+    operation_rows: list[dict[str, Any]] = []
+    schedule_rows: list[dict[str, Any]] = []
+    current_start = pd.Timestamp(release_date)
 
-    operation_hours = [
-        float(row.StandardSetupHours) + float(row.StandardRunHoursPerUnit) * float(planned_quantity)
-        for row in routing_rows.itertuples(index=False)
-    ]
-    total_hours = sum(operation_hours) or float(len(operation_hours))
-    total_days = max(int((due - planning_anchor).days), len(operation_hours) - 1, 0)
-    current_start = planning_anchor
-    rows: list[dict[str, Any]] = []
-
-    for index, row in enumerate(routing_rows.itertuples(index=False), start=1):
-        if index == len(operation_hours):
-            planned_end = max(current_start, due)
+    for row in routing_rows.itertuples(index=False):
+        work_center_id = int(row.WorkCenterID)
+        current_start = next_schedulable_day(context, work_center_id, current_start)
+        planned_load_hours = money(
+            float(row.StandardSetupHours) + float(row.StandardRunHoursPerUnit) * float(planned_quantity)
+        )
+        work_order_operation_id = next_id(context, "WorkOrderOperation")
+        operation_schedule_rows = schedule_operation_rows(
+            context,
+            work_order_operation_id,
+            work_center_id,
+            current_start,
+            planned_load_hours,
+        )
+        if operation_schedule_rows:
+            planned_start = pd.Timestamp(operation_schedule_rows[0]["ScheduleDate"])
+            planned_end = pd.Timestamp(operation_schedule_rows[-1]["ScheduleDate"])
         else:
-            proportion = float(operation_hours[index - 1]) / total_hours
-            duration_days = max(0, int(round(total_days * proportion)))
-            remaining_slots = len(operation_hours) - index
-            max_end = due - pd.Timedelta(days=remaining_slots)
-            planned_end = current_start + pd.Timedelta(days=duration_days)
-            if planned_end > max_end:
-                planned_end = max(current_start, max_end)
-        rows.append({
-            "WorkOrderOperationID": next_id(context, "WorkOrderOperation"),
+            planned_start = pd.Timestamp(context.settings.fiscal_year_end)
+            planned_end = planned_start
+
+        operation_rows.append({
+            "WorkOrderOperationID": work_order_operation_id,
             "WorkOrderID": int(work_order_id),
             "RoutingOperationID": int(row.RoutingOperationID),
             "OperationSequence": int(row.OperationSequence),
-            "WorkCenterID": int(row.WorkCenterID),
+            "WorkCenterID": work_center_id,
             "PlannedQuantity": qty(float(planned_quantity)),
-            "PlannedStartDate": current_start.strftime("%Y-%m-%d"),
+            "PlannedLoadHours": planned_load_hours,
+            "PlannedStartDate": planned_start.strftime("%Y-%m-%d"),
             "PlannedEndDate": planned_end.strftime("%Y-%m-%d"),
             "ActualStartDate": None,
             "ActualEndDate": None,
             "Status": "Released",
         })
-        queue_days = int(row.StandardQueueDays)
-        current_start = max(planned_end, current_start) + pd.Timedelta(days=queue_days)
-        if current_start > due:
-            current_start = due
+        schedule_rows.extend(operation_schedule_rows)
+        current_start = planned_end + pd.Timedelta(days=int(row.StandardQueueDays))
 
-    return rows
+    return operation_rows, schedule_rows
 
 
-def set_work_order_operation_activity(
+def work_order_schedule_bounds(context: GenerationContext) -> dict[int, tuple[pd.Timestamp, pd.Timestamp]]:
+    cached = getattr(context, "_work_order_schedule_bounds", None)
+    if cached is not None:
+        return cached
+
+    operations = context.tables["WorkOrderOperation"]
+    if operations.empty:
+        cached = {}
+    else:
+        bounds = (
+            operations.assign(
+                PlannedStartDateTS=pd.to_datetime(operations["PlannedStartDate"], errors="coerce"),
+                PlannedEndDateTS=pd.to_datetime(operations["PlannedEndDate"], errors="coerce"),
+            )
+            .groupby("WorkOrderID")
+            .agg(
+                FirstScheduledDate=("PlannedStartDateTS", "min"),
+                FinalScheduledDate=("PlannedEndDateTS", "max"),
+            )
+        )
+        cached = {
+            int(row.Index): (pd.Timestamp(row.FirstScheduledDate), pd.Timestamp(row.FinalScheduledDate))
+            for row in bounds.itertuples()
+        }
+
+    setattr(context, "_work_order_schedule_bounds", cached)
+    return cached
+
+
+def work_order_operation_schedule_index_map(context: GenerationContext) -> dict[int, list[int]]:
+    cached = getattr(context, "_work_order_operation_schedule_index_map", None)
+    if cached is not None:
+        return cached
+
+    schedules = context.tables["WorkOrderOperationSchedule"]
+    if schedules.empty:
+        cached = {}
+    else:
+        ordered = schedules[["WorkOrderOperationID", "ScheduleDate"]].copy()
+        ordered["__row_index"] = ordered.index
+        ordered = ordered.sort_values(["WorkOrderOperationID", "ScheduleDate", "__row_index"])
+        grouped = ordered.groupby("WorkOrderOperationID")["__row_index"].apply(list)
+        cached = {
+            int(work_order_operation_id): [int(index) for index in indexes]
+            for work_order_operation_id, indexes in grouped.items()
+        }
+
+    setattr(context, "_work_order_operation_schedule_index_map", cached)
+    return cached
+
+
+def work_order_operation_schedule_by_operation(context: GenerationContext) -> dict[int, pd.DataFrame]:
+    schedules = context.tables["WorkOrderOperationSchedule"]
+    if schedules.empty:
+        return {}
+    return {
+        int(work_order_operation_id): schedules.loc[indexes].copy().sort_values("ScheduleDate").reset_index(drop=True)
+        for work_order_operation_id, indexes in work_order_operation_schedule_index_map(context).items()
+    }
+
+
+def operation_actual_target_windows(context: GenerationContext, work_order_id: int) -> dict[int, tuple[pd.Timestamp, pd.Timestamp]]:
+    cached = getattr(context, "_operation_target_windows", {})
+    if int(work_order_id) in cached:
+        return cached[int(work_order_id)]
+
+    work_order_operations = work_order_operations_for_work_order(context, int(work_order_id))
+    schedule_index_map = work_order_operation_schedule_index_map(context)
+    if work_order_operations is None or work_order_operations.empty:
+        return {}
+
+    target_windows: dict[int, tuple[pd.Timestamp, pd.Timestamp]] = {}
+    prior_end: pd.Timestamp | None = None
+    for row in work_order_operations.itertuples(index=False):
+        if not schedule_index_map.get(int(row.WorkOrderOperationID)):
+            continue
+        if pd.isna(row.PlannedStartDate) or pd.isna(row.PlannedEndDate):
+            continue
+
+        planned_start = pd.Timestamp(row.PlannedStartDate)
+        planned_end = pd.Timestamp(row.PlannedEndDate)
+        rng = capacity_rng(context, "operation-actual-window", int(work_order_id), int(row.WorkOrderOperationID))
+        actual_start = add_schedulable_days(context, int(row.WorkCenterID), planned_start, int(rng.integers(0, 2)))
+        if prior_end is not None and actual_start < prior_end:
+            actual_start = next_schedulable_day(context, int(row.WorkCenterID), prior_end)
+        actual_end = add_schedulable_days(context, int(row.WorkCenterID), planned_end, int(rng.integers(0, 3)))
+        if actual_end < actual_start:
+            actual_end = actual_start
+        if prior_end is not None and actual_end < prior_end:
+            actual_end = next_schedulable_day(context, int(row.WorkCenterID), prior_end)
+        target_windows[int(row.WorkOrderOperationID)] = (actual_start, actual_end)
+        prior_end = actual_end
+
+    cached[int(work_order_id)] = target_windows
+    setattr(context, "_operation_target_windows", cached)
+    return target_windows
+
+
+def sync_work_order_operation_activity(
     context: GenerationContext,
     work_order_id: int,
-    activity_start: pd.Timestamp,
-    activity_end: pd.Timestamp,
-    final_complete: bool,
-) -> None:
-    mask = context.tables["WorkOrderOperation"]["WorkOrderID"].astype(int).eq(int(work_order_id))
-    work_order_operations = context.tables["WorkOrderOperation"].loc[mask].sort_values("OperationSequence").copy()
+    month_end: pd.Timestamp,
+) -> dict[str, pd.Timestamp | None]:
+    work_order_operations = work_order_operations_for_work_order(context, int(work_order_id))
     if work_order_operations.empty:
-        return
+        return {
+            "first_planned_start": None,
+            "first_actual_start": None,
+            "final_actual_end": None,
+            "last_completed_end": None,
+        }
 
-    start = pd.Timestamp(activity_start)
-    end = pd.Timestamp(activity_end)
-    if final_complete:
-        windows = sequential_operation_windows(start, end, len(work_order_operations))
-        for (row_index, _), (window_start, window_end) in zip(work_order_operations.iterrows(), windows, strict=False):
-            context.tables["WorkOrderOperation"].loc[row_index, "ActualStartDate"] = window_start.strftime("%Y-%m-%d")
-            context.tables["WorkOrderOperation"].loc[row_index, "ActualEndDate"] = window_end.strftime("%Y-%m-%d")
+    target_windows = operation_actual_target_windows(context, int(work_order_id))
+    first_planned_start = pd.to_datetime(work_order_operations["PlannedStartDate"]).min()
+    first_actual_start: pd.Timestamp | None = None
+    final_actual_end: pd.Timestamp | None = None
+    last_completed_end: pd.Timestamp | None = None
+    blocked = False
+
+    for row_index, row in work_order_operations.iterrows():
+        target_window = target_windows.get(int(row["WorkOrderOperationID"]))
+        if target_window is None or blocked:
+            context.tables["WorkOrderOperation"].loc[row_index, "Status"] = "Released"
+            continue
+
+        actual_start, actual_end = target_window
+        if first_actual_start is None:
+            first_actual_start = actual_start
+        final_actual_end = actual_end
+
+        if actual_end <= pd.Timestamp(month_end):
+            context.tables["WorkOrderOperation"].loc[row_index, "ActualStartDate"] = actual_start.strftime("%Y-%m-%d")
+            context.tables["WorkOrderOperation"].loc[row_index, "ActualEndDate"] = actual_end.strftime("%Y-%m-%d")
             context.tables["WorkOrderOperation"].loc[row_index, "Status"] = "Completed"
-        return
+            last_completed_end = actual_end
+            continue
 
-    if len(work_order_operations) == 1:
-        row_index = work_order_operations.index[0]
-        context.tables["WorkOrderOperation"].loc[row_index, "ActualStartDate"] = start.strftime("%Y-%m-%d")
-        context.tables["WorkOrderOperation"].loc[row_index, "ActualEndDate"] = None
-        context.tables["WorkOrderOperation"].loc[row_index, "Status"] = "In Progress"
-        return
+        if actual_start <= pd.Timestamp(month_end):
+            context.tables["WorkOrderOperation"].loc[row_index, "ActualStartDate"] = actual_start.strftime("%Y-%m-%d")
+            context.tables["WorkOrderOperation"].loc[row_index, "ActualEndDate"] = None
+            context.tables["WorkOrderOperation"].loc[row_index, "Status"] = "In Progress"
+            blocked = True
+            continue
 
-    completed_windows = sequential_operation_windows(start, end, len(work_order_operations) - 1)
-    for (row_index, _), (window_start, window_end) in zip(
-        work_order_operations.iloc[:-1].iterrows(),
-        completed_windows,
-        strict=False,
-    ):
-        context.tables["WorkOrderOperation"].loc[row_index, "ActualStartDate"] = window_start.strftime("%Y-%m-%d")
-        context.tables["WorkOrderOperation"].loc[row_index, "ActualEndDate"] = window_end.strftime("%Y-%m-%d")
-        context.tables["WorkOrderOperation"].loc[row_index, "Status"] = "Completed"
+        context.tables["WorkOrderOperation"].loc[row_index, "Status"] = "Released"
+        blocked = True
 
-    final_row_index = work_order_operations.index[-1]
-    final_start = completed_windows[-1][1] if completed_windows else start
-    context.tables["WorkOrderOperation"].loc[final_row_index, "ActualStartDate"] = final_start.strftime("%Y-%m-%d")
-    context.tables["WorkOrderOperation"].loc[final_row_index, "ActualEndDate"] = None
-    context.tables["WorkOrderOperation"].loc[final_row_index, "Status"] = "In Progress"
+    return {
+        "first_planned_start": first_planned_start,
+        "first_actual_start": first_actual_start,
+        "final_actual_end": final_actual_end,
+        "last_completed_end": last_completed_end,
+    }
 
 
 def generate_month_work_orders_and_requisitions(context: GenerationContext, year: int, month: int) -> None:
@@ -897,6 +1465,7 @@ def generate_month_work_orders_and_requisitions(context: GenerationContext, year
     requisition_rows: list[dict[str, Any]] = []
     work_order_rows: list[dict[str, Any]] = []
     work_order_operation_rows: list[dict[str, Any]] = []
+    work_order_operation_schedule_rows: list[dict[str, Any]] = []
 
     for item in manufactured.sort_values("ItemID").itertuples(index=False):
         shortage = shortages.get(int(item.ItemID))
@@ -934,16 +1503,16 @@ def generate_month_work_orders_and_requisitions(context: GenerationContext, year
             "ReleasedByEmployeeID": int(rng.choice(manufacturing_employee_ids)),
             "ClosedByEmployeeID": None,
         })
-        work_order_operation_rows.extend(
-            build_work_order_operations(
-                context,
-                work_order_id,
-                int(routing["RoutingID"]),
-                planned_quantity,
-                release_date,
-                due_date,
-            )
+        operation_rows, operation_schedule_rows = build_work_order_operations(
+            context,
+            work_order_id,
+            int(routing["RoutingID"]),
+            planned_quantity,
+            release_date,
+            due_date,
         )
+        work_order_operation_rows.extend(operation_rows)
+        work_order_operation_schedule_rows.extend(operation_schedule_rows)
 
         bom_lines = bom_lines_lookup.get(int(bom["BOMID"]))
         if bom_lines is None or bom_lines.empty:
@@ -979,6 +1548,7 @@ def generate_month_work_orders_and_requisitions(context: GenerationContext, year
 
     append_rows(context, "WorkOrder", work_order_rows)
     append_rows(context, "WorkOrderOperation", work_order_operation_rows)
+    append_rows(context, "WorkOrderOperationSchedule", work_order_operation_schedule_rows)
     append_rows(context, "PurchaseRequisition", requisition_rows)
 
 
@@ -994,6 +1564,18 @@ def work_orders_due_for_month(context: GenerationContext, year: int, month: int)
     ].copy()
     candidates["RemainingQuantity"] = candidates["WorkOrderID"].astype(int).map(remaining).fillna(0.0)
     candidates = candidates[candidates["RemainingQuantity"].gt(0)].copy()
+    schedule_bounds = work_order_schedule_bounds(context)
+    if schedule_bounds:
+        candidates["FirstScheduledDate"] = candidates["WorkOrderID"].astype(int).map(
+            lambda work_order_id: schedule_bounds.get(int(work_order_id), (pd.NaT, pd.NaT))[0]
+        )
+        candidates["FinalScheduledDate"] = candidates["WorkOrderID"].astype(int).map(
+            lambda work_order_id: schedule_bounds.get(int(work_order_id), (pd.NaT, pd.NaT))[1]
+        )
+        candidates = candidates[
+            candidates["FirstScheduledDate"].notna()
+            & pd.to_datetime(candidates["FirstScheduledDate"]).le(month_end)
+        ].copy()
     return candidates.sort_values(["DueDate", "ReleasedDate", "WorkOrderID"]).reset_index(drop=True)
 
 
@@ -1043,6 +1625,67 @@ def split_quantities(total_quantity: float, event_count: int, rng: np.random.Gen
     return quantities[:event_count]
 
 
+def work_order_issued_support_quantity_map(context: GenerationContext) -> dict[int, float]:
+    issues = context.tables["MaterialIssue"]
+    issue_lines = context.tables["MaterialIssueLine"]
+    work_orders = context.tables["WorkOrder"]
+    if issues.empty or issue_lines.empty or work_orders.empty:
+        return {}
+    state = getattr(context, "_material_issue_support_state", None)
+    if state is None:
+        state = {
+            "processed_issue_count": 0,
+            "processed_issue_line_count": 0,
+            "issue_work_order": {},
+            "issued_quantities": defaultdict(float),
+            "support_quantities": {},
+        }
+
+    if int(state["processed_issue_count"]) < len(issues):
+        new_issues = issues.iloc[int(state["processed_issue_count"]):]
+        issue_work_order: dict[int, int] = state["issue_work_order"]
+        for issue in new_issues.itertuples(index=False):
+            issue_work_order[int(issue.MaterialIssueID)] = int(issue.WorkOrderID)
+        state["processed_issue_count"] = len(issues)
+
+    if int(state["processed_issue_line_count"]) < len(issue_lines):
+        issue_work_order = state["issue_work_order"]
+        work_order_bom_lookup = work_orders.set_index("WorkOrderID")["BOMID"].astype(int).to_dict()
+        bom_lines_lookup = bom_lines_by_bom(context)
+        issued_quantities: defaultdict[tuple[int, int], float] = state["issued_quantities"]
+        support_quantities: dict[int, float] = state["support_quantities"]
+        touched_work_orders: set[int] = set()
+
+        new_issue_lines = issue_lines.iloc[int(state["processed_issue_line_count"]):]
+        for line in new_issue_lines.itertuples(index=False):
+            work_order_id = issue_work_order.get(int(line.MaterialIssueID))
+            if work_order_id is None:
+                continue
+            issued_quantities[(int(work_order_id), int(line.BOMLineID))] += float(line.QuantityIssued)
+            touched_work_orders.add(int(work_order_id))
+
+        for work_order_id in touched_work_orders:
+            bom_id = work_order_bom_lookup.get(int(work_order_id))
+            bom_lines = bom_lines_lookup.get(int(bom_id)) if bom_id is not None else None
+            if bom_lines is None or bom_lines.empty:
+                continue
+            supported_quantity: float | None = None
+            for bom_line in bom_lines.itertuples(index=False):
+                required_per_unit = float(bom_line.QuantityPerUnit) * (1 + float(bom_line.ScrapFactorPct))
+                if required_per_unit <= 0:
+                    continue
+                issued_quantity = float(issued_quantities.get((int(work_order_id), int(bom_line.BOMLineID)), 0.0))
+                line_support = issued_quantity / required_per_unit
+                supported_quantity = line_support if supported_quantity is None else min(supported_quantity, line_support)
+            if supported_quantity is not None and supported_quantity > 0:
+                support_quantities[int(work_order_id)] = qty(supported_quantity)
+
+        state["processed_issue_line_count"] = len(issue_lines)
+
+    setattr(context, "_material_issue_support_state", state)
+    return {int(work_order_id): qty(float(amount)) for work_order_id, amount in state["support_quantities"].items()}
+
+
 def generate_month_manufacturing_activity(context: GenerationContext, year: int, month: int) -> None:
     candidates = work_orders_due_for_month(context, year, month)
     if candidates.empty:
@@ -1052,11 +1695,16 @@ def generate_month_manufacturing_activity(context: GenerationContext, year: int,
     month_start, month_end = month_bounds(year, month)
     sync_material_inventory_receipts(context, year, month)
     material_inventory = material_inventory_state(context)
-    fg_inventory = shadow_inventory_state(context)
     items = context.tables["Item"].set_index("ItemID").to_dict("index")
     bom_lines_lookup = bom_lines_by_bom(context)
     manufacturing_employee_ids = employee_ids_for_cost_center(context, "Manufacturing")
     completed_quantities = work_order_completed_quantity_map(context)
+    issued_support_quantities = work_order_issued_support_quantity_map(context)
+    existing_issue_counts = (
+        context.tables["MaterialIssue"].groupby("WorkOrderID").size().to_dict()
+        if not context.tables["MaterialIssue"].empty
+        else {}
+    )
     issue_headers: list[dict[str, Any]] = []
     issue_lines: list[dict[str, Any]] = []
     completion_headers: list[dict[str, Any]] = []
@@ -1072,91 +1720,119 @@ def generate_month_manufacturing_activity(context: GenerationContext, year: int,
         if bom_lines is None or bom_lines.empty:
             continue
 
-        release_date = pd.Timestamp(work_order.ReleasedDate)
-        work_order_age_months = (year - release_date.year) * 12 + (month - release_date.month)
-        if work_order_age_months >= 1:
-            target_completion_quantity = remaining_quantity
-        else:
-            if rng.random() <= WORK_ORDER_SAME_MONTH_COMPLETION_PROBABILITY:
-                target_completion_quantity = remaining_quantity
-            else:
-                target_completion_quantity = qty(remaining_quantity * rng.uniform(*WORK_ORDER_PARTIAL_COMPLETION_RANGE))
-
-        max_material_supported_quantity = remaining_quantity
-        for bom_line in bom_lines.itertuples(index=False):
-            required_per_unit = float(bom_line.QuantityPerUnit) * (1 + float(bom_line.ScrapFactorPct))
-            available_quantity = float(material_inventory.get((int(bom_line.ComponentItemID), int(work_order.WarehouseID)), 0.0))
-            supported_quantity = available_quantity / required_per_unit if required_per_unit > 0 else remaining_quantity
-            max_material_supported_quantity = min(max_material_supported_quantity, supported_quantity)
-
-        completion_quantity = qty(min(target_completion_quantity, max_material_supported_quantity))
-        if completion_quantity <= 0:
+        first_planned_start = None
+        if pd.notna(work_order.FirstScheduledDate):
+            first_planned_start = pd.Timestamp(work_order.FirstScheduledDate)
+        if first_planned_start is None or first_planned_start > month_end:
             update_work_order_row(context, work_order_id, "Released")
             continue
 
-        issue_event_count = choose_count(rng, ISSUE_EVENT_COUNT_PROBABILITIES)
-        issue_dates = [
-            random_date_between(rng, max(month_start, release_date), min(month_end, pd.Timestamp(work_order.DueDate)))
-            for _ in range(issue_event_count)
-        ]
-        issue_dates = sorted(issue_dates)
-        issue_quantities_by_line = {
-            int(bom_line.BOMLineID): split_quantities(
-                qty(
-                    completion_quantity
-                    * float(bom_line.QuantityPerUnit)
-                    * (1 + float(bom_line.ScrapFactorPct))
-                    * rng.uniform(*ISSUE_FACTOR_RANGE)
-                ),
-                issue_event_count,
-                rng,
-            )
-            for bom_line in bom_lines.itertuples(index=False)
-        }
-
-        issue_line_number_by_header: dict[int, int] = {}
-        for event_index, issue_date in enumerate(issue_dates):
-            material_issue_id = next_id(context, "MaterialIssue")
-            issue_headers.append({
-                "MaterialIssueID": material_issue_id,
-                "IssueNumber": format_doc_number("MI", year, material_issue_id),
-                "WorkOrderID": work_order_id,
-                "IssueDate": issue_date.strftime("%Y-%m-%d"),
-                "WarehouseID": int(work_order.WarehouseID),
-                "IssuedByEmployeeID": int(rng.choice(manufacturing_employee_ids)),
-                "Status": "Issued",
-            })
-            issue_line_number_by_header[material_issue_id] = 1
-
+        if int(existing_issue_counts.get(work_order_id, 0)) == 0:
+            issuable_quantity = remaining_quantity
             for bom_line in bom_lines.itertuples(index=False):
-                issue_quantity = qty(issue_quantities_by_line[int(bom_line.BOMLineID)][event_index])
-                if issue_quantity <= 0:
-                    continue
-                key = (int(bom_line.ComponentItemID), int(work_order.WarehouseID))
-                available_quantity = qty(material_inventory.get(key, 0.0))
-                issue_quantity = min(issue_quantity, available_quantity)
-                if issue_quantity <= 0:
-                    continue
-                material_inventory[key] = qty(available_quantity - issue_quantity)
-                component = items[int(bom_line.ComponentItemID)]
-                issue_lines.append({
-                    "MaterialIssueLineID": next_id(context, "MaterialIssueLine"),
-                    "MaterialIssueID": material_issue_id,
-                    "BOMLineID": int(bom_line.BOMLineID),
-                    "LineNumber": issue_line_number_by_header[material_issue_id],
-                    "ItemID": int(bom_line.ComponentItemID),
-                    "QuantityIssued": issue_quantity,
-                    "ExtendedStandardCost": money(issue_quantity * float(component["StandardCost"])),
-                })
-                issue_line_number_by_header[material_issue_id] += 1
+                required_per_unit = float(bom_line.QuantityPerUnit) * (1 + float(bom_line.ScrapFactorPct))
+                available_quantity = float(material_inventory.get((int(bom_line.ComponentItemID), int(work_order.WarehouseID)), 0.0))
+                supported_quantity = available_quantity / required_per_unit if required_per_unit > 0 else remaining_quantity
+                issuable_quantity = min(issuable_quantity, supported_quantity)
+            issuable_quantity = qty(issuable_quantity)
+
+            if issuable_quantity > 0:
+                issue_event_count = choose_count(rng, ISSUE_EVENT_COUNT_PROBABILITIES)
+                issue_window_start = max(month_start, first_planned_start)
+                issue_window_end = min(month_end, pd.Timestamp(work_order.FinalScheduledDate))
+                if issue_window_end < issue_window_start:
+                    issue_window_end = issue_window_start
+                issue_dates = sorted(
+                    random_date_between(rng, issue_window_start, issue_window_end)
+                    for _ in range(issue_event_count)
+                )
+                issue_quantities_by_line = {
+                    int(bom_line.BOMLineID): split_quantities(
+                        qty(
+                            issuable_quantity
+                            * float(bom_line.QuantityPerUnit)
+                            * (1 + float(bom_line.ScrapFactorPct))
+                            * rng.uniform(*ISSUE_FACTOR_RANGE)
+                        ),
+                        issue_event_count,
+                        rng,
+                    )
+                    for bom_line in bom_lines.itertuples(index=False)
+                }
+
+                issue_line_number_by_header: dict[int, int] = {}
+                for event_index, issue_date in enumerate(issue_dates):
+                    material_issue_id = next_id(context, "MaterialIssue")
+                    issue_headers.append({
+                        "MaterialIssueID": material_issue_id,
+                        "IssueNumber": format_doc_number("MI", year, material_issue_id),
+                        "WorkOrderID": work_order_id,
+                        "IssueDate": issue_date.strftime("%Y-%m-%d"),
+                        "WarehouseID": int(work_order.WarehouseID),
+                        "IssuedByEmployeeID": int(rng.choice(manufacturing_employee_ids)),
+                        "Status": "Issued",
+                    })
+                    issue_line_number_by_header[material_issue_id] = 1
+
+                    for bom_line in bom_lines.itertuples(index=False):
+                        issue_quantity = qty(issue_quantities_by_line[int(bom_line.BOMLineID)][event_index])
+                        if issue_quantity <= 0:
+                            continue
+                        key = (int(bom_line.ComponentItemID), int(work_order.WarehouseID))
+                        available_quantity = qty(material_inventory.get(key, 0.0))
+                        issue_quantity = min(issue_quantity, available_quantity)
+                        if issue_quantity <= 0:
+                            continue
+                        material_inventory[key] = qty(available_quantity - issue_quantity)
+                        component = items[int(bom_line.ComponentItemID)]
+                        issue_lines.append({
+                            "MaterialIssueLineID": next_id(context, "MaterialIssueLine"),
+                            "MaterialIssueID": material_issue_id,
+                            "BOMLineID": int(bom_line.BOMLineID),
+                            "LineNumber": issue_line_number_by_header[material_issue_id],
+                            "ItemID": int(bom_line.ComponentItemID),
+                            "QuantityIssued": issue_quantity,
+                            "ExtendedStandardCost": money(issue_quantity * float(component["StandardCost"])),
+                        })
+                        issue_line_number_by_header[material_issue_id] += 1
+
+                existing_issue_counts[work_order_id] = issue_event_count
+                issued_support_quantities[work_order_id] = issuable_quantity
+
+        if int(existing_issue_counts.get(work_order_id, 0)) == 0:
+            update_work_order_row(context, work_order_id, "Released")
+            continue
+
+        schedule_state = sync_work_order_operation_activity(context, work_order_id, month_end)
+        first_actual_start = schedule_state["first_actual_start"]
+        final_actual_end = schedule_state["final_actual_end"]
+        last_completed_end = schedule_state["last_completed_end"]
+
+        if first_actual_start is None or first_actual_start > month_end:
+            update_work_order_row(context, work_order_id, "Released")
+            continue
+
+        if final_actual_end is None or pd.Timestamp(final_actual_end) > month_end:
+            update_work_order_row(context, work_order_id, "In Progress")
+            continue
+
+        completion_quantity = qty(
+            min(
+                remaining_quantity,
+                max(float(issued_support_quantities.get(work_order_id, 0.0)) - float(completed_quantities.get(work_order_id, 0.0)), 0.0),
+            )
+        )
+        if completion_quantity <= 0:
+            update_work_order_row(context, work_order_id, "In Progress")
+            continue
 
         completion_event_count = choose_count(rng, COMPLETION_EVENT_COUNT_PROBABILITIES)
-        due_date = pd.Timestamp(work_order.DueDate)
-        completion_dates = [
-            random_date_between(rng, max(issue_dates[-1] if issue_dates else month_start, month_start), min(month_end, due_date if due_date <= month_end else month_end))
+        completion_window_start = max(month_start, pd.Timestamp(final_actual_end))
+        completion_window_end = max(completion_window_start, min(month_end, pd.Timestamp(final_actual_end) + pd.Timedelta(days=3)))
+        completion_dates = sorted(
+            random_date_between(rng, completion_window_start, completion_window_end)
             for _ in range(completion_event_count)
-        ]
-        completion_dates = sorted(completion_dates)
+        )
         completion_quantities = split_quantities(completion_quantity, completion_event_count, rng)
         item = items[int(work_order.ItemID)]
         standard_material_unit = standard_material_unit_cost(context, int(work_order.BOMID))
@@ -1197,19 +1873,9 @@ def generate_month_manufacturing_activity(context: GenerationContext, year: int,
                 "ExtendedStandardConversionCost": standard_conversion_cost,
                 "ExtendedStandardTotalCost": total_cost,
             })
-            fg_key = (int(work_order.ItemID), int(work_order.WarehouseID))
-            fg_inventory[fg_key] = qty(float(fg_inventory.get(fg_key, 0.0)) + completion_qty)
 
         completed_total = qty(float(completed_quantities.get(work_order_id, 0.0)) + sum(completion_quantities))
-        activity_start = issue_dates[0] if issue_dates else max(month_start, release_date)
         if completed_total >= qty(float(work_order.PlannedQuantity)):
-            set_work_order_operation_activity(
-                context,
-                work_order_id,
-                activity_start,
-                completion_dates[-1],
-                final_complete=True,
-            )
             update_work_order_row(
                 context,
                 work_order_id,
@@ -1217,13 +1883,6 @@ def generate_month_manufacturing_activity(context: GenerationContext, year: int,
                 completed_date=completion_dates[-1].strftime("%Y-%m-%d"),
             )
         else:
-            set_work_order_operation_activity(
-                context,
-                work_order_id,
-                activity_start,
-                completion_dates[-1],
-                final_complete=False,
-            )
             update_work_order_row(context, work_order_id, "In Progress")
 
     append_rows(context, "MaterialIssue", issue_headers)

@@ -6,7 +6,7 @@
 
 > **Implemented in current generator:** Starter analytics documentation, runnable SQLite query files, and Excel workflow guidance for financial accounting, managerial accounting, auditing, payroll, and manufacturing-related analysis.
 
-> **Planned future extension:** Capacity planning, richer labor-scheduling analysis, and time-clock detail.
+> **Planned future extension:** Time-clock detail, employee-shift analysis, and richer labor-scheduling analysis.
 
 ## What This Starter Layer Includes
 

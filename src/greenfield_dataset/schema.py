@@ -137,7 +137,11 @@ TABLE_COLUMNS = {
     ],
     "WorkCenter": [
         "WorkCenterID", "WorkCenterCode", "WorkCenterName", "Department", "WarehouseID",
-        "ManagerEmployeeID", "IsActive",
+        "ManagerEmployeeID", "NominalDailyCapacityHours", "IsActive",
+    ],
+    "WorkCenterCalendar": [
+        "WorkCenterCalendarID", "WorkCenterID", "CalendarDate", "IsWorkingDay", "AvailableHours",
+        "ExceptionReason",
     ],
     "Routing": [
         "RoutingID", "ParentItemID", "VersionNumber", "EffectiveStartDate", "EffectiveEndDate",
@@ -154,7 +158,10 @@ TABLE_COLUMNS = {
     ],
     "WorkOrderOperation": [
         "WorkOrderOperationID", "WorkOrderID", "RoutingOperationID", "OperationSequence", "WorkCenterID",
-        "PlannedQuantity", "PlannedStartDate", "PlannedEndDate", "ActualStartDate", "ActualEndDate", "Status",
+        "PlannedQuantity", "PlannedLoadHours", "PlannedStartDate", "PlannedEndDate", "ActualStartDate", "ActualEndDate", "Status",
+    ],
+    "WorkOrderOperationSchedule": [
+        "WorkOrderOperationScheduleID", "WorkOrderOperationID", "WorkCenterID", "ScheduleDate", "ScheduledHours",
     ],
     "MaterialIssue": [
         "MaterialIssueID", "IssueNumber", "WorkOrderID", "IssueDate", "WarehouseID",

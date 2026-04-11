@@ -15,44 +15,44 @@ The current generator already delivers:
 - event-based postings into `GLEntry`
 - validations, anomaly injection, starter analytics assets, and exports
 
-## Recently Delivered: Phase 14 - Routing and Work Center Foundation
+## Recently Delivered: Phase 15 - Capacity and Scheduling
 
-Phase 14 delivered:
+Phase 15 delivered:
 
-- work centers and active routings for manufactured items
-- routing operations with standard setup, run, and queue assumptions
-- work-order operation rows created at release time
-- operation-level direct-labor assignment through `LaborTimeEntry.WorkOrderOperationID`
-- routing-aware manufacturing validation and starter analytics
-- updated manufacturing and payroll process documentation
+- `WorkCenter.NominalDailyCapacityHours`
+- `WorkCenterCalendar` rows for every work center and calendar day in range
+- `WorkOrderOperation.PlannedLoadHours`
+- `WorkOrderOperationSchedule` rows with capacity-aware daily load allocation
+- schedule-aware manufacturing execution, validation, anomalies, and starter analytics
+- updated manufacturing, payroll, analytics, and technical documentation
 
-This phase turned the manufacturing model from a single-stage flow into a routing-aware foundation without changing standard-cost valuation.
+This phase turned the routing-aware manufacturing model into a capacity-aware scheduling foundation without changing standard-cost valuation.
 
-## Next Phase: Capacity and Scheduling
+## Next Phase: Time Clocks and Shift Labor
 
 ### Why this is next
 
-The dataset now has routings, work centers, operation-level labor assignment, and standard-cost manufacturing. The next high-value gap is planned load versus available capacity.
+The dataset now has routings, work centers, work-center calendars, operation schedules, operation-level labor assignment, and standard-cost manufacturing. The next high-value gap is employee-level time and attendance detail.
 
-The next high-value addition is capacity and schedule logic that can support:
+The next high-value addition is time-clock and shift logic that can support:
 
-- work-center capacity calendars
-- planned load versus available hours
-- bottleneck and backlog analytics
-- schedule-delay analysis beyond simple queue assumptions
+- shift-level attendance
+- clock-in and clock-out detail
+- richer overtime-timing review
+- payroll-to-production timing controls
 
 ### Planned scope
 
 The next phase should add:
 
-- work-center capacity calendars
-- planned load versus capacity measures
-- backlog and bottleneck analytics
-- richer schedule-delay analytics
-- capacity-oriented controls and anomalies
+- employee shift records
+- time-clock transactions
+- attendance and overtime timing analytics
+- richer payroll-control and labor-timing anomalies
+- tighter payroll-to-production linkage analysis
 
 ## Recommended Sequence
 
-1. Phase 15: Capacity and Scheduling
-2. Phase 16: Time Clocks and Shift Labor
+1. Phase 16: Time Clocks and Shift Labor
+2. Additional analytics packs built on top of the time-clock layer
 3. Additional analytics packs built on top of those new operational layers

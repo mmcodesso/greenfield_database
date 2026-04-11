@@ -6,7 +6,7 @@
 
 > **Implemented in current generator:** Config loading, shared generation context, schema registry, master data, BOMs, routings, work centers, budgets, monthly O2C/P2P/manufacturing/payroll generation, recurring manual journals, year-end close, posting, validations, anomaly injection, SQLite/Excel export, JSON reporting, and generation logging.
 
-> **Planned future extension:** Capacity planning, scheduling, and richer labor-timing detail.
+> **Planned future extension:** Time-clock detail, employee-shift scheduling, and richer labor-timing detail.
 
 ## Entrypoints
 
@@ -161,6 +161,6 @@ The current generator exports:
 
 ## Next Extension Point
 
-The next clean extension point is capacity and scheduling on top of the routing foundation.
+The next clean extension point is time clocks and shift labor on top of the routing and capacity foundation.
 
-That work should extend the current work-center, routing, payroll, and manufacturing model without rewriting the O2C, P2P, or payroll subledger layers.
+That work should extend the current work-center, routing, capacity, payroll, and manufacturing model without rewriting the O2C, P2P, or payroll subledger layers.

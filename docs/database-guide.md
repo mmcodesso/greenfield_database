@@ -6,14 +6,14 @@
 
 ## How the Database Is Organized
 
-The current implementation contains **49 tables** grouped into seven areas:
+The current implementation contains **51 tables** grouped into seven areas:
 
 | Area | Tables |
 |---|---|
 | Accounting core | `Account`, `JournalEntry`, `GLEntry` |
 | O2C | `Customer`, `SalesOrder`, `SalesOrderLine`, `Shipment`, `ShipmentLine`, `SalesInvoice`, `SalesInvoiceLine`, `CashReceipt`, `CashReceiptApplication`, `SalesReturn`, `SalesReturnLine`, `CreditMemo`, `CreditMemoLine`, `CustomerRefund` |
 | P2P | `Supplier`, `PurchaseRequisition`, `PurchaseOrder`, `PurchaseOrderLine`, `GoodsReceipt`, `GoodsReceiptLine`, `PurchaseInvoice`, `PurchaseInvoiceLine`, `DisbursementPayment` |
-| Manufacturing | `BillOfMaterial`, `BillOfMaterialLine`, `WorkCenter`, `Routing`, `RoutingOperation`, `WorkOrder`, `WorkOrderOperation`, `MaterialIssue`, `MaterialIssueLine`, `ProductionCompletion`, `ProductionCompletionLine`, `WorkOrderClose` |
+| Manufacturing | `BillOfMaterial`, `BillOfMaterialLine`, `WorkCenter`, `WorkCenterCalendar`, `Routing`, `RoutingOperation`, `WorkOrder`, `WorkOrderOperation`, `WorkOrderOperationSchedule`, `MaterialIssue`, `MaterialIssueLine`, `ProductionCompletion`, `ProductionCompletionLine`, `WorkOrderClose` |
 | Payroll | `PayrollPeriod`, `LaborTimeEntry`, `PayrollRegister`, `PayrollRegisterLine`, `PayrollPayment`, `PayrollLiabilityRemittance` |
 | Master data | `Item`, `Warehouse`, `Employee` |
 | Organizational planning | `CostCenter`, `Budget` |
@@ -57,6 +57,7 @@ Many business documents use a header table and a line table.
 | `BOMID` | Connect manufactured items to their BOM headers |
 | `BOMLineID` | Connect component issues back to BOM detail |
 | `WorkOrderID` | Connect work-order activity across issue, completion, close, and direct labor |
+| `WorkOrderOperationID` | Connect operation-level schedules and direct labor to one work-order operation |
 | `PayrollPeriodID` | Connect labor time, payroll registers, and liability remittances to a pay period |
 | `PayrollRegisterID` | Connect payroll headers to line detail and payroll payments |
 | `ItemID` | Analyze quantities, prices, standard costs, supply mode, and account mappings |
@@ -87,7 +88,7 @@ There is also a direct service-settlement branch:
 
 ### Manufacturing path
 
-`Item -> BillOfMaterial -> BillOfMaterialLine -> WorkOrder -> MaterialIssue -> MaterialIssueLine -> ProductionCompletion -> ProductionCompletionLine -> WorkOrderClose`
+`Item -> BillOfMaterial -> BillOfMaterialLine -> WorkOrder -> WorkOrderOperation -> WorkOrderOperationSchedule -> MaterialIssue -> MaterialIssueLine -> ProductionCompletion -> ProductionCompletionLine -> WorkOrderClose`
 
 Manufacturing also touches P2P, payroll, and O2C:
 

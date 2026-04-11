@@ -6,7 +6,7 @@
 
 > **Implemented in current generator:** Five years of O2C, P2P, manufacturing, and payroll data, opening balances, recurring manual journals, year-end close, budgets, ledger postings, anomalies, and starter analytics materials for financial, managerial, and audit analytics.
 
-> **Planned future extension:** Capacity planning and richer labor-planning detail.
+> **Planned future extension:** Time clocks, shift planning, and richer labor-planning detail.
 
 ## How to Position the Dataset
 
@@ -176,7 +176,6 @@ Use the starter layer for:
 
 The current dataset does **not** yet include:
 
-- work-center capacity calendars or formal scheduling
 - time clocks or shift scheduling
 - labor planning beyond the payroll-period model
 

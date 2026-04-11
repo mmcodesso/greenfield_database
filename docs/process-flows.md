@@ -6,7 +6,7 @@
 
 > **Implemented in current generator:** O2C, returns and credits, P2P, manufacturing, payroll, recurring journals, year-end close, and event-based posting into `GLEntry`.
 
-> **Planned future extension:** Capacity planning, richer labor scheduling, and deeper process detail.
+> **Planned future extension:** Time-clock detail, employee-shift scheduling, and deeper process detail.
 
 ## How to Use This Section
 

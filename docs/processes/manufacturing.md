@@ -4,9 +4,9 @@
 **Purpose:** Explain the manufacturing flow in plain language and connect it to the database tables and accounting entries.  
 **What you will learn:** How Greenfield plans production, issues materials, captures labor, completes finished goods, closes work orders, and links manufacturing to purchasing, payroll, inventory, and the ledger.
 
-> **Implemented in current generator:** Single-level BOMs, work centers, active routings, work-order operations, manufacturing work orders, material issues, production completions, work-order close, payroll-driven direct-labor integration, factory-overhead journals, manufacturing labor / overhead reclasses, and manufacturing variance accounting.
+> **Implemented in current generator:** Single-level BOMs, work centers, work-center capacity calendars, active routings, work-order operations, operation schedules, manufacturing work orders, material issues, production completions, work-order close, payroll-driven direct-labor integration, factory-overhead journals, manufacturing labor / overhead reclasses, and manufacturing variance accounting.
 
-> **Planned future extension:** Capacity calendars, time clocks, shift detail, and richer production scheduling.
+> **Planned future extension:** Time clocks, shift detail, capacity calendars by shift, and richer production scheduling detail beyond the current work-center schedule foundation.
 
 ## Business Storyline
 
@@ -24,6 +24,7 @@ flowchart LR
     GR[Goods receipts]
     BOM[Bill of material]
     RT[Routing and work centers]
+    CAL[Work-center calendar and operation schedule]
     WO[Work order]
     WOO[Work-order operations]
     MI[Material issue]
@@ -36,8 +37,10 @@ flowchart LR
     SO --> WO
     BOM --> WO
     RT --> WO
+    RT --> CAL
     WO --> PR
     WO --> WOO
+    CAL --> WOO
     PR --> PO --> GR --> MI
     WOO --> MI
     WOO --> LT
@@ -82,7 +85,7 @@ Main tables:
 - `Routing`
 - `RoutingOperation`
 
-### 3. Release a work order
+### 3. Release a work order and schedule it
 
 Work orders are created for manufactured items when projected shortage exists after considering:
 
@@ -95,11 +98,13 @@ Main table:
 
 - `WorkOrder`
 
-At release time the generator also creates work-order operation rows for the routing sequence that item uses.
+At release time the generator also creates work-order operation rows for the routing sequence that item uses. Phase 15 adds a capacity-aware daily schedule for each operation, based on the assigned work center's calendar and available hours.
 
 Main linked table:
 
 - `WorkOrderOperation`
+- `WorkOrderOperationSchedule`
+- `WorkCenterCalendar`
 
 ### 4. Replenish components through P2P
 
@@ -113,7 +118,7 @@ Main linked tables:
 
 ### 5. Issue components to production
 
-When work begins, raw materials and packaging are issued from warehouse inventory into WIP.
+When the first scheduled operation window begins, raw materials and packaging are issued from warehouse inventory into WIP. Issues are not dated before the work order's first scheduled operation date.
 
 Main tables:
 
@@ -138,7 +143,7 @@ Main linked tables:
 
 ### 7. Complete finished goods
 
-Completed production moves finished goods into inventory at standard material plus standard direct labor plus standard variable and fixed overhead.
+Completed production moves finished goods into inventory at standard material plus standard direct labor plus standard variable and fixed overhead. Completion dates are kept on or after the final operation's actual end date.
 
 Main tables:
 
@@ -175,10 +180,12 @@ Once finished goods are in inventory, normal O2C shipments can consume them.
 | `BillOfMaterial` | BOM header for manufactured items |
 | `BillOfMaterialLine` | BOM component detail |
 | `WorkCenter` | Manufacturing resource group where an operation is performed |
+| `WorkCenterCalendar` | Daily work-center availability, including weekends, holidays, maintenance, and reduced-capacity days |
 | `Routing` | Active operation plan for a manufactured item |
 | `RoutingOperation` | Ordered routing step with standard setup, run, and queue assumptions |
 | `WorkOrder` | Production order for a manufactured item |
 | `WorkOrderOperation` | Operation-level execution plan and actual start/end progression for a work order |
+| `WorkOrderOperationSchedule` | Daily scheduled hours for each work-order operation |
 | `MaterialIssue` | Header for component issue to production |
 | `MaterialIssueLine` | Component issue detail |
 | `ProductionCompletion` | Header for finished-goods completion |
@@ -205,6 +212,8 @@ Manufacturing creates both operational and journal-driven accounting:
 - Which operations and work centers are used for each manufactured item?
 - How much direct labor is tied to each work order and operation?
 - Which work centers look busiest by month?
+- Which work centers are capacity constrained or fully booked?
+- Which work orders spilled into later months because schedule capacity was tight?
 - Which work orders stayed open at period end?
 - How much material was issued compared with standard requirement?
 - How much manufacturing variance was posted by month or item group?
@@ -215,11 +224,11 @@ Manufacturing creates both operational and journal-driven accounting:
 - The current model is intentionally a foundation:
   - single-level BOMs only
   - no multi-level BOMs or subassemblies
-  - no capacity calendars or formal finite scheduling
   - no time-clock or shift-attendance layer
+- Phase 15 adds work-center-level capacity calendars and daily operation schedules.
 - Manufacturing demand is linked to sales backlog and finished-goods inventory logic.
 - Raw-material replenishment uses the existing P2P flow instead of a separate procurement subsystem.
-- Manufacturing remains standard-cost based even though payroll now provides actual labor detail and direct labor is assigned at the operation level.
+- Manufacturing remains standard-cost based even though payroll now provides actual labor detail, direct labor is assigned at the operation level, and operations are now scheduled against finite daily work-center hours.
 
 ## Where to Go Next
 

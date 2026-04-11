@@ -4,9 +4,9 @@
 **Purpose:** Show how to work with budgets, cost centers, product mix, inventory movement, purchasing activity, BOMs, work orders, labor, and manufacturing variance.  
 **What you will learn:** Which tables to use, how to join them, and which starter queries answer the most useful managerial questions.
 
-> **Implemented in current generator:** Budget rows, cost centers, detailed O2C and P2P volume, item master data, warehouse movement, BOMs, routings, work centers, work orders, work-order operations, labor time, production completions, payroll-driven direct labor, and manufacturing variance.
+> **Implemented in current generator:** Budget rows, cost centers, detailed O2C and P2P volume, item master data, warehouse movement, BOMs, routings, work centers, work-center calendars, work orders, work-order operations, work-order operation schedules, labor time, production completions, payroll-driven direct labor, and manufacturing variance.
 
-> **Planned future extension:** Capacity calendars, richer scheduling, and time-clock analysis.
+> **Planned future extension:** Time-clock analysis, employee-shift capacity, and richer scheduling detail beyond the current work-center-hour model.
 
 ## Relevant Tables
 
@@ -17,9 +17,9 @@
 | Inventory movement | `GoodsReceiptLine`, `ShipmentLine`, `SalesReturnLine`, `ProductionCompletionLine`, `Warehouse`, `Item` |
 | Purchasing behavior | `PurchaseOrder`, `PurchaseOrderLine`, `Supplier`, `Item` |
 | BOM and standard cost | `BillOfMaterial`, `BillOfMaterialLine`, `Item` |
-| Routing and work-center planning | `Routing`, `RoutingOperation`, `WorkCenter`, `Item` |
+| Routing and work-center planning | `Routing`, `RoutingOperation`, `WorkCenter`, `WorkCenterCalendar`, `Item` |
 | Work-order throughput | `WorkOrder`, `ProductionCompletion`, `WorkOrderClose` |
-| Operation throughput and labor | `WorkOrderOperation`, `RoutingOperation`, `WorkCenter`, `LaborTimeEntry`, `WorkOrder` |
+| Operation throughput and labor | `WorkOrderOperation`, `WorkOrderOperationSchedule`, `RoutingOperation`, `WorkCenter`, `WorkCenterCalendar`, `LaborTimeEntry`, `WorkOrder` |
 | Material usage and scrap | `WorkOrder`, `BillOfMaterialLine`, `MaterialIssueLine`, `ProductionCompletionLine` |
 | Direct labor and payroll cost | `LaborTimeEntry`, `PayrollRegister`, `Employee`, `WorkOrder`, `Item` |
 | Manufacturing variance | `WorkOrderClose`, `WorkOrder`, `Item`, `Warehouse` |
@@ -46,13 +46,18 @@
 | Labor efficiency and rate variance | [16_labor_efficiency_and_rate_variance.sql](../../queries/managerial/16_labor_efficiency_and_rate_variance.sql) |
 | Routing master review | [17_routing_master_review.sql](../../queries/managerial/17_routing_master_review.sql) |
 | Work-center activity and operation labor | [18_work_center_activity_and_operation_hours.sql](../../queries/managerial/18_work_center_activity_and_operation_hours.sql) |
+| Daily load vs capacity | [19_daily_load_vs_capacity.sql](../../queries/managerial/19_daily_load_vs_capacity.sql) |
+| Monthly work-center utilization | [20_monthly_work_center_utilization.sql](../../queries/managerial/20_monthly_work_center_utilization.sql) |
+| Operation delay and bottleneck review | [21_operation_delay_and_bottleneck_review.sql](../../queries/managerial/21_operation_delay_and_bottleneck_review.sql) |
+| Backlog aging by work center | [22_backlog_aging_by_work_center.sql](../../queries/managerial/22_backlog_aging_by_work_center.sql) |
 
 ## Interpretation Notes
 
 - The item master now mixes purchased and manufactured finished goods.
 - `StandardCost` on manufactured items includes BOM-based material cost plus standard direct labor, variable overhead, and fixed overhead.
 - Routing tables explain how manufactured items move through operations and which work centers perform the work.
+- Work-center calendars and operation schedules now support daily load-versus-capacity and backlog analysis.
 - `LaborTimeEntry.WorkOrderOperationID` supports operation-level labor analysis without switching inventory valuation to actual cost.
 - Contribution margin excludes fixed overhead. Absorption margin includes it.
 - Manufacturing variance analysis belongs with `WorkOrderClose`, not only with `GLEntry`.
-- The current model is still a foundation: routing and work-center structure is implemented, but there is still no capacity calendar, time-clock layer, or multi-level BOM.
+- The current model is still a foundation: work-center-level capacity is implemented, but there is still no time-clock layer, employee-shift calendar, or multi-level BOM.

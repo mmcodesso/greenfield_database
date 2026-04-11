@@ -6,9 +6,9 @@
 
 The canonical schema lives in `src/greenfield_dataset/schema.py` as `TABLE_COLUMNS`.
 
-> **Implemented in current generator:** 49 tables across accounting, O2C, P2P, manufacturing, payroll, master data, and organizational planning.
+> **Implemented in current generator:** 51 tables across accounting, O2C, P2P, manufacturing, payroll, master data, and organizational planning.
 
-> **Planned future extension:** Capacity calendars, richer labor scheduling, and deeper production detail beyond the current routing foundation.
+> **Planned future extension:** Time clocks, employee-shift planning, and deeper production detail beyond the current routing-and-capacity foundation.
 
 ## Table Groups
 
@@ -17,11 +17,11 @@ The canonical schema lives in `src/greenfield_dataset/schema.py` as `TABLE_COLUM
 | Accounting core | `Account`, `JournalEntry`, `GLEntry` | 3 |
 | O2C | `Customer`, `SalesOrder`, `SalesOrderLine`, `Shipment`, `ShipmentLine`, `SalesInvoice`, `SalesInvoiceLine`, `CashReceipt`, `CashReceiptApplication`, `SalesReturn`, `SalesReturnLine`, `CreditMemo`, `CreditMemoLine`, `CustomerRefund` | 14 |
 | P2P | `Supplier`, `PurchaseRequisition`, `PurchaseOrder`, `PurchaseOrderLine`, `GoodsReceipt`, `GoodsReceiptLine`, `PurchaseInvoice`, `PurchaseInvoiceLine`, `DisbursementPayment` | 9 |
-| Manufacturing | `BillOfMaterial`, `BillOfMaterialLine`, `WorkCenter`, `Routing`, `RoutingOperation`, `WorkOrder`, `WorkOrderOperation`, `MaterialIssue`, `MaterialIssueLine`, `ProductionCompletion`, `ProductionCompletionLine`, `WorkOrderClose` | 12 |
+| Manufacturing | `BillOfMaterial`, `BillOfMaterialLine`, `WorkCenter`, `WorkCenterCalendar`, `Routing`, `RoutingOperation`, `WorkOrder`, `WorkOrderOperation`, `WorkOrderOperationSchedule`, `MaterialIssue`, `MaterialIssueLine`, `ProductionCompletion`, `ProductionCompletionLine`, `WorkOrderClose` | 14 |
 | Payroll | `PayrollPeriod`, `LaborTimeEntry`, `PayrollRegister`, `PayrollRegisterLine`, `PayrollPayment`, `PayrollLiabilityRemittance` | 6 |
 | Master data | `Item`, `Warehouse`, `Employee` | 3 |
 | Organizational planning | `CostCenter`, `Budget` | 2 |
-| Total |  | 49 |
+| Total |  | 51 |
 
 ## Design Patterns That Matter
 
@@ -78,11 +78,13 @@ The canonical schema lives in `src/greenfield_dataset/schema.py` as `TABLE_COLUM
 |---|---|---|
 | `BillOfMaterial` | BOM header for manufactured items | `ParentItemID`, `VersionNumber`, `Status`, `StandardBatchQuantity` |
 | `BillOfMaterialLine` | BOM component detail | `BOMID`, `ComponentItemID`, `LineNumber`, `QuantityPerUnit`, `ScrapFactorPct` |
-| `WorkCenter` | Manufacturing resource grouping | `WorkCenterCode`, `WorkCenterName`, `Department`, `WarehouseID`, `ManagerEmployeeID`, `IsActive` |
+| `WorkCenter` | Manufacturing resource grouping | `WorkCenterCode`, `WorkCenterName`, `Department`, `WarehouseID`, `ManagerEmployeeID`, `NominalDailyCapacityHours`, `IsActive` |
+| `WorkCenterCalendar` | Daily work-center capacity calendar | `WorkCenterID`, `CalendarDate`, `IsWorkingDay`, `AvailableHours`, `ExceptionReason` |
 | `Routing` | Routing header for manufactured items | `ParentItemID`, `VersionNumber`, `EffectiveStartDate`, `EffectiveEndDate`, `Status` |
 | `RoutingOperation` | Ordered routing step | `RoutingID`, `OperationSequence`, `OperationCode`, `OperationName`, `WorkCenterID`, `StandardSetupHours`, `StandardRunHoursPerUnit`, `StandardQueueDays` |
 | `WorkOrder` | Production order header | `ItemID`, `BOMID`, `RoutingID`, `WarehouseID`, `PlannedQuantity`, `ReleasedDate`, `DueDate`, `CompletedDate`, `ClosedDate`, `Status`, `CostCenterID` |
-| `WorkOrderOperation` | Operation-level work-order execution record | `WorkOrderID`, `RoutingOperationID`, `OperationSequence`, `WorkCenterID`, `PlannedQuantity`, `PlannedStartDate`, `PlannedEndDate`, `ActualStartDate`, `ActualEndDate`, `Status` |
+| `WorkOrderOperation` | Operation-level work-order execution record | `WorkOrderID`, `RoutingOperationID`, `OperationSequence`, `WorkCenterID`, `PlannedQuantity`, `PlannedLoadHours`, `PlannedStartDate`, `PlannedEndDate`, `ActualStartDate`, `ActualEndDate`, `Status` |
+| `WorkOrderOperationSchedule` | Daily scheduled hours for one work-order operation | `WorkOrderOperationID`, `WorkCenterID`, `ScheduleDate`, `ScheduledHours` |
 | `MaterialIssue` | Material issue header | `WorkOrderID`, `IssueDate`, `WarehouseID`, `IssuedByEmployeeID`, `Status` |
 | `MaterialIssueLine` | Material issue detail | `MaterialIssueID`, `BOMLineID`, `ItemID`, `QuantityIssued`, `ExtendedStandardCost` |
 | `ProductionCompletion` | Production completion header | `WorkOrderID`, `CompletionDate`, `WarehouseID`, `ReceivedByEmployeeID`, `Status` |
@@ -132,6 +134,7 @@ The most important lineage fields in the implementation are:
 - `WorkOrder.BOMID`
 - `WorkOrder.RoutingID`
 - `WorkOrderOperation.RoutingOperationID`
+- `WorkOrderOperationSchedule.WorkOrderOperationID`
 - `MaterialIssueLine.BOMLineID`
 - `ProductionCompletion.WorkOrderID`
 - `WorkOrderClose.WorkOrderID`
@@ -154,6 +157,7 @@ The most important lineage fields in the implementation are:
 - `PurchaseInvoiceLine.AccrualJournalEntryID` links direct service invoices back to month-end accrual journals.
 - `GoodsReceiptLine.ExtendedStandardCost` stores the receipt posting basis used for inventory and GRNI.
 - The manufacturing foundation uses single-level BOMs plus one active routing per manufactured item.
-- `WorkOrderOperation` is the operation-level planning and actual-flow bridge between routing design and payroll labor detail.
+- `WorkCenterCalendar` and `WorkOrderOperationSchedule` add daily work-center capacity and scheduled-load detail.
+- `WorkOrderOperation` is the operation-level planning and actual-flow bridge between routing design, scheduling, and payroll labor detail.
 - Payroll is operationally modeled, but manufacturing still uses standard-cost valuation rather than full actual-cost inventory.
 - For exact column order and names, use `TABLE_COLUMNS` in `src/greenfield_dataset/schema.py`.

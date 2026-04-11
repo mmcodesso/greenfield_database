@@ -4,9 +4,9 @@
 **Purpose:** Explain the payroll cycle, how labor time connects to manufacturing, and how payroll liabilities clear.  
 **What you will learn:** How pay periods, labor time, payroll registers, payments, remittances, and manufacturing labor reclasses work together.
 
-> **Implemented in current generator:** Biweekly payroll periods, labor-time capture, payroll registers, payroll payments, liability remittances, operation-level direct-labor assignment, and direct-labor / manufacturing-overhead integration.
+> **Implemented in current generator:** Biweekly payroll periods, labor-time capture, payroll registers, payroll payments, liability remittances, operation-level direct-labor assignment, schedule-aware manufacturing labor timing, and direct-labor / manufacturing-overhead integration.
 
-> **Planned future extension:** Time clocks, shift attendance, and richer labor-scheduling detail.
+> **Planned future extension:** Time clocks, shift attendance, and richer labor-scheduling detail below the current work-center schedule level.
 
 ## Business Storyline
 
@@ -82,7 +82,7 @@ Main table:
 
 ### 2. Capture labor time
 
-Hourly manufacturing workers create labor-time records. Direct manufacturing time is tied to both `WorkOrderID` and `WorkOrderOperationID`. Indirect manufacturing and nonmanufacturing time remain untied to production orders.
+Hourly manufacturing workers create labor-time records. Direct manufacturing time is tied to both `WorkOrderID` and `WorkOrderOperationID`. In Phase 15 the manufacturing side also schedules those operations against work-center calendars, so payroll-linked labor can now be compared to scheduled operation windows. Indirect manufacturing and nonmanufacturing time remain untied to production orders.
 
 Main table:
 
@@ -173,6 +173,8 @@ This is how payroll integrates with product cost for manufactured items.
 |---|---|
 | `PayrollPeriod` | Biweekly payroll calendar |
 | `LaborTimeEntry` | Operational labor-time detail, including operation-linked direct labor |
+| `WorkCenterCalendar` | Capacity calendar used to stage production timing before labor is consumed |
+| `WorkOrderOperationSchedule` | Daily operation schedule that payroll-linked direct labor can be compared against analytically |
 | `WorkOrderOperation` | Production operation record used for routing-aware labor analysis |
 | `PayrollRegister` | Employee payroll header |
 | `PayrollRegisterLine` | Earnings, withholding, and burden detail |
@@ -207,6 +209,7 @@ Payroll creates several accounting events:
 - The clean build no longer uses payroll accrual or payroll settlement journals.
 - Direct labor affects manufacturing through reclass journals and work-order close, not through a separate job-cost ledger.
 - Direct labor is now assigned at the routing-operation level for manufactured work orders.
+- Manufacturing operations are now scheduled against daily work-center capacity, which gives payroll and labor analytics a schedule baseline.
 - The manufacturing model remains standard-cost based even though payroll provides actual labor detail.
 
 ## Where to Go Next

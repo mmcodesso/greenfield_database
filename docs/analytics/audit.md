@@ -15,7 +15,7 @@
 | O2C completeness | O2C header and line tables plus `CashReceiptApplication` |
 | P2P completeness | P2P header and line tables |
 | Approvals and SOD | `PurchaseRequisition`, `PurchaseOrder`, `PurchaseInvoice`, `JournalEntry`, `CreditMemo`, `CustomerRefund`, `Employee`, `PayrollRegister` |
-| Manufacturing controls | `Item`, `BillOfMaterial`, `BillOfMaterialLine`, `Routing`, `RoutingOperation`, `WorkCenter`, `WorkOrder`, `WorkOrderOperation`, `MaterialIssueLine`, `ProductionCompletionLine`, `WorkOrderClose` |
+| Manufacturing controls | `Item`, `BillOfMaterial`, `BillOfMaterialLine`, `Routing`, `RoutingOperation`, `WorkCenter`, `WorkCenterCalendar`, `WorkOrder`, `WorkOrderOperation`, `WorkOrderOperationSchedule`, `MaterialIssueLine`, `ProductionCompletionLine`, `WorkOrderClose` |
 | Payroll controls | `PayrollPeriod`, `LaborTimeEntry`, `PayrollRegister`, `PayrollRegisterLine`, `PayrollPayment`, `PayrollLiabilityRemittance`, `Employee` |
 | Cut-off and timing | operational header and line tables plus date fields |
 | Duplicate and anomaly review | `DisbursementPayment`, `PurchaseInvoice`, `JournalEntry`, `SalesInvoice`, `CreditMemo`, `PayrollPayment`, Excel `AnomalyLog` |
@@ -39,12 +39,15 @@
 | Over and under accrual review | [13_over_under_accrual_review.sql](../../queries/audit/13_over_under_accrual_review.sql) |
 | Missing routing or operation-link review | [14_missing_routing_or_operation_link_review.sql](../../queries/audit/14_missing_routing_or_operation_link_review.sql) |
 | Operation sequence and final-completion review | [15_operation_sequence_and_final_completion_review.sql](../../queries/audit/15_operation_sequence_and_final_completion_review.sql) |
+| Schedule on non-working day review | [16_schedule_on_nonworking_day_review.sql](../../queries/audit/16_schedule_on_nonworking_day_review.sql) |
+| Over-capacity day review | [17_over_capacity_day_review.sql](../../queries/audit/17_over_capacity_day_review.sql) |
+| Completion before scheduled operation end review | [18_completion_before_scheduled_operation_end.sql](../../queries/audit/18_completion_before_scheduled_operation_end.sql) |
 
 ## Interpretation Notes
 
 - A clean build with `anomaly_mode: none` may return few or no exceptions from anomaly-oriented queries.
 - The default `standard` build is better for controls teaching because anomalies are present while the GL remains balanced.
 - O2C completeness should be checked at the line and application level.
-- Manufacturing controls should now start from BOM and routing integrity before moving to work-order close timing and ledger balances.
+- Manufacturing controls should now start from BOM, routing, and schedule integrity before moving to work-order close timing and ledger balances.
 - Payroll-control review should distinguish between normal processing lag and true exceptions such as missing payment, time after close, or hourly pay without time.
 - Accrued-expense review should distinguish receipt-matched inventory AP from direct service invoices that intentionally clear prior accruals.

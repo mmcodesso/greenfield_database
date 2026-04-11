@@ -6,7 +6,7 @@
 
 > **Implemented in current generator:** A hybrid manufacturer-distributor with O2C, P2P, manufacturing, payroll, recurring journals, and year-end close.
 
-> **Planned future extension:** Routings, capacity planning, time clocks, and deeper production-planning detail.
+> **Planned future extension:** Time clocks, richer shift planning, and deeper production-planning detail beyond the current routing-and-capacity foundation.
 
 ## The Company in Plain Language
 
@@ -99,7 +99,6 @@ The current dataset is a teaching model, not a full ERP simulation.
 The current implementation does **not** include:
 
 - time clocks or shift scheduling
-- capacity planning
 - subassemblies or multi-level BOMs
 - detailed labor planning beyond the payroll-period model
 

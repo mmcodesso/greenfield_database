@@ -474,6 +474,124 @@ def inject_related_party_address_matches(context: GenerationContext, count_per_y
         )
 
 
+def inject_scheduled_on_nonworking_day(context: GenerationContext, count_per_year: int) -> None:
+    schedules = context.tables["WorkOrderOperationSchedule"]
+    calendars = context.tables["WorkCenterCalendar"]
+    if schedules.empty or calendars.empty or count_per_year <= 0:
+        return
+
+    for year in fiscal_years(context):
+        year_schedules = schedules[pd.to_datetime(schedules["ScheduleDate"]).dt.year.eq(year)].copy()
+        used_ids = used_primary_keys(context, "WorkOrderOperationSchedule", "scheduled_on_nonworking_day")
+        if used_ids:
+            year_schedules = year_schedules[~year_schedules["WorkOrderOperationScheduleID"].astype(int).isin(used_ids)]
+        for row in year_schedules.head(count_per_year).itertuples(index=False):
+            nonworking = calendars[
+                calendars["WorkCenterID"].astype(int).eq(int(row.WorkCenterID))
+                & pd.to_datetime(calendars["CalendarDate"]).dt.year.eq(year)
+                & calendars["IsWorkingDay"].astype(int).eq(0)
+            ].sort_values("CalendarDate")
+            if nonworking.empty:
+                continue
+            target_date = str(nonworking.iloc[0]["CalendarDate"])
+            mask = context.tables["WorkOrderOperationSchedule"]["WorkOrderOperationScheduleID"].astype(int).eq(
+                int(row.WorkOrderOperationScheduleID)
+            )
+            context.tables["WorkOrderOperationSchedule"].loc[mask, "ScheduleDate"] = target_date
+            log_anomaly(
+                context,
+                "scheduled_on_nonworking_day",
+                "WorkOrderOperationSchedule",
+                int(row.WorkOrderOperationScheduleID),
+                year,
+                f"Operation schedule moved to non-working date {target_date}.",
+                "Schedule rows that fall on work-center non-working days.",
+            )
+
+
+def inject_overbooked_work_center_day(context: GenerationContext, count_per_year: int) -> None:
+    schedules = context.tables["WorkOrderOperationSchedule"]
+    calendars = context.tables["WorkCenterCalendar"]
+    if schedules.empty or calendars.empty or count_per_year <= 0:
+        return
+
+    for year in fiscal_years(context):
+        year_schedules = schedules[pd.to_datetime(schedules["ScheduleDate"]).dt.year.eq(year)].copy()
+        used_ids = used_primary_keys(context, "WorkOrderOperationSchedule", "overbooked_work_center_day")
+        if used_ids:
+            year_schedules = year_schedules[~year_schedules["WorkOrderOperationScheduleID"].astype(int).isin(used_ids)]
+        injected = 0
+        for row in year_schedules.itertuples(index=False):
+            calendar_row = calendars[
+                calendars["WorkCenterID"].astype(int).eq(int(row.WorkCenterID))
+                & calendars["CalendarDate"].eq(str(row.ScheduleDate))
+            ]
+            if calendar_row.empty or float(calendar_row.iloc[0]["AvailableHours"]) <= 0:
+                continue
+            available_hours = float(calendar_row.iloc[0]["AvailableHours"])
+            mask = context.tables["WorkOrderOperationSchedule"]["WorkOrderOperationScheduleID"].astype(int).eq(
+                int(row.WorkOrderOperationScheduleID)
+            )
+            context.tables["WorkOrderOperationSchedule"].loc[mask, "ScheduledHours"] = money(available_hours + 1.0)
+            log_anomaly(
+                context,
+                "overbooked_work_center_day",
+                "WorkOrderOperationSchedule",
+                int(row.WorkOrderOperationScheduleID),
+                year,
+                "Work-center day was intentionally overbooked beyond available hours.",
+                "Work-center days where scheduled hours exceed available hours.",
+            )
+            injected += 1
+            if injected >= count_per_year:
+                break
+
+
+def inject_completion_before_operation_end(context: GenerationContext, count_per_year: int) -> None:
+    completions = context.tables["ProductionCompletion"]
+    operations = context.tables["WorkOrderOperation"]
+    if completions.empty or operations.empty or count_per_year <= 0:
+        return
+
+    latest_operation_end = (
+        operations[operations["ActualEndDate"].notna()]
+        .groupby("WorkOrderID")["ActualEndDate"]
+        .max()
+        .to_dict()
+    )
+
+    for year in fiscal_years(context):
+        year_completions = completions[pd.to_datetime(completions["CompletionDate"]).dt.year.eq(year)].copy()
+        year_completions = year_completions.sort_values(["WorkOrderID", "CompletionDate", "ProductionCompletionID"])
+        used_ids = used_primary_keys(context, "ProductionCompletion", "completion_before_operation_end")
+        if used_ids:
+            year_completions = year_completions[~year_completions["ProductionCompletionID"].astype(int).isin(used_ids)]
+        injected = 0
+        for row in year_completions.itertuples(index=False):
+            final_actual_end = latest_operation_end.get(int(row.WorkOrderID))
+            if final_actual_end is None:
+                continue
+            target_date = pd.Timestamp(final_actual_end) - pd.Timedelta(days=1)
+            if target_date >= pd.Timestamp(final_actual_end):
+                target_date = pd.Timestamp(final_actual_end) - pd.Timedelta(days=1)
+            mask = context.tables["ProductionCompletion"]["ProductionCompletionID"].astype(int).eq(
+                int(row.ProductionCompletionID)
+            )
+            context.tables["ProductionCompletion"].loc[mask, "CompletionDate"] = target_date.strftime("%Y-%m-%d")
+            log_anomaly(
+                context,
+                "completion_before_operation_end",
+                "ProductionCompletion",
+                int(row.ProductionCompletionID),
+                year,
+                "Production completion date was moved before the final operation end date.",
+                "Production completions dated before final work-order operation end.",
+            )
+            injected += 1
+            if injected >= count_per_year:
+                break
+
+
 def inject_anomalies(context: GenerationContext) -> None:
     profile = load_anomaly_profile(context)
     if not profile.get("enabled", False):
@@ -490,3 +608,6 @@ def inject_anomalies(context: GenerationContext) -> None:
     inject_threshold_adjacent_entries(context, int(profile.get("threshold_adjacent_entries_per_year", 0)))
     inject_round_dollar_manual_journals(context, int(profile.get("round_dollar_manual_journals_per_year", 0)))
     inject_related_party_address_matches(context, int(profile.get("related_party_address_matches_per_year", 0)))
+    inject_scheduled_on_nonworking_day(context, int(profile.get("scheduled_on_nonworking_day_per_year", 0)))
+    inject_overbooked_work_center_day(context, int(profile.get("overbooked_work_center_day_per_year", 0)))
+    inject_completion_before_operation_end(context, int(profile.get("completion_before_operation_end_per_year", 0)))

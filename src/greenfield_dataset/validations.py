@@ -8,10 +8,13 @@ import pandas as pd
 from greenfield_dataset.journals import ACCRUAL_ACCOUNT_METADATA, accrual_journal_details
 from greenfield_dataset.master_data import ACCRUAL_SERVICE_ITEMS
 from greenfield_dataset.manufacturing import (
+    CAPACITY_EXCEPTION_REASONS,
     active_routing_by_item,
+    manufacturing_capacity_state,
     manufacturing_open_state,
     open_work_order_remaining_quantity_map,
     routing_operations_by_routing,
+    work_order_operation_schedule_by_operation,
     work_order_operations_by_work_order,
     work_order_actual_conversion_cost_map,
     work_order_completed_quantity_map,
@@ -1732,6 +1735,211 @@ def validate_routing_controls(context: GenerationContext) -> dict[str, Any]:
     }
 
 
+def validate_capacity_controls(context: GenerationContext) -> dict[str, Any]:
+    work_centers = context.tables["WorkCenter"]
+    work_center_calendar = context.tables["WorkCenterCalendar"]
+    work_order_operations = context.tables["WorkOrderOperation"]
+    work_order_operation_schedule = context.tables["WorkOrderOperationSchedule"]
+    material_issues = context.tables["MaterialIssue"]
+    production_completions = context.tables["ProductionCompletion"]
+    work_order_closes = context.tables["WorkOrderClose"]
+    exceptions: list[dict[str, Any]] = []
+
+    if work_centers.empty:
+        return {
+            "exception_count": 0,
+            "exceptions": [],
+            "capacity_state": manufacturing_capacity_state(context, pd.Timestamp(context.settings.fiscal_year_end).year, pd.Timestamp(context.settings.fiscal_year_end).month),
+        }
+
+    expected_dates = set(context.calendar["Date"].astype(str).tolist())
+    work_center_ids = set(work_centers["WorkCenterID"].astype(int).tolist())
+    expected_count = len(expected_dates) * len(work_center_ids)
+
+    if len(work_center_calendar) != expected_count:
+        exceptions.append({
+            "type": "work_center_calendar_coverage",
+            "message": f"Expected {expected_count} work-center calendar rows, found {len(work_center_calendar)}.",
+        })
+
+    if not work_center_calendar.empty:
+        invalid_reasons = sorted(
+            set(work_center_calendar["ExceptionReason"].astype(str).tolist()) - set(CAPACITY_EXCEPTION_REASONS)
+        )
+        if invalid_reasons:
+            exceptions.append({
+                "type": "work_center_calendar_exception_reason",
+                "message": f"Work-center calendar uses invalid exception reasons: {invalid_reasons[:5]}.",
+            })
+
+        grouped = work_center_calendar.groupby("WorkCenterID")["CalendarDate"].nunique()
+        missing = [
+            int(work_center_id)
+            for work_center_id, date_count in grouped.items()
+            if int(date_count) != len(expected_dates)
+        ]
+        if missing:
+            exceptions.append({
+                "type": "work_center_calendar_missing_dates",
+                "message": f"Work centers are missing one or more calendar dates: {missing[:5]}.",
+            })
+
+        calendar_copy = work_center_calendar.copy()
+        calendar_copy["CalendarDateTS"] = pd.to_datetime(calendar_copy["CalendarDate"], errors="coerce")
+        invalid_nonworking = calendar_copy[
+            (
+                calendar_copy["IsWorkingDay"].astype(int).eq(0)
+                | calendar_copy["ExceptionReason"].isin(["Weekend", "Holiday"])
+            )
+            & calendar_copy["AvailableHours"].astype(float).ne(0.0)
+        ]
+        if not invalid_nonworking.empty:
+            exceptions.append({
+                "type": "calendar_nonworking_available_hours",
+                "message": "Non-working work-center calendar days must have zero available hours.",
+            })
+
+    schedule_by_operation = work_order_operation_schedule_by_operation(context)
+    calendar_lookup = (
+        work_center_calendar.set_index(["WorkCenterID", "CalendarDate"]).to_dict("index")
+        if not work_center_calendar.empty
+        else {}
+    )
+    operation_lookup = (
+        work_order_operations.set_index("WorkOrderOperationID").to_dict("index")
+        if not work_order_operations.empty
+        else {}
+    )
+
+    if not work_order_operation_schedule.empty:
+        invalid_schedule_refs = []
+        for row in work_order_operation_schedule.itertuples(index=False):
+            operation = operation_lookup.get(int(row.WorkOrderOperationID))
+            if operation is None:
+                invalid_schedule_refs.append(int(row.WorkOrderOperationScheduleID))
+                continue
+            if int(operation["WorkCenterID"]) != int(row.WorkCenterID):
+                invalid_schedule_refs.append(int(row.WorkOrderOperationScheduleID))
+        if invalid_schedule_refs:
+            exceptions.append({
+                "type": "invalid_schedule_reference",
+                "message": f"Schedule rows reference invalid operations or work centers: {invalid_schedule_refs[:5]}.",
+            })
+
+        schedule_by_day = (
+            work_order_operation_schedule.groupby(["WorkCenterID", "ScheduleDate"])["ScheduledHours"].sum().round(2)
+        )
+        for (work_center_id, schedule_date), scheduled_hours in schedule_by_day.items():
+            calendar_row = calendar_lookup.get((int(work_center_id), str(schedule_date)))
+            available_hours = float(calendar_row["AvailableHours"]) if calendar_row is not None else 0.0
+            if round(float(scheduled_hours), 2) > round(available_hours, 2):
+                exceptions.append({
+                    "type": "work_center_day_overbooked",
+                    "work_center_id": int(work_center_id),
+                    "schedule_date": str(schedule_date),
+                    "message": "Scheduled hours exceed available capacity for the work-center day.",
+                })
+            if calendar_row is not None and int(calendar_row["IsWorkingDay"]) == 0 and round(float(scheduled_hours), 2) > 0:
+                exceptions.append({
+                    "type": "scheduled_on_nonworking_day",
+                    "work_center_id": int(work_center_id),
+                    "schedule_date": str(schedule_date),
+                    "message": "Work-order operation was scheduled on a non-working calendar day.",
+                })
+
+    for row in work_order_operations.itertuples(index=False):
+        schedule_rows = schedule_by_operation.get(int(row.WorkOrderOperationID))
+        horizon_exhausted = str(row.PlannedEndDate) == str(context.settings.fiscal_year_end)
+        if schedule_rows is None or schedule_rows.empty:
+            if not horizon_exhausted:
+                exceptions.append({
+                    "type": "missing_operation_schedule",
+                    "message": f"Work-order operation {int(row.WorkOrderOperationID)} is missing schedule rows.",
+                })
+            continue
+        scheduled_hours = round(float(schedule_rows["ScheduledHours"].astype(float).sum()), 2)
+        if scheduled_hours != round(float(row.PlannedLoadHours), 2) and not horizon_exhausted:
+            exceptions.append({
+                "type": "planned_load_mismatch",
+                "message": f"Scheduled hours do not equal planned load for work-order operation {int(row.WorkOrderOperationID)}.",
+            })
+        if str(schedule_rows["ScheduleDate"].min()) != str(row.PlannedStartDate) or str(schedule_rows["ScheduleDate"].max()) != str(row.PlannedEndDate):
+            exceptions.append({
+                "type": "planned_window_mismatch",
+                "message": f"Planned dates do not match schedule rows for work-order operation {int(row.WorkOrderOperationID)}.",
+            })
+
+    work_order_groups = work_order_operations_by_work_order(context)
+    issue_dates_by_work_order = (
+        material_issues.groupby("WorkOrderID")["IssueDate"].min().to_dict()
+        if not material_issues.empty
+        else {}
+    )
+    completion_dates_by_work_order = (
+        production_completions.groupby("WorkOrderID")["CompletionDate"].max().to_dict()
+        if not production_completions.empty
+        else {}
+    )
+    close_dates_by_work_order = (
+        work_order_closes.groupby("WorkOrderID")["CloseDate"].max().to_dict()
+        if not work_order_closes.empty
+        else {}
+    )
+
+    for work_order_id, rows in work_order_groups.items():
+        prior_planned_end: pd.Timestamp | None = None
+        final_actual_end: pd.Timestamp | None = None
+        first_planned_start: pd.Timestamp | None = None
+        for row in rows.itertuples(index=False):
+            planned_start = pd.Timestamp(row.PlannedStartDate) if pd.notna(row.PlannedStartDate) else None
+            planned_end = pd.Timestamp(row.PlannedEndDate) if pd.notna(row.PlannedEndDate) else None
+            actual_end = pd.Timestamp(row.ActualEndDate) if pd.notna(row.ActualEndDate) else None
+            if first_planned_start is None and planned_start is not None:
+                first_planned_start = planned_start
+            if prior_planned_end is not None and planned_start is not None and planned_start < prior_planned_end:
+                exceptions.append({
+                    "type": "planned_operation_sequence_violation",
+                    "message": f"Planned operation sequence is violated for work order {int(work_order_id)}.",
+                })
+                break
+            if planned_end is not None:
+                prior_planned_end = planned_end
+            if actual_end is not None:
+                final_actual_end = actual_end
+
+        issue_date = issue_dates_by_work_order.get(int(work_order_id))
+        if issue_date is not None and first_planned_start is not None and pd.Timestamp(issue_date) < first_planned_start:
+            exceptions.append({
+                "type": "issue_before_first_scheduled_operation",
+                "message": f"Material issue precedes first scheduled operation for work order {int(work_order_id)}.",
+            })
+
+        completion_date = completion_dates_by_work_order.get(int(work_order_id))
+        if completion_date is not None and final_actual_end is not None and pd.Timestamp(completion_date) < final_actual_end:
+            exceptions.append({
+                "type": "completion_before_operation_end",
+                "message": f"Production completion precedes final operation end for work order {int(work_order_id)}.",
+            })
+
+        close_date = close_dates_by_work_order.get(int(work_order_id))
+        if close_date is not None:
+            comparison_dates = [pd.Timestamp(value) for value in [issue_date, completion_date] if value is not None]
+            if final_actual_end is not None:
+                comparison_dates.append(pd.Timestamp(final_actual_end))
+            if comparison_dates and pd.Timestamp(close_date) < max(comparison_dates):
+                exceptions.append({
+                    "type": "work_order_close_before_final_activity",
+                    "message": f"Work-order close precedes final activity for work order {int(work_order_id)}.",
+                })
+
+    end_timestamp = pd.Timestamp(context.settings.fiscal_year_end)
+    return {
+        "exception_count": len(exceptions),
+        "exceptions": exceptions,
+        "capacity_state": manufacturing_capacity_state(context, int(end_timestamp.year), int(end_timestamp.month)),
+    }
+
+
 def validate_payroll_controls(context: GenerationContext) -> dict[str, Any]:
     periods = context.tables["PayrollPeriod"]
     labor_entries = context.tables["LaborTimeEntry"]
@@ -1958,29 +2166,61 @@ def validate_phase14(context: GenerationContext, store: bool = True) -> dict[str
     return phase14_results
 
 
+def validate_phase15(context: GenerationContext, store: bool = True) -> dict[str, Any]:
+    results = validate_phase14(context, store=False)
+    exceptions = list(results["exceptions"])
+
+    capacity_controls = validate_capacity_controls(context)
+    if capacity_controls["exception_count"]:
+        exceptions.append(f"Capacity control exceptions: {capacity_controls['exception_count']}.")
+
+    phase15_results: dict[str, Any] = {
+        "row_counts": {table: int(len(df)) for table, df in context.tables.items()},
+        "exceptions": exceptions,
+        "gl_balance": results["gl_balance"],
+        "trial_balance_difference": results["trial_balance_difference"],
+        "account_rollforward": results["account_rollforward"],
+        "o2c_controls": results["o2c_controls"],
+        "p2p_controls": results["p2p_controls"],
+        "journal_controls": results["journal_controls"],
+        "manufacturing_controls": results["manufacturing_controls"],
+        "payroll_controls": results["payroll_controls"],
+        "routing_controls": results["routing_controls"],
+        "capacity_controls": capacity_controls,
+    }
+    if store:
+        context.validation_results["phase15"] = phase15_results
+        context.validation_results["phase14"] = phase15_results
+        context.validation_results["phase13"] = phase15_results
+        context.validation_results["phase12"] = phase15_results
+        context.validation_results["phase11"] = phase15_results
+        context.validation_results["phase9"] = phase15_results
+    return phase15_results
+
+
 def validate_phase12(context: GenerationContext, store: bool = True) -> dict[str, Any]:
-    results = validate_phase13(context, store=False)
+    results = validate_phase15(context, store=False)
     if store:
         context.validation_results["phase12"] = results
     return results
 
 
 def validate_phase11(context: GenerationContext, store: bool = True) -> dict[str, Any]:
-    results = validate_phase13(context, store=False)
+    results = validate_phase15(context, store=False)
     if store:
         context.validation_results["phase11"] = results
     return results
 
 
 def validate_phase9(context: GenerationContext, store: bool = True) -> dict[str, Any]:
-    results = validate_phase13(context, store=False)
+    results = validate_phase15(context, store=False)
     if store:
         context.validation_results["phase9"] = results
     return results
 
 
 def validate_phase8(context: GenerationContext) -> dict[str, Any]:
-    results = validate_phase14(context, store=False)
+    results = validate_phase15(context, store=False)
     exceptions = list(results["exceptions"])
 
     if context.settings.anomaly_mode != "none" and not context.anomaly_log:
@@ -1999,6 +2239,7 @@ def validate_phase8(context: GenerationContext) -> dict[str, Any]:
         "manufacturing_controls": results["manufacturing_controls"],
         "payroll_controls": results["payroll_controls"],
         "routing_controls": results["routing_controls"],
+        "capacity_controls": results["capacity_controls"],
     }
     context.validation_results["phase8"] = phase8_results
     return phase8_results

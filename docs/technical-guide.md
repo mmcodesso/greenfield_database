@@ -4,9 +4,9 @@
 **Purpose:** Provide a current, implementation-aligned guide to how the database and code work.  
 **What you will learn:** The system architecture, data-model layers, build flow, posting model, validation model, outputs, and the next extension point.
 
-> **Implemented in current generator:** A 45-table hybrid manufacturer-distributor dataset with O2C, P2P, manufacturing, payroll, recurring journals, year-end close, posting, validation, anomaly injection, and export logic.
+> **Implemented in current generator:** A 51-table hybrid manufacturer-distributor dataset with O2C, P2P, manufacturing, payroll, capacity-aware operation scheduling, recurring journals, year-end close, posting, validation, anomaly injection, and export logic.
 
-> **Planned future extension:** Capacity planning, richer labor scheduling, and deeper cost-accounting detail.
+> **Planned future extension:** Time-clock detail, employee-shift planning, and deeper cost-accounting detail.
 
 ## What This Guide Covers
 
@@ -42,7 +42,7 @@ The implemented schema is organized into seven groups:
 | Accounting core | `Account`, `JournalEntry`, `GLEntry` |
 | O2C | Orders, shipments, billing, receipt applications, returns, credits, refunds |
 | P2P | Requisitions, purchase orders, receipts, supplier invoices, disbursements |
-| Manufacturing | BOMs, work orders, material issues, completions, and work-order close |
+| Manufacturing | BOMs, work centers, capacity calendars, routings, work-order schedules, material issues, completions, and work-order close |
 | Payroll | Payroll periods, labor time, payroll registers, payments, remittances |
 | Master data | Customers, suppliers, items, employees, warehouses |
 | Organizational planning | Cost centers and budgets |
@@ -78,7 +78,7 @@ In plain language, the build works like this:
 
 1. load settings and initialize the shared generation context
 2. create empty DataFrames for all implemented tables
-3. generate master data such as accounts, cost centers, employees, warehouses, items, customers, suppliers, and BOMs
+3. generate master data such as accounts, cost centers, employees, warehouses, items, customers, suppliers, BOMs, work centers, routings, and work-center calendars
 4. generate opening balances and budget rows
 5. generate monthly O2C demand
 6. generate monthly P2P demand and manufacturing-driven requisitions
@@ -100,7 +100,7 @@ In plain language, the build works like this:
 | `calendar.py` | Build the fiscal calendar |
 | `schema.py` | Define `TABLE_COLUMNS` and create empty tables |
 | `master_data.py` | Generate accounts, cost centers, employees, warehouses, items, customers, and suppliers |
-| `manufacturing.py` | Generate BOMs, manufacturing-driven requisitions, work orders, material issues, completions, and work-order close |
+| `manufacturing.py` | Generate BOMs, work centers, work-center calendars, routings, operation schedules, manufacturing-driven requisitions, work orders, material issues, completions, and work-order close |
 | `payroll.py` | Generate payroll periods, labor time, payroll registers, payroll payments, liability remittances, and manufacturing labor helpers |
 | `budgets.py` | Generate opening balances and budgets |
 | `o2c.py` | Generate orders, shipments, invoices, receipts, applications, returns, credits, and refunds |
@@ -171,7 +171,6 @@ The next clean extension point is deeper manufacturing and labor planning.
 
 Likely next additions:
 
-- work-center capacity calendars and finite scheduling
 - time-clock and shift detail
 - richer labor-timing and attendance analytics
 - deeper bottleneck and backlog analysis

@@ -65,6 +65,39 @@ def append_rows(context: GenerationContext, table_name: str, rows: list[dict]) -
         [context.tables[table_name], new_rows],
         ignore_index=True,
     )
+    invalidate_o2c_caches(context, table_name)
+
+
+def drop_context_attributes(context: GenerationContext, attribute_names: list[str]) -> None:
+    for attribute_name in attribute_names:
+        if hasattr(context, attribute_name):
+            delattr(context, attribute_name)
+
+
+def invalidate_o2c_caches(context: GenerationContext, table_name: str) -> None:
+    cache_map = {
+        "ShipmentLine": ["_sales_order_line_shipped_quantities_cache"],
+        "SalesInvoiceLine": [
+            "_shipment_line_billed_quantities_cache",
+            "_invoice_cash_application_amounts_cache",
+            "_credit_memo_allocation_map_cache",
+            "_invoice_settled_amounts_cache",
+        ],
+        "CashReceiptApplication": [
+            "_receipt_applied_amounts_cache",
+            "_invoice_cash_application_amounts_cache",
+            "_credit_memo_allocation_map_cache",
+            "_invoice_settled_amounts_cache",
+        ],
+        "CustomerRefund": ["_credit_memo_refunded_amounts_cache"],
+        "SalesReturnLine": ["_shipment_line_returned_quantities_cache"],
+        "CreditMemo": [
+            "_returned_invoice_ids_cache",
+            "_credit_memo_allocation_map_cache",
+            "_invoice_settled_amounts_cache",
+        ],
+    }
+    drop_context_attributes(context, cache_map.get(table_name, []))
 
 
 def month_bounds(year: int, month: int) -> tuple[pd.Timestamp, pd.Timestamp]:
@@ -125,7 +158,12 @@ def returned_invoice_ids(context: GenerationContext) -> set[int]:
     credit_memos = context.tables["CreditMemo"]
     if credit_memos.empty:
         return set()
-    return set(credit_memos["OriginalSalesInvoiceID"].astype(int).tolist())
+    cached = getattr(context, "_returned_invoice_ids_cache", None)
+    if cached is not None:
+        return cached
+    cached = set(credit_memos["OriginalSalesInvoiceID"].astype(int).tolist())
+    setattr(context, "_returned_invoice_ids_cache", cached)
+    return cached
 
 
 def invoice_return_plan(context: GenerationContext, sales_invoice_id: int, invoice: dict[str, Any]) -> dict[str, Any] | None:
@@ -249,69 +287,102 @@ def sales_order_line_shipped_quantities(context: GenerationContext) -> dict[int,
     shipment_lines = context.tables["ShipmentLine"]
     if shipment_lines.empty:
         return {}
-    return {
+    cached = getattr(context, "_sales_order_line_shipped_quantities_cache", None)
+    if cached is not None:
+        return cached
+    cached = {
         int(line_id): round(float(quantity), 2)
         for line_id, quantity in shipment_lines.groupby("SalesOrderLineID")["QuantityShipped"].sum().items()
     }
+    setattr(context, "_sales_order_line_shipped_quantities_cache", cached)
+    return cached
 
 
 def shipment_line_billed_quantities(context: GenerationContext) -> dict[int, float]:
     invoice_lines = context.tables["SalesInvoiceLine"]
     if invoice_lines.empty:
         return {}
+    cached = getattr(context, "_shipment_line_billed_quantities_cache", None)
+    if cached is not None:
+        return cached
     linked_lines = invoice_lines[invoice_lines["ShipmentLineID"].notna()]
     if linked_lines.empty:
         return {}
-    return {
+    cached = {
         int(line_id): round(float(quantity), 2)
         for line_id, quantity in linked_lines.groupby("ShipmentLineID")["Quantity"].sum().items()
     }
+    setattr(context, "_shipment_line_billed_quantities_cache", cached)
+    return cached
 
 
 def shipment_line_returned_quantities(context: GenerationContext) -> dict[int, float]:
     return_lines = context.tables["SalesReturnLine"]
     if return_lines.empty:
         return {}
-    return {
+    cached = getattr(context, "_shipment_line_returned_quantities_cache", None)
+    if cached is not None:
+        return cached
+    cached = {
         int(line_id): round(float(quantity), 2)
         for line_id, quantity in return_lines.groupby("ShipmentLineID")["QuantityReturned"].sum().items()
     }
+    setattr(context, "_shipment_line_returned_quantities_cache", cached)
+    return cached
 
 
 def receipt_applied_amounts(context: GenerationContext) -> dict[int, float]:
     applications = context.tables["CashReceiptApplication"]
     if applications.empty:
         return {}
-    return {
+    cached = getattr(context, "_receipt_applied_amounts_cache", None)
+    if cached is not None:
+        return cached
+    cached = {
         int(receipt_id): round(float(amount), 2)
         for receipt_id, amount in applications.groupby("CashReceiptID")["AppliedAmount"].sum().items()
     }
+    setattr(context, "_receipt_applied_amounts_cache", cached)
+    return cached
 
 
 def invoice_cash_application_amounts(context: GenerationContext) -> dict[int, float]:
     applications = context.tables["CashReceiptApplication"]
     if applications.empty:
         return {}
-    return {
+    cached = getattr(context, "_invoice_cash_application_amounts_cache", None)
+    if cached is not None:
+        return cached
+    cached = {
         int(invoice_id): round(float(amount), 2)
         for invoice_id, amount in applications.groupby("SalesInvoiceID")["AppliedAmount"].sum().items()
     }
+    setattr(context, "_invoice_cash_application_amounts_cache", cached)
+    return cached
 
 
 def credit_memo_refunded_amounts(context: GenerationContext) -> dict[int, float]:
     refunds = context.tables["CustomerRefund"]
     if refunds.empty:
         return {}
-    return {
+    cached = getattr(context, "_credit_memo_refunded_amounts_cache", None)
+    if cached is not None:
+        return cached
+    cached = {
         int(credit_memo_id): round(float(amount), 2)
         for credit_memo_id, amount in refunds.groupby("CreditMemoID")["Amount"].sum().items()
     }
+    setattr(context, "_credit_memo_refunded_amounts_cache", cached)
+    return cached
 
 
 def credit_memo_allocation_map(context: GenerationContext) -> dict[int, dict[str, float]]:
     credit_memos = context.tables["CreditMemo"]
     if credit_memos.empty:
         return {}
+    cached = getattr(context, "_credit_memo_allocation_map_cache", None)
+    if cached is not None:
+        return cached
 
     applications = context.tables["CashReceiptApplication"]
     invoice_totals = context.tables["SalesInvoice"].set_index("SalesInvoiceID")["GrandTotal"].astype(float).to_dict()
@@ -332,6 +403,7 @@ def credit_memo_allocation_map(context: GenerationContext) -> dict[int, dict[str
             "customer_credit_amount": round(float(memo.GrandTotal) - ar_amount, 2),
         }
         prior_credit_totals[invoice_id] = round(prior_credit_totals[invoice_id] + float(memo.GrandTotal), 2)
+    setattr(context, "_credit_memo_allocation_map_cache", allocations)
     return allocations
 
 
@@ -349,13 +421,18 @@ def invoice_credit_memo_amounts(context: GenerationContext) -> dict[int, float]:
 
 
 def invoice_settled_amounts(context: GenerationContext) -> dict[int, float]:
+    cached = getattr(context, "_invoice_settled_amounts_cache", None)
+    if cached is not None:
+        return cached
     cash_applied = invoice_cash_application_amounts(context)
     credit_memo_amounts = invoice_credit_memo_amounts(context)
     invoice_ids = set(cash_applied) | set(credit_memo_amounts)
-    return {
+    cached = {
         int(invoice_id): round(float(cash_applied.get(invoice_id, 0.0)) + float(credit_memo_amounts.get(invoice_id, 0.0)), 2)
         for invoice_id in invoice_ids
     }
+    setattr(context, "_invoice_settled_amounts_cache", cached)
+    return cached
 
 
 def inventory_position_before_month(context: GenerationContext, year: int, month: int) -> dict[tuple[int, int], float]:
@@ -685,7 +762,7 @@ def generate_month_shipments(context: GenerationContext, year: int, month: int) 
     rng = context.rng
     month_start, month_end = month_bounds(year, month)
     shipped_quantities = sales_order_line_shipped_quantities(context)
-    inventory = inventory_position_before_month(context, year, month)
+    inventory = shadow_inventory_state(context)
     items = context.tables["Item"].set_index("ItemID").to_dict("index")
     warehouses = warehouse_ids(context)
 
@@ -830,7 +907,6 @@ def generate_month_shipments(context: GenerationContext, year: int, month: int) 
 
     append_rows(context, "Shipment", shipment_rows)
     append_rows(context, "ShipmentLine", shipment_line_rows)
-    setattr(context, "_o2c_shadow_inventory", inventory)
 
 
 def generate_month_sales_invoices(context: GenerationContext, year: int, month: int) -> None:

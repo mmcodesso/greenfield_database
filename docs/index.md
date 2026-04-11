@@ -59,7 +59,7 @@ The docs are organized for two broad uses:
 ### Implemented in current generator
 
 - five fiscal years from 2026 through 2030
-- 49 tables across O2C, P2P, manufacturing, payroll, accounting core, master data, and planning
+- 51 tables across O2C, P2P, manufacturing, payroll, accounting core, master data, and planning
 - returns, credit memos, refunds, receipt applications, and customer-credit behavior in O2C
 - batched and matched multi-period P2P flows
 - BOMs, routings, work centers, work orders, work-order operations, material issues, completions, and work-order close

@@ -17,3 +17,6 @@ profiles:
     missing_reversal_links_per_year: 1
     late_reversals_per_year: 1
     round_dollar_manual_journals_per_year: 2
+    scheduled_on_nonworking_day_per_year: 1
+    overbooked_work_center_day_per_year: 1
+    completion_before_operation_end_per_year: 1

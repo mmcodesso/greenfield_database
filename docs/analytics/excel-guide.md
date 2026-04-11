@@ -6,7 +6,7 @@
 
 > **Implemented in current generator:** A workbook with one sheet per table plus `AnomalyLog` and `ValidationSummary`, suitable for Excel-based starter analytics across O2C, P2P, manufacturing, payroll, and journals.
 
-> **Planned future extension:** More advanced workbook guidance for capacity planning, shift detail, and richer scheduling analysis.
+> **Planned future extension:** More advanced workbook guidance for time clocks, shift detail, and richer employee-level scheduling analysis.
 
 ## Workbook Setup
 
@@ -296,6 +296,30 @@ Suggested outputs:
 - issued material versus completed output by work order
 - WIP, manufacturing clearing, and manufacturing variance review by period
 
+### Capacity and scheduling workflows
+
+Use:
+
+- `WorkCenter`
+- `WorkCenterCalendar`
+- `WorkOrderOperation`
+- `WorkOrderOperationSchedule`
+- `RoutingOperation`
+
+Suggested outputs:
+
+- daily scheduled hours versus available hours by work center
+- monthly utilization by work center
+- fully booked days by month
+- late operations by work center and operation code
+- backlog aging for open operations
+
+Suggested charts:
+
+- monthly utilization line chart by work center
+- stacked column of scheduled versus remaining hours
+- backlog-aging bar chart by work center
+
 ## Audit Analytics Workflows
 
 ### Document-chain completeness
@@ -390,7 +414,6 @@ Suggested workflow:
 The Excel starter layer does **not** assume:
 
 - prebuilt pivot tables inside the exported workbook
-- capacity-planning tables or scheduling calendars
 - time-clock or shift-level labor detail
 
 Those are future teaching extensions, not missing pieces of the current workbook.

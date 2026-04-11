@@ -85,6 +85,60 @@ def append_rows(context: GenerationContext, table_name: str, rows: list[dict]) -
         [context.tables[table_name], new_rows],
         ignore_index=True,
     )
+    invalidate_p2p_caches(context, table_name)
+
+
+def drop_context_attributes(context: GenerationContext, attribute_names: list[str]) -> None:
+    for attribute_name in attribute_names:
+        if hasattr(context, attribute_name):
+            delattr(context, attribute_name)
+
+
+def invalidate_p2p_caches(context: GenerationContext, table_name: str) -> None:
+    cache_map = {
+        "PurchaseOrderLine": [
+            "_purchase_order_line_requisition_ids_cache",
+            "_purchase_order_line_cost_center_map_cache",
+            "_goods_receipt_line_cost_center_map_cache",
+            "_purchase_invoice_line_cost_center_map_cache",
+            "_purchase_invoice_unique_cost_center_map_cache",
+            "_purchase_invoice_line_matched_basis_map_cache",
+        ],
+        "PurchaseRequisition": [
+            "_purchase_order_line_cost_center_map_cache",
+            "_goods_receipt_line_cost_center_map_cache",
+            "_purchase_invoice_line_cost_center_map_cache",
+            "_purchase_invoice_unique_cost_center_map_cache",
+        ],
+        "GoodsReceiptLine": [
+            "_po_line_received_quantities_cache",
+            "_po_line_receipt_event_counts_cache",
+            "_goods_receipt_line_invoiced_quantities_cache",
+            "_goods_receipt_line_invoice_event_counts_cache",
+            "_goods_receipt_line_cost_center_map_cache",
+            "_purchase_invoice_line_cost_center_map_cache",
+            "_purchase_invoice_unique_cost_center_map_cache",
+            "_purchase_invoice_line_matched_basis_map_cache",
+        ],
+        "PurchaseInvoiceLine": [
+            "_goods_receipt_line_invoiced_quantities_cache",
+            "_goods_receipt_line_invoice_event_counts_cache",
+            "_purchase_invoice_line_cost_center_map_cache",
+            "_purchase_invoice_unique_cost_center_map_cache",
+            "_purchase_invoice_line_matched_basis_map_cache",
+        ],
+        "DisbursementPayment": [
+            "_invoice_paid_amounts_cache",
+            "_invoice_payment_event_counts_cache",
+        ],
+        "PurchaseOrder": [
+            "_purchase_order_line_cost_center_map_cache",
+            "_goods_receipt_line_cost_center_map_cache",
+            "_purchase_invoice_line_cost_center_map_cache",
+            "_purchase_invoice_unique_cost_center_map_cache",
+        ],
+    }
+    drop_context_attributes(context, cache_map.get(table_name, []))
 
 
 def month_bounds(year: int, month: int) -> tuple[pd.Timestamp, pd.Timestamp]:
@@ -220,61 +274,99 @@ def purchase_order_line_requisition_ids(context: GenerationContext) -> set[int]:
     po_lines = context.tables["PurchaseOrderLine"]
     if po_lines.empty or "RequisitionID" not in po_lines.columns:
         return set()
-    return set(po_lines["RequisitionID"].dropna().astype(int).tolist())
+    cached = getattr(context, "_purchase_order_line_requisition_ids_cache", None)
+    if cached is not None:
+        return cached
+    cached = set(po_lines["RequisitionID"].dropna().astype(int).tolist())
+    setattr(context, "_purchase_order_line_requisition_ids_cache", cached)
+    return cached
 
 
 def po_line_received_quantities(context: GenerationContext) -> dict[int, float]:
     receipt_lines = context.tables["GoodsReceiptLine"]
     if receipt_lines.empty:
         return {}
-    return receipt_lines.groupby("POLineID")["QuantityReceived"].sum().round(2).to_dict()
+    cached = getattr(context, "_po_line_received_quantities_cache", None)
+    if cached is not None:
+        return cached
+    cached = receipt_lines.groupby("POLineID")["QuantityReceived"].sum().round(2).to_dict()
+    setattr(context, "_po_line_received_quantities_cache", cached)
+    return cached
 
 
 def po_line_receipt_event_counts(context: GenerationContext) -> dict[int, int]:
     receipt_lines = context.tables["GoodsReceiptLine"]
     if receipt_lines.empty:
         return {}
-    return receipt_lines.groupby("POLineID").size().astype(int).to_dict()
+    cached = getattr(context, "_po_line_receipt_event_counts_cache", None)
+    if cached is not None:
+        return cached
+    cached = receipt_lines.groupby("POLineID").size().astype(int).to_dict()
+    setattr(context, "_po_line_receipt_event_counts_cache", cached)
+    return cached
 
 
 def goods_receipt_line_invoiced_quantities(context: GenerationContext) -> dict[int, float]:
     invoice_lines = context.tables["PurchaseInvoiceLine"]
     if invoice_lines.empty or "GoodsReceiptLineID" not in invoice_lines.columns:
         return {}
+    cached = getattr(context, "_goods_receipt_line_invoiced_quantities_cache", None)
+    if cached is not None:
+        return cached
     matched_lines = invoice_lines[invoice_lines["GoodsReceiptLineID"].notna()]
     if matched_lines.empty:
         return {}
-    return matched_lines.groupby("GoodsReceiptLineID")["Quantity"].sum().round(2).to_dict()
+    cached = matched_lines.groupby("GoodsReceiptLineID")["Quantity"].sum().round(2).to_dict()
+    setattr(context, "_goods_receipt_line_invoiced_quantities_cache", cached)
+    return cached
 
 
 def goods_receipt_line_invoice_event_counts(context: GenerationContext) -> dict[int, int]:
     invoice_lines = context.tables["PurchaseInvoiceLine"]
     if invoice_lines.empty or "GoodsReceiptLineID" not in invoice_lines.columns:
         return {}
+    cached = getattr(context, "_goods_receipt_line_invoice_event_counts_cache", None)
+    if cached is not None:
+        return cached
     matched_lines = invoice_lines[invoice_lines["GoodsReceiptLineID"].notna()]
     if matched_lines.empty:
         return {}
-    return matched_lines.groupby("GoodsReceiptLineID").size().astype(int).to_dict()
+    cached = matched_lines.groupby("GoodsReceiptLineID").size().astype(int).to_dict()
+    setattr(context, "_goods_receipt_line_invoice_event_counts_cache", cached)
+    return cached
 
 
 def invoice_paid_amounts(context: GenerationContext) -> dict[int, float]:
     disbursements = context.tables["DisbursementPayment"]
     if disbursements.empty:
         return {}
-    return disbursements.groupby("PurchaseInvoiceID")["Amount"].sum().round(2).to_dict()
+    cached = getattr(context, "_invoice_paid_amounts_cache", None)
+    if cached is not None:
+        return cached
+    cached = disbursements.groupby("PurchaseInvoiceID")["Amount"].sum().round(2).to_dict()
+    setattr(context, "_invoice_paid_amounts_cache", cached)
+    return cached
 
 
 def invoice_payment_event_counts(context: GenerationContext) -> dict[int, int]:
     disbursements = context.tables["DisbursementPayment"]
     if disbursements.empty:
         return {}
-    return disbursements.groupby("PurchaseInvoiceID").size().astype(int).to_dict()
+    cached = getattr(context, "_invoice_payment_event_counts_cache", None)
+    if cached is not None:
+        return cached
+    cached = disbursements.groupby("PurchaseInvoiceID").size().astype(int).to_dict()
+    setattr(context, "_invoice_payment_event_counts_cache", cached)
+    return cached
 
 
 def purchase_order_line_cost_center_map(context: GenerationContext) -> dict[int, int | None]:
     po_lines = context.tables["PurchaseOrderLine"]
     if po_lines.empty:
         return {}
+    cached = getattr(context, "_purchase_order_line_cost_center_map_cache", None)
+    if cached is not None:
+        return cached
 
     requisition_cost_centers = context.tables["PurchaseRequisition"].set_index("RequisitionID")["CostCenterID"].to_dict()
     header_requisition_ids = context.tables["PurchaseOrder"].set_index("PurchaseOrderID")["RequisitionID"].to_dict()
@@ -289,7 +381,7 @@ def purchase_order_line_cost_center_map(context: GenerationContext) -> dict[int,
             continue
         cost_center_value = requisition_cost_centers.get(int(requisition_id_value))
         cost_center_map[int(line.POLineID)] = int(cost_center_value) if pd.notna(cost_center_value) else None
-
+    setattr(context, "_purchase_order_line_cost_center_map_cache", cost_center_map)
     return cost_center_map
 
 
@@ -298,6 +390,9 @@ def purchase_invoice_unique_cost_center_map(context: GenerationContext) -> dict[
     invoice_lines = context.tables["PurchaseInvoiceLine"]
     if invoice_lines.empty:
         return {}
+    cached = getattr(context, "_purchase_invoice_unique_cost_center_map_cache", None)
+    if cached is not None:
+        return cached
 
     invoice_cost_centers: dict[int, int | None] = {}
     for invoice_id, rows in invoice_lines.groupby("PurchaseInvoiceID"):
@@ -307,6 +402,7 @@ def purchase_invoice_unique_cost_center_map(context: GenerationContext) -> dict[
             if invoice_line_cost_centers.get(int(row.PILineID)) is not None
         }
         invoice_cost_centers[int(invoice_id)] = next(iter(centers)) if len(centers) == 1 else None
+    setattr(context, "_purchase_invoice_unique_cost_center_map_cache", invoice_cost_centers)
     return invoice_cost_centers
 
 
@@ -314,11 +410,15 @@ def goods_receipt_line_cost_center_map(context: GenerationContext) -> dict[int, 
     receipt_lines = context.tables["GoodsReceiptLine"]
     if receipt_lines.empty:
         return {}
+    cached = getattr(context, "_goods_receipt_line_cost_center_map_cache", None)
+    if cached is not None:
+        return cached
 
     po_line_cost_centers = purchase_order_line_cost_center_map(context)
     cost_center_map: dict[int, int | None] = {}
     for line in receipt_lines.itertuples(index=False):
         cost_center_map[int(line.GoodsReceiptLineID)] = po_line_cost_centers.get(int(line.POLineID))
+    setattr(context, "_goods_receipt_line_cost_center_map_cache", cost_center_map)
     return cost_center_map
 
 
@@ -326,6 +426,9 @@ def purchase_invoice_line_cost_center_map(context: GenerationContext) -> dict[in
     invoice_lines = context.tables["PurchaseInvoiceLine"]
     if invoice_lines.empty:
         return {}
+    cached = getattr(context, "_purchase_invoice_line_cost_center_map_cache", None)
+    if cached is not None:
+        return cached
 
     po_line_cost_centers = purchase_order_line_cost_center_map(context)
     receipt_line_cost_centers = goods_receipt_line_cost_center_map(context)
@@ -341,6 +444,7 @@ def purchase_invoice_line_cost_center_map(context: GenerationContext) -> dict[in
         if cost_center_value is None and po_line_id is not None:
             cost_center_value = po_line_cost_centers.get(po_line_id)
         cost_center_map[int(line.PILineID)] = cost_center_value
+    setattr(context, "_purchase_invoice_line_cost_center_map_cache", cost_center_map)
     return cost_center_map
 
 
@@ -348,6 +452,9 @@ def purchase_invoice_line_matched_basis_map(context: GenerationContext) -> dict[
     invoice_lines = context.tables["PurchaseInvoiceLine"]
     if invoice_lines.empty:
         return {}
+    cached = getattr(context, "_purchase_invoice_line_matched_basis_map_cache", None)
+    if cached is not None:
+        return cached
 
     po_unit_costs = context.tables["PurchaseOrderLine"].set_index("POLineID")["UnitCost"].astype(float).to_dict()
     receipt_lines = context.tables["GoodsReceiptLine"].set_index("GoodsReceiptLineID").to_dict("index")
@@ -372,7 +479,7 @@ def purchase_invoice_line_matched_basis_map(context: GenerationContext) -> dict[
             if receipt_line is not None and qty(float(receipt_line["QuantityReceived"])) > 0:
                 unit_basis = float(receipt_line["ExtendedStandardCost"]) / float(receipt_line["QuantityReceived"])
         matched_basis[int(line.PILineID)] = money(float(line.Quantity) * unit_basis)
-
+    setattr(context, "_purchase_invoice_line_matched_basis_map_cache", matched_basis)
     return matched_basis
 
 
