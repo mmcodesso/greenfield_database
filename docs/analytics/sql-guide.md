@@ -6,33 +6,33 @@ sidebar_label: SQL Guide
 
 # SQL Starter Guide
 
-
 ## Starter SQL Package Layout
 
 | Folder | Coverage |
 |---|---|
-| [queries/financial](https://github.com/mmcodesso/greenfield_database/tree/main/queries/financial) | Revenue, margin, AR, AP, accrued expenses, payroll liabilities, trial balance, control-account work, and manufacturing balance review |
-| [queries/managerial](https://github.com/mmcodesso/greenfield_database/tree/main/queries/managerial) | Budgeting, cost centers, sales mix, inventory movement, purchasing, BOMs, work orders, labor, unit cost, and profitability |
-| [queries/audit](https://github.com/mmcodesso/greenfield_database/tree/main/queries/audit) | Document-chain completeness, approvals, cut-off, duplicate checks, anomaly review, manufacturing controls, and payroll controls |
+| [queries/financial](https://github.com/mmcodesso/greenfield_database/tree/main/queries/financial) | revenue, margin, working capital, AR, AP, accrued expenses, payroll liabilities, close-cycle, and control-account review |
+| [queries/managerial](https://github.com/mmcodesso/greenfield_database/tree/main/queries/managerial) | budget, product portfolio, lifecycle mix, labor, service levels, BOMs, work orders, capacity, and contribution margin |
+| [queries/audit](https://github.com/mmcodesso/greenfield_database/tree/main/queries/audit) | document-chain completeness, approvals, cut-off, payroll and time controls, master-data controls, and anomaly-oriented review |
 
 Each file is a single SQLite-friendly `SELECT` statement with short comment headers that explain:
 
 - teaching objective
 - main tables
 - output shape
+- recommended build mode
 - interpretation notes
 
 ## Recommended Workflow
 
 1. Open the SQLite file shared for your course or section.
 2. If you are preparing the dataset yourself, use [Dataset Delivery and Build Setup](../teach-with-greenfield/dataset-delivery.md).
-3. Start with one topic area:
+3. Start with one topic page:
    - [Financial Analytics](financial.md)
    - [Managerial Analytics](managerial.md)
    - [Audit Analytics](audit.md)
-   - [Analytics Cases](cases/index.md)
-4. Run the corresponding `.sql` files.
-5. Export results or compare them to the Excel workbook.
+4. Run the corresponding SQL files.
+5. Then open the paired case in [Analytics Cases](cases/index.md).
+6. Recreate one result in Excel when you want students to move from SQL to workbook interpretation.
 
 ## Ways to Run the Queries
 
@@ -56,7 +56,7 @@ from pathlib import Path
 import sqlite3
 import pandas as pd
 
-sql = Path("queries/financial/01_monthly_revenue_and_gross_margin.sql").read_text(encoding="utf-8")
+sql = Path("queries/financial/19_working_capital_bridge_by_month.sql").read_text(encoding="utf-8")
 with sqlite3.connect("greenfield.sqlite") as connection:
     df = pd.read_sql_query(sql, connection)
 
@@ -68,93 +68,59 @@ print(df.head())
 If the `sqlite3` command-line tool is installed on your system, you can also run:
 
 ```bash
-sqlite3 greenfield.sqlite < queries/financial/01_monthly_revenue_and_gross_margin.sql
+sqlite3 greenfield.sqlite < queries/financial/19_working_capital_bridge_by_month.sql
 ```
 
-## Query Design Conventions
+## Clean Build vs Default Build
 
-The starter pack follows these rules:
-
-- SQLite syntax first
-- one query per file
-- no dependency on future schema changes
-- readable CTE-based structure where it improves clarity
-- no dependency on exact row counts
-- current manufacturing and payroll logic is allowed where it improves teaching value
-
-## How to Adapt the Starter Queries
-
-Safe ways to extend the starter pack:
-
-- add a `WHERE` filter for a fiscal year, region, supplier, cost center, or pay period
-- add additional grouping columns
-- convert detail listings into summarized pivots by month or year
-- join `Employee`, `Customer`, or `Supplier` for descriptive fields
-
-Changes to avoid in this phase:
-
-- rewriting queries around future raw punch-event or shift-level capacity flows
-- assuming anomaly rows will always exist
-- assuming every control-account or balance-sheet line carries a cost center
-
-## Clean Build vs Anomaly-Enabled Build
-
-- Financial and managerial queries work well on either a clean or anomaly-enabled package.
-- Audit queries are often more interesting on the standard anomaly-enabled package.
+- The default anomaly-enabled build is the main student-facing package.
+- Financial and managerial queries work well on either build.
+- Audit queries are usually more informative on the default build.
 - The main SQLite export contains dataset tables only.
-- Anomaly and validation companion content now lives in the separate support workbook, not in SQLite.
-- Some audit starter queries may return no rows on a clean build. That is expected and not a query failure.
+- Anomaly and validation companion content lives in the support workbook, not in SQLite.
 
-## Suggested Starter Sequence
+## Suggested Phase 19 Sequence
 
 ### Financial
 
 1. monthly revenue and gross margin
 2. AR aging
 3. AP aging
-4. payroll liability roll-forward
-5. gross-to-net payroll review
-6. accrued expense roll-forward
-7. accrued versus invoiced versus paid timing
-8. hourly payroll hours to paid earnings bridge
-9. trial balance
-10. journal and close-cycle review
-11. control-account reconciliation
+4. working-capital bridge by month
+5. cash-conversion timing review
+6. payroll liability roll-forward
+7. accrued expense roll-forward
+8. retained earnings and close-entry impact
+9. payroll and people-cost mix
+10. paired cases:
+   - [Working Capital and Cash Conversion Case](cases/working-capital-and-cash-conversion-case.md)
+   - [Financial Statement Bridge Case](cases/financial-statement-bridge-case.md)
 
 ### Managerial
 
 1. budget vs actual
-2. sales mix
-3. inventory movement
-4. purchasing activity
-5. cost center summary
-6. basic profitability
-7. BOM standard cost rollup
-8. work-order throughput
-9. direct labor by work order
-10. unit-cost bridge
-11. absorption vs contribution margin
-12. labor efficiency and rate variance
-13. shift adherence and overtime by work center
-14. approved clock hours versus labor allocation
+2. product portfolio mix by collection, style, lifecycle, and supply mode
+3. sales and gross margin by collection and lifecycle
+4. contribution margin by collection, material, lifecycle, and supply mode
+5. customer-service impact by collection and style
+6. labor and headcount by work location, job family, and cost center
+7. portfolio return and refund impact by collection and lifecycle
+8. paired case:
+   - [Product Portfolio Profitability Case](cases/product-portfolio-profitability-case.md)
 
 ### Audit
 
-1. O2C completeness
-2. P2P completeness
-3. approval and SOD review
-4. cut-off and timing analysis
-5. duplicate review
-6. potential anomaly review
-7. BOM and supply-mode conflict review
-8. over-issue and open WIP review
-9. work-order close timing review
-10. payroll control review
-11. labor-time-after-close and paid-without-time review
-12. over and under accrual review
-13. time-clock exception review
-14. labor outside scheduled operation window review
-15. paid-without-clock and clock-without-pay review
+1. document-chain completeness
+2. approval and SOD review
+3. payroll and time-control review
+4. executive-role uniqueness and control-assignment review
+5. item-master completeness review
+6. discontinued or pre-launch item activity review
+7. approval-authority review by expected role family
+8. terminated-employee activity detail and rollup review
+9. paired cases:
+   - [Workforce Cost and Org-Control Case](cases/workforce-cost-and-org-control-case.md)
+   - [Audit Review Pack Case](cases/audit-review-pack-case.md)
 
 ## Where to Go Next
 

@@ -45,11 +45,11 @@ Suggested student sequence:
 5. [Analytics Hub](analytics/index.md)
 6. topic-specific analytics pages and cases
 
-### 4. Decide whether you want a clean or anomaly-enabled experience
+### 4. Decide how you will use the default versus clean build
 
-- Use the standard teaching package when you want the normal five-year anomaly-enabled build.
-- Use the clean baseline package when you want a faster, cleaner setup for prep or demonstration.
-- Make the distinction explicit to students. Some audit queries are supposed to return exceptions only when the anomaly-enabled build is used.
+- Use the default five-year anomaly-enabled package as the main student path.
+- Use the clean baseline package mainly for instructor prep, quick demonstrations, or contrast.
+- Make the distinction explicit to students. Some audit queries are supposed to return exceptions only on the default anomaly-enabled build.
 - Use [Dataset Delivery and Build Setup](teach-with-greenfield/dataset-delivery.md) for the exact local build commands and profile choices.
 
 ## What to Share With Students vs Keep for Teaching Setup
@@ -88,9 +88,10 @@ Use these when you need local build setup, generator context, or release-plannin
 | 2. Process mapping | Show O2C, P2P, manufacturing, payroll, and close-cycle flow | [Process Flows](process-flows.md) and process guides | None yet |
 | 3. Table navigation | Teach keys, joins, and traceability | [Dataset Guide](dataset-overview.md) | Introductory ad hoc joins |
 | 4. Financial analytics | Connect operational activity to accounting review | [Financial Analytics](analytics/financial.md) | `queries/financial/` |
-| 5. Managerial analytics | Analyze costs, labor, inventory, and operations | [Managerial Analytics](analytics/managerial.md) | `queries/managerial/` |
-| 6. Audit analytics | Review completeness, controls, cut-off, and anomalies | [Audit Analytics](analytics/audit.md) | `queries/audit/` |
-| 7. Guided assignments | Use structured walkthroughs before open-ended work | [Analytics Cases](analytics/cases/index.md) | case docs plus starter SQL |
+| 5. Working-capital and statement bridge | Connect subledgers to control accounts and close | [Financial Analytics](analytics/financial.md), [Analytics Cases](analytics/cases/index.md) | financial starter SQL plus the working-capital and statement-bridge cases |
+| 6. Managerial analytics | Analyze portfolio mix, costs, labor, inventory, and operations | [Managerial Analytics](analytics/managerial.md) | `queries/managerial/` plus the portfolio-profitability case |
+| 7. Audit analytics | Review completeness, controls, master data, and anomalies | [Audit Analytics](analytics/audit.md) | `queries/audit/` plus the workforce and audit-review-pack cases |
+| 8. Guided assignments | Use structured walkthroughs before open-ended work | [Analytics Cases](analytics/cases/index.md) | case docs plus starter SQL |
 
 This sequence compresses cleanly into fewer modules or expands into a full semester.
 
@@ -111,6 +112,14 @@ This sequence compresses cleanly into fewer modules or expands into a full semes
 - For auditing classes, explain the clean-vs-anomaly distinction early.
 - For beginner SQL classes, start from the provided queries before moving to blank-screen assignments.
 - For Excel-heavy classes, use the workbook and process docs together so students can interpret patterns instead of only producing pivots.
+
+## Recommended Phase 19 Classroom Sequence
+
+1. Use the default anomaly-enabled package as the standard student file set.
+2. Start financial classes with the working-capital and statement-bridge cases.
+3. Start managerial classes with the product-portfolio profitability case.
+4. Start audit classes with the workforce cost and org-control case, then move to the audit review pack.
+5. Use the clean build only when you want a baseline comparison after students understand the default dataset.
 
 ## Where to Go Next
 

@@ -90,6 +90,7 @@ from greenfield_dataset.validations import (
     validate_phase16,
     validate_phase17,
     validate_phase18,
+    validate_phase19,
 )
 
 
@@ -267,7 +268,7 @@ def build_phase7(config_path: str | Path = "config/settings.yaml") -> Generation
 
 
 def build_phase8(config_path: str | Path = "config/settings.yaml") -> GenerationContext:
-    context = build_phase18(config_path)
+    context = build_phase19(config_path)
     inject_anomalies(context)
     validate_phase8(context)
     if context.settings.export_sqlite:
@@ -569,6 +570,16 @@ def build_phase18(
     validate_phase18(context, scope=validation_scope)
     export_validation_report(context)
 
+    return context
+
+
+def build_phase19(
+    config_path: str | Path = "config/settings.yaml",
+    validation_scope: str = "full",
+) -> GenerationContext:
+    context = build_phase18(config_path, validation_scope=validation_scope)
+    validate_phase19(context, scope=validation_scope)
+    export_validation_report(context)
     return context
 
 
@@ -884,7 +895,7 @@ def build_full_dataset(
         log_table_counts(context, ("JournalEntry", "GLEntry"), "year-end close")
 
     with logged_step("Validate clean final dataset"):
-        log_validation_results("phase18", validate_phase18(context, scope=validation_scope))
+        log_validation_results("phase19", validate_phase19(context, scope=validation_scope))
 
     with logged_step("Inject configured anomalies"):
         inject_anomalies(context)
@@ -934,7 +945,7 @@ def build_full_dataset(
 
 
 def print_summary(context: GenerationContext) -> None:
-    row_counts = context.validation_results["phase18"]["row_counts"]
+    row_counts = context.validation_results["phase19"]["row_counts"]
     print("Full dataset generated.")
     print(f"Fiscal range: {context.settings.fiscal_year_start} to {context.settings.fiscal_year_end}")
     print(f"Accounts: {row_counts['Account']}")
@@ -984,7 +995,7 @@ def print_summary(context: GenerationContext) -> None:
     print(f"Payroll payments: {row_counts['PayrollPayment']}")
     print(f"Payroll liability remittances: {row_counts['PayrollLiabilityRemittance']}")
     print(f"GL entries: {row_counts['GLEntry']}")
-    print(f"GL balance exceptions: {context.validation_results['phase18']['gl_balance']['exception_count']}")
+    print(f"GL balance exceptions: {context.validation_results['phase19']['gl_balance']['exception_count']}")
     print(f"Anomalies logged: {len(context.anomaly_log)}")
     print(f"SQLite export: {context.settings.sqlite_path}")
     print(f"Excel export: {context.settings.excel_path}")

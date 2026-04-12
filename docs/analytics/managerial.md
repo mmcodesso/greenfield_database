@@ -6,22 +6,16 @@ sidebar_label: Managerial Analytics
 
 # Managerial Analytics Starter Guide
 
-
 ## Relevant Tables
 
 | Topic | Main tables |
 |---|---|
 | Budget vs actual | `Budget`, `CostCenter`, `Account`, `GLEntry`, `JournalEntry` |
-| Sales mix | `SalesInvoice`, `SalesInvoiceLine`, `Customer`, `Item` |
-| Inventory movement | `GoodsReceiptLine`, `ShipmentLine`, `SalesReturnLine`, `ProductionCompletionLine`, `Warehouse`, `Item` |
-| Purchasing behavior | `PurchaseOrder`, `PurchaseOrderLine`, `Supplier`, `Item` |
-| BOM and standard cost | `BillOfMaterial`, `BillOfMaterialLine`, `Item` |
-| Routing and work-center planning | `Routing`, `RoutingOperation`, `WorkCenter`, `WorkCenterCalendar`, `Item` |
-| Work-order throughput | `WorkOrder`, `ProductionCompletion`, `WorkOrderClose` |
-| Operation throughput and labor | `WorkOrderOperation`, `WorkOrderOperationSchedule`, `RoutingOperation`, `WorkCenter`, `WorkCenterCalendar`, `LaborTimeEntry`, `WorkOrder` |
-| Material usage and scrap | `WorkOrder`, `BillOfMaterialLine`, `MaterialIssueLine`, `ProductionCompletionLine` |
-| Direct labor and payroll cost | `TimeClockEntry`, `LaborTimeEntry`, `PayrollRegister`, `Employee`, `ShiftDefinition`, `WorkOrder`, `Item` |
-| Manufacturing variance | `WorkOrderClose`, `WorkOrder`, `Item`, `Warehouse` |
+| Product portfolio and sales mix | `Item`, `SalesInvoiceLine`, `CreditMemoLine`, `ShipmentLine`, `SalesOrderLine`, `Customer` |
+| Inventory and purchasing | `GoodsReceiptLine`, `ShipmentLine`, `SalesReturnLine`, `ProductionCompletionLine`, `PurchaseOrderLine`, `Supplier`, `Warehouse`, `Item` |
+| BOM, routing, and work-center planning | `BillOfMaterial`, `BillOfMaterialLine`, `Routing`, `RoutingOperation`, `WorkCenter`, `WorkCenterCalendar`, `Item` |
+| Work-order throughput and variance | `WorkOrder`, `WorkOrderOperation`, `WorkOrderOperationSchedule`, `MaterialIssueLine`, `ProductionCompletionLine`, `WorkOrderClose` |
+| Labor, headcount, and payroll mix | `Employee`, `TimeClockEntry`, `LaborTimeEntry`, `PayrollRegister`, `WorkCenter`, `CostCenter` |
 
 ## Starter SQL Map
 
@@ -57,19 +51,23 @@ sidebar_label: Managerial Analytics
 | Paid hours versus productive labor by work center | [28_paid_hours_vs_productive_labor_by_work_center.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/28_paid_hours_vs_productive_labor_by_work_center.sql) |
 | Headcount by cost center, job family, and employment status | [29_headcount_by_cost_center_job_family_status.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/29_headcount_by_cost_center_job_family_status.sql) |
 | Sales and margin by collection, style family, material, and lifecycle | [30_sales_margin_by_collection_style_material.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/30_sales_margin_by_collection_style_material.sql) |
+| Product portfolio mix by collection, style, lifecycle, and supply mode | [31_product_portfolio_mix_by_collection_style_lifecycle_supply_mode.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/31_product_portfolio_mix_by_collection_style_lifecycle_supply_mode.sql) |
+| Contribution margin by collection, material, lifecycle, and supply mode | [32_contribution_margin_by_collection_material_lifecycle_supply_mode.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/32_contribution_margin_by_collection_material_lifecycle_supply_mode.sql) |
+| Customer-service impact by collection and style | [33_customer_service_impact_by_collection_style.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/33_customer_service_impact_by_collection_style.sql) |
+| Labor and headcount by work location, job family, and cost center | [34_labor_and_headcount_by_work_location_job_family_cost_center.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/34_labor_and_headcount_by_work_location_job_family_cost_center.sql) |
+| Portfolio return and refund impact by collection and lifecycle | [35_portfolio_return_refund_impact_by_collection_lifecycle.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/35_portfolio_return_refund_impact_by_collection_lifecycle.sql) |
+
+## Phase 19 Pairings
+
+- Use [Product Portfolio Profitability Case](cases/product-portfolio-profitability-case.md) when you want a portfolio, lifecycle, and contribution-margin sequence.
+- Use [Workforce Cost and Org-Control Case](cases/workforce-cost-and-org-control-case.md) when you want workforce structure, labor mix, and approval concentration in one lab.
+- Use [Product Portfolio Case](cases/product-portfolio-and-lifecycle-case.md) when you want a lighter Phase 18-style entry point before moving into the fuller Phase 19 pack.
 
 ## Interpretation Notes
 
-- The item master now mixes purchased and manufactured finished goods.
-- The item master now also carries collection, style family, material, finish, color, size, lifecycle, and launch-date context.
-- `StandardCost` on manufactured items includes BOM-based material cost plus standard direct labor, variable overhead, and fixed overhead.
-- Routing tables explain how manufactured items move through operations and which work centers perform the work.
-- Work-center calendars and operation schedules now support daily load-versus-capacity and backlog analysis.
-- `LaborTimeEntry.WorkOrderOperationID` supports operation-level labor analysis without switching inventory valuation to actual cost.
-- `TimeClockEntry` adds an attendance layer for hourly employees, which makes overtime and shift-adherence analysis possible.
-- Shipment lag and backorder review belong in managerial analysis because they show how inventory and production capacity affect customer service.
-- Returns and refund review belongs here when the goal is operational performance and margin impact rather than audit exception work.
-- Workforce composition analysis is now more useful because the employee master distinguishes job family, job level, employment status, and current-state active flags.
-- Contribution margin excludes fixed overhead. Absorption margin includes it.
-- Manufacturing variance analysis belongs with `WorkOrderClose`, not only with `GLEntry`.
-- The current model is still a foundation: it includes shift assignments and approved daily time clocks, but it does not yet include raw punch-event tables, rotating shift rosters, or multi-level BOMs.
+- The item master now supports collection, style family, material, finish, color, lifecycle, and supply-mode analysis inside the existing `Item` table.
+- The employee master now supports work location, job family, job level, employment status, and current-state active analysis without adding a separate HR-history model.
+- Supply mode changes the meaning of cost analysis. Manufactured items can support both absorption and contribution-margin work because fixed overhead is stored separately.
+- Portfolio mix and profitability should be read together with service-level measures such as fill rate, shipment lag, and return pressure.
+- Work location and cost center answer different questions. Use both when students compare workforce structure to payroll or labor usage.
+- The current manufacturing model is still a foundation. It supports operations, labor, and contribution-margin analysis without switching inventory valuation to actual cost.

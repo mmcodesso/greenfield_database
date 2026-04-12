@@ -26,6 +26,8 @@ The dataset is built for:
 - managerial accounting analytics
 - auditing and controls analytics
 - document tracing and business-process understanding
+- portfolio and lifecycle analysis by collection, style family, material, and supply mode
+- workforce cost and org-control analysis by work location, job family, and job level
 
 ## Business Context
 
@@ -209,6 +211,7 @@ Students can:
 - reconcile AP using purchase invoices and disbursements
 - review WIP, manufacturing clearing, and manufacturing variance balances
 - review payroll liabilities, gross-to-net payroll, time-clock-to-payroll support, and payroll cash flows
+- analyze working capital by month across AR, inventory, AP, GRNI, customer deposits, accrued expenses, and payroll liabilities
 - trace source transactions into `GLEntry`
 
 ### Managerial accounting
@@ -221,6 +224,8 @@ Students can:
 - roll up BOM-based standard costs
 - analyze work-order throughput, completions, production variance, and direct labor cost
 - compare absorption cost and contribution margin for manufactured versus purchased items
+- review portfolio mix and margin by collection, style family, lifecycle status, and supply mode
+- analyze service-level pressure through fill rate, shipment lag, and return/refund impact by portfolio
 
 ### Auditing
 
@@ -231,6 +236,7 @@ Students can:
 - review approvals and segregation-of-duties patterns
 - examine timing and cut-off behavior
 - detect duplicate references and planted anomalies
+- review executive-role uniqueness, approval-authority design, item-master completeness, and terminated-employee activity
 - trace source documents to posted ledger activity
 
 ## Start Here by Analytics Topic

@@ -6,7 +6,6 @@ sidebar_label: Analytics Cases
 
 # Analytics Walkthrough Cases
 
-
 ## Walkthrough Set
 
 | Case | Recommended build mode | Best paired query packs |
@@ -16,17 +15,23 @@ sidebar_label: Analytics Cases
 | [Manufacturing Labor Case](manufacturing-labor-cost-case.md) | Clean or default | managerial + financial |
 | [Workforce Audit Case](master-data-and-workforce-audit-case.md) | Default anomaly-enabled | audit + managerial |
 | [Product Portfolio Case](product-portfolio-and-lifecycle-case.md) | Clean or default | managerial + cost accounting |
+| [Working Capital and Cash Conversion Case](working-capital-and-cash-conversion-case.md) | Clean or default | financial |
+| [Financial Statement Bridge Case](financial-statement-bridge-case.md) | Clean or default | financial + audit |
+| [Product Portfolio Profitability Case](product-portfolio-profitability-case.md) | Default anomaly-enabled or clean | managerial + financial |
+| [Workforce Cost and Org-Control Case](workforce-cost-and-org-control-case.md) | Default anomaly-enabled | managerial + audit + financial |
+| [Audit Review Pack Case](audit-review-pack-case.md) | Default anomaly-enabled | audit + support workbook |
 | [Audit Exception Lab](audit-exception-lab.md) | Default anomaly-enabled | audit |
 
-## Suggested Use
+## Suggested Phase 19 Sequence
 
-1. Read the related process guide first.
-2. Open the recommended SQLite build.
-3. Run the listed starter queries in order.
-4. Recreate at least one of the same ideas in Excel.
-5. Answer the follow-up questions without using an answer key.
+1. start with the topic page in [Financial Analytics](../financial.md), [Managerial Analytics](../managerial.md), or [Audit Analytics](../audit.md)
+2. run the paired SQL files in order
+3. open the case doc and follow the business scenario
+4. recreate one result in Excel
+5. answer the follow-up questions without using an answer key
 
 ## Where to Go Next
 
-- Read [Financial Analytics](../financial.md), [Managerial Analytics](../managerial.md), and [Audit Analytics](../audit.md) for the broader starter maps.
-- Read [Process Flows](../../process-flows.md) if students need the full business-process context first.
+- Use [Analytics Hub](../index.md) for the broader starter map.
+- Use [SQL Guide](../sql-guide.md) for query-running workflow.
+- Use [Excel Guide](../excel-guide.md) for workbook-side reconstruction.

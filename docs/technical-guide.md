@@ -10,6 +10,8 @@ Use this page when you need the codebase-level view of how Greenfield is generat
 
 For table structure and join fields, use [Schema Reference](reference/schema.md). For event-to-ledger behavior, use [GLEntry Posting Reference](reference/posting.md). For planned future changes, use [Roadmap](roadmap.md).
 
+Phase 19 does not add a new operational model. It expands the teaching layer through starter SQL, analytics docs, and walkthrough cases on top of the existing Phase 18 dataset.
+
 ## Current System at a Glance
 
 The current implementation has six layers:
@@ -85,6 +87,16 @@ In plain language, the build:
 | `exporters.py` | Write SQLite, dataset Excel, support workbook, and CSV zip outputs |
 | `utils.py` | Support numbering, rounding, and shared helper logic |
 | `main.py` | Orchestrate the full run and write the generation log |
+
+## Phase 19 Teaching Layer
+
+The current analytics layer now includes:
+
+- broader starter SQL coverage across financial, managerial, and audit topics
+- case-based walkthroughs under `docs/analytics/cases/`
+- default-build-first documentation that treats the anomaly-enabled package as the main classroom artifact
+
+This is intentionally a teaching-pack expansion, not a new generator phase that changes business behavior, schema, or posting logic.
 
 ## Posting, Validation, and Outputs
 

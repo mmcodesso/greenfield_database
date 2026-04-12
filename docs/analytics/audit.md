@@ -6,18 +6,16 @@ sidebar_label: Audit Analytics
 
 # Audit Analytics Starter Guide
 
-
 ## Relevant Tables
 
 | Topic | Main tables |
 |---|---|
-| O2C completeness | O2C header and line tables plus `CashReceiptApplication` |
-| P2P completeness | P2P header and line tables |
-| Approvals and SOD | `PurchaseRequisition`, `PurchaseOrder`, `PurchaseInvoice`, `JournalEntry`, `CreditMemo`, `CustomerRefund`, `Employee`, `PayrollRegister` |
-| Manufacturing controls | `Item`, `BillOfMaterial`, `BillOfMaterialLine`, `Routing`, `RoutingOperation`, `WorkCenter`, `WorkCenterCalendar`, `WorkOrder`, `WorkOrderOperation`, `WorkOrderOperationSchedule`, `MaterialIssueLine`, `ProductionCompletionLine`, `WorkOrderClose` |
-| Payroll and time-clock controls | `ShiftDefinition`, `EmployeeShiftAssignment`, `TimeClockEntry`, `AttendanceException`, `PayrollPeriod`, `LaborTimeEntry`, `PayrollRegister`, `PayrollRegisterLine`, `PayrollPayment`, `PayrollLiabilityRemittance`, `Employee` |
-| Cut-off and timing | operational header and line tables plus date fields |
-| Duplicate and anomaly review | `DisbursementPayment`, `PurchaseInvoice`, `JournalEntry`, `SalesInvoice`, `CreditMemo`, `PayrollPayment`, plus the support workbook sheets `AnomalyLog`, `ValidationStages`, `ValidationChecks`, and `ValidationExceptions` |
+| O2C and P2P completeness | O2C and P2P header and line tables plus `CashReceiptApplication` |
+| Approvals and segregation of duties | `PurchaseRequisition`, `PurchaseOrder`, `PurchaseInvoice`, `JournalEntry`, `CreditMemo`, `CustomerRefund`, `PayrollRegister`, `Employee` |
+| Manufacturing controls | `Item`, `BillOfMaterial`, `Routing`, `WorkCenter`, `WorkOrder`, `WorkOrderOperation`, `WorkOrderOperationSchedule`, `MaterialIssueLine`, `ProductionCompletionLine`, `WorkOrderClose` |
+| Payroll and time controls | `ShiftDefinition`, `EmployeeShiftAssignment`, `TimeClockEntry`, `AttendanceException`, `LaborTimeEntry`, `PayrollRegister`, `PayrollRegisterLine`, `PayrollPayment`, `PayrollLiabilityRemittance`, `Employee` |
+| Master-data controls | `Employee`, `Item`, plus operational tables that reuse those masters |
+| Support-workbook-assisted review | `greenfield_support.xlsx` sheets `AnomalyLog`, `ValidationStages`, `ValidationChecks`, and `ValidationExceptions` |
 
 ## Starter SQL Map
 
@@ -50,17 +48,51 @@ sidebar_label: Audit Analytics
 | Duplicate AP reference detail review | [26_duplicate_ap_reference_detail_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/26_duplicate_ap_reference_detail_review.sql) |
 | Terminated-employee activity review | [27_terminated_employee_activity_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/27_terminated_employee_activity_review.sql) |
 | Approval-role review by organization position | [28_approval_role_review_by_org_position.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/28_approval_role_review_by_org_position.sql) |
+| Executive-role uniqueness and control-assignment review | [29_executive_role_uniqueness_and_control_assignment_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/29_executive_role_uniqueness_and_control_assignment_review.sql) |
+| Item-master completeness review | [30_item_master_completeness_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/30_item_master_completeness_review.sql) |
+| Discontinued or pre-launch item activity review | [31_discontinued_or_prelaunch_item_activity_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/31_discontinued_or_prelaunch_item_activity_review.sql) |
+| Approval-authority review by expected role family | [32_approval_authority_review_by_expected_role_family.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/32_approval_authority_review_by_expected_role_family.sql) |
+| Terminated-employee activity rollup by process area | [33_terminated_employee_activity_rollup_by_process_area.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/33_terminated_employee_activity_rollup_by_process_area.sql) |
+
+## Baseline Control Queries
+
+Use these first when you want control logic without relying on planted anomalies:
+
+- O2C and P2P completeness
+- approval-role review by organization position
+- executive-role uniqueness and control-assignment review
+- approval-authority review by expected role family
+
+## Anomaly-Oriented Queries
+
+Use these when you want the default anomaly-enabled build to surface teachable exceptions:
+
+- duplicate payment or AP reference review
+- payroll control review
+- routing and operation-link review
+- time-clock and labor exception review
+- terminated-employee activity review
+- item-master completeness review
+- discontinued or pre-launch item activity review
+
+## Support-Workbook-Assisted Review
+
+Use the support workbook when you want a quicker triage path:
+
+- `AnomalyLog` for planted anomaly families and source keys
+- `ValidationStages` for stage-level exception counts
+- `ValidationChecks` for section-level control counts
+- `ValidationExceptions` for flattened exception detail
+
+Pair those sheets with [Audit Review Pack Case](cases/audit-review-pack-case.md) or [Audit Exception Lab](cases/audit-exception-lab.md).
 
 ## Interpretation Notes
 
-- A clean build with `anomaly_mode: none` may return few or no exceptions from anomaly-oriented queries.
+- A clean build with `anomaly_mode: none` may return few or no rows from anomaly-oriented queries.
 - The default `standard` build is better for controls teaching because anomalies are present while the GL remains balanced.
-- O2C completeness should be checked at the line and application level.
-- Manufacturing controls should now start from BOM, routing, and schedule integrity before moving to work-order close timing and ledger balances.
-- Payroll-control review should distinguish between normal processing lag and true exceptions such as missing payment, time after close, or hourly pay without time.
-- Time-clock review should distinguish clean scheduling variance from planted attendance anomalies such as missing clock-out or off-shift clocking.
-- Accrued-expense review should distinguish receipt-matched inventory AP from direct service invoices that intentionally clear prior accruals.
-- Employee-master review should distinguish current-state `IsActive` from the historical employment validity driven by `HireDate` and `TerminationDate`.
+- Employee-master review should distinguish current-state `IsActive` from historical validity driven by `HireDate` and `TerminationDate`.
+- Item-master review should distinguish current-state lifecycle and launch-date logic from operational usage timing.
+- Support-workbook review should accelerate tracing, not replace source-document review.
 
 ## Anomaly Coverage Matrix
 
@@ -81,3 +113,7 @@ sidebar_label: Audit Analytics
 | [25_time_clock_payroll_labor_bridge_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/25_time_clock_payroll_labor_bridge_review.sql) | `standard` | `paid_without_clock`, `missing_clock_out`, `labor_after_operation_close` | `TimeClockEntry`, `LaborTimeEntry`, `PayrollRegister`, `PayrollRegisterLine` |
 | [26_duplicate_ap_reference_detail_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/26_duplicate_ap_reference_detail_review.sql) | `standard` | `duplicate_vendor_payment_reference`, `duplicate_supplier_invoice_number` | `PurchaseInvoice`, `DisbursementPayment`, `Supplier` |
 | [27_terminated_employee_activity_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/27_terminated_employee_activity_review.sql) | `standard` | `terminated_employee_on_payroll`, `terminated_employee_approval`, `inactive_employee_time_or_labor` | `Employee`, `PayrollRegister`, `TimeClockEntry`, `LaborTimeEntry`, `PurchaseOrder`, `JournalEntry` |
+| [29_executive_role_uniqueness_and_control_assignment_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/29_executive_role_uniqueness_and_control_assignment_review.sql) | `standard` | `duplicate_executive_title_assignment` | `Employee`, `CostCenter`, `Warehouse`, `WorkCenter`, approval tables |
+| [30_item_master_completeness_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/30_item_master_completeness_review.sql) | `standard` | `missing_item_catalog_attribute` | `Item` |
+| [31_discontinued_or_prelaunch_item_activity_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/31_discontinued_or_prelaunch_item_activity_review.sql) | `standard` | `discontinued_item_in_new_activity` | `Item`, `SalesOrderLine`, `PurchaseOrderLine`, `WorkOrder`, `ShipmentLine`, `SalesInvoiceLine` |
+| [33_terminated_employee_activity_rollup_by_process_area.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/33_terminated_employee_activity_rollup_by_process_area.sql) | `standard` | `terminated_employee_on_payroll`, `terminated_employee_approval`, `inactive_employee_time_or_labor` | `Employee`, `PayrollRegister`, `TimeClockEntry`, `LaborTimeEntry`, approval tables |
