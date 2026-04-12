@@ -2,16 +2,11 @@
 
 ## Business Storyline
 
-A customer places an order with Greenfield. Sales records the demand. Warehouse operations ship the goods when inventory is available. Those finished goods may come from purchased inventory or from Greenfield's own production completions. Accounting bills the customer from the shipped lines, not from the original order alone. Treasury records the cash receipt, and accounting applies that cash to one or more invoices.
+At Greenfield, the order-to-cash cycle starts when the sales team promises goods to a customer and ends only when that sale is settled in cash. Several teams touch the process along the way. Sales captures demand, warehouse staff ship what is available, accounting bills what actually left the warehouse, and treasury records the money when the customer pays.
 
-That means students can see the difference between:
+That sequence matters because a customer order is not the same thing as revenue, and an invoice is not the same thing as cash. Students can see those stages separately in the data instead of treating the sale as one instant event.
 
-- demand
-- fulfillment
-- billing
-- cash collection
-
-In the clean base dataset, most invoices stop there. Returns are documented separately because they are intentionally modeled as a minority exception path rather than a normal outcome on most sales.
+Most sales end with shipment, billing, and settlement. Returns are handled on a separate page because Greenfield models them as an exception path, not as the normal outcome of most invoices.
 
 ## Process Diagram
 
@@ -36,17 +31,17 @@ flowchart LR
     CRA -. Clears AR from Customer Deposits .-> GL
 ```
 
-The diagram shows the basic revenue cycle. Orders do not post to the GL. Shipping, billing, cash movement, and receipt application do.
+Read the diagram as promise, fulfillment, billing, cash, and settlement. Orders show customer demand, but the accounting entries happen later when goods ship, invoices post, cash is received, and receipts are applied.
 
 ## Step-by-Step Walkthrough
 
-1. A customer places an order, which creates `SalesOrder` and `SalesOrderLine`.
-2. The warehouse tries to fulfill the order from available stock. If stock is short, some quantity stays open or backordered.
-3. A shipment is recorded in `Shipment` and `ShipmentLine`.
-4. Accounting creates a `SalesInvoice` from the shipped lines. The invoice lines point back to the exact `ShipmentLineID`.
-5. Treasury records a `CashReceipt` when money arrives from the customer.
-6. Accounting uses `CashReceiptApplication` to apply that receipt against one or more open invoices.
-7. Posted activity lands in `GLEntry`, where students can analyze revenue, receivables, and cash timing.
+1. Sales records the customer order. In the data, that promise appears in `SalesOrder` and `SalesOrderLine`.
+2. Warehouse staff fulfill what is available. If inventory is short, some quantity stays open or backordered until stock is available.
+3. When goods leave the warehouse, the shipment is recorded in `Shipment` and `ShipmentLine`. This is the first point where the physical movement of inventory is visible.
+4. Accounting bills from what shipped, not only from what was ordered. The billing records appear in `SalesInvoice` and `SalesInvoiceLine`, and each billed line points back to the exact `ShipmentLineID`.
+5. Treasury records the incoming customer payment in `CashReceipt`.
+6. Accounting applies that payment against one or more open invoices through `CashReceiptApplication`.
+7. Students can then move into `GLEntry` to analyze revenue recognition, receivables, deposits or unapplied cash, and collection timing.
 
 ## Main Tables in This Process
 
@@ -69,13 +64,13 @@ The diagram shows the basic revenue cycle. Orders do not post to the GL. Shippin
 
 ## Common Student Questions
 
-- Which orders shipped immediately and which became backorders?
-- Which shipment lines were billed later than shipment date?
+- Which orders shipped immediately and which turned into backorders?
+- Which shipment lines were invoiced later than the shipment date?
 - Which invoices remain open after cash applications?
 - Which customers pay one invoice at a time versus several at once?
 - How do revenue, receivables, and cash collection timing differ by period?
 
-## Current Implementation Notes
+## What to Notice in the Data
 
 - `SalesInvoiceLine.ShipmentLineID` is the core shipment-to-invoice traceability field.
 - `CashReceiptApplication` is the authoritative settlement table in O2C.
@@ -97,7 +92,7 @@ flowchart LR
     CRA -. Application clears deposit liability into AR settlement .-> GL
 ```
 
-The key teaching idea is that customer money can arrive before accounting applies it to one or more invoices. That makes `CashReceipt` a cash event and `CashReceiptApplication` the true settlement event.
+The key teaching idea is that customer money can arrive before accounting applies it to one or more invoices. That makes `CashReceipt` the cash event and `CashReceiptApplication` the true settlement event.
 
 ## Subprocess Spotlight: Backorder to Shipment Lag
 
@@ -120,3 +115,4 @@ This mini-flow helps students see why order date, shipment date, and invoice dat
 
 - Read [Returns, Credits, and Refunds](o2c-returns-credits-refunds.md) for the return and refund path.
 - Read [Dataset Guide](../dataset-overview.md) for the main joins used in analysis.
+- Read [GLEntry Posting Reference](../reference/posting.md) when you want the detailed posting rules.

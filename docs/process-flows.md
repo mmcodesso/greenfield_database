@@ -7,20 +7,21 @@ sidebar_label: Process Flows
 
 # Process Flows
 
+Use this section after [Company Story](company-story.md). Each guide explains the business situation first, then the document flow, then the accounting effect. That sequence helps students connect what the company is doing with what the database records.
 
 ## How to Use This Section
 
-Use this page as the hub for the detailed process guides:
+Start with the process that matches your class question:
 
-| Process area | Detailed guide | What it covers |
+| Process area | Detailed guide | Why students use it |
 |---|---|---|
-| Core O2C | [O2C](processes/o2c.md) | Customer order through shipment, invoice, receipt, and cash application |
-| Returns and credits | [Returns, Credits, and Refunds](processes/o2c-returns-credits-refunds.md) | Returned goods, credit memos, customer credits, and refunds |
-| P2P | [P2P](processes/p2p.md) | Requisition through PO, goods receipt, supplier invoice, and payment |
-| Manufacturing | [Manufacturing](processes/manufacturing.md) | BOMs, routings, work centers, work orders, material issues, completions, and work-order close |
-| Payroll | [Payroll](processes/payroll.md) | Pay periods, labor time, payroll registers, payments, remittances, and operation-level labor integration |
-| Time clocks and shifts | [Time Clocks](processes/time-clocks.md) | Shift definitions, employee assignments, approved time clocks, attendance exceptions, and payroll-hour sourcing |
-| Journals and close | [Manual Journals and Close](processes/manual-journals-and-close.md) | Recurring journals, accrued-expense estimates and adjustments, reclasses, and year-end close |
+| Core O2C | [O2C](processes/o2c.md) | To follow a sale from customer order through shipment, invoice, cash receipt, and application |
+| Returns and credits | [Returns, Credits, and Refunds](processes/o2c-returns-credits-refunds.md) | To study the exception path when a billed sale is corrected |
+| P2P | [P2P](processes/p2p.md) | To trace internal demand through supplier ordering, receiving, invoicing, and payment |
+| Manufacturing | [Manufacturing](processes/manufacturing.md) | To see how Greenfield turns materials, labor, and schedules into finished goods |
+| Time clocks and shifts | [Time Clocks](processes/time-clocks.md) | To understand attendance, shift expectations, labor support, and exception analysis |
+| Payroll | [Payroll](processes/payroll.md) | To follow gross-to-net payroll, liabilities, payments, remittances, and labor reclass |
+| Journals and close | [Manual Journals and Close](processes/manual-journals-and-close.md) | To study finance-controlled entries that sit outside the day-to-day document cycles |
 
 ## Greenfield Process Map
 
@@ -55,16 +56,7 @@ flowchart LR
     GL --> AN
 ```
 
-At Greenfield, students can think of the database as one business with six accounting-relevant threads:
-
-- selling and collecting from customers
-- correcting customer-side exceptions through returns and credits
-- buying inventory and materials from suppliers
-- manufacturing selected finished goods internally
-- assigning shifts, recording hourly attendance, paying employees, and tracing labor into product cost
-- recording recurring finance activity and year-end close
-
-Each of those threads eventually reaches `GLEntry`.
+Read the map from left to right. Customer and supplier activity create the external business cycles. Manufacturing turns demand and materials into finished goods. Time clocks document when hourly labor was worked and approved. Payroll converts that support into expense, liabilities, and employee pay. Finance journals complete the accounting picture. All of those threads eventually reach `GLEntry`.
 
 ## Subledger-to-Ledger Traceability
 
@@ -122,16 +114,17 @@ The most important traceability fields are:
 
 ## Recommended Reading Order
 
-1. Read [Company Story](company-story.md) to understand the business.
-2. Read [O2C](processes/o2c.md) and [P2P](processes/p2p.md).
-3. Read [Returns, Credits, and Refunds](processes/o2c-returns-credits-refunds.md) for the sales-side exception path.
-4. Read [Manufacturing](processes/manufacturing.md) for the production flow.
-5. Read [Time Clocks](processes/time-clocks.md) for shift and attendance flow.
-6. Read [Payroll](processes/payroll.md) for payroll and labor-cost flow.
-7. Read [Manual Journals and Close](processes/manual-journals-and-close.md) for finance-team activity outside the operational cycles.
-8. Read [Dataset Guide](dataset-overview.md) once you are ready to navigate tables and joins.
+1. Read [Company Story](company-story.md) to understand the business model.
+2. Read [O2C](processes/o2c.md) and [P2P](processes/p2p.md) to learn the customer and supplier cycles.
+3. Read [Returns, Credits, and Refunds](processes/o2c-returns-credits-refunds.md) for the main customer-side exception path.
+4. Read [Manufacturing](processes/manufacturing.md) to see how Greenfield produces selected goods internally.
+5. Read [Time Clocks](processes/time-clocks.md) to understand workforce scheduling, approved attendance, and labor support.
+6. Read [Payroll](processes/payroll.md) to follow the pay cycle and related accounting.
+7. Read [Manual Journals and Close](processes/manual-journals-and-close.md) for the finance-led activity outside the operational subledgers.
+8. Read [Dataset Guide](dataset-overview.md) when you are ready to work directly with tables and joins.
 
 ## Where to Go Next
 
-- Read [Dataset Guide](dataset-overview.md) for joins and table families.
-- Read [GLEntry Posting Reference](reference/posting.md) for the technical posting rules.
+- Read [Dataset Guide](dataset-overview.md) for table families and join paths.
+- Read [Schema Reference](reference/schema.md) when you need field-level table detail.
+- Read [GLEntry Posting Reference](reference/posting.md) when you want the posting rules behind each process.

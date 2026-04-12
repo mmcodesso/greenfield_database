@@ -2,9 +2,9 @@
 
 ## Business Storyline
 
-Some customer sales do not end with the original invoice. Goods may come back because they were damaged, incorrect, or no longer needed. Warehouse staff receive the goods back. Accounting issues a credit memo. If the invoice is still open, the credit reduces receivables. If the customer already paid, the credit can become customer credit and may later be refunded in cash.
+Some sales do not end with the original invoice. A customer may return goods because the order was damaged, incorrect, or no longer needed. Warehouse staff receive the goods back, accounting issues the financial correction, and treasury may later return cash if the customer had already paid.
 
-This is a valuable teaching path because it shows that revenue correction is both an operational and an accounting process. In the clean base dataset, this is intentionally a minority exception path, not a dominant share of revenue activity.
+This is one of the most useful student exception paths in the dataset because it shows that correcting revenue is both an operational process and an accounting process. Greenfield keeps it as a minority path so students can compare normal sales with exception handling.
 
 ## Process Diagram
 
@@ -25,17 +25,17 @@ flowchart LR
     RF -. Clears Customer Credit and Cash .-> GL
 ```
 
-This process starts from something that was already shipped and billed. It does not create a brand-new sale-side document chain. It corrects an earlier one.
+Read the diagram as a correction path, not as a new sale. The return starts from something that was already shipped and billed, then moves through physical return, financial correction, and sometimes cash refund.
 
 ## Step-by-Step Walkthrough
 
-1. A shipment line was previously sent to the customer and billed on a sales invoice.
+1. The starting point is a sale that was already shipped and invoiced.
 2. The customer sends back some or all of that quantity.
-3. Warehouse operations receive the returned goods, which creates `SalesReturn` and `SalesReturnLine`.
-4. Accounting creates a `CreditMemo` and `CreditMemoLine` from the returned line.
-5. If the original invoice was still open, the credit memo reduces AR.
-6. If the original invoice was already paid, the credit memo creates customer credit.
-7. Treasury may later issue `CustomerRefund` to clear that credit in cash.
+3. Warehouse staff receive the goods and record the return in `SalesReturn` and `SalesReturnLine`.
+4. Accounting issues the related financial correction in `CreditMemo` and `CreditMemoLine`.
+5. If the original invoice is still open, the credit memo reduces accounts receivable.
+6. If the customer already paid, the credit memo creates customer credit instead.
+7. Treasury may later clear that credit in cash through `CustomerRefund`.
 
 ## Main Tables in This Process
 
@@ -62,7 +62,7 @@ This process starts from something that was already shipped and billed. It does 
 - How much contra revenue came from returns by month or customer?
 - How do returns affect margin and inventory movement?
 
-## Current Implementation Notes
+## What to Notice in the Data
 
 - Returns only occur against previously shipped and previously invoiced lines.
 - `SalesReturnLine.ShipmentLineID` is the core operational trace field.
@@ -96,4 +96,5 @@ That distinction matters for AR analysis, cash analysis, and audit testing.
 ## Where to Go Next
 
 - Read [O2C](o2c.md) for the main revenue cycle.
+- Read [Dataset Guide](../dataset-overview.md) for the joins that connect shipment, invoice, return, and refund records.
 - Read [GLEntry Posting Reference](../reference/posting.md) for the detailed posting reference.

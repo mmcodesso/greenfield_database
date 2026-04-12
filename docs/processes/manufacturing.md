@@ -1,11 +1,10 @@
 # Manufacturing Process
 
-
 ## Business Storyline
 
-Greenfield does not manufacture every product it sells.
+Greenfield does not manufacture every product it sells. It buys some finished goods ready-made, but it also produces a selected subset of furniture, lighting, and textile items in-house. That hybrid model is one of the most useful teaching features in the dataset because students can compare purchased inventory with manufactured inventory inside the same company.
 
-Instead, it produces a selected subset of furniture, lighting, and some textile items in-house. When customer demand and finished-goods buffers indicate a shortage, the manufacturing team releases work orders. Raw materials and packaging are issued to production, direct labor is traced from payroll time entries, completed finished goods move into inventory, and accounting closes the work order when actual and standard costs are fully resolved.
+The manufacturing story begins when planners see that demand and inventory levels are moving out of balance. They release a work order, purchasing helps replenish any missing materials, warehouse staff issue components into production, supervisors and workers move the order through scheduled operations, payroll-supported labor is traced into the job, and accounting closes the order when standard and actual amounts are resolved.
 
 ## Process Diagram
 
@@ -46,21 +45,13 @@ flowchart LR
     WC --> GL
 ```
 
-In plain language:
-
-- customer demand helps determine when new production is needed
-- BOMs define which components are required
-- purchasing replenishes raw materials and packaging
-- production issues components into WIP
-- payroll and labor time provide actual labor input
-- completed goods move into finished-goods inventory at standard cost
-- work-order close pushes remaining material, labor, and overhead differences into manufacturing variance
+Read the diagram as demand, planning, scheduling, material support, labor support, completion, and close. Students should notice that manufacturing is not isolated: it depends on sales demand, purchasing, warehouse activity, time clocks, payroll, and the general ledger.
 
 ## Step-by-Step Walkthrough
 
 ### 1. Define the standard recipe
 
-Each manufactured finished good has one active BOM. The BOM lists raw-material and packaging components plus standard component quantities and scrap factors.
+Before production begins, Greenfield needs a standard recipe for each manufactured item. That recipe is stored as one active bill of material for the finished good, with the required raw materials, packaging components, quantities, and scrap assumptions.
 
 Main tables:
 
@@ -70,7 +61,7 @@ Main tables:
 
 ### 2. Define the routing and work centers
 
-Each manufactured item also has one active routing. The routing breaks production into `2` to `4` ordered operations and assigns each operation to a work center such as cutting, assembly, finishing, packing, or selected quality checks.
+Greenfield also defines how the work should happen. Each manufactured item has one active routing that breaks production into `2` to `4` ordered operations and assigns those operations to work centers such as cutting, assembly, finishing, packing, or selected quality checks.
 
 Main tables:
 
@@ -80,20 +71,20 @@ Main tables:
 
 ### 3. Release a work order and schedule it
 
-Work orders are created for manufactured items when projected shortage exists after considering:
+The planning team releases a work order when projected demand is going to exceed available finished-goods supply. In the current model, that decision considers:
 
 - open sales backlog
 - available finished-goods inventory
 - scheduled open completions
 - a target finished-goods buffer
 
-Main table:
+The work order itself is recorded in:
 
 - `WorkOrder`
 
-At release time the generator also creates work-order operation rows for the routing sequence that item uses. The current generator also creates a capacity-aware daily schedule for each operation, based on the assigned work center's calendar and available hours.
+At release time, the system also lays out the operation sequence and daily schedule that the order is expected to follow. That schedule uses the assigned work center's calendar and available hours.
 
-Main linked table:
+Main linked tables:
 
 - `WorkOrderOperation`
 - `WorkOrderOperationSchedule`
@@ -101,7 +92,7 @@ Main linked table:
 
 ### 4. Replenish components through P2P
 
-If the planned work order needs more materials than current stock supports, the generator creates purchasing demand through `PurchaseRequisition`. Those requisitions move through the normal P2P process into purchase orders and goods receipts.
+If the work order needs more materials than current stock can support, manufacturing demand flows into the normal purchasing process. That replenishment appears through `PurchaseRequisition`, then continues through purchase orders and goods receipts.
 
 Main linked tables:
 
@@ -111,7 +102,7 @@ Main linked tables:
 
 ### 5. Issue components to production
 
-When the first scheduled operation window begins, raw materials and packaging are issued from warehouse inventory into WIP. Issues are not dated before the work order's first scheduled operation date.
+When production begins, warehouse staff issue raw materials and packaging from inventory into work in process. In the dataset, issue dates are aligned with the start of the scheduled operation window rather than happening arbitrarily earlier.
 
 Main tables:
 
@@ -125,7 +116,7 @@ Accounting event:
 
 ### 6. Capture time clocks, labor, and overhead inputs
 
-Manufacturing direct workers are assigned to shifts and record approved daily `TimeClockEntry` rows. Those approved clock rows then feed `LaborTimeEntry` records tied to both the work order and the specific work-order operation where labor was consumed. Payroll later turns those labor records into direct-labor and manufacturing-overhead reclass journals.
+Manufacturing does not stop at materials. Direct workers are assigned to shifts, their approved daily attendance flows into labor support, and direct labor can be tied to the specific work-order operation where it was consumed. Payroll later turns that support into direct-labor and manufacturing-overhead reclass journals.
 
 Main linked tables:
 
@@ -139,7 +130,7 @@ Main linked tables:
 
 ### 7. Complete finished goods
 
-Completed production moves finished goods into inventory at standard material plus standard direct labor plus standard variable and fixed overhead. Completion dates are kept on or after the final operation's actual end date.
+When the production team completes the order, finished goods move into inventory at standard material, standard direct labor, and standard variable and fixed overhead. Completion dates are kept on or after the final operation's actual end date.
 
 Main tables:
 
@@ -154,7 +145,7 @@ Accounting event:
 
 ### 8. Close the work order
 
-When the generator determines the work order is ready to close, residual material, direct-labor, and overhead differences are closed to manufacturing variance.
+Once the order is complete, accounting closes it. Residual material, direct-labor, and overhead differences are pushed into manufacturing variance so the order no longer carries unresolved balances.
 
 Main table:
 
@@ -166,9 +157,9 @@ Accounting event:
 
 ### 9. Ship the completed goods
 
-Once finished goods are in inventory, normal O2C shipments can consume them.
+Once finished goods are back in inventory, the normal O2C shipment process can consume them to satisfy customer demand.
 
-## Main Tables Involved
+## Main Tables in This Process
 
 | Table | Role |
 |---|---|
@@ -220,17 +211,13 @@ Manufacturing creates both operational and journal-driven accounting:
 - How much manufacturing variance was posted by month or item group?
 - How do production activity and payroll affect finished-goods availability and margin analysis?
 
-## Current Implementation Notes
+## What to Notice in the Data
 
-- The current model is intentionally a foundation:
-  - single-level BOMs only
-  - no multi-level BOMs or subassemblies
-  - no raw punch-event table or shift-level capacity calendar
-- Phase 15 introduced work-center-level capacity calendars and daily operation schedules.
-- Phase 16 introduced shift assignments and approved daily time clocks for hourly employees.
-- Manufacturing demand is linked to sales backlog and finished-goods inventory logic.
+- Manufactured demand is tied to sales backlog and finished-goods availability rather than being released randomly.
 - Raw-material replenishment uses the existing P2P flow instead of a separate procurement subsystem.
-- Manufacturing remains standard-cost based even though payroll now provides actual labor detail, direct labor is assigned at the operation level, hourly attendance is captured, and operations are scheduled against finite daily work-center hours.
+- The current manufacturing model uses single-level BOMs rather than multilevel subassemblies.
+- Direct labor is assigned at the operation level, and operations are scheduled against finite daily work-center capacity.
+- Manufacturing remains standard-cost based even though payroll now provides actual labor detail.
 
 ## Subprocess Spotlight: Operation Schedule to Time Clock to Payroll to Cost
 
@@ -258,12 +245,10 @@ This mini-flow is the bridge students need for product-cost teaching:
 - payroll turns labor into pay and later manufacturing reclass activity
 - completion and work-order close tie those pieces back into product cost and variance
 
-That is how the dataset supports DL + overhead analysis without switching inventory to full actual costing.
+That is how the dataset supports direct-labor and overhead analysis without switching inventory to full actual costing.
 
 ## Where to Go Next
 
-- Read [Payroll](payroll.md) to see how labor enters the manufacturing flow.
-- Read [Time Clocks](time-clocks.md) to see how hourly attendance supports payroll and operation-level labor analysis.
-- Read [P2P](p2p.md) to see how materials enter inventory.
-- Read [O2C](o2c.md) to see how finished goods leave inventory.
-- Read [GLEntry Posting Reference](../reference/posting.md) for the detailed accounting rules.
+- Read [P2P](p2p.md) to see how materials and packaging are replenished.
+- Read [Time Clocks](time-clocks.md) and [Payroll](payroll.md) for the labor side of the same production story.
+- Read [GLEntry Posting Reference](../reference/posting.md) for the detailed posting rules behind issues, completions, and close.

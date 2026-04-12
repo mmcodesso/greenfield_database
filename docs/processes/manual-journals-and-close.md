@@ -2,21 +2,9 @@
 
 ## Business Storyline
 
-Greenfield is not just an operational database. The finance team also records recurring activity that students expect in a real accounting system:
+Greenfield is not only an operational database. The finance team also records the recurring and period-end activity that students expect in a real accounting system. That includes rent, utilities, depreciation, month-end accruals, rare accrual adjustments, factory-overhead journals, manufacturing labor and overhead reclasses, and year-end close.
 
-- rent
-- utilities
-- depreciation
-- month-end accruals
-- rare accrual adjustments
-- factory overhead
-- manufacturing labor and overhead reclasses
-- year-end close
-
-This matters because it lets students work with both:
-
-- operational postings from business events
-- finance-controlled postings outside the document cycles
+This page matters because it shows what happens outside the normal document chains. Students can compare operational postings from shipments, receipts, payroll, and purchasing with finance-controlled entries that start directly in the journal process.
 
 ## Process Diagram
 
@@ -48,15 +36,15 @@ flowchart LR
     PI -. Clears accrued expenses through AP .-> GL
 ```
 
-Unlike O2C, P2P, manufacturing, and payroll, this process starts directly in `JournalEntry`. The linked `GLEntry` rows carry the posted accounting detail.
+Unlike O2C, P2P, manufacturing, and payroll, this process starts directly in `JournalEntry`. Students should read the diagram as a finance calendar: record recurring entries, estimate expenses when needed, clear those estimates later through AP, and close the year when the reporting cycle ends.
 
 ## Step-by-Step Walkthrough
 
-1. The dataset begins with an opening balance journal.
-2. Each month, the generator creates recurring operating journals such as rent, utilities, depreciation, and month-end accruals.
-3. Most accrued expenses are later cleared through normal supplier invoices and disbursement payments rather than automatic reversals.
-4. Rare `Accrual Adjustment` journals partially reduce residual estimates when an accrual is overstated or remains stale.
-5. Manufacturing-related journals record factory overhead and payroll-driven labor and overhead reclasses.
+1. The accounting history begins with an opening balance journal that establishes the starting financial position.
+2. Each month, finance records recurring entries such as rent, utilities, depreciation, factory overhead, and accrued expenses in `JournalEntry`.
+3. Most accrued expenses are not reversed automatically. Instead, they are cleared later when AP records the related supplier invoice and payment.
+4. If an estimate remains overstated or stale, finance may record a targeted `Accrual Adjustment` journal to reduce the remaining balance.
+5. Manufacturing-related journals move factory overhead, direct labor reclass, and manufacturing overhead reclass activity into the cost-accounting flow.
 6. At year end, closing journals move profit-and-loss activity into `8010` Income Summary and then into `3030` Retained Earnings.
 
 ## Main Tables in This Process
@@ -93,7 +81,7 @@ Current recurring categories:
 - How much manual journal activity exists beside operational postings?
 - How should year-end close entries be treated in multi-year income-statement analysis?
 
-## Current Implementation Notes
+## What to Notice in the Data
 
 - Manual journal detail is represented through `JournalEntry` headers plus linked `GLEntry` rows. There is no separate journal-line table.
 - `ReversesJournalEntryID` is used for rare accrual adjustments that point back to the original accrual.
@@ -119,10 +107,11 @@ flowchart LR
     AJ -. Rare cleanup of residual estimate .-> GL
 ```
 
-The teaching point is that accrued expenses are now expected to survive into later operational settlement. They are not blanket-reversed every month. That makes year-end expense totals and liability roll-forwards much more realistic for students.
+The teaching point is that accrued expenses are expected to survive into later operational settlement. They are not blanket-reversed every month. That makes year-end expense totals and liability roll-forwards much more realistic for students.
 
 ## Where to Go Next
 
 - Read [Payroll](payroll.md) for the operational payroll process.
+- Read [P2P](p2p.md) for the supplier-invoice and disbursement flow that clears many accrued expenses.
 - Read [GLEntry Posting Reference](../reference/posting.md) for the detailed posting logic.
 - Read [Financial Analytics](../analytics/financial.md) for journal and close-cycle analysis examples.

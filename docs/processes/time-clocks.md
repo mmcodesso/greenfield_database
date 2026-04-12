@@ -2,17 +2,9 @@
 
 ## Business Storyline
 
-Greenfield now models time and attendance as an operational layer between workforce planning and payroll.
+Greenfield models time and attendance as the bridge between workforce planning and payroll. Supervisors define the expected shift pattern, hourly employees work against those expectations, and the approved daily clock becomes the support for both payroll hours and labor analysis.
 
-Hourly employees are assigned to a primary shift. On each worked day, the generator creates one approved `TimeClockEntry` row that captures the employee's clock-in time, clock-out time, break minutes, regular hours, and overtime hours. For direct manufacturing workers, that daily clock also ties back to the specific work-order operation where labor was consumed.
-
-That gives students a realistic bridge between:
-
-- employee attendance
-- payroll earnings
-- direct-labor costing
-- work-center activity
-- payroll-control and audit testing
+This page is about the workforce side of the story: when employees were expected to work, when they actually worked, how overtime appears, how direct manufacturing time can be tied to a work-order operation, and where attendance exceptions show up. The actual pay cycle is covered on the separate [Payroll](payroll.md) page.
 
 ## Process Diagram
 
@@ -45,21 +37,13 @@ flowchart LR
     REM --> GL
 ```
 
-In plain language:
-
-- `ShiftDefinition` stores the standard work pattern
-- `EmployeeShiftAssignment` gives each hourly employee a primary shift
-- `TimeClockEntry` stores the approved daily attendance record
-- direct manufacturing clocks can point to a specific `WorkOrderOperation`
-- `LaborTimeEntry` carries the approved labor-allocation record used for costing
-- payroll reads approved clock hours for hourly earnings
-- anomaly mode can record attendance issues in `AttendanceException`
+Read the diagram from workforce planning to approved attendance and then to downstream use. The important teaching idea is that time clocks do not exist only for payroll. They also support labor tracing, overtime analysis, manufacturing support, and control testing.
 
 ## Step-by-Step Walkthrough
 
 ### 1. Define the shift structure
 
-The generator creates a small set of reusable shift templates for manufacturing, warehouse, and customer-service work.
+Greenfield starts by defining standard shifts for areas such as manufacturing, warehouse, and customer service. Those shift definitions tell students what "on time" and "normal hours" are supposed to look like.
 
 Main table:
 
@@ -67,7 +51,7 @@ Main table:
 
 ### 2. Assign hourly employees to a primary shift
 
-Each hourly employee receives one primary active assignment tied to a shift and work center when applicable.
+Each hourly employee receives one primary active assignment. In some cases the assignment also ties the employee to a work center, which matters later for manufacturing and overtime analysis.
 
 Main table:
 
@@ -75,7 +59,7 @@ Main table:
 
 ### 3. Record approved daily time clocks
 
-For each worked day in a payroll period, the generator creates one normalized `TimeClockEntry` row with:
+For each worked day, the dataset records one approved `TimeClockEntry` row that captures the daily attendance summary:
 
 - `ClockInTime`
 - `ClockOutTime`
@@ -83,7 +67,7 @@ For each worked day in a payroll period, the generator creates one normalized `T
 - `RegularHours`
 - `OvertimeHours`
 
-For direct manufacturing workers, the daily clock can also point to:
+For direct manufacturing workers, the same daily clock can also point to:
 
 - `WorkOrderID`
 - `WorkOrderOperationID`
@@ -92,35 +76,26 @@ Main table:
 
 - `TimeClockEntry`
 
-### 4. Turn approved clock hours into labor allocation
+### 4. Link approved attendance to labor support
 
-Hourly manufacturing labor is then represented in `LaborTimeEntry`. Direct labor ties back to the work order, the routing operation, and the supporting time-clock row.
+Approved attendance does not stay isolated in the time-clock table. It feeds `LaborTimeEntry`, where direct manufacturing labor can be tied back to the work order, the routing operation, and the supporting time-clock row.
 
 Main table:
 
 - `LaborTimeEntry`
 
-### 5. Build payroll earnings from approved hours
+### 5. Use attendance for payroll and costing
 
-Hourly payroll earnings now come from approved time-clock hours instead of synthetic payroll-hour generation. Salaried employees still use salary-based payroll logic.
+Payroll uses approved clock hours as the source for hourly earnings, while manufacturing uses the same support to trace labor into product-cost analysis. Salaried employees remain outside the routine time-clock flow.
 
-Main tables:
+Main downstream tables:
 
 - `PayrollRegister`
 - `PayrollRegisterLine`
 
-### 6. Clear cash and liabilities
+### 6. Review exceptions
 
-Net pay is cleared through payroll payments. Taxes and deductions are cleared later through liability remittances.
-
-Main tables:
-
-- `PayrollPayment`
-- `PayrollLiabilityRemittance`
-
-### 7. Review exceptions
-
-The clean build keeps attendance exceptions minimal. In anomaly mode, the dataset can add issues such as:
+The clean build keeps attendance exceptions limited, but anomaly mode can add issues such as:
 
 - missing clock-out
 - duplicate time-clock day
@@ -132,7 +107,7 @@ Main table:
 
 - `AttendanceException`
 
-## Main Tables Involved
+## Main Tables in This Process
 
 | Table | Role |
 |---|---|
@@ -142,10 +117,8 @@ Main table:
 | `AttendanceException` | Logged time-and-attendance issues, mainly in anomaly mode |
 | `LaborTimeEntry` | Labor allocation record used for costing and payroll traceability |
 | `WorkOrderOperation` | Operation-level production link for direct labor |
-| `PayrollRegister` | Employee payroll header |
-| `PayrollRegisterLine` | Earnings and deduction detail |
-| `PayrollPayment` | Net-pay settlement |
-| `PayrollLiabilityRemittance` | Tax and deduction settlement |
+| `PayrollRegister` | Downstream payroll header that uses approved clock hours for hourly pay |
+| `PayrollRegisterLine` | Downstream earnings and deduction detail |
 
 ## When Accounting Happens
 
@@ -158,11 +131,10 @@ They affect accounting indirectly by driving:
 - payroll-control validation
 - manufacturing labor reclass logic through `LaborTimeEntry`
 
-The posting events still happen at:
+The posting events happen later in the payroll process:
 
 - `PayrollRegister`
-- `PayrollPayment`
-- `PayrollLiabilityRemittance`
+- related payroll settlements and remittances described on [Payroll](payroll.md)
 
 ## Common Student Questions
 
@@ -173,7 +145,7 @@ The posting events still happen at:
 - How do approved clock hours relate to paid hourly earnings?
 - Which attendance issues should be treated as control exceptions?
 
-## Current Implementation Notes
+## What to Notice in the Data
 
 - The clean build uses one approved `TimeClockEntry` row per worked day, not separate punch-in and punch-out event tables.
 - Salaried employees do not receive routine time-clock rows in the clean build.
@@ -181,8 +153,32 @@ The posting events still happen at:
 - Direct manufacturing time clocks can link to `WorkOrderOperationID`, which makes operation-level labor analytics possible.
 - Attendance exceptions are most useful in anomaly-enabled builds.
 
+## Subprocess Spotlight: Shift Expectation to Approved Hours
+
+```mermaid
+flowchart LR
+    SD[ShiftDefinition]
+    ESA[EmployeeShiftAssignment]
+    TCE[TimeClockEntry]
+    LTE[LaborTimeEntry]
+    PR[PayrollRegister]
+    AE[AttendanceException]
+
+    SD --> ESA --> TCE --> LTE
+    TCE --> PR
+    TCE --> AE
+```
+
+This view highlights the main learning path on this page:
+
+- shifts define the expected work pattern
+- approved time clocks show what happened on the day worked
+- labor support carries that attendance into costing
+- payroll later uses the approved hours for hourly earnings
+- exception analysis sits beside the normal flow as a control lens
+
 ## Where to Go Next
 
-- Read [Payroll](payroll.md) for the payroll-cycle view of the same data.
+- Read [Payroll](payroll.md) for the pay-cycle view of the same labor support.
 - Read [Manufacturing](manufacturing.md) for the production side of direct labor.
 - Read [Managerial Analytics](../analytics/managerial.md) and [Audit Analytics](../analytics/audit.md) for starter time-clock analysis.
