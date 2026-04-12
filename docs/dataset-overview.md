@@ -56,12 +56,12 @@ The current implementation contains **55 tables** across seven areas:
 | Master data | `Item`, `Warehouse`, `Employee` | 3 |
 | Organizational planning | `CostCenter`, `Budget` | 2 |
 
-Most classes use these teaching-package files:
+Most classes use these ready-to-use files:
 
 - `greenfield_2026_2030.sqlite`
 - `greenfield_2026_2030.xlsx`
-- `validation_report.json`
-- `generation.log`
+
+Download them from [Downloads](downloads.md) or use the copies already shared for your course.
 
 ## How the Database Is Organized
 
@@ -269,8 +269,8 @@ Start with:
 - manufacturing chain tables
 - payroll chain tables
 - `GLEntry`
-- `validation_report.json`
-- the anomaly log in Excel
+- the anomaly tabs in the Excel workbook
+- the transaction chains in [Process Flows](process-flows.md)
 
 ## Current Practical Tips
 

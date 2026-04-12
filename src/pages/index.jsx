@@ -28,7 +28,7 @@ const highlights = [
 const deliverables = [
   "SQLite database for query work",
   "Excel workbook for pivots and classroom exercises",
-  "Validation report and generation log for control review",
+  "Ready-to-use files published through GitHub Releases",
 ];
 
 export default function Home() {
@@ -51,6 +51,9 @@ export default function Home() {
             <div className={styles.actions}>
               <Link className="button button--primary button--lg" to="/docs/quick-start">
                 Open quick start
+              </Link>
+              <Link className="button button--secondary button--lg" to="/docs/downloads">
+                Download the data
               </Link>
               <Link className="button button--secondary button--lg" to="/docs/teach-with-greenfield/instructor-adoption">
                 Adopt it in a course
@@ -99,8 +102,8 @@ export default function Home() {
               ))}
             </ul>
             <p className={styles.panelNote}>
-              Most students should begin with the packaged outputs provided by their
-              course.
+              Most students should download the SQLite database and Excel workbook
+              from the latest release, then start with the docs.
             </p>
           </div>
         </section>

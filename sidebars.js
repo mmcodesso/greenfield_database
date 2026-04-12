@@ -4,7 +4,7 @@ const sidebars = {
     {
       type: "category",
       label: "Start Here",
-      items: ["index", "student-quickstart", "dataset-overview"],
+      items: ["index", "student-quickstart", "downloads", "dataset-overview"],
     },
     {
       type: "category",

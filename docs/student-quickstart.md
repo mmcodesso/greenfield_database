@@ -10,16 +10,14 @@ Use this page if you want the shortest path from “What is this database?” to
 
 ## 1. Start With the Right Files
 
-Most students should begin with the teaching package shared for their course.
+Most students should begin with the published classroom package.
 
 The core files are:
 
 - `greenfield_2026_2030.sqlite` for SQL work
 - `greenfield_2026_2030.xlsx` for Excel pivots, charts, and workbook-based analysis
-- `validation_report.json` for control and validation review
-- `generation.log` for run diagnostics and build checkpoints
 
-If your instructor already shared those files, start there first.
+Download them from [Downloads](downloads.md) or use the copies already shared for your course.
 
 ## 2. Learn the Story Before the Tables
 

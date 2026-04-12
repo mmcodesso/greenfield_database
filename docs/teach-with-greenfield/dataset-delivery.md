@@ -24,12 +24,11 @@ For most courses, share these files:
 
 - `greenfield_2026_2030.sqlite`
 - `greenfield_2026_2030.xlsx`
-- `validation_report.json`
-- `generation.log`
 
 Then point students to:
 
 - [Quick Start](../student-quickstart.md)
+- [Downloads](../downloads.md)
 - [Dataset Guide](../dataset-overview.md)
 - [Analytics Hub](../analytics/index.md)
 
@@ -84,11 +83,14 @@ The default teaching build writes:
 - `outputs/validation_report.json`
 - `outputs/generation.log`
 
+Only the SQLite database and Excel workbook should be published in the student-facing download package.
+
 ## Packaging Guidance
 
 - Share the SQLite database for SQL work.
 - Share the Excel workbook for pivot and chart-based analysis.
-- Keep `validation_report.json` and `generation.log` available for instructor review or advanced control exercises.
+- Publish the student files through GitHub Releases or your course LMS.
+- Keep `validation_report.json` and `generation.log` for instructor review only.
 - Ask students to start from the documentation site, not from the codebase.
 - If you want a smaller assignment, filter to one fiscal year in SQL or Excel instead of creating many custom classroom variants.
 

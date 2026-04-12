@@ -13,8 +13,8 @@ Greenfield Accounting Dataset is a synthetic business database for accounting an
 
 | If you are a... | Start here | Then continue with |
 |---|---|---|
-| Student | [Quick Start](student-quickstart.md) | [Company Story](company-story.md), [Process Flows](process-flows.md), [Schema Reference](reference/schema.md), [GLEntry Posting Reference](reference/posting.md), [Analytics Hub](analytics/index.md) |
-| Instructor | [Instructor Adoption Guide](instructor-guide.md) | [Quick Start](student-quickstart.md), [Schema Reference](reference/schema.md), [GLEntry Posting Reference](reference/posting.md), [Analytics Hub](analytics/index.md) |
+| Student | [Downloads](downloads.md) | [Quick Start](student-quickstart.md), [Company Story](company-story.md), [Process Flows](process-flows.md), [Schema Reference](reference/schema.md), [GLEntry Posting Reference](reference/posting.md), [Analytics Hub](analytics/index.md) |
+| Instructor | [Instructor Adoption Guide](instructor-guide.md) | [Downloads](downloads.md), [Quick Start](student-quickstart.md), [Schema Reference](reference/schema.md), [GLEntry Posting Reference](reference/posting.md), [Analytics Hub](analytics/index.md) |
 | Analyst | [Dataset Guide](dataset-overview.md) | [Analytics Hub](analytics/index.md), [Schema Reference](reference/schema.md), [GLEntry Posting Reference](reference/posting.md) |
 | Contributor | [Technical Guide](technical-guide.md) | [Schema Reference](reference/schema.md), [GLEntry Posting Reference](reference/posting.md), [Roadmap](roadmap.md) |
 
@@ -22,13 +22,14 @@ Greenfield Accounting Dataset is a synthetic business database for accounting an
 
 If you are new to the dataset, use this sequence:
 
-1. [Quick Start](student-quickstart.md)
-2. [Company Story](company-story.md)
-3. [Process Flows](process-flows.md)
-4. [Dataset Guide](dataset-overview.md)
-5. [Schema Reference](reference/schema.md)
-6. [GLEntry Posting Reference](reference/posting.md)
-7. [Analytics Hub](analytics/index.md)
+1. [Downloads](downloads.md)
+2. [Quick Start](student-quickstart.md)
+3. [Company Story](company-story.md)
+4. [Process Flows](process-flows.md)
+5. [Dataset Guide](dataset-overview.md)
+6. [Schema Reference](reference/schema.md)
+7. [GLEntry Posting Reference](reference/posting.md)
+8. [Analytics Hub](analytics/index.md)
 
 That path gives students the business context first, then the table and GLEntry posting references they need to trace documents into the ledger.
 
@@ -36,6 +37,7 @@ That path gives students the business context first, then the table and GLEntry 
 
 ### Start Here
 
+- [Downloads](downloads.md)
 - [Quick Start](student-quickstart.md)
 - [Dataset Guide](dataset-overview.md)
 
