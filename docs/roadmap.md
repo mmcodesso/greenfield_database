@@ -72,19 +72,100 @@ Phase 15 delivered:
 
 This phase turned the routing-aware manufacturing model into a capacity-aware scheduling foundation without changing standard-cost valuation.
 
-## Planned Extensions
+## Why Master Data Comes Next
 
-The next major phase is not locked yet, but the most likely follow-on work is deeper workforce-planning detail beneath the current daily time-clock model.
+The next major phase should improve master data realism before adding deeper workforce-operating detail.
 
-Likely next candidates:
+Current gaps that matter for teaching:
 
-- raw punch-event detail beneath the current approved daily time-clock model
-- rotating shift rosters and richer attendance-planning logic
-- shift-level workforce planning that ties employee availability more tightly to work-center scheduling
-- deeper labor-timing anomaly packs and workforce-efficiency analytics
+- employee titles still repeat in ways that weaken role-based controls, such as multiple CEOs and missing unique finance leadership roles
+- the employee master does not yet model inactive, terminated, or leave-status employees
+- item names are still generic patterns rather than business-readable product names
+- the product catalog does not yet support richer collection, style, material, finish, and lifecycle analysis
+
+Fixing those gaps first improves the current dataset more broadly than raw punch-event detail would:
+
+- **Auditing:** stronger approval, HR, master-data, and terminated-employee control scenarios
+- **Financial analytics:** clearer payroll, organization, and close-role interpretation
+- **Managerial analytics:** stronger product-family, collection, lifecycle, and portfolio analysis
+- **Cost accounting:** better rollups and comparisons by meaningful product family and product attributes
+
+## Next Planned Phase: Phase 18 - Master Data Realism and Workforce Lifecycle Foundation
+
+Phase 18 should add a more realistic but still teachable employee and item master.
+
+Planned employee improvements:
+
+- deterministic org-structure role assignment instead of repeated executive titles
+- exactly one `Chief Executive Officer`
+- exactly one `Chief Financial Officer`
+- exactly one `Controller`
+- exactly one `Production Manager`
+- exactly one `Accounting Manager`
+- repeatable frontline and supervisory roles only where repetition makes business sense
+- moderate workforce lifecycle modeling through status, termination, and role metadata
+- historical employee retention for traceability, while preventing new clean-build activity after termination
+
+Planned item and product-catalog improvements:
+
+- deterministic business-readable product names instead of `Item ####`
+- richer item attributes inside the existing `Item` table, such as collection, style family, material, finish, color, size, launch timing, and lifecycle status
+- continued support for purchased and manufactured finished goods without changing the current operational model
+- clearer catalog structure for profitability, returns, mix, and cost-accounting analysis
+
+Planned teaching value:
+
+- stronger org-role and approval analytics
+- headcount, tenure, turnover, and terminated-employee audit review
+- richer sales, return, and margin analysis by collection and product family
+- stronger cost and contribution-margin analysis by meaningful product groupings
+
+## Planned Follow-On Phases
+
+### Phase 19 - Analytics Starter Pack 2.0 and Case Library Expansion
+
+Phase 19 should use the richer employee and item masters to expand the teaching layer.
+
+Planned focus:
+
+- more guided SQL and Excel paths across financial, managerial, audit, and cost-accounting topics
+- richer walkthrough cases built around named products, collections, departments, and employee roles
+- stronger product profitability, turnover, payroll-mix, and org-control labs
+- instructor-facing activity sequencing that separates clean analysis from anomaly analysis
+
+This phase should remain documentation, query, and case heavy rather than process-model heavy.
+
+### Phase 20 - Master Data and Workforce Audit Anomaly Expansion
+
+Phase 20 should expand anomaly coverage around employee and item master controls.
+
+Planned focus:
+
+- terminated or inactive employee activity
+- conflicting executive-role assignments
+- approval-authority mismatch and stale employee-master scenarios
+- inactive or discontinued item usage
+- missing or inconsistent product-catalog attributes
+- stronger linkage between anomaly packs, audit starter queries, and case labs
+
+This phase should improve audit teaching coverage without turning the base dataset into an exception-heavy build.
+
+### Phase 21 - Workforce Planning Detail
+
+Only after Phases 18 to 20 should the roadmap return to deeper workforce-operating detail beneath the current daily time-clock model.
+
+Planned focus:
+
+- raw punch-event detail beneath approved daily time-clock rows
+- rotating shift rosters
+- richer employee-availability and attendance-planning logic
+- deeper labor-timing and workforce-efficiency anomalies
+
+This work still matters, but it is no longer the immediate next step because it improves operational detail more narrowly than master-data realism and teaching-pack expansion.
 
 ## Recommended Sequence
 
-1. Add raw punch-event detail beneath the current approved daily time-clock layer
-2. Add rotating shift rosters and richer workforce-planning detail
-3. Continue extending analytics and anomaly packs on top of those deeper workforce layers
+1. Phase 18 - Master Data Realism and Workforce Lifecycle Foundation
+2. Phase 19 - Analytics Starter Pack 2.0 and Case Library Expansion
+3. Phase 20 - Master Data and Workforce Audit Anomaly Expansion
+4. Phase 21 - Workforce Planning Detail
