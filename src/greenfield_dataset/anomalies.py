@@ -11,6 +11,17 @@ from greenfield_dataset.settings import GenerationContext
 from greenfield_dataset.utils import money, next_id
 
 
+APPROVAL_ROLE_FAMILIES_BY_DOCUMENT = {
+    "Purchase Requisition": {"Finance and Accounting", "Executive Leadership"},
+    "Purchase Order": {"Finance and Accounting", "Executive Leadership"},
+    "Purchase Invoice": {"Finance and Accounting"},
+    "Credit Memo": {"Finance and Accounting", "Executive Leadership"},
+    "Customer Refund": {"Finance and Accounting", "Executive Leadership"},
+    "Journal Entry": {"Finance and Accounting", "Executive Leadership"},
+    "Payroll Register": {"Finance and Accounting", "Executive Leadership"},
+}
+
+
 def fiscal_years(context: GenerationContext) -> list[int]:
     start = pd.Timestamp(context.settings.fiscal_year_start).year
     end = pd.Timestamp(context.settings.fiscal_year_end).year
@@ -176,6 +187,202 @@ def journal_gl_rows(context: GenerationContext, journal_entry_id: int) -> pd.Dat
         gl["SourceDocumentType"].eq("JournalEntry")
         & gl["SourceDocumentID"].astype(int).eq(int(journal_entry_id))
     ].copy()
+
+
+def approval_document_rows(context: GenerationContext, year: int) -> pd.DataFrame:
+    specs = [
+        ("PurchaseOrder", "Purchase Order", "PurchaseOrderID", "OrderDate", "OrderTotal", "ApprovedByEmployeeID", "CreatedByEmployeeID", "PONumber"),
+        ("PurchaseInvoice", "Purchase Invoice", "PurchaseInvoiceID", "ApprovedDate", "GrandTotal", "ApprovedByEmployeeID", None, "InvoiceNumber"),
+        ("CreditMemo", "Credit Memo", "CreditMemoID", "ApprovedDate", "GrandTotal", "ApprovedByEmployeeID", None, "CreditMemoNumber"),
+        ("CustomerRefund", "Customer Refund", "CustomerRefundID", "RefundDate", "Amount", "ApprovedByEmployeeID", None, "RefundNumber"),
+        ("JournalEntry", "Journal Entry", "JournalEntryID", "ApprovedDate", "TotalAmount", "ApprovedByEmployeeID", "CreatedByEmployeeID", "EntryNumber"),
+        ("PayrollRegister", "Payroll Register", "PayrollRegisterID", "ApprovedDate", "GrossPay", "ApprovedByEmployeeID", None, None),
+    ]
+    frames: list[pd.DataFrame] = []
+    for table_name, document_type, pk_column, date_column, amount_column, approver_column, creator_column, document_number_column in specs:
+        table = context.tables[table_name]
+        if table.empty or approver_column not in table.columns:
+            continue
+        columns = [pk_column, date_column, amount_column, approver_column]
+        if creator_column is not None:
+            columns.append(creator_column)
+        if document_number_column is not None:
+            columns.append(document_number_column)
+        rows = table[columns].copy()
+        rows = rows[rows[approver_column].notna()]
+        rows["EventDateValue"] = pd.to_datetime(rows[date_column], errors="coerce")
+        rows = rows[rows["EventDateValue"].dt.year.eq(year) & rows["EventDateValue"].notna()]
+        if rows.empty:
+            continue
+        rows["TableName"] = table_name
+        rows["DocumentType"] = document_type
+        rows["PrimaryKeyColumn"] = pk_column
+        rows["PrimaryKeyValue"] = rows[pk_column].astype(int)
+        rows["EventDate"] = rows[date_column].astype(str)
+        rows["DocumentAmount"] = rows[amount_column].astype(float)
+        rows["ApprovedByEmployeeIDValue"] = rows[approver_column].astype(int)
+        rows["CreatorEmployeeIDValue"] = rows[creator_column].astype("Int64") if creator_column is not None else pd.Series(pd.NA, index=rows.index, dtype="Int64")
+        rows["DocumentNumber"] = rows[document_number_column].astype(str) if document_number_column is not None else rows[pk_column].astype(str)
+        frames.append(
+            rows[
+                [
+                    "TableName",
+                    "DocumentType",
+                    "PrimaryKeyColumn",
+                    "PrimaryKeyValue",
+                    "DocumentNumber",
+                    "EventDate",
+                    "EventDateValue",
+                    "DocumentAmount",
+                    "ApprovedByEmployeeIDValue",
+                    "CreatorEmployeeIDValue",
+                ]
+            ]
+        )
+    if not frames:
+        return pd.DataFrame(
+            columns=[
+                "TableName",
+                "DocumentType",
+                "PrimaryKeyColumn",
+                "PrimaryKeyValue",
+                "DocumentNumber",
+                "EventDate",
+                "EventDateValue",
+                "DocumentAmount",
+                "ApprovedByEmployeeIDValue",
+                "CreatorEmployeeIDValue",
+            ]
+        )
+    documents = pd.concat(frames, ignore_index=True)
+    return documents.sort_values(["EventDateValue", "TableName", "PrimaryKeyValue"]).reset_index(drop=True)
+
+
+def approval_candidate_employees(
+    context: GenerationContext,
+    *,
+    event_date: pd.Timestamp,
+    current_approver_id: int,
+    creator_employee_id: int | None,
+) -> pd.DataFrame:
+    employees = context.tables["Employee"].copy()
+    if employees.empty:
+        return employees
+    hire_dates = pd.to_datetime(employees["HireDate"], errors="coerce")
+    termination_dates = pd.to_datetime(employees["TerminationDate"], errors="coerce")
+    employees = employees[
+        hire_dates.le(pd.Timestamp(event_date))
+        & (termination_dates.isna() | termination_dates.ge(pd.Timestamp(event_date)))
+    ].copy()
+    employees = employees[~employees["EmployeeID"].astype(int).eq(int(current_approver_id))]
+    if creator_employee_id is not None:
+        employees = employees[~employees["EmployeeID"].astype(int).eq(int(creator_employee_id))]
+    return employees.copy()
+
+
+def reassign_document_approver(
+    context: GenerationContext,
+    *,
+    table_name: str,
+    pk_column: str,
+    pk_value: int,
+    employee_id: int,
+) -> None:
+    mask = context.tables[table_name][pk_column].astype(int).eq(int(pk_value))
+    context.tables[table_name].loc[mask, "ApprovedByEmployeeID"] = int(employee_id)
+
+
+def current_state_inactive_employee_rows(context: GenerationContext) -> pd.DataFrame:
+    employees = context.tables["Employee"]
+    if employees.empty:
+        return employees.head(0)
+    rows = employees[
+        employees["IsActive"].astype(int).eq(0)
+        | employees["EmploymentStatus"].eq("Terminated")
+    ].copy()
+    if rows.empty:
+        return rows
+    rows["TerminationDateValue"] = pd.to_datetime(rows["TerminationDate"], errors="coerce")
+    return rows.sort_values(["TerminationDateValue", "EmployeeID"], na_position="first").reset_index(drop=True)
+
+
+def item_activity_rows(context: GenerationContext, year: int) -> pd.DataFrame:
+    frames: list[pd.DataFrame] = []
+
+    sales_order_headers = context.tables["SalesOrder"][["SalesOrderID", "OrderDate", "OrderNumber"]].copy()
+    if not context.tables["SalesOrderLine"].empty and not sales_order_headers.empty:
+        rows = context.tables["SalesOrderLine"][["SalesOrderLineID", "ItemID", "SalesOrderID"]].merge(
+            sales_order_headers,
+            on="SalesOrderID",
+            how="left",
+        )
+        rows["ActivityDateValue"] = pd.to_datetime(rows["OrderDate"], errors="coerce")
+        rows = rows[rows["ActivityDateValue"].dt.year.eq(year)]
+        if not rows.empty:
+            rows["TableName"] = "SalesOrderLine"
+            rows["PrimaryKeyValue"] = rows["SalesOrderLineID"].astype(int)
+            rows["DocumentNumber"] = rows["OrderNumber"].astype(str)
+            frames.append(rows[["TableName", "PrimaryKeyValue", "DocumentNumber", "ItemID", "ActivityDateValue"]])
+
+    purchase_order_headers = context.tables["PurchaseOrder"][["PurchaseOrderID", "OrderDate", "PONumber"]].copy()
+    if not context.tables["PurchaseOrderLine"].empty and not purchase_order_headers.empty:
+        rows = context.tables["PurchaseOrderLine"][["POLineID", "ItemID", "PurchaseOrderID"]].merge(
+            purchase_order_headers,
+            on="PurchaseOrderID",
+            how="left",
+        )
+        rows["ActivityDateValue"] = pd.to_datetime(rows["OrderDate"], errors="coerce")
+        rows = rows[rows["ActivityDateValue"].dt.year.eq(year)]
+        if not rows.empty:
+            rows["TableName"] = "PurchaseOrderLine"
+            rows["PrimaryKeyValue"] = rows["POLineID"].astype(int)
+            rows["DocumentNumber"] = rows["PONumber"].astype(str)
+            frames.append(rows[["TableName", "PrimaryKeyValue", "DocumentNumber", "ItemID", "ActivityDateValue"]])
+
+    work_orders = context.tables["WorkOrder"]
+    if not work_orders.empty:
+        rows = work_orders[["WorkOrderID", "WorkOrderNumber", "ItemID", "ReleasedDate"]].copy()
+        rows["ActivityDateValue"] = pd.to_datetime(rows["ReleasedDate"], errors="coerce")
+        rows = rows[rows["ActivityDateValue"].dt.year.eq(year)]
+        if not rows.empty:
+            rows["TableName"] = "WorkOrder"
+            rows["PrimaryKeyValue"] = rows["WorkOrderID"].astype(int)
+            rows["DocumentNumber"] = rows["WorkOrderNumber"].astype(str)
+            frames.append(rows[["TableName", "PrimaryKeyValue", "DocumentNumber", "ItemID", "ActivityDateValue"]])
+
+    shipment_headers = context.tables["Shipment"][["ShipmentID", "ShipmentDate", "ShipmentNumber"]].copy()
+    if not context.tables["ShipmentLine"].empty and not shipment_headers.empty:
+        rows = context.tables["ShipmentLine"][["ShipmentLineID", "ItemID", "ShipmentID"]].merge(
+            shipment_headers,
+            on="ShipmentID",
+            how="left",
+        )
+        rows["ActivityDateValue"] = pd.to_datetime(rows["ShipmentDate"], errors="coerce")
+        rows = rows[rows["ActivityDateValue"].dt.year.eq(year)]
+        if not rows.empty:
+            rows["TableName"] = "ShipmentLine"
+            rows["PrimaryKeyValue"] = rows["ShipmentLineID"].astype(int)
+            rows["DocumentNumber"] = rows["ShipmentNumber"].astype(str)
+            frames.append(rows[["TableName", "PrimaryKeyValue", "DocumentNumber", "ItemID", "ActivityDateValue"]])
+
+    invoice_headers = context.tables["SalesInvoice"][["SalesInvoiceID", "InvoiceDate", "InvoiceNumber"]].copy()
+    if not context.tables["SalesInvoiceLine"].empty and not invoice_headers.empty:
+        rows = context.tables["SalesInvoiceLine"][["SalesInvoiceLineID", "ItemID", "SalesInvoiceID"]].merge(
+            invoice_headers,
+            on="SalesInvoiceID",
+            how="left",
+        )
+        rows["ActivityDateValue"] = pd.to_datetime(rows["InvoiceDate"], errors="coerce")
+        rows = rows[rows["ActivityDateValue"].dt.year.eq(year)]
+        if not rows.empty:
+            rows["TableName"] = "SalesInvoiceLine"
+            rows["PrimaryKeyValue"] = rows["SalesInvoiceLineID"].astype(int)
+            rows["DocumentNumber"] = rows["InvoiceNumber"].astype(str)
+            frames.append(rows[["TableName", "PrimaryKeyValue", "DocumentNumber", "ItemID", "ActivityDateValue"]])
+
+    if not frames:
+        return pd.DataFrame(columns=["TableName", "PrimaryKeyValue", "DocumentNumber", "ItemID", "ActivityDateValue"])
+    return pd.concat(frames, ignore_index=True).sort_values(["ActivityDateValue", "TableName", "PrimaryKeyValue"]).reset_index(drop=True)
 
 
 def inject_weekend_journal_entries(context: GenerationContext, count_per_year: int) -> None:
@@ -1422,6 +1629,231 @@ def inject_discontinued_item_in_new_activity(context: GenerationContext, count_p
                 break
 
 
+def inject_approval_above_authority_limit(context: GenerationContext, count_per_year: int) -> None:
+    if count_per_year <= 0:
+        return
+
+    for year in fiscal_years(context):
+        documents = approval_document_rows(context, year)
+        if documents.empty:
+            continue
+        injected = 0
+        for row in documents.itertuples(index=False):
+            used_ids = used_primary_keys(context, str(row.TableName))
+            if int(row.PrimaryKeyValue) in used_ids:
+                continue
+            if pd.isna(row.DocumentAmount) or float(row.DocumentAmount) <= 0:
+                continue
+            creator_employee_id = None if pd.isna(row.CreatorEmployeeIDValue) else int(row.CreatorEmployeeIDValue)
+            candidates = approval_candidate_employees(
+                context,
+                event_date=pd.Timestamp(row.EventDateValue),
+                current_approver_id=int(row.ApprovedByEmployeeIDValue),
+                creator_employee_id=creator_employee_id,
+            )
+            if candidates.empty:
+                continue
+            candidates = candidates[candidates["MaxApprovalAmount"].astype(float) < float(row.DocumentAmount)]
+            if candidates.empty:
+                continue
+            candidates = candidates.sort_values(["MaxApprovalAmount", "EmployeeID"], ascending=[False, True])
+            selected = candidates.iloc[0]
+            reassign_document_approver(
+                context,
+                table_name=str(row.TableName),
+                pk_column=str(row.PrimaryKeyColumn),
+                pk_value=int(row.PrimaryKeyValue),
+                employee_id=int(selected["EmployeeID"]),
+            )
+            log_anomaly(
+                context,
+                "approval_above_authority_limit",
+                str(row.TableName),
+                int(row.PrimaryKeyValue),
+                year,
+                f"{row.DocumentType} approver was changed to an active employee whose approval limit is below the document amount.",
+                "Approval authority limit review for document amounts above approver MaxApprovalAmount.",
+            )
+            injected += 1
+            if injected >= count_per_year:
+                break
+
+
+def inject_unexpected_role_family_approval(context: GenerationContext, count_per_year: int) -> None:
+    if count_per_year <= 0:
+        return
+
+    for year in fiscal_years(context):
+        documents = approval_document_rows(context, year)
+        if documents.empty:
+            continue
+        injected = 0
+        for row in documents.itertuples(index=False):
+            used_ids = used_primary_keys(context, str(row.TableName))
+            if int(row.PrimaryKeyValue) in used_ids:
+                continue
+            creator_employee_id = None if pd.isna(row.CreatorEmployeeIDValue) else int(row.CreatorEmployeeIDValue)
+            candidates = approval_candidate_employees(
+                context,
+                event_date=pd.Timestamp(row.EventDateValue),
+                current_approver_id=int(row.ApprovedByEmployeeIDValue),
+                creator_employee_id=creator_employee_id,
+            )
+            if candidates.empty:
+                continue
+            expected_families = APPROVAL_ROLE_FAMILIES_BY_DOCUMENT.get(str(row.DocumentType), set())
+            candidates = candidates[~candidates["JobFamily"].isin(expected_families)]
+            if candidates.empty:
+                continue
+            sufficient = candidates[candidates["MaxApprovalAmount"].astype(float) >= float(row.DocumentAmount)]
+            selected_pool = sufficient if not sufficient.empty else candidates
+            selected_pool = selected_pool.sort_values(["MaxApprovalAmount", "EmployeeID"], ascending=[True, True])
+            selected = selected_pool.iloc[0]
+            reassign_document_approver(
+                context,
+                table_name=str(row.TableName),
+                pk_column=str(row.PrimaryKeyColumn),
+                pk_value=int(row.PrimaryKeyValue),
+                employee_id=int(selected["EmployeeID"]),
+            )
+            log_anomaly(
+                context,
+                "unexpected_role_family_approval",
+                str(row.TableName),
+                int(row.PrimaryKeyValue),
+                year,
+                f"{row.DocumentType} approver was changed to an active employee from an unexpected role family.",
+                "Approval-role-family review using expected approver job-family guidance.",
+            )
+            injected += 1
+            if injected >= count_per_year:
+                break
+
+
+def inject_inactive_employee_current_assignment(context: GenerationContext, count_per_year: int) -> None:
+    if count_per_year <= 0:
+        return
+
+    inactive_employees = current_state_inactive_employee_rows(context)
+    if inactive_employees.empty:
+        return
+
+    assignment_specs = [
+        ("CostCenter", "ManagerID", "stale cost-center manager assignment"),
+        ("Warehouse", "ManagerID", "stale warehouse manager assignment"),
+        ("WorkCenter", "ManagerEmployeeID", "stale work-center manager assignment"),
+        ("Customer", "SalesRepEmployeeID", "stale customer sales-rep assignment"),
+    ]
+
+    for year in fiscal_years(context):
+        injected = 0
+        for table_name, employee_column, assignment_label in assignment_specs:
+            table = context.tables[table_name]
+            if table.empty or employee_column not in table.columns:
+                continue
+            pk_column = table.columns[0]
+            used_ids = used_primary_keys(context, table_name, "inactive_employee_current_assignment")
+            candidates = table[
+                table[employee_column].notna()
+                & ~table[pk_column].astype(int).isin(used_ids)
+            ].sort_values(pk_column)
+            if candidates.empty:
+                continue
+            selected_row = candidates.iloc[0]
+            employee_id = int(inactive_employees.iloc[(year - fiscal_years(context)[0] + injected) % len(inactive_employees)]["EmployeeID"])
+            mask = context.tables[table_name][pk_column].astype(int).eq(int(selected_row[pk_column]))
+            context.tables[table_name].loc[mask, employee_column] = employee_id
+            log_anomaly(
+                context,
+                "inactive_employee_current_assignment",
+                table_name,
+                int(selected_row[pk_column]),
+                year,
+                f"{assignment_label.capitalize()} was reassigned to an inactive employee in the current-state master data.",
+                "Current-state employee assignment review for inactive or terminated owners.",
+            )
+            injected += 1
+            if injected >= count_per_year:
+                break
+
+
+def inject_prelaunch_item_in_new_activity(context: GenerationContext, count_per_year: int) -> None:
+    if count_per_year <= 0:
+        return
+
+    items = context.tables["Item"]
+    if items.empty:
+        return
+    sellable_groups = {"Furniture", "Lighting", "Textiles", "Accessories"}
+
+    for year in fiscal_years(context):
+        activity_rows = item_activity_rows(context, year)
+        if activity_rows.empty:
+            continue
+        used_ids = used_primary_keys(context, "Item")
+        injected = 0
+        for row in activity_rows.itertuples(index=False):
+            if int(row.ItemID) in used_ids:
+                continue
+            item_mask = context.tables["Item"]["ItemID"].astype(int).eq(int(row.ItemID))
+            item_rows = context.tables["Item"].loc[item_mask]
+            if item_rows.empty:
+                continue
+            item = item_rows.iloc[0]
+            if str(item["ItemGroup"]) not in sellable_groups or int(item["IsActive"]) != 1:
+                continue
+            offset_days = 15 + (int(row.PrimaryKeyValue) % 31)
+            launch_date = (pd.Timestamp(row.ActivityDateValue) + pd.Timedelta(days=offset_days)).strftime("%Y-%m-%d")
+            context.tables["Item"].loc[item_mask, "LaunchDate"] = launch_date
+            log_anomaly(
+                context,
+                "prelaunch_item_in_new_activity",
+                "Item",
+                int(row.ItemID),
+                year,
+                f"Item launch date was moved after {row.TableName} activity so the item appears in use before launch.",
+                "Discontinued or pre-launch item activity review for activity dated before item LaunchDate.",
+            )
+            injected += 1
+            if injected >= count_per_year:
+                break
+
+
+def inject_item_status_alignment_conflict(context: GenerationContext, count_per_year: int) -> None:
+    if count_per_year <= 0:
+        return
+
+    items = context.tables["Item"]
+    if items.empty:
+        return
+    sellable_groups = {"Furniture", "Lighting", "Textiles", "Accessories"}
+
+    for year in fiscal_years(context):
+        used_ids = used_primary_keys(context, "Item")
+        candidates = items[
+            items["ItemGroup"].isin(sellable_groups)
+            & items["IsActive"].astype(int).eq(1)
+            & ~items["ItemID"].astype(int).isin(used_ids)
+        ].sort_values("ItemID")
+        injected = 0
+        for row in candidates.itertuples(index=False):
+            mask = context.tables["Item"]["ItemID"].astype(int).eq(int(row.ItemID))
+            context.tables["Item"].loc[mask, "LifecycleStatus"] = "Discontinued"
+            context.tables["Item"].loc[mask, "IsActive"] = 1
+            log_anomaly(
+                context,
+                "item_status_alignment_conflict",
+                "Item",
+                int(row.ItemID),
+                year,
+                "Item lifecycle status was set to Discontinued while the current-state IsActive flag remained 1.",
+                "Item status alignment review for discontinued items still marked active.",
+            )
+            injected += 1
+            if injected >= count_per_year:
+                break
+
+
 def inject_anomalies(context: GenerationContext) -> None:
     profile = load_anomaly_profile(context)
     if not profile.get("enabled", False):
@@ -1458,4 +1890,9 @@ def inject_anomalies(context: GenerationContext) -> None:
     inject_duplicate_executive_title_assignment(context, int(profile.get("duplicate_executive_title_assignment_per_year", 0)))
     inject_missing_item_catalog_attribute(context, int(profile.get("missing_item_catalog_attribute_per_year", 0)))
     inject_discontinued_item_in_new_activity(context, int(profile.get("discontinued_item_in_new_activity_per_year", 0)))
+    inject_approval_above_authority_limit(context, int(profile.get("approval_above_authority_limit_per_year", 0)))
+    inject_unexpected_role_family_approval(context, int(profile.get("unexpected_role_family_approval_per_year", 0)))
+    inject_inactive_employee_current_assignment(context, int(profile.get("inactive_employee_current_assignment_per_year", 0)))
+    inject_prelaunch_item_in_new_activity(context, int(profile.get("prelaunch_item_in_new_activity_per_year", 0)))
+    inject_item_status_alignment_conflict(context, int(profile.get("item_status_alignment_conflict_per_year", 0)))
     invalidate_all_caches(context)

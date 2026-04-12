@@ -37,3 +37,8 @@ profiles:
     duplicate_executive_title_assignment_per_year: 1
     missing_item_catalog_attribute_per_year: 1
     discontinued_item_in_new_activity_per_year: 1
+    approval_above_authority_limit_per_year: 2
+    unexpected_role_family_approval_per_year: 1
+    inactive_employee_current_assignment_per_year: 1
+    prelaunch_item_in_new_activity_per_year: 1
+    item_status_alignment_conflict_per_year: 1

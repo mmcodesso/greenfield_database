@@ -113,13 +113,14 @@ This sequence compresses cleanly into fewer modules or expands into a full semes
 - For beginner SQL classes, start from the provided queries before moving to blank-screen assignments.
 - For Excel-heavy classes, use the workbook and process docs together so students can interpret patterns instead of only producing pivots.
 
-## Recommended Phase 19 Classroom Sequence
+## Recommended Phase 19 and Phase 20 Classroom Sequence
 
 1. Use the default anomaly-enabled package as the standard student file set.
 2. Start financial classes with the working-capital and statement-bridge cases.
 3. Start managerial classes with the product-portfolio profitability case.
 4. Start audit classes with the workforce cost and org-control case, then move to the audit review pack.
-5. Use the clean build only when you want a baseline comparison after students understand the default dataset.
+5. Use the expanded Phase 20 audit queries to separate role-family issues, approval-limit issues, current-state assignment issues, and item-status issues without changing the default build profile.
+6. Use the clean build only when you want a baseline comparison after students understand the default dataset.
 
 ## Where to Go Next
 

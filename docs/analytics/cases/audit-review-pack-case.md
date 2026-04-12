@@ -1,6 +1,6 @@
 ---
 title: Audit Review Pack Case
-description: Guided walkthrough for running a default anomaly-enabled audit review pack with the support workbook and the new Phase 19 audit queries.
+description: Guided walkthrough for running a default anomaly-enabled audit review pack with the support workbook and the expanded Phase 20 audit queries.
 sidebar_label: Audit Review Pack
 ---
 
@@ -36,10 +36,13 @@ The internal-audit team receives the normal five-year package and needs to triag
 
 1. Open `greenfield_support.xlsx` and summarize `AnomalyLog` by `anomaly_type`.
 2. Run [../../../queries/audit/29_executive_role_uniqueness_and_control_assignment_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/29_executive_role_uniqueness_and_control_assignment_review.sql).
-3. Run [../../../queries/audit/30_item_master_completeness_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/30_item_master_completeness_review.sql).
-4. Run [../../../queries/audit/31_discontinued_or_prelaunch_item_activity_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/31_discontinued_or_prelaunch_item_activity_review.sql).
-5. Run [../../../queries/audit/32_approval_authority_review_by_expected_role_family.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/32_approval_authority_review_by_expected_role_family.sql).
-6. Run [../../../queries/audit/33_terminated_employee_activity_rollup_by_process_area.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/33_terminated_employee_activity_rollup_by_process_area.sql).
+3. Run [../../../queries/audit/34_current_state_employee_assignment_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/34_current_state_employee_assignment_review.sql).
+4. Run [../../../queries/audit/35_approval_authority_limit_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/35_approval_authority_limit_review.sql).
+5. Run [../../../queries/audit/30_item_master_completeness_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/30_item_master_completeness_review.sql).
+6. Run [../../../queries/audit/36_item_status_alignment_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/36_item_status_alignment_review.sql).
+7. Run [../../../queries/audit/31_discontinued_or_prelaunch_item_activity_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/31_discontinued_or_prelaunch_item_activity_review.sql).
+8. Run [../../../queries/audit/32_approval_authority_review_by_expected_role_family.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/32_approval_authority_review_by_expected_role_family.sql).
+9. Run [../../../queries/audit/33_terminated_employee_activity_rollup_by_process_area.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/33_terminated_employee_activity_rollup_by_process_area.sql).
 
 ## Suggested Excel Sequence
 
@@ -51,6 +54,7 @@ The internal-audit team receives the normal five-year package and needs to triag
 
 - The support workbook is a guide, not a substitute for source-document review.
 - Several audit queries now focus on master data and org structure, not only document timing.
+- Current-state assignment issues and approval-limit exceptions can be reviewed separately from broader role-family questions.
 - The same anomaly family can appear in both a summary query and a more detailed control query.
 - An anomaly-enabled dataset should still be explainable. It should not feel random.
 

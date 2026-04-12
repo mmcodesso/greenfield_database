@@ -53,6 +53,9 @@ sidebar_label: Audit Analytics
 | Discontinued or pre-launch item activity review | [31_discontinued_or_prelaunch_item_activity_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/31_discontinued_or_prelaunch_item_activity_review.sql) |
 | Approval-authority review by expected role family | [32_approval_authority_review_by_expected_role_family.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/32_approval_authority_review_by_expected_role_family.sql) |
 | Terminated-employee activity rollup by process area | [33_terminated_employee_activity_rollup_by_process_area.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/33_terminated_employee_activity_rollup_by_process_area.sql) |
+| Current-state employee assignment review | [34_current_state_employee_assignment_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/34_current_state_employee_assignment_review.sql) |
+| Approval authority-limit review | [35_approval_authority_limit_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/35_approval_authority_limit_review.sql) |
+| Item status alignment review | [36_item_status_alignment_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/36_item_status_alignment_review.sql) |
 
 ## Baseline Control Queries
 
@@ -74,6 +77,9 @@ Use these when you want the default anomaly-enabled build to surface teachable e
 - terminated-employee activity review
 - item-master completeness review
 - discontinued or pre-launch item activity review
+- current-state employee assignment review
+- approval authority-limit review
+- item status alignment review
 
 ## Support-Workbook-Assisted Review
 
@@ -115,5 +121,9 @@ Pair those sheets with [Audit Review Pack Case](cases/audit-review-pack-case.md)
 | [27_terminated_employee_activity_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/27_terminated_employee_activity_review.sql) | `standard` | `terminated_employee_on_payroll`, `terminated_employee_approval`, `inactive_employee_time_or_labor` | `Employee`, `PayrollRegister`, `TimeClockEntry`, `LaborTimeEntry`, `PurchaseOrder`, `JournalEntry` |
 | [29_executive_role_uniqueness_and_control_assignment_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/29_executive_role_uniqueness_and_control_assignment_review.sql) | `standard` | `duplicate_executive_title_assignment` | `Employee`, `CostCenter`, `Warehouse`, `WorkCenter`, approval tables |
 | [30_item_master_completeness_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/30_item_master_completeness_review.sql) | `standard` | `missing_item_catalog_attribute` | `Item` |
-| [31_discontinued_or_prelaunch_item_activity_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/31_discontinued_or_prelaunch_item_activity_review.sql) | `standard` | `discontinued_item_in_new_activity` | `Item`, `SalesOrderLine`, `PurchaseOrderLine`, `WorkOrder`, `ShipmentLine`, `SalesInvoiceLine` |
+| [31_discontinued_or_prelaunch_item_activity_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/31_discontinued_or_prelaunch_item_activity_review.sql) | `standard` | `discontinued_item_in_new_activity`, `prelaunch_item_in_new_activity` | `Item`, `SalesOrderLine`, `PurchaseOrderLine`, `WorkOrder`, `ShipmentLine`, `SalesInvoiceLine` |
+| [32_approval_authority_review_by_expected_role_family.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/32_approval_authority_review_by_expected_role_family.sql) | `standard` | `unexpected_role_family_approval` | approval tables, `Employee` |
 | [33_terminated_employee_activity_rollup_by_process_area.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/33_terminated_employee_activity_rollup_by_process_area.sql) | `standard` | `terminated_employee_on_payroll`, `terminated_employee_approval`, `inactive_employee_time_or_labor` | `Employee`, `PayrollRegister`, `TimeClockEntry`, `LaborTimeEntry`, approval tables |
+| [34_current_state_employee_assignment_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/34_current_state_employee_assignment_review.sql) | `standard` | `inactive_employee_current_assignment` | `CostCenter`, `Warehouse`, `WorkCenter`, `Customer`, `Employee` |
+| [35_approval_authority_limit_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/35_approval_authority_limit_review.sql) | `standard` | `approval_above_authority_limit`, `unexpected_role_family_approval` | `PurchaseOrder`, `PurchaseInvoice`, `CreditMemo`, `CustomerRefund`, `JournalEntry`, `PayrollRegister`, `Employee` |
+| [36_item_status_alignment_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/36_item_status_alignment_review.sql) | `standard` | `item_status_alignment_conflict` | `Item` |

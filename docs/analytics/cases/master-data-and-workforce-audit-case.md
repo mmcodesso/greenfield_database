@@ -35,20 +35,24 @@ This case asks students to test whether operational activity, approvals, and pay
 
 1. Run [../../../queries/managerial/29_headcount_by_cost_center_job_family_status.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/29_headcount_by_cost_center_job_family_status.sql).
 2. Run [../../../queries/audit/27_terminated_employee_activity_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/27_terminated_employee_activity_review.sql).
-3. Run [../../../queries/audit/28_approval_role_review_by_org_position.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/28_approval_role_review_by_org_position.sql).
-4. Open `greenfield_support.xlsx` and filter `AnomalyLog` to the workforce-related anomaly types.
+3. Run [../../../queries/audit/34_current_state_employee_assignment_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/34_current_state_employee_assignment_review.sql).
+4. Run [../../../queries/audit/28_approval_role_review_by_org_position.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/28_approval_role_review_by_org_position.sql).
+5. Run [../../../queries/audit/35_approval_authority_limit_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/35_approval_authority_limit_review.sql).
+6. Open `greenfield_support.xlsx` and filter `AnomalyLog` to the workforce-related anomaly types.
 
 ## Suggested Excel Sequence
 
 1. Use `Employee` to build a pivot by `CostCenterID`, `JobFamily`, `JobLevel`, and `EmploymentStatus`.
 2. Filter terminated employees and compare `TerminationDate` to any linked payroll, time-clock, or approval evidence.
-3. Use the support workbook to identify which anomalies were intentionally planted versus what the clean control design expects.
+3. Review current-state manager and sales-rep assignments to see whether ownership still points to active employees.
+4. Use the support workbook to identify which anomalies were intentionally planted versus what the clean control design expects.
 
 ## What Students Should Notice
 
 - `IsActive` is current-state metadata, not a replacement for historical employment dates.
 - The employee master should support both org-structure analysis and transaction-date validity testing.
 - Approval review becomes more meaningful when executive and finance roles are unique and stable.
+- Current-state assignment ownership is a different control question from post-termination transaction activity.
 - Terminated employees remain in the dataset for audit traceability, but clean operational activity should stop at the termination date.
 
 ## Follow-Up Questions
