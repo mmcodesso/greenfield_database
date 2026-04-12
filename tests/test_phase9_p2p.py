@@ -88,5 +88,4 @@ def test_phase9_full_dataset_p2p_volume_regression(full_dataset_artifacts: dict[
     assert row_counts["PurchaseInvoiceLine"] > 4000
     assert row_counts["DisbursementPayment"] > 2300
     assert context.tables["PurchaseInvoiceLine"]["AccrualJournalEntryID"].notna().any()
-    assert full_dataset_artifacts["validation_report_path"].exists()
     assert full_dataset_artifacts["generation_log_path"].exists()

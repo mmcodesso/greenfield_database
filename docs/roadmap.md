@@ -55,7 +55,7 @@ Phase 17 delivered:
 - richer audit anomaly coverage inside the main `standard` anomaly profile
 - case-style walkthrough docs under `docs/analytics/cases/`
 - richer subprocess diagrams inside the process guides
-- SQLite export support for `AnomalyLog` and `ValidationSummary`
+- a split export package with dataset-only SQLite and Excel outputs plus a separate support workbook
 
 This phase did not add a new operational process. It made the current Phase 16 foundation easier to teach, easier to audit, and easier to explore with starter analytics.
 

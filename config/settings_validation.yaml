@@ -10,8 +10,11 @@ item_count: 90
 warehouse_count: 2
 export_sqlite: false
 export_excel: false
+export_support_excel: false
+export_csv_zip: false
 anomaly_mode: "none"
 sqlite_path: "outputs/greenfield_validation.sqlite"
 excel_path: "outputs/greenfield_validation.xlsx"
-validation_report_path: "outputs/validation_validation_report.json"
+support_excel_path: "outputs/greenfield_validation_support.xlsx"
+csv_zip_path: "outputs/greenfield_validation_csv.zip"
 generation_log_path: "outputs/generation_validation.log"

@@ -10,8 +10,11 @@ item_count: 140
 warehouse_count: 2
 export_sqlite: false
 export_excel: false
+export_support_excel: false
+export_csv_zip: false
 anomaly_mode: "none"
 sqlite_path: "outputs/greenfield_perf.sqlite"
 excel_path: "outputs/greenfield_perf.xlsx"
-validation_report_path: "outputs/perf_validation_report.json"
+support_excel_path: "outputs/greenfield_perf_support.xlsx"
+csv_zip_path: "outputs/greenfield_perf_csv.zip"
 generation_log_path: "outputs/generation_perf.log"

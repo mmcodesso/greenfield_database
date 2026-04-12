@@ -20,7 +20,7 @@ Give students:
 - the documentation site for orientation and guided reading
 
 Use the generator itself mainly for instructor prep, custom builds, or contribution work.
-Use [Dataset Delivery and Build Setup](/docs/technical/dataset-delivery) when you need to produce or package those files locally.
+Use [Dataset Delivery and Build Setup](teach-with-greenfield/dataset-delivery.md) when you need to produce or package those files locally.
 
 ### 2. Pick the course emphasis
 
@@ -50,7 +50,7 @@ Suggested student sequence:
 - Use the standard teaching package when you want the normal five-year anomaly-enabled build.
 - Use the clean baseline package when you want a faster, cleaner setup for prep or demonstration.
 - Make the distinction explicit to students. Some audit queries are supposed to return exceptions only when the anomaly-enabled build is used.
-- Use [Dataset Delivery and Build Setup](/docs/technical/dataset-delivery) for the exact local build commands and profile choices.
+- Use [Dataset Delivery and Build Setup](teach-with-greenfield/dataset-delivery.md) for the exact local build commands and profile choices.
 
 ## What to Share With Students vs Keep for Teaching Setup
 
@@ -76,7 +76,7 @@ Share these directly with students:
 
 Use these when you need local build setup, generator context, or release-planning detail:
 
-- [Dataset Delivery and Build Setup](/docs/technical/dataset-delivery)
+- [Dataset Delivery and Build Setup](teach-with-greenfield/dataset-delivery.md)
 - [Technical Guide](technical-guide.md)
 - [Roadmap](roadmap.md)
 
@@ -98,7 +98,7 @@ This sequence compresses cleanly into fewer modules or expands into a full semes
 
 - Decide whether students will work primarily in SQL, Excel, or both.
 - Share the packaged output files before asking students to inspect code.
-- Use [Dataset Delivery and Build Setup](/docs/technical/dataset-delivery) when you need to build or refresh the package locally.
+- Use [Dataset Delivery and Build Setup](teach-with-greenfield/dataset-delivery.md) when you need to build or refresh the package locally.
 - Assign the company and process reading before the first query exercise.
 - Pick one analytics track first: financial, managerial, or audit.
 - Use guided cases before open-ended student prompts if the class is new to integrated business datasets.

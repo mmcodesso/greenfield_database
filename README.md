@@ -17,12 +17,14 @@ Most students should begin with the documentation site and the packaged output f
 - 55 implemented tables across accounting, O2C, P2P, manufacturing, payroll and time, master data, and planning
 - starter SQL packs for financial, managerial, and audit analytics
 - ready-to-use download files for SQLite and Excel through GitHub Releases
-- local generator support for validation reporting and generation logs
+- local generator support for a companion support workbook, CSV zip exports, and generation logs
 
 Student download files:
 
-- `greenfield_2026_2030.sqlite`
-- `greenfield_2026_2030.xlsx`
+- `greenfield.sqlite`
+- `greenfield.xlsx`
+- `greenfield_support.xlsx`
+- `greenfield_csv.zip`
 
 ## View the Docs Locally
 

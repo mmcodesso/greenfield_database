@@ -18,9 +18,12 @@ def full_dataset_artifacts(tmp_path_factory: pytest.TempPathFactory) -> dict[str
         "anomaly_mode": "none",
         "export_sqlite": True,
         "export_excel": False,
+        "export_support_excel": False,
+        "export_csv_zip": False,
         "sqlite_path": str(workdir / "greenfield.sqlite"),
         "excel_path": str(workdir / "greenfield.xlsx"),
-        "validation_report_path": str(workdir / "validation_report.json"),
+        "support_excel_path": str(workdir / "greenfield_support.xlsx"),
+        "csv_zip_path": str(workdir / "greenfield_csv.zip"),
         "generation_log_path": str(workdir / "generation.log"),
     })
 
@@ -32,7 +35,8 @@ def full_dataset_artifacts(tmp_path_factory: pytest.TempPathFactory) -> dict[str
         "context": context,
         "workdir": workdir,
         "sqlite_path": Path(payload["sqlite_path"]),
-        "validation_report_path": Path(payload["validation_report_path"]),
+        "support_excel_path": Path(payload["support_excel_path"]),
+        "csv_zip_path": Path(payload["csv_zip_path"]),
         "generation_log_path": Path(payload["generation_log_path"]),
     }
 
@@ -45,7 +49,8 @@ def default_anomaly_dataset_artifacts(tmp_path_factory: pytest.TempPathFactory) 
     payload.update({
         "sqlite_path": str(workdir / "greenfield_default.sqlite"),
         "excel_path": str(workdir / "greenfield_default.xlsx"),
-        "validation_report_path": str(workdir / "default_validation_report.json"),
+        "support_excel_path": str(workdir / "greenfield_default_support.xlsx"),
+        "csv_zip_path": str(workdir / "greenfield_default_csv.zip"),
         "generation_log_path": str(workdir / "generation_default.log"),
     })
 
@@ -58,7 +63,8 @@ def default_anomaly_dataset_artifacts(tmp_path_factory: pytest.TempPathFactory) 
         "workdir": workdir,
         "sqlite_path": Path(payload["sqlite_path"]),
         "excel_path": Path(payload["excel_path"]),
-        "validation_report_path": Path(payload["validation_report_path"]),
+        "support_excel_path": Path(payload["support_excel_path"]),
+        "csv_zip_path": Path(payload["csv_zip_path"]),
         "generation_log_path": Path(payload["generation_log_path"]),
     }
 
@@ -71,9 +77,12 @@ def clean_validation_dataset_artifacts(tmp_path_factory: pytest.TempPathFactory)
     payload.update({
         "export_sqlite": True,
         "export_excel": False,
+        "export_support_excel": False,
+        "export_csv_zip": False,
         "sqlite_path": str(workdir / "greenfield_validation.sqlite"),
         "excel_path": str(workdir / "greenfield_validation.xlsx"),
-        "validation_report_path": str(workdir / "validation_report.json"),
+        "support_excel_path": str(workdir / "greenfield_validation_support.xlsx"),
+        "csv_zip_path": str(workdir / "greenfield_validation_csv.zip"),
         "generation_log_path": str(workdir / "generation.log"),
     })
 
@@ -85,6 +94,7 @@ def clean_validation_dataset_artifacts(tmp_path_factory: pytest.TempPathFactory)
         "context": context,
         "workdir": workdir,
         "sqlite_path": Path(payload["sqlite_path"]),
-        "validation_report_path": Path(payload["validation_report_path"]),
+        "support_excel_path": Path(payload["support_excel_path"]),
+        "csv_zip_path": Path(payload["csv_zip_path"]),
         "generation_log_path": Path(payload["generation_log_path"]),
     }

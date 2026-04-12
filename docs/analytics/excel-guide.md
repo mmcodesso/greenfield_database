@@ -9,21 +9,25 @@ sidebar_label: Excel Guide
 
 ## Workbook Setup
 
-The workbook contains:
+The dataset workbook contains one worksheet for each dataset table.
 
-- one worksheet for each dataset table
+The companion support workbook contains:
+
+- `Overview`
 - `AnomalyLog`
-- `ValidationSummary`
+- `ValidationStages`
+- `ValidationChecks`
+- `ValidationExceptions`
 
 Recommended first steps:
 
-1. open `greenfield_2026_2030.xlsx`
+1. open `greenfield.xlsx`
 2. convert the most-used sheets into Excel Tables
 3. freeze the top row on large sheets
 4. format date and amount columns consistently
 5. add slicers or timeline filters for year and month where helpful
 
-For anomaly-focused teaching, use the standard course workbook and then filter pivots or tables to one fiscal year when you want a narrower lab. If you are preparing that workbook yourself, use [Dataset Delivery and Build Setup](/docs/technical/dataset-delivery).
+For anomaly-focused teaching, use the standard course dataset workbook together with the companion support workbook, then filter pivots or tables to one fiscal year when you want a narrower lab. If you are preparing that package yourself, use [Dataset Delivery and Build Setup](../teach-with-greenfield/dataset-delivery.md).
 
 ## Financial Accounting Workflows
 
@@ -513,15 +517,19 @@ Suggested measures:
 
 Use:
 
+- `greenfield_support.xlsx`
 - `AnomalyLog`
-- `ValidationSummary`
+- `ValidationStages`
+- `ValidationChecks`
+- `ValidationExceptions`
 - the base document sheets that the anomaly references
 
 Suggested workflow:
 
-1. summarize `AnomalyLog` by `anomaly_type`
-2. trace one AP anomaly, one payroll anomaly, and one manufacturing anomaly to the source sheets
-3. compare the sheet-level evidence to the matching SQL starter query
+1. open `greenfield_support.xlsx`
+2. summarize `AnomalyLog` by `anomaly_type`
+3. trace one AP anomaly, one payroll anomaly, and one manufacturing anomaly to the source sheets
+4. compare the sheet-level evidence to the matching SQL starter query
 
 ### Accrual cleanup review
 

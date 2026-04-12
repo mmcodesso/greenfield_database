@@ -28,7 +28,11 @@ class Settings:
     anomaly_mode: str
     sqlite_path: str
     excel_path: str
-    validation_report_path: str
+    export_support_excel: bool = False
+    support_excel_path: str = "outputs/greenfield_support.xlsx"
+    export_csv_zip: bool = False
+    csv_zip_path: str = "outputs/greenfield_csv.zip"
+    validation_report_path: str | None = None
     generation_log_path: str = "outputs/generation.log"
 
 
@@ -50,7 +54,27 @@ def load_settings(config_path: str | Path) -> Settings:
     if not isinstance(raw, dict):
         raise ValueError(f"Settings file must contain a mapping: {config_path}")
 
-    return Settings(**raw)
+    normalized = dict(raw)
+    legacy_validation_path = normalized.get("validation_report_path")
+
+    if "support_excel_path" not in normalized:
+        if legacy_validation_path:
+            normalized["support_excel_path"] = str(Path(legacy_validation_path).with_suffix(".xlsx"))
+        else:
+            excel_path = Path(str(normalized.get("excel_path", "outputs/greenfield.xlsx")))
+            normalized["support_excel_path"] = str(excel_path.with_name(f"{excel_path.stem}_support.xlsx"))
+
+    if "csv_zip_path" not in normalized:
+        excel_path = Path(str(normalized.get("excel_path", "outputs/greenfield.xlsx")))
+        normalized["csv_zip_path"] = str(excel_path.with_name(f"{excel_path.stem}_csv.zip"))
+
+    if "export_support_excel" not in normalized:
+        normalized["export_support_excel"] = bool(legacy_validation_path)
+
+    if "export_csv_zip" not in normalized:
+        normalized["export_csv_zip"] = False
+
+    return Settings(**normalized)
 
 
 def initialize_context(settings: Settings) -> GenerationContext:

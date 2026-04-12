@@ -25,7 +25,7 @@ Each file is a single SQLite-friendly `SELECT` statement with short comment head
 ## Recommended Workflow
 
 1. Open the SQLite file shared for your course or section.
-2. If you are preparing the dataset yourself, use [Dataset Delivery and Build Setup](/docs/technical/dataset-delivery).
+2. If you are preparing the dataset yourself, use [Dataset Delivery and Build Setup](../teach-with-greenfield/dataset-delivery.md).
 3. Start with one topic area:
    - [Financial Analytics](financial.md)
    - [Managerial Analytics](managerial.md)
@@ -57,7 +57,7 @@ import sqlite3
 import pandas as pd
 
 sql = Path("queries/financial/01_monthly_revenue_and_gross_margin.sql").read_text(encoding="utf-8")
-with sqlite3.connect("greenfield_2026_2030.sqlite") as connection:
+with sqlite3.connect("greenfield.sqlite") as connection:
     df = pd.read_sql_query(sql, connection)
 
 print(df.head())
@@ -68,7 +68,7 @@ print(df.head())
 If the `sqlite3` command-line tool is installed on your system, you can also run:
 
 ```bash
-sqlite3 greenfield_2026_2030.sqlite < queries/financial/01_monthly_revenue_and_gross_margin.sql
+sqlite3 greenfield.sqlite < queries/financial/01_monthly_revenue_and_gross_margin.sql
 ```
 
 ## Query Design Conventions
@@ -101,7 +101,8 @@ Changes to avoid in this phase:
 
 - Financial and managerial queries work well on either a clean or anomaly-enabled package.
 - Audit queries are often more interesting on the standard anomaly-enabled package.
-- The default build exports `AnomalyLog` and `ValidationSummary` into SQLite as helper tables for audit walkthroughs.
+- The main SQLite export contains dataset tables only.
+- Anomaly and validation companion content now lives in the separate support workbook, not in SQLite.
 - Some audit starter queries may return no rows on a clean build. That is expected and not a query failure.
 
 ## Suggested Starter Sequence

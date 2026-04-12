@@ -3,8 +3,10 @@ from __future__ import annotations
 from collections import Counter
 import sqlite3
 from pathlib import Path
+from zipfile import ZipFile
 
 import pandas as pd
+from openpyxl import load_workbook
 
 from greenfield_dataset.main import build_phase17
 
@@ -23,7 +25,6 @@ TARGETED_AUDIT_QUERY_EXPECTATIONS = {
     "19_time_clock_exceptions_by_employee_supervisor_work_center.sql": 1,
     "20_labor_outside_scheduled_operation_window_review.sql": 1,
     "21_paid_without_clock_and_clock_without_pay_review.sql": 1,
-    "22_anomaly_log_to_source_document_tie_out.sql": 1,
     "25_time_clock_payroll_labor_bridge_review.sql": 1,
     "26_duplicate_ap_reference_detail_review.sql": 1,
 }
@@ -161,20 +162,41 @@ def test_phase17_default_build_all_starter_sql_executes(
     _execute_all_starter_sql(sqlite_path)
 
 
-def test_phase17_default_sqlite_contains_support_tables(
+def test_phase17_default_export_artifacts_follow_split_contract(
     default_anomaly_dataset_artifacts: dict[str, object],
 ) -> None:
     sqlite_path = Path(default_anomaly_dataset_artifacts["sqlite_path"])
     excel_path = Path(default_anomaly_dataset_artifacts["excel_path"])
+    support_excel_path = Path(default_anomaly_dataset_artifacts["support_excel_path"])
+    csv_zip_path = Path(default_anomaly_dataset_artifacts["csv_zip_path"])
     assert sqlite_path.exists()
     assert excel_path.exists()
+    assert support_excel_path.exists()
+    assert csv_zip_path.exists()
 
     with sqlite3.connect(sqlite_path) as connection:
         tables = pd.read_sql_query(
             "SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('AnomalyLog', 'ValidationSummary')",
             connection,
         )["name"].tolist()
-    assert set(tables) == {"AnomalyLog", "ValidationSummary"}
+    assert tables == []
+
+    dataset_workbook = load_workbook(excel_path)
+    support_workbook = load_workbook(support_excel_path)
+
+    assert "AnomalyLog" not in dataset_workbook.sheetnames
+    assert "ValidationStages" not in dataset_workbook.sheetnames
+    for sheet_name in ["Account", "SalesOrder", "GLEntry", "TimeClockEntry"]:
+        assert len(dataset_workbook[sheet_name].tables) >= 1
+
+    required_support_sheets = {"Overview", "AnomalyLog", "ValidationStages", "ValidationChecks", "ValidationExceptions"}
+    assert required_support_sheets.issubset(set(support_workbook.sheetnames))
+    for sheet_name in required_support_sheets:
+        assert len(support_workbook[sheet_name].tables) >= 1
+
+    with ZipFile(csv_zip_path) as archive:
+        zip_members = set(archive.namelist())
+    assert zip_members == {f"{table_name}.csv" for table_name in default_anomaly_dataset_artifacts["context"].tables}
 
 
 def test_phase17_docs_include_cases_matrix_and_subprocess_diagrams() -> None:

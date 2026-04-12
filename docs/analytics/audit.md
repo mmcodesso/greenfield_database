@@ -17,7 +17,7 @@ sidebar_label: Audit Analytics
 | Manufacturing controls | `Item`, `BillOfMaterial`, `BillOfMaterialLine`, `Routing`, `RoutingOperation`, `WorkCenter`, `WorkCenterCalendar`, `WorkOrder`, `WorkOrderOperation`, `WorkOrderOperationSchedule`, `MaterialIssueLine`, `ProductionCompletionLine`, `WorkOrderClose` |
 | Payroll and time-clock controls | `ShiftDefinition`, `EmployeeShiftAssignment`, `TimeClockEntry`, `AttendanceException`, `PayrollPeriod`, `LaborTimeEntry`, `PayrollRegister`, `PayrollRegisterLine`, `PayrollPayment`, `PayrollLiabilityRemittance`, `Employee` |
 | Cut-off and timing | operational header and line tables plus date fields |
-| Duplicate and anomaly review | `DisbursementPayment`, `PurchaseInvoice`, `JournalEntry`, `SalesInvoice`, `CreditMemo`, `PayrollPayment`, exported `AnomalyLog`, exported `ValidationSummary` |
+| Duplicate and anomaly review | `DisbursementPayment`, `PurchaseInvoice`, `JournalEntry`, `SalesInvoice`, `CreditMemo`, `PayrollPayment`, plus the support workbook sheets `AnomalyLog`, `ValidationStages`, `ValidationChecks`, and `ValidationExceptions` |
 
 ## Starter SQL Map
 
@@ -44,7 +44,6 @@ sidebar_label: Audit Analytics
 | Time-clock exceptions by employee, supervisor, and work center | [19_time_clock_exceptions_by_employee_supervisor_work_center.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/19_time_clock_exceptions_by_employee_supervisor_work_center.sql) |
 | Labor outside scheduled operation window review | [20_labor_outside_scheduled_operation_window_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/20_labor_outside_scheduled_operation_window_review.sql) |
 | Paid-without-clock and clock-without-pay review | [21_paid_without_clock_and_clock_without_pay_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/21_paid_without_clock_and_clock_without_pay_review.sql) |
-| Anomaly log to source-document tie-out | [22_anomaly_log_to_source_document_tie_out.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/22_anomaly_log_to_source_document_tie_out.sql) |
 | Accrued-service settlement exception review | [23_accrued_service_settlement_exception_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/23_accrued_service_settlement_exception_review.sql) |
 | Customer deposits and unapplied cash exception review | [24_customer_deposits_and_unapplied_cash_exception_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/24_customer_deposits_and_unapplied_cash_exception_review.sql) |
 | Time-clock, payroll, and labor bridge review | [25_time_clock_payroll_labor_bridge_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/25_time_clock_payroll_labor_bridge_review.sql) |
@@ -76,6 +75,5 @@ sidebar_label: Audit Analytics
 | [19_time_clock_exceptions_by_employee_supervisor_work_center.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/19_time_clock_exceptions_by_employee_supervisor_work_center.sql) | `standard` | `missing_clock_out`, `duplicate_time_clock_day`, `off_shift_clocking` | `AttendanceException`, `TimeClockEntry`, `ShiftDefinition`, `WorkCenter` |
 | [20_labor_outside_scheduled_operation_window_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/20_labor_outside_scheduled_operation_window_review.sql) | `standard` | `labor_after_operation_close` | `LaborTimeEntry`, `TimeClockEntry`, `WorkOrderOperation` |
 | [21_paid_without_clock_and_clock_without_pay_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/21_paid_without_clock_and_clock_without_pay_review.sql) | `standard` | `paid_without_clock`, `missing_clock_out` | `PayrollRegisterLine`, `LaborTimeEntry`, `TimeClockEntry` |
-| [22_anomaly_log_to_source_document_tie_out.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/22_anomaly_log_to_source_document_tie_out.sql) | `standard` | any logged anomaly | exported `AnomalyLog` plus source tables |
 | [25_time_clock_payroll_labor_bridge_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/25_time_clock_payroll_labor_bridge_review.sql) | `standard` | `paid_without_clock`, `missing_clock_out`, `labor_after_operation_close` | `TimeClockEntry`, `LaborTimeEntry`, `PayrollRegister`, `PayrollRegisterLine` |
 | [26_duplicate_ap_reference_detail_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/26_duplicate_ap_reference_detail_review.sql) | `standard` | `duplicate_vendor_payment_reference`, `duplicate_supplier_invoice_number` | `PurchaseInvoice`, `DisbursementPayment`, `Supplier` |

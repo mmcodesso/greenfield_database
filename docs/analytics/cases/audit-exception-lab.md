@@ -15,12 +15,15 @@ The finance and audit team receives the standard five-year build with a moderate
 
 - standard anomaly-enabled teaching package
 
-If you are preparing that package yourself, use [Dataset Delivery and Build Setup](/docs/technical/dataset-delivery).
+If you are preparing that package yourself, use [Dataset Delivery and Build Setup](../../teach-with-greenfield/dataset-delivery.md).
 
 ## Main Tables and Worksheets
 
+- `greenfield_support.xlsx`
 - `AnomalyLog`
-- `ValidationSummary`
+- `ValidationStages`
+- `ValidationChecks`
+- `ValidationExceptions`
 - `PurchaseInvoice`
 - `DisbursementPayment`
 - `PayrollRegister`
@@ -32,19 +35,21 @@ If you are preparing that package yourself, use [Dataset Delivery and Build Setu
 
 ## Recommended Query Sequence
 
-1. Run [../../../queries/audit/22_anomaly_log_to_source_document_tie_out.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/22_anomaly_log_to_source_document_tie_out.sql).
-2. Run [../../../queries/audit/05_duplicate_payment_reference_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/05_duplicate_payment_reference_review.sql).
-3. Run [../../../queries/audit/11_payroll_control_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/11_payroll_control_review.sql).
-4. Run [../../../queries/audit/14_missing_routing_or_operation_link_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/14_missing_routing_or_operation_link_review.sql).
-5. Run [../../../queries/audit/15_operation_sequence_and_final_completion_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/15_operation_sequence_and_final_completion_review.sql).
-6. Run [../../../queries/audit/19_time_clock_exceptions_by_employee_supervisor_work_center.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/19_time_clock_exceptions_by_employee_supervisor_work_center.sql).
+1. Open `greenfield_support.xlsx` and review `AnomalyLog`.
+2. Pick one anomaly row and note the source document keys shown in the workbook.
+3. Run [../../../queries/audit/05_duplicate_payment_reference_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/05_duplicate_payment_reference_review.sql).
+4. Run [../../../queries/audit/11_payroll_control_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/11_payroll_control_review.sql).
+5. Run [../../../queries/audit/14_missing_routing_or_operation_link_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/14_missing_routing_or_operation_link_review.sql).
+6. Run [../../../queries/audit/15_operation_sequence_and_final_completion_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/15_operation_sequence_and_final_completion_review.sql).
+7. Run [../../../queries/audit/19_time_clock_exceptions_by_employee_supervisor_work_center.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/19_time_clock_exceptions_by_employee_supervisor_work_center.sql).
 
 ## Suggested Excel Sequence
 
-1. Open `AnomalyLog` and group by `anomaly_type`.
-2. Pick one anomaly from AP, one from payroll, and one from manufacturing.
-3. Use the source-document sheets to trace each exception.
-4. Compare the workbook trace to the matching SQL result set.
+1. Open `greenfield_support.xlsx`.
+2. Open `AnomalyLog` and group by `anomaly_type`.
+3. Pick one anomaly from AP, one from payroll, and one from manufacturing.
+4. Use the source-document sheets to trace each exception.
+5. Compare the workbook trace to the matching SQL result set.
 
 ## What Students Should Notice
 

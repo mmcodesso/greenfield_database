@@ -58,8 +58,10 @@ The current implementation contains **55 tables** across seven areas:
 
 Most classes use these ready-to-use files:
 
-- `greenfield_2026_2030.sqlite`
-- `greenfield_2026_2030.xlsx`
+- `greenfield.sqlite`
+- `greenfield.xlsx`
+- `greenfield_support.xlsx`
+- `greenfield_csv.zip`
 
 Download them from [Downloads](downloads.md) or use the copies already shared for your course.
 
@@ -269,7 +271,7 @@ Start with:
 - manufacturing chain tables
 - payroll chain tables
 - `GLEntry`
-- the anomaly tabs in the Excel workbook
+- the anomaly and validation sheets in the companion support workbook
 - the transaction chains in [Process Flows](process-flows.md)
 
 ## Current Practical Tips

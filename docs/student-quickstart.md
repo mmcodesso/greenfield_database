@@ -14,8 +14,13 @@ Most students should begin with the published classroom package.
 
 The core files are:
 
-- `greenfield_2026_2030.sqlite` for SQL work
-- `greenfield_2026_2030.xlsx` for Excel pivots, charts, and workbook-based analysis
+- `greenfield.sqlite` for SQL work
+- `greenfield.xlsx` for Excel pivots, charts, and workbook-based analysis
+
+Optional companion files:
+
+- `greenfield_support.xlsx` for anomaly and validation support
+- `greenfield_csv.zip` for one-CSV-per-table delivery
 
 Download them from [Downloads](downloads.md) or use the copies already shared for your course.
 

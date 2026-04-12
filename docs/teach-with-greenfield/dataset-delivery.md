@@ -22,8 +22,10 @@ Students usually do **not** need this page.
 
 For most courses, share these files:
 
-- `greenfield_2026_2030.sqlite`
-- `greenfield_2026_2030.xlsx`
+- `greenfield.sqlite`
+- `greenfield.xlsx`
+- `greenfield_support.xlsx`
+- `greenfield_csv.zip`
 
 Then point students to:
 
@@ -78,19 +80,22 @@ Generated files are written to `outputs/`.
 
 The default teaching build writes:
 
-- `outputs/greenfield_2026_2030.sqlite`
-- `outputs/greenfield_2026_2030.xlsx`
-- `outputs/validation_report.json`
+- `outputs/greenfield.sqlite`
+- `outputs/greenfield.xlsx`
+- `outputs/greenfield_support.xlsx`
+- `outputs/greenfield_csv.zip`
 - `outputs/generation.log`
 
-Only the SQLite database and Excel workbook should be published in the student-facing download package.
+The main SQLite database and main Excel workbook are the core student-facing dataset files. Share the support workbook when students need anomaly or validation guidance. Share the CSV zip when flat-file delivery is useful.
 
 ## Packaging Guidance
 
 - Share the SQLite database for SQL work.
 - Share the Excel workbook for pivot and chart-based analysis.
+- Share the support workbook when classes need anomaly and validation companion material.
+- Share the CSV zip when students or analysts need one CSV per table.
 - Publish the student files through GitHub Releases or your course LMS.
-- Keep `validation_report.json` and `generation.log` for instructor review only.
+- Keep `generation.log` for instructor review only.
 - Ask students to start from the documentation site, not from the codebase.
 - If you want a smaller assignment, filter to one fiscal year in SQL or Excel instead of creating many custom classroom variants.
 

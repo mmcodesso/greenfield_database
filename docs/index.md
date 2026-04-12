@@ -75,7 +75,7 @@ That path gives students the business context first, then the table and GLEntry 
 ### Technical
 
 - [Technical Guide](technical-guide.md)
-- [Dataset Delivery and Build Setup](/docs/technical/dataset-delivery)
+- [Dataset Delivery and Build Setup](teach-with-greenfield/dataset-delivery.md)
 - [Roadmap](roadmap.md)
 
 ## Repository Resources

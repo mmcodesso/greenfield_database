@@ -11,7 +11,13 @@ import pandas as pd
 
 from greenfield_dataset.anomalies import inject_anomalies
 from greenfield_dataset.budgets import generate_budgets, generate_opening_balances
-from greenfield_dataset.exporters import export_excel, export_sqlite, export_validation_report
+from greenfield_dataset.exporters import (
+    export_csv_zip,
+    export_excel,
+    export_sqlite,
+    export_support_excel,
+    export_validation_report,
+)
 from greenfield_dataset.journals import (
     generate_accrual_adjustment_journals,
     generate_recurring_manual_journals,
@@ -143,7 +149,8 @@ def log_settings(settings: Settings, config_path: str | Path) -> None:
     LOGGER.info("Anomaly mode: %s", settings.anomaly_mode)
     LOGGER.info("SQLite export enabled: %s | path=%s", settings.export_sqlite, settings.sqlite_path)
     LOGGER.info("Excel export enabled: %s | path=%s", settings.export_excel, settings.excel_path)
-    LOGGER.info("Validation report path: %s", settings.validation_report_path)
+    LOGGER.info("Support workbook enabled: %s | path=%s", settings.export_support_excel, settings.support_excel_path)
+    LOGGER.info("CSV zip export enabled: %s | path=%s", settings.export_csv_zip, settings.csv_zip_path)
     LOGGER.info("Generation log path: %s", generation_log_path(settings))
 
 
@@ -869,9 +876,19 @@ def build_full_dataset(
     else:
         LOGGER.info("SKIP | Excel export disabled.")
 
-    with logged_step("Export validation report"):
-        export_validation_report(context)
-        LOGGER.info("EXPORT | validation_report | path=%s", context.settings.validation_report_path)
+    if context.settings.export_support_excel:
+        with logged_step("Export support workbook"):
+            export_support_excel(context)
+            LOGGER.info("EXPORT | support_excel | path=%s", context.settings.support_excel_path)
+    else:
+        LOGGER.info("SKIP | Support workbook export disabled.")
+
+    if context.settings.export_csv_zip:
+        with logged_step("Export CSV zip package"):
+            export_csv_zip(context)
+            LOGGER.info("EXPORT | csv_zip | path=%s", context.settings.csv_zip_path)
+    else:
+        LOGGER.info("SKIP | CSV zip export disabled.")
 
     log_all_table_counts(context, "final")
     LOGGER.info("Finished Greenfield dataset generation.")
@@ -935,7 +952,8 @@ def print_summary(context: GenerationContext) -> None:
     print(f"Anomalies logged: {len(context.anomaly_log)}")
     print(f"SQLite export: {context.settings.sqlite_path}")
     print(f"Excel export: {context.settings.excel_path}")
-    print(f"Validation report: {context.settings.validation_report_path}")
+    print(f"Support workbook: {context.settings.support_excel_path}")
+    print(f"CSV zip export: {context.settings.csv_zip_path}")
     print(f"Generation log: {generation_log_path(context)}")
 
 
