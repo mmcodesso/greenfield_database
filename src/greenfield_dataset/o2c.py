@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 from greenfield_dataset.master_data import employee_active_mask, employee_ids_for_cost_center_as_of, eligible_item_mask
+from greenfield_dataset.planning import monthly_forecast_targets
 from greenfield_dataset.schema import TABLE_COLUMNS
 from greenfield_dataset.settings import GenerationContext
 from greenfield_dataset.utils import format_doc_number, money, next_id, qty, random_date_in_month
@@ -699,8 +700,16 @@ def o2c_open_state(context: GenerationContext) -> dict[str, float]:
 def generate_month_sales_orders(context: GenerationContext, year: int, month: int) -> None:
     sales_center_id = sales_cost_center_id(context)
     rng = context.rng
+    forecast_targets = monthly_forecast_targets(context, year, month)
+    planned_actual_targets = {
+        int(item_id): max(0.0, qty(float(target_quantity) * rng.uniform(0.88, 1.12)))
+        for item_id, target_quantity in forecast_targets.items()
+    }
+    total_target_quantity = float(sum(planned_actual_targets.values()))
     order_count = int(rng.integers(95, 126))
-    if month in [3, 4, 9, 10, 11]:
+    if total_target_quantity > 0:
+        order_count = int(np.clip(round(total_target_quantity / 6.8), 90, 155))
+    elif month in [3, 4, 9, 10, 11]:
         order_count = int(order_count * 1.10)
 
     order_rows: list[dict] = []
@@ -719,20 +728,56 @@ def generate_month_sales_orders(context: GenerationContext, year: int, month: in
         used_item_ids: set[int] = set()
         for line_number in range(1, line_count + 1):
             item = select_sales_item(context, sellable_items, segment)
+            if planned_actual_targets:
+                target_items = sellable_items[
+                    sellable_items["ItemID"].astype(int).map(lambda item_id: planned_actual_targets.get(int(item_id), 0.0)).gt(0)
+                ].copy()
+                if not target_items.empty:
+                    target_weights = target_items["ItemID"].astype(int).map(
+                        lambda item_id: max(float(planned_actual_targets.get(int(item_id), 0.0)), 0.01)
+                    ).astype(float)
+                    target_weights = target_weights / target_weights.sum()
+                    selected_index = rng.choice(target_items.index.to_numpy(), p=target_weights.to_numpy())
+                    item = target_items.loc[selected_index]
             retry_count = 0
             while int(item["ItemID"]) in used_item_ids and retry_count < 5:
-                item = select_sales_item(context, sellable_items, segment)
+                if planned_actual_targets:
+                    target_items = sellable_items[
+                        sellable_items["ItemID"].astype(int).map(lambda item_id: planned_actual_targets.get(int(item_id), 0.0)).gt(0)
+                    ].copy()
+                    if not target_items.empty:
+                        target_weights = target_items["ItemID"].astype(int).map(
+                            lambda item_id: max(float(planned_actual_targets.get(int(item_id), 0.0)), 0.01)
+                        ).astype(float)
+                        target_weights = target_weights / target_weights.sum()
+                        selected_index = rng.choice(target_items.index.to_numpy(), p=target_weights.to_numpy())
+                        item = target_items.loc[selected_index]
+                    else:
+                        item = select_sales_item(context, sellable_items, segment)
+                else:
+                    item = select_sales_item(context, sellable_items, segment)
                 retry_count += 1
             used_item_ids.add(int(item["ItemID"]))
 
             qty_min, qty_max = SEGMENT_QUANTITY_RANGES[segment]
             quantity = qty(int(rng.integers(qty_min, qty_max + 1)))
+            planned_remaining = float(planned_actual_targets.get(int(item["ItemID"]), 0.0))
+            if planned_remaining > 0:
+                lower_bound = min(quantity, max(1.0, planned_remaining * 0.12))
+                upper_bound = min(max(float(qty_max), lower_bound), max(float(qty_min), planned_remaining * 0.45))
+                if upper_bound >= lower_bound:
+                    quantity = qty(rng.uniform(lower_bound, upper_bound))
             unit_price = money(float(item["ListPrice"]) * rng.uniform(0.97, 1.04))
             discount = qty(rng.uniform(0.00, 0.12), "0.0001")
             if segment in ["Strategic", "Wholesale"]:
                 discount = qty(rng.uniform(0.04, 0.18), "0.0001")
             line_total = money(quantity * unit_price * (1 - discount))
             order_total = money(order_total + line_total)
+            if int(item["ItemID"]) in planned_actual_targets:
+                planned_actual_targets[int(item["ItemID"])] = max(
+                    0.0,
+                    qty(float(planned_actual_targets[int(item["ItemID"])]) - quantity),
+                )
 
             line_rows.append({
                 "SalesOrderLineID": next_id(context, "SalesOrderLine"),

@@ -1,6 +1,6 @@
 ---
 title: Schema Reference
-description: Student-friendly reference for the 59 implemented Greenfield tables, key columns, and join patterns.
+description: Student-friendly reference for the 64 implemented Greenfield tables, key columns, and join patterns.
 sidebar_label: Schema Reference
 ---
 
@@ -24,7 +24,8 @@ The canonical schema lives in `src/greenfield_dataset/schema.py` as `TABLE_COLUM
 | Payroll and time | `ShiftDefinition`, `EmployeeShiftAssignment`, `EmployeeShiftRoster`, `EmployeeAbsence`, `OvertimeApproval`, `TimeClockEntry`, `TimeClockPunch`, `AttendanceException`, `PayrollPeriod`, `LaborTimeEntry`, `PayrollRegister`, `PayrollRegisterLine`, `PayrollPayment`, `PayrollLiabilityRemittance` | 14 |
 | Master data | `Item`, `Warehouse`, `Employee` | 3 |
 | Organizational planning | `CostCenter`, `Budget` | 2 |
-| Total |  | 59 |
+| Demand planning and MRP | `DemandForecast`, `InventoryPolicy`, `SupplyPlanRecommendation`, `MaterialRequirementPlan`, `RoughCutCapacityPlan` | 5 |
+| Total |  | 64 |
 
 ## Design Patterns
 
@@ -66,7 +67,7 @@ The canonical schema lives in `src/greenfield_dataset/schema.py` as `TABLE_COLUM
 | Table | Purpose | High-value columns |
 |---|---|---|
 | `Supplier` | Supplier master data | `PaymentTerms`, `TaxID`, `BankAccount`, `SupplierCategory`, `SupplierRiskRating`, `DefaultCurrency` |
-| `PurchaseRequisition` | Internal request document | `RequisitionNumber`, `RequestDate`, `RequestedByEmployeeID`, `CostCenterID`, `ItemID`, `Quantity`, `EstimatedUnitCost`, `ApprovedByEmployeeID`, `Status` |
+| `PurchaseRequisition` | Internal request document | `RequisitionNumber`, `RequestDate`, `RequestedByEmployeeID`, `CostCenterID`, `ItemID`, `Quantity`, `EstimatedUnitCost`, `ApprovedByEmployeeID`, `Status`, `SupplyPlanRecommendationID` |
 | `PurchaseOrder` | Purchase order header | `PONumber`, `OrderDate`, `SupplierID`, `RequisitionID`, `ExpectedDeliveryDate`, `CreatedByEmployeeID`, `ApprovedByEmployeeID`, `OrderTotal`, `Status` |
 | `PurchaseOrderLine` | Purchase order detail | `PurchaseOrderID`, `RequisitionID`, `LineNumber`, `ItemID`, `Quantity`, `UnitCost`, `LineTotal` |
 | `GoodsReceipt` | Receipt header | `ReceiptNumber`, `ReceiptDate`, `PurchaseOrderID`, `WarehouseID`, `ReceivedByEmployeeID`, `Status` |
@@ -85,7 +86,7 @@ The canonical schema lives in `src/greenfield_dataset/schema.py` as `TABLE_COLUM
 | `WorkCenterCalendar` | Daily work-center capacity calendar | `WorkCenterID`, `CalendarDate`, `IsWorkingDay`, `AvailableHours`, `ExceptionReason` |
 | `Routing` | Routing header for manufactured items | `ParentItemID`, `VersionNumber`, `EffectiveStartDate`, `EffectiveEndDate`, `Status` |
 | `RoutingOperation` | Ordered routing step | `RoutingID`, `OperationSequence`, `OperationCode`, `OperationName`, `WorkCenterID`, `StandardSetupHours`, `StandardRunHoursPerUnit`, `StandardQueueDays` |
-| `WorkOrder` | Production order header | `ItemID`, `BOMID`, `RoutingID`, `WarehouseID`, `PlannedQuantity`, `ReleasedDate`, `DueDate`, `CompletedDate`, `ClosedDate`, `Status`, `CostCenterID` |
+| `WorkOrder` | Production order header | `ItemID`, `BOMID`, `RoutingID`, `WarehouseID`, `PlannedQuantity`, `ReleasedDate`, `DueDate`, `CompletedDate`, `ClosedDate`, `Status`, `CostCenterID`, `SupplyPlanRecommendationID` |
 | `WorkOrderOperation` | Operation-level work-order execution record | `WorkOrderID`, `RoutingOperationID`, `OperationSequence`, `WorkCenterID`, `PlannedQuantity`, `PlannedLoadHours`, `PlannedStartDate`, `PlannedEndDate`, `ActualStartDate`, `ActualEndDate`, `Status` |
 | `WorkOrderOperationSchedule` | Daily scheduled hours for one work-order operation | `WorkOrderOperationID`, `WorkCenterID`, `ScheduleDate`, `ScheduledHours` |
 | `MaterialIssue` | Material issue header | `WorkOrderID`, `IssueDate`, `WarehouseID`, `IssuedByEmployeeID`, `Status` |
@@ -128,6 +129,16 @@ The canonical schema lives in `src/greenfield_dataset/schema.py` as `TABLE_COLUM
 | `CostCenter` | Organizational reporting structure | `CostCenterName`, `ParentCostCenterID`, `ManagerID`, `IsActive` |
 | `Budget` | Monthly budget by fiscal year, cost center, and account | `FiscalYear`, `Month`, `CostCenterID`, `AccountID`, `BudgetAmount`, `ApprovedByEmployeeID` |
 
+## Demand Planning and MRP
+
+| Table | Purpose | High-value columns |
+|---|---|---|
+| `DemandForecast` | Weekly demand-planning input by item and warehouse | `ForecastWeekStartDate`, `ForecastWeekEndDate`, `ItemID`, `WarehouseID`, `BaselineForecastQuantity`, `ForecastQuantity`, `ForecastMethod`, `ForecastVersion`, `PlannerEmployeeID`, `ApprovedByEmployeeID`, `IsCurrent` |
+| `InventoryPolicy` | Active replenishment-policy master for one item and warehouse | `ItemID`, `WarehouseID`, `PlanningGroup`, `PolicyType`, `SafetyStockQuantity`, `ReorderPointQuantity`, `ReorderQuantity`, `TargetDaysSupply`, `PlanningLeadTimeDays`, `PlannerEmployeeID`, `BuyerEmployeeID`, `EffectiveStartDate`, `EffectiveEndDate`, `IsActive` |
+| `SupplyPlanRecommendation` | Weekly replenishment recommendation that converts into a requisition or work order | `RecommendationDate`, `BucketWeekStartDate`, `BucketWeekEndDate`, `ItemID`, `WarehouseID`, `RecommendationType`, `PriorityCode`, `SupplyMode`, `GrossRequirementQuantity`, `ProjectedAvailableQuantity`, `NetRequirementQuantity`, `RecommendedOrderQuantity`, `NeedByDate`, `ReleaseByDate`, `RecommendationStatus`, `DriverType`, `PlannerEmployeeID`, `ConvertedDocumentType`, `ConvertedDocumentID` |
+| `MaterialRequirementPlan` | Component-demand explosion tied to a parent manufacturing recommendation | `BucketWeekStartDate`, `BucketWeekEndDate`, `ParentItemID`, `ComponentItemID`, `WarehouseID`, `SupplyPlanRecommendationID`, `GrossRequirementQuantity`, `ScheduledSupplyQuantity`, `ProjectedAvailableQuantity`, `NetRequirementQuantity`, `RecommendedOrderQuantity` |
+| `RoughCutCapacityPlan` | Weekly load-versus-available-hours planning tieout for a manufactured item and work center | `BucketWeekStartDate`, `BucketWeekEndDate`, `WorkCenterID`, `ItemID`, `SupplyPlanRecommendationID`, `PlannedLoadHours`, `AvailableHours`, `UtilizationPct`, `CapacityStatus` |
+
 ## Traceability Fields
 
 The most important lineage fields in the implementation are:
@@ -168,6 +179,10 @@ The most important lineage fields in the implementation are:
 - `PayrollRegisterLine.LaborTimeEntryID`
 - `PayrollPayment.PayrollRegisterID`
 - `PayrollLiabilityRemittance.PayrollPeriodID`
+- `PurchaseRequisition.SupplyPlanRecommendationID`
+- `WorkOrder.SupplyPlanRecommendationID`
+- `MaterialRequirementPlan.SupplyPlanRecommendationID`
+- `RoughCutCapacityPlan.SupplyPlanRecommendationID`
 - `GLEntry.SourceDocumentType`
 - `GLEntry.SourceDocumentID`
 - `GLEntry.SourceLineID`
@@ -184,5 +199,6 @@ The most important lineage fields in the implementation are:
 - `WorkOrderOperation` is the operation-level planning and actual-flow bridge between routing design, scheduling, and payroll labor detail.
 - Approved `TimeClockEntry` rows are the clean-build hour source for hourly payroll.
 - `EmployeeShiftRoster`, `EmployeeAbsence`, `TimeClockPunch`, and `OvertimeApproval` now sit beneath the approved `TimeClockEntry` layer.
+- Phase 22 adds a weekly planning layer that links `DemandForecast` and `InventoryPolicy` to `SupplyPlanRecommendation`, then into `PurchaseRequisition` and `WorkOrder`.
 - Payroll is operationally modeled, but manufacturing still uses standard-cost valuation rather than full actual-cost inventory.
 - For exact column order and names, use `TABLE_COLUMNS` in `src/greenfield_dataset/schema.py`.

@@ -55,9 +55,15 @@ from greenfield_dataset.payroll import (
     time_clock_entry_lookup,
     time_clock_punches_by_entry,
 )
+from greenfield_dataset.planning import first_forecast_week_start
 from greenfield_dataset.schema import TABLE_COLUMNS
 from greenfield_dataset.settings import GenerationContext
 from greenfield_dataset.utils import money, qty
+
+
+def planning_week_start(value: pd.Timestamp | str) -> pd.Timestamp:
+    timestamp = pd.Timestamp(value).normalize()
+    return timestamp - pd.Timedelta(days=int(timestamp.weekday()))
 
 
 def account_id_by_number(context: GenerationContext, account_number: str) -> int:
@@ -2545,6 +2551,207 @@ def validate_workforce_planning_controls(context: GenerationContext) -> dict[str
     }
 
 
+def validate_planning_controls(context: GenerationContext) -> dict[str, Any]:
+    items = context.tables["Item"]
+    forecasts = context.tables["DemandForecast"]
+    policies = context.tables["InventoryPolicy"]
+    recommendations = context.tables["SupplyPlanRecommendation"]
+    material_plans = context.tables["MaterialRequirementPlan"]
+    rough_cut = context.tables["RoughCutCapacityPlan"]
+    purchase_requisitions = context.tables["PurchaseRequisition"]
+    work_orders = context.tables["WorkOrder"]
+    work_center_calendar = context.tables["WorkCenterCalendar"]
+    boms = context.tables["BillOfMaterial"]
+    bom_lines = context.tables["BillOfMaterialLine"]
+    exceptions: list[dict[str, Any]] = []
+
+    if items.empty:
+        return {"exception_count": 0, "exceptions": []}
+
+    item_lookup = items.set_index("ItemID").to_dict("index")
+    fiscal_end = pd.Timestamp(context.settings.fiscal_year_end)
+    active_sellable_items = items[
+        items["RevenueAccountID"].notna()
+        & items["IsActive"].astype(int).eq(1)
+        & items["LaunchDate"].notna()
+    ].copy()
+
+    if not forecasts.empty:
+        forecasts = forecasts.copy()
+        forecasts["WeekStartTS"] = pd.to_datetime(forecasts["ForecastWeekStartDate"], errors="coerce")
+        forecasts["ItemIDNumeric"] = pd.to_numeric(forecasts["ItemID"], errors="coerce").astype("Int64")
+        forecast_counts = (
+            forecasts.dropna(subset=["ItemIDNumeric", "WeekStartTS"])
+            .groupby("ItemIDNumeric")["WeekStartTS"]
+            .nunique()
+            .to_dict()
+        )
+        fiscal_start = pd.Timestamp(context.settings.fiscal_year_start)
+        fiscal_end_week = planning_week_start(fiscal_end)
+        for row in active_sellable_items.itertuples(index=False):
+            launch_week = first_forecast_week_start(row.LaunchDate)
+            effective_start = max(launch_week, planning_week_start(fiscal_start))
+            expected_weeks = 0
+            if effective_start <= fiscal_end_week:
+                expected_weeks = int(((fiscal_end_week - effective_start).days // 7) + 1)
+            actual_weeks = int(forecast_counts.get(int(row.ItemID), 0))
+            if actual_weeks < expected_weeks:
+                exceptions.append({
+                    "type": "missing_forecast_coverage",
+                    "item_id": int(row.ItemID),
+                    "message": f"Item {int(row.ItemID)} is missing weekly forecast coverage after launch.",
+                })
+                if len(exceptions) >= 25:
+                    break
+
+        merged_forecasts = forecasts.merge(
+            items[["ItemID", "LaunchDate", "LifecycleStatus", "IsActive"]],
+            on="ItemID",
+            how="left",
+        )
+        invalid_launch_rows = merged_forecasts[
+            merged_forecasts["WeekStartTS"].lt(pd.to_datetime(merged_forecasts["LaunchDate"], errors="coerce"))
+        ]
+        for row in invalid_launch_rows.head(10).itertuples(index=False):
+            exceptions.append({
+                "type": "forecast_before_launch",
+                "item_id": int(row.ItemID),
+                "message": f"Forecast row exists before launch for item {int(row.ItemID)}.",
+            })
+        invalid_discontinued_rows = merged_forecasts[
+            merged_forecasts["LifecycleStatus"].eq("Discontinued")
+            & merged_forecasts["IsActive"].astype(int).ne(1)
+            & merged_forecasts["ForecastQuantity"].astype(float).gt(0)
+        ]
+        for row in invalid_discontinued_rows.head(10).itertuples(index=False):
+            exceptions.append({
+                "type": "forecast_for_discontinued_item",
+                "item_id": int(row.ItemID),
+                "message": f"Inactive discontinued item {int(row.ItemID)} still has positive forecast demand.",
+            })
+
+    if not policies.empty:
+        active_policies = policies[policies["IsActive"].astype(int).eq(1)].copy()
+        duplicates = active_policies.groupby(["ItemID", "WarehouseID"]).size().reset_index(name="RowCount")
+        duplicates = duplicates[duplicates["RowCount"].ne(1)]
+        for row in duplicates.head(10).itertuples(index=False):
+            exceptions.append({
+                "type": "policy_uniqueness_failure",
+                "item_id": int(row.ItemID),
+                "warehouse_id": int(row.WarehouseID),
+                "message": f"Expected exactly one active policy for item {int(row.ItemID)} warehouse {int(row.WarehouseID)}.",
+            })
+
+    recommendation_lookup = recommendations.set_index("SupplyPlanRecommendationID").to_dict("index") if not recommendations.empty else {}
+    if not recommendations.empty:
+        invalid_quantities = recommendations[
+            recommendations["NetRequirementQuantity"].astype(float).lt(0)
+            | recommendations["RecommendedOrderQuantity"].astype(float).lt(0)
+        ]
+        for row in invalid_quantities.head(10).itertuples(index=False):
+            exceptions.append({
+                "type": "negative_recommendation_quantity",
+                "recommendation_id": int(row.SupplyPlanRecommendationID),
+                "message": f"Recommendation {int(row.SupplyPlanRecommendationID)} has a negative planning quantity.",
+            })
+
+        converted = recommendations[recommendations["RecommendationStatus"].eq("Converted")].copy()
+        if not converted.empty:
+            for row in converted.itertuples(index=False):
+                if str(row.ConvertedDocumentType) == "PurchaseRequisition":
+                    matches = purchase_requisitions[
+                        purchase_requisitions["RequisitionID"].astype(int).eq(int(row.ConvertedDocumentID))
+                    ]
+                    if matches.empty or matches["SupplyPlanRecommendationID"].isna().all():
+                        exceptions.append({
+                            "type": "converted_requisition_link_failure",
+                            "recommendation_id": int(row.SupplyPlanRecommendationID),
+                            "message": f"Converted purchase recommendation {int(row.SupplyPlanRecommendationID)} does not reconcile to its requisition link.",
+                        })
+                    elif pd.Timestamp(matches.iloc[0]["RequestDate"]) > pd.Timestamp(row.NeedByDate):
+                        exceptions.append({
+                            "type": "late_requisition_conversion",
+                            "recommendation_id": int(row.SupplyPlanRecommendationID),
+                            "message": f"Purchase recommendation {int(row.SupplyPlanRecommendationID)} converted after need-by date.",
+                        })
+                if str(row.ConvertedDocumentType) == "WorkOrder":
+                    matches = work_orders[
+                        work_orders["WorkOrderID"].astype(int).eq(int(row.ConvertedDocumentID))
+                    ]
+                    if matches.empty or matches["SupplyPlanRecommendationID"].isna().all():
+                        exceptions.append({
+                            "type": "converted_work_order_link_failure",
+                            "recommendation_id": int(row.SupplyPlanRecommendationID),
+                            "message": f"Converted manufacturing recommendation {int(row.SupplyPlanRecommendationID)} does not reconcile to its work-order link.",
+                        })
+                    elif pd.Timestamp(matches.iloc[0]["ReleasedDate"]) > pd.Timestamp(row.NeedByDate):
+                        exceptions.append({
+                            "type": "late_work_order_conversion",
+                            "recommendation_id": int(row.SupplyPlanRecommendationID),
+                            "message": f"Manufacturing recommendation {int(row.SupplyPlanRecommendationID)} converted after need-by date.",
+                        })
+
+    if not material_plans.empty and not boms.empty and not bom_lines.empty:
+        active_boms = boms[boms["Status"].eq("Active")].copy()
+        bom_lookup = active_boms.set_index("ParentItemID")["BOMID"].astype(int).to_dict()
+        bom_line_lookup = bom_lines.set_index("BOMLineID").to_dict("index")
+        grouped_bom_lines = {
+            int(bom_id): rows.copy()
+            for bom_id, rows in bom_lines.groupby("BOMID")
+        }
+        for row in material_plans.head(len(material_plans)).itertuples(index=False):
+            recommendation = recommendation_lookup.get(int(row.SupplyPlanRecommendationID))
+            if recommendation is None:
+                exceptions.append({
+                    "type": "missing_parent_recommendation",
+                    "material_requirement_plan_id": int(row.MaterialRequirementPlanID),
+                    "message": f"MRP row {int(row.MaterialRequirementPlanID)} references a missing parent recommendation.",
+                })
+                continue
+            bom_id = bom_lookup.get(int(row.ParentItemID))
+            bom_rows = grouped_bom_lines.get(int(bom_id), pd.DataFrame()) if bom_id is not None else pd.DataFrame()
+            expected_gross = None
+            if not bom_rows.empty:
+                match = bom_rows[bom_rows["ComponentItemID"].astype(int).eq(int(row.ComponentItemID))]
+                if not match.empty:
+                    bom_line = match.iloc[0]
+                    expected_gross = qty(
+                        float(recommendation["RecommendedOrderQuantity"])
+                        * float(bom_line["QuantityPerUnit"])
+                        * (1 + float(bom_line["ScrapFactorPct"]))
+                    )
+            if expected_gross is not None and round(float(row.GrossRequirementQuantity), 2) != round(float(expected_gross), 2):
+                exceptions.append({
+                    "type": "mrp_bom_quantity_mismatch",
+                    "material_requirement_plan_id": int(row.MaterialRequirementPlanID),
+                    "message": f"MRP row {int(row.MaterialRequirementPlanID)} does not reconcile to BOM quantity requirements.",
+                })
+                if len(exceptions) >= 250:
+                    break
+
+    if not rough_cut.empty and not work_center_calendar.empty:
+        calendar = work_center_calendar.copy()
+        calendar["WeekStart"] = pd.to_datetime(calendar["CalendarDate"], errors="coerce").map(planning_week_start)
+        available_hours = calendar.groupby(["WeekStart", "WorkCenterID"])["AvailableHours"].sum().round(2)
+        for row in rough_cut.head(len(rough_cut)).itertuples(index=False):
+            expected_available = float(
+                available_hours.get((pd.Timestamp(row.BucketWeekStartDate), int(row.WorkCenterID)), 0.0)
+            )
+            if round(float(row.AvailableHours), 2) != round(expected_available, 2):
+                exceptions.append({
+                    "type": "rough_cut_available_hours_mismatch",
+                    "rough_cut_capacity_plan_id": int(row.RoughCutCapacityPlanID),
+                    "message": f"Rough-cut capacity row {int(row.RoughCutCapacityPlanID)} does not reconcile to work-center calendar availability.",
+                })
+                if len(exceptions) >= 250:
+                    break
+
+    return {
+        "exception_count": len(exceptions),
+        "exceptions": exceptions,
+    }
+
+
 def validate_master_data_controls(context: GenerationContext) -> dict[str, Any]:
     employees = context.tables["Employee"].copy()
     items = context.tables["Item"].copy()
@@ -3186,6 +3393,60 @@ def validate_phase21(
     return phase21_results
 
 
+def validate_phase22(
+    context: GenerationContext,
+    scope: str = "full",
+    store: bool = True,
+) -> dict[str, Any]:
+    results = validate_phase21(context, scope=scope, store=False)
+    exceptions = list(results["exceptions"])
+
+    normalized_scope = str(scope).strip().lower()
+    planning_controls: dict[str, Any] = {"exception_count": 0, "exceptions": []}
+    if normalized_scope in {"operational", "full"}:
+        planning_controls = validate_planning_controls(context)
+        if planning_controls["exception_count"]:
+            exceptions.append(
+                f"Planning control exceptions: {planning_controls['exception_count']}."
+            )
+
+    phase22_results: dict[str, Any] = {
+        "row_counts": {table: int(len(df)) for table, df in context.tables.items()},
+        "exceptions": exceptions,
+        "validation_scope": normalized_scope,
+        "gl_balance": results["gl_balance"],
+        "trial_balance_difference": results["trial_balance_difference"],
+        "account_rollforward": results["account_rollforward"],
+        "o2c_controls": results["o2c_controls"],
+        "p2p_controls": results["p2p_controls"],
+        "journal_controls": results["journal_controls"],
+        "manufacturing_controls": results["manufacturing_controls"],
+        "payroll_controls": results["payroll_controls"],
+        "routing_controls": results["routing_controls"],
+        "capacity_controls": results["capacity_controls"],
+        "time_clock_controls": results["time_clock_controls"],
+        "master_data_controls": results["master_data_controls"],
+        "workforce_planning_controls": results["workforce_planning_controls"],
+        "planning_controls": planning_controls,
+    }
+    if store:
+        context.validation_results["phase22"] = phase22_results
+        context.validation_results["phase21"] = phase22_results
+        context.validation_results["phase20"] = phase22_results
+        context.validation_results["phase19"] = phase22_results
+        context.validation_results["phase18"] = phase22_results
+        context.validation_results["phase17"] = phase22_results
+        context.validation_results["phase16"] = phase22_results
+        context.validation_results["phase15_2"] = phase22_results
+        context.validation_results["phase15"] = phase22_results
+        context.validation_results["phase14"] = phase22_results
+        context.validation_results["phase13"] = phase22_results
+        context.validation_results["phase12"] = phase22_results
+        context.validation_results["phase11"] = phase22_results
+        context.validation_results["phase9"] = phase22_results
+    return phase22_results
+
+
 def validate_phase12(context: GenerationContext, store: bool = True) -> dict[str, Any]:
     results = validate_phase15(context, store=False)
     if store:
@@ -3208,7 +3469,7 @@ def validate_phase9(context: GenerationContext, store: bool = True) -> dict[str,
 
 
 def validate_phase8(context: GenerationContext, scope: str = "full") -> dict[str, Any]:
-    results = validate_phase21(context, scope=scope, store=False)
+    results = validate_phase22(context, scope=scope, store=False)
     exceptions = list(results["exceptions"])
 
     if context.settings.anomaly_mode != "none" and not context.anomaly_log:
@@ -3231,6 +3492,7 @@ def validate_phase8(context: GenerationContext, scope: str = "full") -> dict[str
         "time_clock_controls": results.get("time_clock_controls", {"exception_count": 0, "exceptions": []}),
         "master_data_controls": results.get("master_data_controls", {"exception_count": 0, "exceptions": []}),
         "workforce_planning_controls": results.get("workforce_planning_controls", {"exception_count": 0, "exceptions": []}),
+        "planning_controls": results.get("planning_controls", {"exception_count": 0, "exceptions": []}),
     }
     context.validation_results["phase8"] = phase8_results
     return phase8_results

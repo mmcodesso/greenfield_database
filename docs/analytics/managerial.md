@@ -62,12 +62,18 @@ sidebar_label: Managerial Analytics
 | Overtime approval coverage and concentration | [39_overtime_approval_coverage_and_concentration.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/39_overtime_approval_coverage_and_concentration.sql) |
 | Punch-to-pay bridge for hourly workers | [40_punch_to_pay_bridge_for_hourly_workers.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/40_punch_to_pay_bridge_for_hourly_workers.sql) |
 | Late arrival and early departure by shift and department | [41_late_arrival_early_departure_by_shift_department.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/41_late_arrival_early_departure_by_shift_department.sql) |
+| Inventory coverage and projected stockout risk | [42_inventory_coverage_and_projected_stockout_risk.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/42_inventory_coverage_and_projected_stockout_risk.sql) |
+| Rough-cut capacity load versus available hours | [43_rough_cut_capacity_load_vs_available_hours.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/43_rough_cut_capacity_load_vs_available_hours.sql) |
+| Expedite pressure by item family and month | [44_expedite_pressure_by_item_family_and_month.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/44_expedite_pressure_by_item_family_and_month.sql) |
+| Forecast error and bias by collection and style family | [45_forecast_error_and_bias_by_collection_style_family.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/45_forecast_error_and_bias_by_collection_style_family.sql) |
+| Supply-plan driver mix by collection and supply mode | [46_supply_plan_driver_mix_by_collection_and_supply_mode.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/46_supply_plan_driver_mix_by_collection_and_supply_mode.sql) |
 
-## Phase 19 to Phase 21 Pairings
+## Phase 19 to Phase 22 Pairings
 
 - Use [Product Portfolio Profitability Case](cases/product-portfolio-profitability-case.md) when you want a portfolio, lifecycle, and contribution-margin sequence.
 - Use [Workforce Cost and Org-Control Case](cases/workforce-cost-and-org-control-case.md) when you want workforce structure, labor mix, and approval concentration in one lab.
 - Use [Workforce Coverage and Attendance Case](cases/workforce-coverage-and-attendance-case.md) when you want planned staffing, approved time, absences, and overtime in one operational lab.
+- Use [Demand Planning and Replenishment Case](cases/demand-planning-and-replenishment-case.md) when you want forecast, replenishment, component-demand, and rough-cut capacity analysis in one sequence.
 - Use [Product Portfolio Case](cases/product-portfolio-and-lifecycle-case.md) when you want a lighter Phase 18-style entry point before moving into the fuller Phase 19 pack.
 
 ## Interpretation Notes
@@ -78,4 +84,6 @@ sidebar_label: Managerial Analytics
 - Portfolio mix and profitability should be read together with service-level measures such as fill rate, shipment lag, and return pressure.
 - Work location and cost center answer different questions. Use both when students compare workforce structure to payroll or labor usage.
 - Workforce-planning analysis is stronger now that rostered hours, approved worked hours, absences, raw punches, and overtime approvals can be compared directly.
+- Phase 22 adds a weekly planning layer. Students can now compare forecast, policy, recommendation, and rough-cut capacity pressure before execution starts.
 - The current manufacturing model is still a foundation. It supports operations, labor, and contribution-margin analysis without switching inventory valuation to actual cost.
+- Demand-planning analysis is most useful when students connect `DemandForecast`, `InventoryPolicy`, `SupplyPlanRecommendation`, `MaterialRequirementPlan`, and `RoughCutCapacityPlan` instead of reading each table in isolation.

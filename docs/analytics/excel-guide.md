@@ -25,7 +25,7 @@ Recommended first steps:
 3. identify the sheets that match the query or case you are running
 4. create a working sheet for pivots, formulas, and charts
 
-## Phase 19 Workflow Pattern
+## Phase 19 to Phase 22 Workflow Pattern
 
 For most classes, use this sequence:
 
@@ -171,6 +171,13 @@ Suggested outputs:
 - operation throughput and planned-versus-actual labor
 - daily load versus capacity
 - backlog aging and late-operation review
+- weekly forecast versus actual demand by item family
+- recommendation mix by priority and planner
+- rough-cut capacity pressure by work center and planning week
+
+Best paired case:
+
+- [Demand Planning and Replenishment Case](cases/demand-planning-and-replenishment-case.md)
 
 ## Audit Workflows
 
@@ -199,6 +206,11 @@ Suggested outputs:
 - absence with worked time review
 - overlapping or incomplete punch review
 - roster after termination review
+- forecast approval and override review
+- inactive or stale inventory policy review
+- requisitions and work orders without planning support
+- recommendation converted after need-by date review
+- discontinued or pre-launch planning activity review
 
 ### Support-workbook-assisted review
 
@@ -220,6 +232,7 @@ Best paired cases:
 
 - [Audit Review Pack Case](cases/audit-review-pack-case.md)
 - [Attendance Control Audit Case](cases/attendance-control-audit-case.md)
+- [Replenishment Support Audit Case](cases/replenishment-support-audit-case.md)
 - [Audit Exception Lab](cases/audit-exception-lab.md)
 
 ## Clean vs Default Build in Excel

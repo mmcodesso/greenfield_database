@@ -14,6 +14,7 @@ from greenfield_dataset.master_data import (
     eligible_item_mask,
 )
 from greenfield_dataset.o2c import opening_inventory_map, sales_order_line_shipped_quantities, shadow_inventory_state
+from greenfield_dataset.planning import manufacture_recommendations_for_month, update_recommendation_conversion
 from greenfield_dataset.payroll import (
     labor_time_direct_cost_by_work_order,
     next_business_day,
@@ -1457,6 +1458,70 @@ def generate_month_work_orders_and_requisitions(context: GenerationContext, year
         return
 
     rng = context.rng
+    planned_recommendations = manufacture_recommendations_for_month(context, year, month)
+    if not planned_recommendations.empty:
+        manufacturing_cost_center = cost_center_id(context, "Manufacturing")
+        bom_by_parent = bom_lookup(context)
+        routing_by_parent = active_routing_by_item(context)
+        work_order_rows: list[dict[str, Any]] = []
+        work_order_operation_rows: list[dict[str, Any]] = []
+        work_order_operation_schedule_rows: list[dict[str, Any]] = []
+        conversion_mapping: dict[int, tuple[str, int]] = {}
+
+        for recommendation in planned_recommendations.itertuples(index=False):
+            item = manufactured[manufactured["ItemID"].astype(int).eq(int(recommendation.ItemID))]
+            if item.empty:
+                continue
+            item_row = item.iloc[0]
+            bom = bom_by_parent.get(int(recommendation.ItemID))
+            routing = routing_by_parent.get(int(recommendation.ItemID))
+            if bom is None or routing is None:
+                continue
+            release_date = max(month_start, pd.Timestamp(recommendation.ReleaseByDate))
+            if release_date > month_end:
+                release_date = month_end
+            due_date = max(release_date, pd.Timestamp(recommendation.NeedByDate))
+            planned_quantity = qty(float(recommendation.RecommendedOrderQuantity))
+            if planned_quantity <= 0:
+                continue
+            work_order_id = next_id(context, "WorkOrder")
+            work_order_number = format_doc_number("WO", year, work_order_id)
+            work_order_rows.append({
+                "WorkOrderID": work_order_id,
+                "WorkOrderNumber": work_order_number,
+                "ItemID": int(recommendation.ItemID),
+                "BOMID": int(bom["BOMID"]),
+                "RoutingID": int(routing["RoutingID"]),
+                "WarehouseID": int(recommendation.WarehouseID),
+                "PlannedQuantity": planned_quantity,
+                "ReleasedDate": release_date.strftime("%Y-%m-%d"),
+                "DueDate": due_date.strftime("%Y-%m-%d"),
+                "CompletedDate": None,
+                "ClosedDate": None,
+                "Status": "Released",
+                "CostCenterID": manufacturing_cost_center,
+                "ReleasedByEmployeeID": int(rng.choice(employee_ids_for_cost_center(context, "Manufacturing", release_date))),
+                "ClosedByEmployeeID": None,
+                "SupplyPlanRecommendationID": int(recommendation.SupplyPlanRecommendationID),
+            })
+            operation_rows, operation_schedule_rows = build_work_order_operations(
+                context,
+                work_order_id,
+                int(routing["RoutingID"]),
+                planned_quantity,
+                release_date,
+                due_date,
+            )
+            work_order_operation_rows.extend(operation_rows)
+            work_order_operation_schedule_rows.extend(operation_schedule_rows)
+            conversion_mapping[int(recommendation.SupplyPlanRecommendationID)] = ("WorkOrder", work_order_id)
+
+        append_rows(context, "WorkOrder", work_order_rows)
+        append_rows(context, "WorkOrderOperation", work_order_operation_rows)
+        append_rows(context, "WorkOrderOperationSchedule", work_order_operation_schedule_rows)
+        update_recommendation_conversion(context, conversion_mapping)
+        return
+
     shortages = finished_goods_shortage_by_item(context, month_end)
     if not shortages:
         return
@@ -1513,6 +1578,7 @@ def generate_month_work_orders_and_requisitions(context: GenerationContext, year
             "CostCenterID": manufacturing_cost_center,
             "ReleasedByEmployeeID": int(rng.choice(employee_ids_for_cost_center(context, "Manufacturing", release_date))),
             "ClosedByEmployeeID": None,
+            "SupplyPlanRecommendationID": None,
         })
         operation_rows, operation_schedule_rows = build_work_order_operations(
             context,
@@ -1555,6 +1621,7 @@ def generate_month_work_orders_and_requisitions(context: GenerationContext, year
                 "ApprovedByEmployeeID": approver_id(context, requisition_quantity * estimated_unit_cost, release_date),
                 "ApprovedDate": release_date.strftime("%Y-%m-%d"),
                 "Status": "Approved",
+                "SupplyPlanRecommendationID": None,
             })
 
     append_rows(context, "WorkOrder", work_order_rows)

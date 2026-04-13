@@ -16,6 +16,7 @@ The current generator already delivers:
 - order-to-cash and procure-to-pay transaction generation
 - manufacturing foundation with BOMs, routings, work centers, work orders, operations, issues, completions, and close
 - payroll, approved daily time clocks, and labor allocation support
+- weekly demand planning, replenishment recommendations, material-requirement planning, and rough-cut capacity tieout
 - richer employee and item master data for role, lifecycle, and portfolio analysis
 - event-based postings into `GLEntry`
 - validations, anomaly injection, starter analytics assets, walkthrough cases, and exports
@@ -74,37 +75,38 @@ Delivered:
 - a dedicated profiling config at `config/settings_perf.yaml`
 - cleaner build helpers through `build_phase15_2(...)`
 
-## Next Planned Phase: Phase 20 - Master Data and Workforce Audit Anomaly Expansion
+## Recently Delivered: Phase 20 - Master Data and Workforce Audit Anomaly Expansion
 
-Phase 20 should expand anomaly coverage around employee and item master controls.
+Phase 20 delivered:
 
-Planned focus:
+- broader anomaly coverage around employee and item master controls
+- stronger approval-authority and current-state assignment exceptions
+- audit-query extensions that map directly to the new anomaly families
+- a stronger default anomaly-enabled audit path without a separate teaching profile
 
-- terminated or inactive employee activity
-- conflicting executive-role assignments
-- approval-authority mismatch and stale employee-master scenarios
-- inactive or discontinued item usage
-- missing or inconsistent product-catalog attributes
-- stronger linkage between anomaly packs, audit starter queries, and case labs
+## Recently Delivered: Phase 21 - Workforce Planning Detail
 
-This phase should improve audit teaching coverage without turning the base dataset into an exception-heavy build.
-
-## Phase 21 - Workforce Planning Detail
-
-Status: implemented
-
-Only after Phase 20 should the roadmap return to deeper workforce-operating detail beneath the current daily time-clock model.
-
-Implemented focus:
+Phase 21 delivered:
 
 - raw punch-event detail beneath approved daily time-clock rows
-- rotating shift rosters
-- richer employee-availability and attendance-planning logic
-- deeper labor-timing and workforce-efficiency anomalies
+- daily shift rosters, explicit absences, and overtime approvals
+- deeper attendance, overtime, and roster-control starter analytics and cases
+- stronger payroll-to-time-to-labor traceability
 
-This work still matters, but it is no longer the immediate next step because master-data realism and analytics expansion now deliver broader teaching value.
+## Recently Delivered: Phase 22 - Demand Planning and MRP Foundation
+
+Phase 22 delivered:
+
+- weekly demand forecasts and inventory policies
+- replenishment recommendations that now support normal requisition and work-order creation
+- component-demand explosion through `MaterialRequirementPlan`
+- rough-cut capacity tieout through `RoughCutCapacityPlan`
+- starter analytics and audit queries for forecast quality, planning support, and recommendation timing
+
+This phase strengthens the planning-to-execution bridge without changing valuation away from standard cost.
 
 ## Recently Completed Sequence
 
 1. Phase 20 - Master Data and Workforce Audit Anomaly Expansion
 2. Phase 21 - Workforce Planning Detail
+3. Phase 22 - Demand Planning and MRP Foundation

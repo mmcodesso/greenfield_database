@@ -4,13 +4,15 @@
 
 Greenfield does not manufacture every product it sells. It buys some finished goods ready-made, but it also produces a selected subset of furniture, lighting, and textile items in-house. That hybrid model is one of the most useful teaching features in the dataset because students can compare purchased inventory with manufactured inventory inside the same company.
 
-The manufacturing story begins when planners see that demand and inventory levels are moving out of balance. They release a work order, purchasing helps replenish any missing materials, warehouse staff issue components into production, supervisors and workers move the order through scheduled operations, payroll-supported labor is traced into the job, and accounting closes the order when standard and actual amounts are resolved.
+The manufacturing story begins when weekly planning sees that demand and inventory levels are moving out of balance. Demand forecasts, inventory policies, and open backlog create replenishment signals. Manufactured signals convert into work orders, purchasing helps replenish any missing materials, warehouse staff issue components into production, supervisors and workers move the order through scheduled operations, payroll-supported labor is traced into the job, and accounting closes the order when standard and actual amounts are resolved.
 
 ## Process Diagram
 
 ```mermaid
 flowchart LR
+    DF[Demand forecast and policy]
     SO[Sales backlog and FG demand]
+    SPR[Supply-plan recommendation]
     PR[Material purchase requisitions]
     PO[Purchase orders]
     GR[Goods receipts]
@@ -28,7 +30,8 @@ flowchart LR
     SH[Shipment]
     GL[GLEntry]
 
-    SO --> WO
+    DF --> SPR --> WO
+    SO --> SPR
     BOM --> WO
     RT --> WO
     RT --> CAL
@@ -74,14 +77,21 @@ Main tables:
 - `Routing`
 - `RoutingOperation`
 
-### 3. Release a work order and schedule it
+### 3. Plan and release a work order
 
-The planning team releases a work order when projected demand is going to exceed available finished-goods supply. In the current model, that decision considers:
+The planning team first creates a weekly manufacturing recommendation when projected demand is going to exceed available finished-goods supply. In the current model, that decision considers:
 
+- weekly forecast
 - open sales backlog
 - available finished-goods inventory
 - scheduled open completions
 - a target finished-goods buffer
+
+That recommendation is recorded in:
+
+- `SupplyPlanRecommendation`
+
+If the recommendation is eligible for release inside the current month, it converts into a `WorkOrder` with `SupplyPlanRecommendationID` populated.
 
 The work order itself is recorded in:
 
@@ -94,6 +104,7 @@ Main linked tables:
 - `WorkOrderOperation`
 - `WorkOrderOperationSchedule`
 - `WorkCenterCalendar`
+- `RoughCutCapacityPlan`
 
 ### 4. Replenish components through P2P
 
@@ -173,6 +184,11 @@ Once finished goods are back in inventory, the normal O2C shipment process can c
 | `Item` | Identifies which sellable items are purchased versus manufactured and stores standard cost components |
 | `BillOfMaterial` | BOM header for manufactured items |
 | `BillOfMaterialLine` | BOM component detail |
+| `DemandForecast` | Weekly demand-planning input that anchors replenishment volume |
+| `InventoryPolicy` | Weekly replenishment policy used for safety stock, reorder point, and lead-time logic |
+| `SupplyPlanRecommendation` | Weekly replenishment signal that becomes a work order or requisition |
+| `MaterialRequirementPlan` | Component-demand explosion tied to manufactured recommendations |
+| `RoughCutCapacityPlan` | Weekly capacity tieout between planned load and available hours |
 | `WorkCenter` | Manufacturing resource group where an operation is performed |
 | `WorkCenterCalendar` | Daily work-center availability, including weekends, holidays, maintenance, and reduced-capacity days |
 | `Routing` | Active operation plan for a manufactured item |
@@ -223,6 +239,7 @@ Manufacturing creates both operational and journal-driven accounting:
 ## What to Notice in the Data
 
 - Manufactured demand is tied to sales backlog and finished-goods availability rather than being released randomly.
+- Phase 22 makes that link explicit through `DemandForecast`, `InventoryPolicy`, and `SupplyPlanRecommendation`.
 - Raw-material replenishment uses the existing P2P flow instead of a separate procurement subsystem.
 - The current manufacturing model uses single-level BOMs rather than multilevel subassemblies.
 - Direct labor is assigned at the operation level, and operations are scheduled against finite daily work-center capacity.

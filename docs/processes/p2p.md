@@ -5,6 +5,8 @@
 
 Greenfield does not buy inventory at random. A department identifies a need, purchasing turns that need into supplier orders, warehouse staff receive the goods when they arrive, accounts payable records the supplier invoice, and treasury pays it when approved. Some demand comes from routine replenishment, while some comes from manufacturing's need for raw materials and packaging.
 
+From Phase 22 onward, the normal replenishment path is planned first. Weekly demand forecasts and inventory policies feed `SupplyPlanRecommendation`, and those planning rows become the standard support for new requisitions.
+
 That sequence gives students a realistic three-way-match environment where ordering, receiving, invoicing, and payment do not always happen on the same day or even in the same month.
 
 The AP side also includes a second path for certain operating expenses. Finance may estimate the expense first through an accrual, then later clear that estimate through a direct supplier service invoice that has no goods receipt behind it.
@@ -38,8 +40,8 @@ Read the diagram as internal demand, supplier commitment, physical receipt, supp
 
 ## Step-by-Step Walkthrough
 
-1. A department identifies the need for inventory, materials, packaging, or another purchased input. That request is recorded in `PurchaseRequisition`.
-2. Manufacturing can create additional requisitions when planned work orders need more materials than current stock can support.
+1. Weekly planning evaluates forecast, backlog, on-hand supply, scheduled receipts, and safety stock. When purchased supply is needed, it creates `SupplyPlanRecommendation` rows with `RecommendationType = 'Purchase'`.
+2. Purchasing converts eligible recommendations into `PurchaseRequisition` rows. Manufacturing can still create residual requisitions when execution consumes more materials than planned supply can cover.
 3. Purchasing groups compatible demand into `PurchaseOrder` and `PurchaseOrderLine`.
 4. Warehouse staff receive the goods over one or more dates, and those receipts appear in `GoodsReceipt` and `GoodsReceiptLine`.
 5. Accounts payable records the supplier bill in `PurchaseInvoice` and `PurchaseInvoiceLine`.
@@ -51,6 +53,7 @@ Read the diagram as internal demand, supplier commitment, physical receipt, supp
 
 | Business step | Main tables | Why they matter |
 |---|---|---|
+| Planning support | `DemandForecast`, `InventoryPolicy`, `SupplyPlanRecommendation` | Shows why replenishment was planned, by week, item, warehouse, and planner |
 | Internal demand | `PurchaseRequisition` | Shows who requested the item and for which cost center |
 | Supplier order | `PurchaseOrder`, `PurchaseOrderLine` | Shows what was ordered, from whom, and at what expected cost |
 | Receiving | `GoodsReceipt`, `GoodsReceiptLine` | Shows what physically arrived and when |
@@ -76,6 +79,7 @@ Read the diagram as internal demand, supplier commitment, physical receipt, supp
 ## What to Notice in the Data
 
 - `PurchaseOrderLine.RequisitionID` is the authoritative requisition link when POs batch several requisitions.
+- `PurchaseRequisition.SupplyPlanRecommendationID` is the authoritative Phase 22 planning-support link for normal replenishment demand.
 - `PurchaseInvoiceLine.GoodsReceiptLineID` is the authoritative clean-match link for receipt-based inventory invoicing.
 - `PurchaseInvoiceLine.AccrualJournalEntryID` is the authoritative link for direct accrued-service invoice settlement.
 - P2P flow is multi-period in the current generator. Receiving, invoicing, and payment do not need to occur in the same month.

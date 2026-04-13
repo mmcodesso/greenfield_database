@@ -61,6 +61,11 @@ sidebar_label: Audit Analytics
 | Absence with worked time review | [39_absence_with_worked_time_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/39_absence_with_worked_time_review.sql) |
 | Overlapping or incomplete punch review | [40_overlapping_or_incomplete_punch_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/40_overlapping_or_incomplete_punch_review.sql) |
 | Roster after termination review | [41_roster_after_termination_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/41_roster_after_termination_review.sql) |
+| Forecast approval and override review | [42_forecast_approval_and_override_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/42_forecast_approval_and_override_review.sql) |
+| Inactive or stale inventory policy review | [43_inactive_or_stale_inventory_policy_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/43_inactive_or_stale_inventory_policy_review.sql) |
+| Requisitions and work orders without planning support | [44_requisitions_and_work_orders_without_planning_support.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/44_requisitions_and_work_orders_without_planning_support.sql) |
+| Recommendation converted after need-by date review | [45_recommendation_converted_after_need_by_date_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/45_recommendation_converted_after_need_by_date_review.sql) |
+| Discontinued or pre-launch planning activity review | [46_discontinued_or_prelaunch_planning_activity_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/46_discontinued_or_prelaunch_planning_activity_review.sql) |
 
 ## Baseline Control Queries
 
@@ -86,6 +91,11 @@ Use these when you want the default anomaly-enabled build to surface teachable e
 - current-state employee assignment review
 - approval authority-limit review
 - item status alignment review
+- forecast approval and override review
+- inactive or stale inventory policy review
+- requisitions and work orders without planning support
+- recommendation converted after need-by date review
+- discontinued or pre-launch planning activity review
 
 ## Support-Workbook-Assisted Review
 
@@ -138,3 +148,8 @@ Pair those sheets with [Audit Review Pack Case](cases/audit-review-pack-case.md)
 | [39_absence_with_worked_time_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/39_absence_with_worked_time_review.sql) | `standard` | `absence_with_worked_time` | `EmployeeAbsence`, `EmployeeShiftRoster`, `TimeClockEntry`, `TimeClockPunch` |
 | [40_overlapping_or_incomplete_punch_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/40_overlapping_or_incomplete_punch_review.sql) | `standard` | `missing_final_punch`, `overlapping_punch_sequence` | `TimeClockPunch`, `TimeClockEntry`, `Employee` |
 | [41_roster_after_termination_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/41_roster_after_termination_review.sql) | `standard` | `roster_after_termination` | `EmployeeShiftRoster`, `Employee`, `TimeClockEntry`, `TimeClockPunch` |
+| [42_forecast_approval_and_override_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/42_forecast_approval_and_override_review.sql) | `standard` | `missing_forecast_approval`, `forecast_override_outlier` | `DemandForecast`, `Item`, `Employee` |
+| [43_inactive_or_stale_inventory_policy_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/43_inactive_or_stale_inventory_policy_review.sql) | `standard` | `inactive_policy_for_active_item` | `InventoryPolicy`, `Item`, `Warehouse`, `Employee` |
+| [44_requisitions_and_work_orders_without_planning_support.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/44_requisitions_and_work_orders_without_planning_support.sql) | `standard` | `purchase_requisition_without_plan`, `work_order_without_plan` | `PurchaseRequisition`, `WorkOrder`, `SupplyPlanRecommendation`, `Item` |
+| [45_recommendation_converted_after_need_by_date_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/45_recommendation_converted_after_need_by_date_review.sql) | `standard` | `late_recommendation_conversion` | `SupplyPlanRecommendation`, `PurchaseRequisition`, `WorkOrder`, `Item` |
+| [46_discontinued_or_prelaunch_planning_activity_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/46_discontinued_or_prelaunch_planning_activity_review.sql) | `standard` | `inactive_policy_for_active_item`, `missing_forecast_approval`, `forecast_override_outlier`, `late_recommendation_conversion` | `DemandForecast`, `InventoryPolicy`, `SupplyPlanRecommendation`, `PurchaseRequisition`, `WorkOrder`, `Item` |

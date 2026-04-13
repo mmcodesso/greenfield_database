@@ -8,7 +8,7 @@ import yaml
 
 from greenfield_dataset.schema import TABLE_COLUMNS
 from greenfield_dataset.settings import GenerationContext
-from greenfield_dataset.utils import money, next_id
+from greenfield_dataset.utils import money, next_id, qty
 
 
 APPROVAL_ROLE_FAMILIES_BY_DOCUMENT = {
@@ -2145,6 +2145,219 @@ def inject_overlapping_punch_sequence(context: GenerationContext, count_per_year
                 break
 
 
+def inject_missing_forecast_approval(context: GenerationContext, count_per_year: int) -> None:
+    forecasts = context.tables["DemandForecast"]
+    if forecasts.empty or count_per_year <= 0:
+        return
+
+    for year in fiscal_years(context):
+        year_rows = rows_for_year(forecasts, "ForecastWeekStartDate", year)
+        used_ids = used_primary_keys(context, "DemandForecast", "missing_forecast_approval")
+        year_rows = year_rows[~year_rows["DemandForecastID"].astype(int).isin(used_ids)]
+        injected = 0
+        for row in year_rows.sort_values(["ForecastWeekStartDate", "DemandForecastID"]).itertuples(index=False):
+            mask = context.tables["DemandForecast"]["DemandForecastID"].astype(int).eq(int(row.DemandForecastID))
+            context.tables["DemandForecast"].loc[mask, "ApprovedByEmployeeID"] = None
+            context.tables["DemandForecast"].loc[mask, "ApprovedDate"] = None
+            log_anomaly(
+                context,
+                "missing_forecast_approval",
+                "DemandForecast",
+                int(row.DemandForecastID),
+                year,
+                "Forecast approval fields were cleared from an active weekly demand forecast row.",
+                "Forecast approval and override review.",
+            )
+            injected += 1
+            if injected >= count_per_year:
+                break
+
+
+def inject_inactive_policy_for_active_item(context: GenerationContext, count_per_year: int) -> None:
+    policies = context.tables["InventoryPolicy"]
+    if policies.empty or count_per_year <= 0:
+        return
+
+    items = context.tables["Item"]
+    active_item_ids = set(
+        items.loc[
+            items["IsActive"].astype(int).eq(1)
+            & items["InventoryAccountID"].notna(),
+            "ItemID",
+        ].astype(int).tolist()
+    )
+    candidates = policies[
+        policies["IsActive"].astype(int).eq(1)
+        & policies["ItemID"].astype(int).isin(active_item_ids)
+    ].copy()
+    if candidates.empty:
+        return
+
+    for year in fiscal_years(context):
+        used_ids = used_primary_keys(context, "InventoryPolicy", "inactive_policy_for_active_item")
+        injected = 0
+        for row in candidates.sort_values(["ItemID", "WarehouseID", "InventoryPolicyID"]).itertuples(index=False):
+            if int(row.InventoryPolicyID) in used_ids:
+                continue
+            mask = context.tables["InventoryPolicy"]["InventoryPolicyID"].astype(int).eq(int(row.InventoryPolicyID))
+            context.tables["InventoryPolicy"].loc[mask, "IsActive"] = 0
+            log_anomaly(
+                context,
+                "inactive_policy_for_active_item",
+                "InventoryPolicy",
+                int(row.InventoryPolicyID),
+                year,
+                "An active inventory item was left with an inactive planning policy row.",
+                "Inactive or stale inventory policy review.",
+            )
+            injected += 1
+            if injected >= count_per_year:
+                break
+
+
+def inject_purchase_requisition_without_plan(context: GenerationContext, count_per_year: int) -> None:
+    requisitions = context.tables["PurchaseRequisition"]
+    if requisitions.empty or count_per_year <= 0 or "SupplyPlanRecommendationID" not in requisitions.columns:
+        return
+
+    for year in fiscal_years(context):
+        year_rows = rows_for_year(requisitions, "RequestDate", year)
+        candidates = year_rows[year_rows["SupplyPlanRecommendationID"].notna()].copy()
+        used_ids = used_primary_keys(context, "PurchaseRequisition", "purchase_requisition_without_plan")
+        injected = 0
+        for row in candidates.sort_values(["RequestDate", "RequisitionID"]).itertuples(index=False):
+            if int(row.RequisitionID) in used_ids:
+                continue
+            mask = context.tables["PurchaseRequisition"]["RequisitionID"].astype(int).eq(int(row.RequisitionID))
+            recommendation_id = int(row.SupplyPlanRecommendationID)
+            context.tables["PurchaseRequisition"].loc[mask, "SupplyPlanRecommendationID"] = None
+            recommendation_mask = context.tables["SupplyPlanRecommendation"]["SupplyPlanRecommendationID"].astype(int).eq(recommendation_id)
+            if recommendation_mask.any():
+                context.tables["SupplyPlanRecommendation"].loc[recommendation_mask, "RecommendationStatus"] = "Planned"
+                context.tables["SupplyPlanRecommendation"].loc[recommendation_mask, "ConvertedDocumentType"] = None
+                context.tables["SupplyPlanRecommendation"].loc[recommendation_mask, "ConvertedDocumentID"] = None
+            log_anomaly(
+                context,
+                "purchase_requisition_without_plan",
+                "PurchaseRequisition",
+                int(row.RequisitionID),
+                year,
+                "A requisition converted from the planning layer had its planning recommendation link removed.",
+                "Requisitions and work orders without planning support review.",
+            )
+            injected += 1
+            if injected >= count_per_year:
+                break
+
+
+def inject_work_order_without_plan(context: GenerationContext, count_per_year: int) -> None:
+    work_orders = context.tables["WorkOrder"]
+    if work_orders.empty or count_per_year <= 0 or "SupplyPlanRecommendationID" not in work_orders.columns:
+        return
+
+    for year in fiscal_years(context):
+        year_rows = rows_for_year(work_orders, "ReleasedDate", year)
+        candidates = year_rows[year_rows["SupplyPlanRecommendationID"].notna()].copy()
+        used_ids = used_primary_keys(context, "WorkOrder", "work_order_without_plan")
+        injected = 0
+        for row in candidates.sort_values(["ReleasedDate", "WorkOrderID"]).itertuples(index=False):
+            if int(row.WorkOrderID) in used_ids:
+                continue
+            mask = context.tables["WorkOrder"]["WorkOrderID"].astype(int).eq(int(row.WorkOrderID))
+            recommendation_id = int(row.SupplyPlanRecommendationID)
+            context.tables["WorkOrder"].loc[mask, "SupplyPlanRecommendationID"] = None
+            recommendation_mask = context.tables["SupplyPlanRecommendation"]["SupplyPlanRecommendationID"].astype(int).eq(recommendation_id)
+            if recommendation_mask.any():
+                context.tables["SupplyPlanRecommendation"].loc[recommendation_mask, "RecommendationStatus"] = "Planned"
+                context.tables["SupplyPlanRecommendation"].loc[recommendation_mask, "ConvertedDocumentType"] = None
+                context.tables["SupplyPlanRecommendation"].loc[recommendation_mask, "ConvertedDocumentID"] = None
+            log_anomaly(
+                context,
+                "work_order_without_plan",
+                "WorkOrder",
+                int(row.WorkOrderID),
+                year,
+                "A work order created from the planning layer had its planning recommendation link removed.",
+                "Requisitions and work orders without planning support review.",
+            )
+            injected += 1
+            if injected >= count_per_year:
+                break
+
+
+def inject_late_recommendation_conversion(context: GenerationContext, count_per_year: int) -> None:
+    recommendations = context.tables["SupplyPlanRecommendation"]
+    if recommendations.empty or count_per_year <= 0:
+        return
+
+    candidates = recommendations[recommendations["RecommendationStatus"].eq("Converted")].copy()
+    if candidates.empty:
+        return
+
+    for year in fiscal_years(context):
+        year_rows = rows_for_year(candidates, "ReleaseByDate", year)
+        used_ids = used_primary_keys(context, "SupplyPlanRecommendation", "late_recommendation_conversion")
+        injected = 0
+        for row in year_rows.sort_values(["NeedByDate", "SupplyPlanRecommendationID"]).itertuples(index=False):
+            if int(row.SupplyPlanRecommendationID) in used_ids:
+                continue
+            late_date = (pd.Timestamp(row.NeedByDate) + pd.Timedelta(days=5)).strftime("%Y-%m-%d")
+            if str(row.ConvertedDocumentType) == "PurchaseRequisition" and pd.notna(row.ConvertedDocumentID):
+                mask = context.tables["PurchaseRequisition"]["RequisitionID"].astype(int).eq(int(row.ConvertedDocumentID))
+                if mask.any():
+                    context.tables["PurchaseRequisition"].loc[mask, "RequestDate"] = late_date
+                    context.tables["PurchaseRequisition"].loc[mask, "ApprovedDate"] = late_date
+            elif str(row.ConvertedDocumentType) == "WorkOrder" and pd.notna(row.ConvertedDocumentID):
+                mask = context.tables["WorkOrder"]["WorkOrderID"].astype(int).eq(int(row.ConvertedDocumentID))
+                if mask.any():
+                    context.tables["WorkOrder"].loc[mask, "ReleasedDate"] = late_date
+            else:
+                continue
+            log_anomaly(
+                context,
+                "late_recommendation_conversion",
+                "SupplyPlanRecommendation",
+                int(row.SupplyPlanRecommendationID),
+                year,
+                "A converted planning recommendation was moved so the actual requisition or work-order release occurred after the need-by date.",
+                "Recommendation converted after need-by date review.",
+            )
+            injected += 1
+            if injected >= count_per_year:
+                break
+
+
+def inject_forecast_override_outlier(context: GenerationContext, count_per_year: int) -> None:
+    forecasts = context.tables["DemandForecast"]
+    if forecasts.empty or count_per_year <= 0:
+        return
+
+    for year in fiscal_years(context):
+        year_rows = rows_for_year(forecasts, "ForecastWeekStartDate", year)
+        used_ids = used_primary_keys(context, "DemandForecast", "forecast_override_outlier")
+        injected = 0
+        for row in year_rows.sort_values(["ForecastWeekStartDate", "DemandForecastID"]).itertuples(index=False):
+            if int(row.DemandForecastID) in used_ids:
+                continue
+            baseline = max(float(row.BaselineForecastQuantity), 1.0)
+            override_quantity = qty(baseline * 3.10)
+            mask = context.tables["DemandForecast"]["DemandForecastID"].astype(int).eq(int(row.DemandForecastID))
+            context.tables["DemandForecast"].loc[mask, "ForecastQuantity"] = override_quantity
+            context.tables["DemandForecast"].loc[mask, "ForecastMethod"] = "Planner Adjusted"
+            log_anomaly(
+                context,
+                "forecast_override_outlier",
+                "DemandForecast",
+                int(row.DemandForecastID),
+                year,
+                "A weekly forecast was overridden far above its baseline so override reasonableness can be reviewed.",
+                "Forecast approval and override review.",
+            )
+            injected += 1
+            if injected >= count_per_year:
+                break
+
+
 def inject_anomalies(context: GenerationContext) -> None:
     profile = load_anomaly_profile(context)
     if not profile.get("enabled", False):
@@ -2192,4 +2405,10 @@ def inject_anomalies(context: GenerationContext) -> None:
     inject_overtime_without_approval(context, int(profile.get("overtime_without_approval_per_year", 0)))
     inject_roster_after_termination(context, int(profile.get("roster_after_termination_per_year", 0)))
     inject_overlapping_punch_sequence(context, int(profile.get("overlapping_punch_sequence_per_year", 0)))
+    inject_missing_forecast_approval(context, int(profile.get("missing_forecast_approval_per_year", 0)))
+    inject_inactive_policy_for_active_item(context, int(profile.get("inactive_policy_for_active_item_per_year", 0)))
+    inject_purchase_requisition_without_plan(context, int(profile.get("purchase_requisition_without_plan_per_year", 0)))
+    inject_work_order_without_plan(context, int(profile.get("work_order_without_plan_per_year", 0)))
+    inject_late_recommendation_conversion(context, int(profile.get("late_recommendation_conversion_per_year", 0)))
+    inject_forecast_override_outlier(context, int(profile.get("forecast_override_outlier_per_year", 0)))
     invalidate_all_caches(context)

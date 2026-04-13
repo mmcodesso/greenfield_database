@@ -48,7 +48,7 @@ Read [Company Story](company-story.md) for the full narrative version of that op
 
 ## What the Dataset Contains
 
-The current implementation contains **59 tables** across seven areas:
+The current implementation contains **64 tables** across eight areas:
 
 | Area | Example tables | Count |
 |---|---|---:|
@@ -59,6 +59,7 @@ The current implementation contains **59 tables** across seven areas:
 | Payroll and time | `ShiftDefinition`, `EmployeeShiftAssignment`, `EmployeeShiftRoster`, `EmployeeAbsence`, `OvertimeApproval`, `TimeClockEntry`, `TimeClockPunch`, `AttendanceException`, `PayrollPeriod`, `LaborTimeEntry`, `PayrollRegister`, `PayrollRegisterLine`, `PayrollPayment`, `PayrollLiabilityRemittance` | 14 |
 | Master data | `Item`, `Warehouse`, `Employee` | 3 |
 | Organizational planning | `CostCenter`, `Budget` | 2 |
+| Demand planning and MRP | `DemandForecast`, `InventoryPolicy`, `SupplyPlanRecommendation`, `MaterialRequirementPlan`, `RoughCutCapacityPlan` | 5 |
 
 Most classes use these ready-to-use files:
 
@@ -108,6 +109,7 @@ Many business documents use a header table and a line table.
 | `TimeClockEntryID` | Connect approved time-clock support to labor allocation and attendance exceptions |
 | `PayrollPeriodID` | Connect labor time, payroll registers, and liability remittances to a pay period |
 | `PayrollRegisterID` | Connect payroll headers to line detail and payroll payments |
+| `SupplyPlanRecommendationID` | Connect weekly replenishment recommendations to requisitions, work orders, MRP rows, and rough-cut capacity rows |
 | `ItemID` | Analyze quantities, prices, standard costs, supply mode, and account mappings |
 | `EmployeeNumber` | Human-readable employee master key for workforce and audit analysis |
 | `AccountID` | Connect `GLEntry` and `Budget` to the chart of accounts |
@@ -145,6 +147,14 @@ Manufacturing also touches P2P, payroll, and O2C:
 - payroll provides direct labor and manufacturing-overhead inputs
 - O2C consumes completed finished goods
 
+### Demand-planning path
+
+`Item -> InventoryPolicy -> DemandForecast -> SupplyPlanRecommendation -> MaterialRequirementPlan -> PurchaseRequisition or WorkOrder`
+
+Rough-cut planning capacity is tracked through:
+
+`SupplyPlanRecommendation -> RoughCutCapacityPlan -> WorkCenterCalendar`
+
 ### Payroll path
 
 `ShiftDefinition -> EmployeeShiftAssignment -> EmployeeShiftRoster -> TimeClockPunch -> TimeClockEntry -> LaborTimeEntry -> PayrollPeriod -> PayrollRegister -> PayrollRegisterLine -> PayrollPayment`
@@ -178,6 +188,11 @@ Not every operational document posts to the general ledger.
 | Purchase orders | No | External commitment document |
 | Bills of material | No | Standard manufacturing structure |
 | Work orders | No | Production planning document |
+| Demand forecasts | No | Weekly demand-planning input |
+| Inventory policies | No | Replenishment-policy master data |
+| Supply plan recommendations | No | Weekly replenishment signal and conversion support |
+| Material requirement plans | No | Component-demand planning detail |
+| Rough-cut capacity plans | No | Weekly load-versus-capacity planning detail |
 | Shift definitions and assignments | No | Workforce planning metadata |
 | Time-clock entries | No | Approved daily attendance rows that support hourly payroll and labor analysis |
 | Attendance exceptions | No | Control and anomaly evidence |
@@ -227,6 +242,7 @@ Students can:
 - compare absorption cost and contribution margin for manufactured versus purchased items
 - review portfolio mix and margin by collection, style family, lifecycle status, and supply mode
 - analyze service-level pressure through fill rate, shipment lag, and return/refund impact by portfolio
+- compare forecast, replenishment, and rough-cut capacity pressure before execution starts
 
 ### Auditing
 
@@ -238,6 +254,7 @@ Students can:
 - examine timing and cut-off behavior
 - detect duplicate references and planted anomalies
 - review executive-role uniqueness, approval-authority design, item-master completeness, and terminated-employee activity
+- review forecast approval, inventory-policy status, recommendation support, and late conversion behavior
 - trace source documents to posted ledger activity
 
 ## Start Here by Analytics Topic

@@ -29,8 +29,8 @@ Use this sequence for most student work:
 | Analytics area | Start with | Starter SQL focus | Paired Phase 19 case | Optional Excel recreation |
 |---|---|---|---|---|
 | Financial accounting | [Financial Analytics](financial.md) | working capital, cash conversion, close-cycle, payroll, accruals, revenue, and margin | [Working Capital and Cash Conversion Case](cases/working-capital-and-cash-conversion-case.md), [Financial Statement Bridge Case](cases/financial-statement-bridge-case.md) | control-account roll-forwards, monthly bridges, and settlement timing |
-| Managerial and cost accounting | [Managerial Analytics](managerial.md) | portfolio mix, contribution margin, service levels, labor mix, workforce coverage, and lifecycle analysis | [Product Portfolio Profitability Case](cases/product-portfolio-profitability-case.md), [Workforce Coverage and Attendance Case](cases/workforce-coverage-and-attendance-case.md) | pivots by collection, lifecycle, supply mode, work location, shift, and work center |
-| Audit analytics | [Audit Analytics](audit.md) | document-chain controls, approval design, master-data completeness, workforce controls, roster review, and anomaly review | [Workforce Cost and Org-Control Case](cases/workforce-cost-and-org-control-case.md), [Audit Review Pack Case](cases/audit-review-pack-case.md), [Attendance Control Audit Case](cases/attendance-control-audit-case.md) | support-workbook review plus source-sheet tracing |
+| Managerial and cost accounting | [Managerial Analytics](managerial.md) | portfolio mix, contribution margin, service levels, labor mix, workforce coverage, planning, replenishment, and lifecycle analysis | [Product Portfolio Profitability Case](cases/product-portfolio-profitability-case.md), [Workforce Coverage and Attendance Case](cases/workforce-coverage-and-attendance-case.md), [Demand Planning and Replenishment Case](cases/demand-planning-and-replenishment-case.md) | pivots by collection, lifecycle, supply mode, work location, shift, work center, and planning week |
+| Audit analytics | [Audit Analytics](audit.md) | document-chain controls, approval design, master-data completeness, workforce controls, roster review, planning support, and anomaly review | [Workforce Cost and Org-Control Case](cases/workforce-cost-and-org-control-case.md), [Audit Review Pack Case](cases/audit-review-pack-case.md), [Attendance Control Audit Case](cases/attendance-control-audit-case.md), [Replenishment Support Audit Case](cases/replenishment-support-audit-case.md) | support-workbook review plus source-sheet tracing |
 | Cross-topic navigation | [SQL Guide](sql-guide.md), [Excel Guide](excel-guide.md) | how to run the query pack and recreate the same ideas in the workbook | [Analytics Cases](cases/index.md) | workbook-side reconstruction of SQL outputs |
 
 ## Current Focus Areas
@@ -42,6 +42,7 @@ Phase 18 and Phase 19 make the current analytics layer stronger in four ways:
 - clearer working-capital, payroll-cost, and financial-statement bridge exercises
 - better anomaly-enabled audit labs without requiring a separate teaching profile
 - richer workforce-planning review through rosters, absences, raw punches, and overtime approvals
+- weekly demand-planning and MRP review through forecasts, policies, recommendations, component plans, and rough-cut capacity
 
 ## Default Build Guidance
 

@@ -68,6 +68,11 @@ from greenfield_dataset.payroll import (
     generate_shift_definitions_and_assignments,
     monthly_payroll_state,
 )
+from greenfield_dataset.planning import (
+    generate_demand_forecasts,
+    generate_inventory_policies,
+    generate_month_planning,
+)
 from greenfield_dataset.posting_engine import post_all_transactions
 from greenfield_dataset.schema import create_empty_tables
 from greenfield_dataset.settings import GenerationContext, Settings, initialize_context, load_settings
@@ -93,6 +98,7 @@ from greenfield_dataset.validations import (
     validate_phase19,
     validate_phase20,
     validate_phase21,
+    validate_phase22,
 )
 
 
@@ -270,7 +276,7 @@ def build_phase7(config_path: str | Path = "config/settings.yaml") -> Generation
 
 
 def build_phase8(config_path: str | Path = "config/settings.yaml") -> GenerationContext:
-    context = build_phase21(config_path)
+    context = build_phase22(config_path)
     inject_anomalies(context)
     validate_phase8(context)
     if context.settings.export_sqlite:
@@ -605,6 +611,26 @@ def build_phase21(
     return context
 
 
+def build_phase22(
+    config_path: str | Path = "config/settings.yaml",
+    validation_scope: str = "full",
+) -> GenerationContext:
+    context = build_phase2(config_path)
+    generate_payroll_periods(context)
+    generate_shift_definitions_and_assignments(context)
+    generate_inventory_policies(context)
+    generate_demand_forecasts(context)
+    generate_all_months(context)
+    generate_recurring_manual_journals(context)
+    generate_accrued_service_settlements(context)
+    generate_accrual_adjustment_journals(context)
+    post_all_transactions(context)
+    generate_year_end_close_journals(context)
+    validate_phase22(context, scope=validation_scope)
+    export_validation_report(context)
+    return context
+
+
 def fiscal_months(context: GenerationContext) -> Iterable[tuple[int, int]]:
     start = pd.Timestamp(context.settings.fiscal_year_start)
     end = pd.Timestamp(context.settings.fiscal_year_end)
@@ -619,6 +645,7 @@ def fiscal_months(context: GenerationContext) -> Iterable[tuple[int, int]]:
 def generate_all_months(context: GenerationContext) -> None:
     for year, month in fiscal_months(context):
         generate_month_o2c(context, year, month)
+        generate_month_planning(context, year, month)
         generate_month_requisitions(context, year, month)
         generate_month_work_orders_and_requisitions(context, year, month)
         generate_month_purchase_orders(context, year, month)
@@ -672,6 +699,8 @@ def build_full_dataset(
         generate_budgets(context)
         generate_payroll_periods(context)
         generate_shift_definitions_and_assignments(context)
+        generate_inventory_policies(context)
+        generate_demand_forecasts(context)
         log_table_counts(
             context,
             (
@@ -690,6 +719,8 @@ def build_full_dataset(
                 "PayrollPeriod",
                 "ShiftDefinition",
                 "EmployeeShiftAssignment",
+                "InventoryPolicy",
+                "DemandForecast",
             ),
             "phase 2",
         )
@@ -729,7 +760,11 @@ def build_full_dataset(
             payroll_register_count_before = len(context.tables["PayrollRegister"])
             payroll_payment_count_before = len(context.tables["PayrollPayment"])
             payroll_remittance_count_before = len(context.tables["PayrollLiabilityRemittance"])
+            recommendation_count_before = len(context.tables["SupplyPlanRecommendation"])
+            material_plan_count_before = len(context.tables["MaterialRequirementPlan"])
+            rough_cut_count_before = len(context.tables["RoughCutCapacityPlan"])
             generate_month_o2c(context, year, month)
+            generate_month_planning(context, year, month)
             generate_month_requisitions(context, year, month)
             generate_month_work_orders_and_requisitions(context, year, month)
             generate_month_purchase_orders(context, year, month)
@@ -755,6 +790,9 @@ def build_full_dataset(
             new_issue_lines = context.tables["MaterialIssueLine"].iloc[issue_line_count_before:]
             new_completion_lines = context.tables["ProductionCompletionLine"].iloc[completion_line_count_before:]
             new_work_order_closes = context.tables["WorkOrderClose"].iloc[work_order_close_count_before:]
+            new_recommendations = context.tables["SupplyPlanRecommendation"].iloc[recommendation_count_before:]
+            new_material_plans = context.tables["MaterialRequirementPlan"].iloc[material_plan_count_before:]
+            new_rough_cut = context.tables["RoughCutCapacityPlan"].iloc[rough_cut_count_before:]
             payroll_state = monthly_payroll_state(context, year, month)
             open_state = p2p_open_state(context)
             revenue_state = o2c_open_state(context)
@@ -852,6 +890,16 @@ def build_full_dataset(
                 payroll_state["manufacturing_overhead_reclass_amount"],
             )
             LOGGER.info(
+                "PLANNING CHECKPOINT | %s-%02d | recommendations_created=%s | planned_quantity=%s | material_plan_rows_created=%s | rough_cut_rows_created=%s | expedite_recommendations=%s",
+                year,
+                month,
+                len(new_recommendations),
+                round(float(new_recommendations["RecommendedOrderQuantity"].astype(float).sum()), 2) if not new_recommendations.empty else 0.0,
+                len(new_material_plans),
+                len(new_rough_cut),
+                int(new_recommendations["PriorityCode"].eq("Expedite").sum()) if not new_recommendations.empty else 0,
+            )
+            LOGGER.info(
                 "P2P CHECKPOINT | %s-%02d | converted_requisitions=%s | po_lines_created=%s | receipt_lines_created=%s | receipt_quantity=%s | invoice_lines_created=%s | invoiced_quantity=%s | disbursements_created=%s | amount_paid=%s | open_requisitions=%s | open_po_quantity=%s | open_receipt_quantity=%s | open_invoice_amount=%s",
                 year,
                 month,
@@ -891,6 +939,11 @@ def build_full_dataset(
                 "TimeClockPunch",
                 "LaborTimeEntry",
                 "PayrollRegister",
+                "DemandForecast",
+                "InventoryPolicy",
+                "SupplyPlanRecommendation",
+                "MaterialRequirementPlan",
+                "RoughCutCapacityPlan",
                 "Shipment",
                 "GoodsReceipt",
                 "SalesInvoice",
@@ -929,7 +982,7 @@ def build_full_dataset(
         log_table_counts(context, ("JournalEntry", "GLEntry"), "year-end close")
 
     with logged_step("Validate clean final dataset"):
-        log_validation_results("phase21", validate_phase21(context, scope=validation_scope))
+        log_validation_results("phase22", validate_phase22(context, scope=validation_scope))
 
     with logged_step("Inject configured anomalies"):
         inject_anomalies(context)
@@ -979,7 +1032,7 @@ def build_full_dataset(
 
 
 def print_summary(context: GenerationContext) -> None:
-    row_counts = context.validation_results["phase21"]["row_counts"]
+    row_counts = context.validation_results["phase22"]["row_counts"]
     print("Full dataset generated.")
     print(f"Fiscal range: {context.settings.fiscal_year_start} to {context.settings.fiscal_year_end}")
     print(f"Accounts: {row_counts['Account']}")
@@ -996,6 +1049,11 @@ def print_summary(context: GenerationContext) -> None:
     print(f"Employee shift rosters: {row_counts['EmployeeShiftRoster']}")
     print(f"Employee absences: {row_counts['EmployeeAbsence']}")
     print(f"Overtime approvals: {row_counts['OvertimeApproval']}")
+    print(f"Demand forecasts: {row_counts['DemandForecast']}")
+    print(f"Inventory policies: {row_counts['InventoryPolicy']}")
+    print(f"Supply plan recommendations: {row_counts['SupplyPlanRecommendation']}")
+    print(f"Material requirement plan rows: {row_counts['MaterialRequirementPlan']}")
+    print(f"Rough-cut capacity rows: {row_counts['RoughCutCapacityPlan']}")
     print(f"Customers: {row_counts['Customer']}")
     print(f"Suppliers: {row_counts['Supplier']}")
     print(f"Journal entries: {row_counts['JournalEntry']}")
@@ -1033,7 +1091,7 @@ def print_summary(context: GenerationContext) -> None:
     print(f"Payroll payments: {row_counts['PayrollPayment']}")
     print(f"Payroll liability remittances: {row_counts['PayrollLiabilityRemittance']}")
     print(f"GL entries: {row_counts['GLEntry']}")
-    print(f"GL balance exceptions: {context.validation_results['phase21']['gl_balance']['exception_count']}")
+    print(f"GL balance exceptions: {context.validation_results['phase22']['gl_balance']['exception_count']}")
     print(f"Anomalies logged: {len(context.anomaly_log)}")
     print(f"SQLite export: {context.settings.sqlite_path}")
     print(f"Excel export: {context.settings.excel_path}")

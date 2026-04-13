@@ -88,7 +88,7 @@ TABLE_COLUMNS = {
     "PurchaseRequisition": [
         "RequisitionID", "RequisitionNumber", "RequestDate", "RequestedByEmployeeID",
         "CostCenterID", "ItemID", "Quantity", "EstimatedUnitCost", "Justification",
-        "ApprovedByEmployeeID", "ApprovedDate", "Status",
+        "ApprovedByEmployeeID", "ApprovedDate", "Status", "SupplyPlanRecommendationID",
     ],
     "PurchaseOrder": [
         "PurchaseOrderID", "PONumber", "OrderDate", "SupplierID", "RequisitionID",
@@ -156,7 +156,7 @@ TABLE_COLUMNS = {
     "WorkOrder": [
         "WorkOrderID", "WorkOrderNumber", "ItemID", "BOMID", "RoutingID", "WarehouseID",
         "PlannedQuantity", "ReleasedDate", "DueDate", "CompletedDate", "ClosedDate", "Status",
-        "CostCenterID", "ReleasedByEmployeeID", "ClosedByEmployeeID",
+        "CostCenterID", "ReleasedByEmployeeID", "ClosedByEmployeeID", "SupplyPlanRecommendationID",
     ],
     "WorkOrderOperation": [
         "WorkOrderOperationID", "WorkOrderID", "RoutingOperationID", "OperationSequence", "WorkCenterID",
@@ -268,6 +268,35 @@ TABLE_COLUMNS = {
     "Budget": [
         "BudgetID", "FiscalYear", "CostCenterID", "AccountID", "Month", "BudgetAmount",
         "ApprovedByEmployeeID", "ApprovedDate",
+    ],
+    "DemandForecast": [
+        "DemandForecastID", "ForecastWeekStartDate", "ForecastWeekEndDate", "ItemID", "WarehouseID",
+        "BaselineForecastQuantity", "ForecastQuantity", "ForecastMethod", "ForecastVersion",
+        "PlannerEmployeeID", "ApprovedByEmployeeID", "ApprovedDate", "IsCurrent",
+    ],
+    "InventoryPolicy": [
+        "InventoryPolicyID", "ItemID", "WarehouseID", "PlanningGroup", "PolicyType",
+        "SafetyStockQuantity", "ReorderPointQuantity", "ReorderQuantity", "TargetDaysSupply",
+        "PlanningLeadTimeDays", "PlannerEmployeeID", "BuyerEmployeeID", "EffectiveStartDate",
+        "EffectiveEndDate", "IsActive",
+    ],
+    "SupplyPlanRecommendation": [
+        "SupplyPlanRecommendationID", "RecommendationDate", "BucketWeekStartDate", "BucketWeekEndDate",
+        "ItemID", "WarehouseID", "RecommendationType", "PriorityCode", "SupplyMode",
+        "GrossRequirementQuantity", "ProjectedAvailableQuantity", "NetRequirementQuantity",
+        "RecommendedOrderQuantity", "NeedByDate", "ReleaseByDate", "RecommendationStatus",
+        "DriverType", "PlannerEmployeeID", "ConvertedDocumentType", "ConvertedDocumentID",
+    ],
+    "MaterialRequirementPlan": [
+        "MaterialRequirementPlanID", "BucketWeekStartDate", "BucketWeekEndDate", "ParentItemID",
+        "ComponentItemID", "WarehouseID", "SupplyPlanRecommendationID", "GrossRequirementQuantity",
+        "ScheduledSupplyQuantity", "ProjectedAvailableQuantity", "NetRequirementQuantity",
+        "RecommendedOrderQuantity",
+    ],
+    "RoughCutCapacityPlan": [
+        "RoughCutCapacityPlanID", "BucketWeekStartDate", "BucketWeekEndDate", "WorkCenterID", "ItemID",
+        "SupplyPlanRecommendationID", "PlannedLoadHours", "AvailableHours", "UtilizationPct",
+        "CapacityStatus",
     ],
 }
 

@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from typing import Any
 
 import numpy as np
 import pandas as pd
 
 from greenfield_dataset.journals import ACCRUAL_ACCOUNT_METADATA, accrual_journal_details
 from greenfield_dataset.master_data import approver_employee_id, employee_ids_for_cost_center_as_of, eligible_item_mask
+from greenfield_dataset.planning import purchase_recommendations_for_month, update_recommendation_conversion
 from greenfield_dataset.schema import TABLE_COLUMNS
 from greenfield_dataset.settings import GenerationContext
 from greenfield_dataset.utils import format_doc_number, money, next_id, qty, random_date_in_month
@@ -688,6 +690,51 @@ def generate_month_requisitions(context: GenerationContext, year: int, month: in
     administration_id = cost_center_id(context, "Administration")
     cost_center_choices = [warehouse_id, purchasing_id, administration_id]
     cost_center_weights = [0.55, 0.30, 0.15]
+    planned_recommendations = purchase_recommendations_for_month(context, year, month)
+    if not planned_recommendations.empty:
+        item_lookup = context.tables["Item"].set_index("ItemID").to_dict("index")
+        conversion_mapping: dict[int, tuple[str, int]] = {}
+        rows: list[dict[str, Any]] = []
+        for recommendation in planned_recommendations.itertuples(index=False):
+            item = item_lookup.get(int(recommendation.ItemID))
+            if item is None:
+                continue
+            request_date = pd.Timestamp(recommendation.ReleaseByDate)
+            if request_date.year != year or request_date.month != month:
+                request_date = random_date_in_month(rng, year, month)
+            cost_center = (
+                cost_center_id(context, "Manufacturing")
+                if str(recommendation.DriverType) == "Component Demand"
+                else purchasing_id
+            )
+            requestors = employee_ids_for_cost_center(context, int(cost_center), request_date)
+            approved_date = min(request_date + pd.Timedelta(days=1), pd.Timestamp(year=year, month=month, day=1) + pd.offsets.MonthEnd(0))
+            requisition_id = next_id(context, "PurchaseRequisition")
+            rows.append({
+                "RequisitionID": requisition_id,
+                "RequisitionNumber": format_doc_number("PR", year, requisition_id),
+                "RequestDate": request_date.strftime("%Y-%m-%d"),
+                "RequestedByEmployeeID": int(rng.choice(requestors)),
+                "CostCenterID": int(cost_center),
+                "ItemID": int(recommendation.ItemID),
+                "Quantity": qty(float(recommendation.RecommendedOrderQuantity)),
+                "EstimatedUnitCost": money(float(item["StandardCost"]) * rng.uniform(0.98, 1.03)),
+                "Justification": f"Supply plan {int(recommendation.SupplyPlanRecommendationID)} - {recommendation.DriverType}",
+                "ApprovedByEmployeeID": approver_id(
+                    context,
+                    float(recommendation.RecommendedOrderQuantity) * float(item["StandardCost"]),
+                    approved_date,
+                ),
+                "ApprovedDate": approved_date.strftime("%Y-%m-%d"),
+                "Status": "Approved",
+                "SupplyPlanRecommendationID": int(recommendation.SupplyPlanRecommendationID),
+            })
+            conversion_mapping[int(recommendation.SupplyPlanRecommendationID)] = ("PurchaseRequisition", requisition_id)
+
+        append_rows(context, "PurchaseRequisition", rows)
+        update_recommendation_conversion(context, conversion_mapping)
+        return
+
     requisition_count = int(rng.integers(*REQUISITION_COUNT_RANGE))
 
     rows: list[dict] = []
@@ -720,6 +767,7 @@ def generate_month_requisitions(context: GenerationContext, year: int, month: in
             "ApprovedByEmployeeID": approver_id(context, estimated_total, approved_date) if approved else None,
             "ApprovedDate": approved_date.strftime("%Y-%m-%d") if approved_date is not None else None,
             "Status": "Approved" if approved else "Pending",
+            "SupplyPlanRecommendationID": None,
         })
 
     append_rows(context, "PurchaseRequisition", rows)

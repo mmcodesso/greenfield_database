@@ -45,12 +45,15 @@ sidebar_label: Financial Analytics
 | Cash-conversion timing review | [20_cash_conversion_timing_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/financial/20_cash_conversion_timing_review.sql) |
 | Revenue and gross margin by collection, style, lifecycle, and supply mode | [21_revenue_and_gross_margin_by_collection_style_lifecycle_supply_mode.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/financial/21_revenue_and_gross_margin_by_collection_style_lifecycle_supply_mode.sql) |
 | Payroll and people-cost mix by cost center, job family, and job level | [22_payroll_and_people_cost_mix_by_cost_center_job_family_level.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/financial/22_payroll_and_people_cost_mix_by_cost_center_job_family_level.sql) |
+| Forecast versus actual demand by week, item group, collection, and lifecycle | [23_forecast_vs_actual_demand_by_week_item_group_collection_lifecycle.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/financial/23_forecast_vs_actual_demand_by_week_item_group_collection_lifecycle.sql) |
+| Recommendation conversion by type, priority, and planner | [24_recommendation_conversion_by_type_priority_planner.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/financial/24_recommendation_conversion_by_type_priority_planner.sql) |
 
-## Phase 19 Pairings
+## Phase 19 to Phase 22 Pairings
 
 - Use [Working Capital and Cash Conversion Case](cases/working-capital-and-cash-conversion-case.md) when you want a balance-sheet and settlement-timing exercise.
 - Use [Financial Statement Bridge Case](cases/financial-statement-bridge-case.md) when you want to move from operations into `GLEntry`, control accounts, and close entries.
 - Use [Product Portfolio Profitability Case](cases/product-portfolio-profitability-case.md) when you want a financial view of collection, lifecycle, and supply-mode performance.
+- Use [Demand Planning and Replenishment Case](cases/demand-planning-and-replenishment-case.md) when you want forecast, replenishment, and planning-pressure analysis to sit beside working-capital and inventory timing.
 
 ## Interpretation Notes
 
@@ -58,6 +61,7 @@ sidebar_label: Financial Analytics
 - `CashReceipt` does not equal settled AR by itself. Use `CashReceiptApplication`.
 - Payroll register activity records liabilities first; cash leaves through payroll payments and remittances later.
 - Working-capital analysis gets stronger when students separate balances from timing.
+- Phase 22 adds forecast, policy, and replenishment tables that support planning-informed working-capital and inventory-timing analysis.
 - The richer item master now supports collection, style family, lifecycle, and supply-mode financial analysis without changing the underlying posting model.
 - The richer employee master now supports job-family, job-level, and people-cost review without requiring a separate HR-history subledger.
 - Customer deposits and unapplied cash analysis should start from `CashReceipt` and `CashReceiptApplication`, not only from AR.

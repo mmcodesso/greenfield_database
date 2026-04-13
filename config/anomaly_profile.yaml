@@ -48,3 +48,9 @@ profiles:
     overtime_without_approval_per_year: 1
     roster_after_termination_per_year: 1
     overlapping_punch_sequence_per_year: 1
+    missing_forecast_approval_per_year: 1
+    inactive_policy_for_active_item_per_year: 1
+    purchase_requisition_without_plan_per_year: 1
+    work_order_without_plan_per_year: 1
+    late_recommendation_conversion_per_year: 1
+    forecast_override_outlier_per_year: 1

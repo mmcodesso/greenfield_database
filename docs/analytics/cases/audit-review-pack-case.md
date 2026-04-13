@@ -48,6 +48,11 @@ The internal-audit team receives the normal five-year package and needs to triag
 12. Run [../../../queries/audit/39_absence_with_worked_time_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/39_absence_with_worked_time_review.sql).
 13. Run [../../../queries/audit/40_overlapping_or_incomplete_punch_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/40_overlapping_or_incomplete_punch_review.sql).
 14. Run [../../../queries/audit/41_roster_after_termination_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/41_roster_after_termination_review.sql).
+15. Run [../../../queries/audit/42_forecast_approval_and_override_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/42_forecast_approval_and_override_review.sql).
+16. Run [../../../queries/audit/43_inactive_or_stale_inventory_policy_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/43_inactive_or_stale_inventory_policy_review.sql).
+17. Run [../../../queries/audit/44_requisitions_and_work_orders_without_planning_support.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/44_requisitions_and_work_orders_without_planning_support.sql).
+18. Run [../../../queries/audit/45_recommendation_converted_after_need_by_date_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/45_recommendation_converted_after_need_by_date_review.sql).
+19. Run [../../../queries/audit/46_discontinued_or_prelaunch_planning_activity_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/46_discontinued_or_prelaunch_planning_activity_review.sql).
 
 ## Suggested Excel Sequence
 
@@ -61,6 +66,7 @@ The internal-audit team receives the normal five-year package and needs to triag
 - Several audit queries now focus on master data and org structure, not only document timing.
 - The audit pack now also separates roster issues, punch issues, absence issues, and overtime-approval issues.
 - Current-state assignment issues and approval-limit exceptions can be reviewed separately from broader role-family questions.
+- Planning-support issues can now be reviewed separately from operational execution failures.
 - The same anomaly family can appear in both a summary query and a more detailed control query.
 - An anomaly-enabled dataset should still be explainable. It should not feel random.
 
