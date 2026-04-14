@@ -6,22 +6,39 @@ sidebar_label: Analytics Cases
 
 # Analytics Walkthrough Cases
 
-## Walkthrough Set
+Use this page as the main entry point for the case library. The sidebar now groups cases by topic so instructors and students can move from the overview page into the specific case set they need.
+
+## Core Walkthroughs
 
 | Case | Recommended use | Best paired query packs |
 |---|---|---|
 | [O2C Trace Case](o2c-trace-case.md) | core walkthrough | financial + audit |
 | [P2P Accrual Case](p2p-accrual-settlement-case.md) | core walkthrough | financial + audit |
 | [Manufacturing Labor Case](manufacturing-labor-cost-case.md) | core walkthrough | managerial + financial |
-| [Workforce Audit Case](master-data-and-workforce-audit-case.md) | exception review | audit + managerial |
 | [Product Portfolio Case](product-portfolio-and-lifecycle-case.md) | core walkthrough | managerial + cost accounting |
+
+## Financial
+
+| Case | Recommended use | Best paired query packs |
+|---|---|---|
 | [Working Capital and Cash Conversion Case](working-capital-and-cash-conversion-case.md) | core walkthrough | financial |
 | [Financial Statement Bridge Case](financial-statement-bridge-case.md) | core walkthrough | financial + audit |
+| [Pricing and Margin Governance Case](pricing-and-margin-governance-case.md) | analytical comparison | financial + managerial |
+
+## Managerial and Planning
+
+| Case | Recommended use | Best paired query packs |
+|---|---|---|
 | [Product Portfolio Profitability Case](product-portfolio-profitability-case.md) | analytical comparison | managerial + financial |
-| [Workforce Cost and Org-Control Case](workforce-cost-and-org-control-case.md) | exception review | managerial + audit + financial |
 | [Workforce Coverage and Attendance Case](workforce-coverage-and-attendance-case.md) | analytical comparison | managerial + audit |
 | [Demand Planning and Replenishment Case](demand-planning-and-replenishment-case.md) | analytical comparison | managerial + financial + cost accounting |
-| [Pricing and Margin Governance Case](pricing-and-margin-governance-case.md) | analytical comparison | financial + managerial |
+
+## Audit and Controls
+
+| Case | Recommended use | Best paired query packs |
+|---|---|---|
+| [Workforce Audit Case](master-data-and-workforce-audit-case.md) | exception review | audit + managerial |
+| [Workforce Cost and Org-Control Case](workforce-cost-and-org-control-case.md) | exception review | managerial + audit + financial |
 | [Audit Review Pack Case](audit-review-pack-case.md) | exception review | audit + support workbook |
 | [Attendance Control Audit Case](attendance-control-audit-case.md) | exception review | audit + support workbook |
 | [Replenishment Support Audit Case](replenishment-support-audit-case.md) | exception review | audit + support workbook |
@@ -32,7 +49,7 @@ sidebar_label: Analytics Cases
 
 1. start with the topic page in [Financial Analytics](../financial.md), [Managerial Analytics](../managerial.md), or [Audit Analytics](../audit.md)
 2. run the paired SQL files in order
-3. open the case doc and follow the business scenario
+3. open the grouped case section that matches the topic you are teaching
 4. recreate one result in Excel
 5. answer the follow-up questions without using an answer key
 
