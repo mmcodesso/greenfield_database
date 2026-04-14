@@ -249,11 +249,11 @@ Best paired cases:
 - [Pricing Governance Audit Case](cases/pricing-governance-audit-case.md)
 - [Audit Exception Lab](cases/audit-exception-lab.md)
 
-## Clean vs Default Build in Excel
+## Using the Workbook and Support Workbook
 
-- Use the default anomaly-enabled build for most student work.
-- Use the clean build mainly for instructor prep, baseline comparison, or shorter demonstrations.
-- Some anomaly-oriented workbook reviews should return no rows on a clean build. That is expected.
+- `greenfield.xlsx` is the main workbook for dataset tables and Excel analysis.
+- `greenfield_support.xlsx` provides anomaly and validation context for exception-oriented review.
+- Workbook exercises can start from either the published dataset tables or the support workbook, depending on the assignment.
 
 ## Where to Go Next
 

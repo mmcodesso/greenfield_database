@@ -6,7 +6,7 @@ import styles from "./index.module.css";
 const proofPoints = [
   {
     title: "Process-to-ledger traceability",
-    text: "Follow business events from source documents through process flow and into GLEntry instead of teaching from disconnected tables.",
+    text: "Follow business events from source documents through process flow and into GLEntry with clear traceability.",
   },
   {
     title: "SQL and Excel ready",
@@ -150,10 +150,9 @@ export default function Home() {
           <div className={styles.adoptionBlock}>
             <p className={styles.adoptionText}>
               Greenfield is designed for reuse across AIS, business process,
-              SQL, Excel, audit, and managerial accounting work. Instead of
-              switching between disconnected examples, instructors can keep one
-              integrated environment and vary the emphasis by course, module,
-              or assignment type.
+              SQL, Excel, audit, and managerial accounting work. Instructors
+              can keep one integrated environment and vary the emphasis by
+              course, module, or assignment type.
             </p>
             <ul className={styles.list}>
               {adoptionPoints.map((item) => (

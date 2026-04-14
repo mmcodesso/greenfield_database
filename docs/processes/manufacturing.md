@@ -118,7 +118,7 @@ Main linked tables:
 
 ### 5. Issue components to production
 
-When production begins, warehouse staff issue raw materials and packaging from inventory into work in process. In the dataset, issue dates are aligned with the start of the scheduled operation window rather than happening arbitrarily earlier.
+When production begins, warehouse staff issue raw materials and packaging from inventory into work in process. In the dataset, issue dates are aligned with the start of the scheduled operation window.
 
 Main tables:
 
@@ -238,10 +238,10 @@ Manufacturing creates both operational and journal-driven accounting:
 
 ## What to Notice in the Data
 
-- Manufactured demand is tied to sales backlog and finished-goods availability rather than being released randomly.
+- Manufactured demand is tied to sales backlog and finished-goods availability.
 - Phase 22 makes that link explicit through `DemandForecast`, `InventoryPolicy`, and `SupplyPlanRecommendation`.
-- Raw-material replenishment uses the existing P2P flow instead of a separate procurement subsystem.
-- The current manufacturing model uses single-level BOMs rather than multilevel subassemblies.
+- Raw-material replenishment uses the existing P2P flow.
+- The current manufacturing model uses single-level BOMs.
 - Direct labor is assigned at the operation level, and operations are scheduled against finite daily work-center capacity.
 - Manufacturing remains standard-cost based even though payroll now provides actual labor detail.
 

@@ -10,10 +10,6 @@ sidebar_label: Attendance Control Case
 
 Use this case when students need a focused audit lab around workforce-planning controls and timekeeping exceptions.
 
-## Recommended Build Mode
-
-- Default anomaly-enabled build
-
 ## Business Scenario
 
 Internal audit has been asked to review whether scheduled work, raw punches, approved time, absences, and overtime approvals stay aligned. The objective is to identify attendance-control failures without losing the operational context behind them.
@@ -44,18 +40,18 @@ Internal audit has been asked to review whether scheduled work, raw punches, app
 
 1. Filter `AnomalyLog` to Phase 21 workforce anomaly families.
 2. Trace the affected employee/date combinations into `EmployeeShiftRoster`, `TimeClockPunch`, and `TimeClockEntry`.
-3. Use `ValidationExceptions` to compare planted anomalies with the control failures that would also be found in a clean validation pass.
+3. Use `ValidationExceptions` to compare planted anomalies with the control failures identified by the validation workflow.
 
 ## What Students Should Notice
 
 - Roster failures, punch failures, and approval failures are different control problems even when they occur on the same day.
 - A missing final punch can create both attendance and payroll review consequences.
 - Absence rows and worked time should rarely coexist for the same planned shift.
-- Workforce-planning exceptions are more meaningful when students trace them back to the planned roster row, not only the approved daily time summary.
+- Workforce-planning exceptions are more meaningful when students trace them back to the planned roster row and the approved daily time summary.
 
 ## Follow-Up Questions
 
 - Which anomaly type is easiest to detect with a simple query, and which requires a multi-table review?
-- When should auditors start from the support workbook instead of the raw attendance tables?
+- When should auditors start from the support workbook and when should they move directly to the raw attendance tables?
 - Which attendance exception would create the greatest payroll overstatement risk?
 - Which attendance exception is operationally serious even if the payroll impact is small?

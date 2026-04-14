@@ -58,7 +58,7 @@ Read the diagram as a correction path, not as a new sale. The return starts from
 
 - Which shipment lines were later returned?
 - Which returns reduced open AR versus created customer credit?
-- Which customers had refunds instead of only a credit memo?
+- Which customers had refunds in addition to a credit memo?
 - How much contra revenue came from returns by month or customer?
 - How do returns affect margin and inventory movement?
 

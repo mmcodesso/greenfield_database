@@ -10,10 +10,6 @@ sidebar_label: Workforce Cost Case
 
 Use this case when students need to connect people-cost analysis to workforce structure and approval design.
 
-## Recommended Build Mode
-
-- Default anomaly-enabled build
-
 ## Business Scenario
 
 Greenfield’s leadership wants to understand where people cost sits, how workforce structure varies by location and cost center, and whether approval activity lines up with the intended organization design.
@@ -51,7 +47,7 @@ Greenfield’s leadership wants to understand where people cost sits, how workfo
 - Workforce structure is easier to interpret now that executive roles are unique and frontline roles repeat only where that makes sense.
 - People-cost concentration and approval concentration are related but not identical.
 - Work location and cost center answer different managerial questions.
-- The default anomaly-enabled build is better for this case because it creates more reviewable control patterns.
+- The published dataset provides reviewable control patterns for cost and organization analysis.
 
 ## Follow-Up Questions
 

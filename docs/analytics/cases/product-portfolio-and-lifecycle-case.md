@@ -13,10 +13,6 @@ Greenfield no longer uses generic item names. Finished goods now belong to colle
 
 This case uses that richer item master to connect catalog realism to managerial and cost-accounting analysis.
 
-## Recommended Build Mode
-
-- Clean or default build
-
 ## Main Tables and Worksheets
 
 - `Item`

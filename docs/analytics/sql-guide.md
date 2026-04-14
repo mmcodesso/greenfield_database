@@ -19,7 +19,7 @@ Each file is a single SQLite-friendly `SELECT` statement with short comment head
 - teaching objective
 - main tables
 - output shape
-- recommended build mode
+- recommended use
 - interpretation notes
 
 ## Recommended Workflow
@@ -71,12 +71,11 @@ If the `sqlite3` command-line tool is installed on your system, you can also run
 sqlite3 greenfield.sqlite < queries/financial/19_working_capital_bridge_by_month.sql
 ```
 
-## Clean Build vs Default Build
+## Using the Published Dataset
 
-- The default anomaly-enabled build is the main student-facing package.
-- Financial and managerial queries work well on either build.
-- Audit queries are usually more informative on the default build.
 - The main SQLite export contains dataset tables only.
+- Financial and managerial queries support regular analytical work across the published dataset.
+- Some audit queries are designed to surface exceptions that are documented in the support workbook.
 - Anomaly and validation companion content lives in the support workbook, not in SQLite.
 
 ## Suggested Phase 19 to Phase 23 Sequence

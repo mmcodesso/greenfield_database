@@ -65,9 +65,9 @@ sidebar_label: Financial Analytics
 - Payroll register activity records liabilities first; cash leaves through payroll payments and remittances later.
 - Working-capital analysis gets stronger when students separate balances from timing.
 - Phase 22 adds forecast, policy, and replenishment tables that support planning-informed working-capital and inventory-timing analysis.
-- Phase 23 adds explicit price-list, promotion, and override lineage so revenue and margin can be analyzed against commercial rules instead of random line-price variation.
+- Phase 23 adds explicit price-list, promotion, and override lineage so revenue and margin can be analyzed against commercial rules.
 - The richer item master now supports collection, style family, lifecycle, and supply-mode financial analysis without changing the underlying posting model.
 - The richer employee master now supports job-family, job-level, and people-cost review without requiring a separate HR-history subledger.
-- Customer deposits and unapplied cash analysis should start from `CashReceipt` and `CashReceiptApplication`, not only from AR.
+- Customer deposits and unapplied cash analysis should start from `CashReceipt` and `CashReceiptApplication`, alongside AR.
 - Accrued-expense analysis should focus on `2040`, `PurchaseInvoiceLine.AccrualJournalEntryID`, and the service-item lines that settle those estimates.
 - Year-end close entries are real posted journals and should be filtered when you want raw multi-year P&L activity.

@@ -10,10 +10,6 @@ sidebar_label: Statement Bridge Case
 
 Use this case when students need to move from subledger activity into `GLEntry`, control accounts, and year-end close entries.
 
-## Recommended Build Mode
-
-- Clean or default build
-
 ## Business Scenario
 
 The accounting team has operational evidence for sales, purchasing, payroll, manufacturing, and accruals. The question is how those flows accumulate into the financial statements, which balances are control accounts, and what changes once year-end close journals run.
@@ -56,5 +52,5 @@ The accounting team has operational evidence for sales, purchasing, payroll, man
 ## Follow-Up Questions
 
 - Which control account is easiest to reconcile from source documents?
-- Which balances depend most on timing assumptions rather than physical movement?
+- Which balances depend most on timing assumptions and which depend most on physical movement?
 - How would you explain the close cycle to someone who understands operations but not accounting?

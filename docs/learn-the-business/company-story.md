@@ -36,7 +36,7 @@ Greenfield sells product families that are easy to visualize and analyze:
 
 Some of those products are purchased ready-made. Others are produced internally from raw materials and packaging. That distinction matters for costing, variance analysis, and margin analysis.
 
-The catalog is also organized into named collections and style families rather than generic item labels. That makes product-profitability and lifecycle analysis more realistic for classroom work.
+The catalog uses named collections and style families. That structure makes product-profitability and lifecycle analysis more realistic for classroom work.
 
 ## How Greenfield Operates
 
@@ -80,7 +80,7 @@ The employee master is also intentionally more realistic. Greenfield has one CEO
 
 Finance records opening balances, recurring journals, accrued-expense estimates, rare accrual adjustments, factory-overhead journals, manufacturing labor and overhead reclasses, and year-end close entries.
 
-That gives students a full accounting environment, not only an operational database.
+That gives students a full accounting environment with operational and finance activity in the same model.
 
 ## Why This Story Works for Business Students
 

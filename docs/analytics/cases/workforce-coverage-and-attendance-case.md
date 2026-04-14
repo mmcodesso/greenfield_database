@@ -10,10 +10,6 @@ sidebar_label: Workforce Coverage Case
 
 Use this case when students need to connect planned staffing, approved worked time, and work-center demand.
 
-## Recommended Build Mode
-
-- Default anomaly-enabled build
-
 ## Business Scenario
 
 Greenfield operations leaders want to understand whether work-center staffing kept pace with scheduled load, where absences concentrated, and how overtime was used to protect throughput.
@@ -49,7 +45,7 @@ Greenfield operations leaders want to understand whether work-center staffing ke
 - Staffing gaps do not always show up as zero rostered hours. They often show up as planned load outpacing rostered or worked hours.
 - Absence pressure and overtime pressure are linked but not identical.
 - Reassigned rosters and overtime approvals are operational responses, not necessarily control failures.
-- The default build is useful here because it includes both normal pressure and a small number of attendance-control exceptions.
+- The published dataset includes both normal operating pressure and a small number of attendance-control exceptions.
 
 ## Follow-Up Questions
 

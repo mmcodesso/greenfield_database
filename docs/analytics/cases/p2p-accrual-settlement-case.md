@@ -11,11 +11,6 @@ sidebar_label: P2P Accrual Case
 
 Greenfield buys inventory and materials through the normal P2P process, but finance also records month-end accrued expenses for insurance, software, and professional fees. Those estimates are later cleared through direct supplier service invoices and normal disbursement payments.
 
-## Recommended Build Mode
-
-- Clean build for the clearest operational settlement story
-- Default build if you want exception review afterward
-
 ## Main Tables and Worksheets
 
 - `PurchaseRequisition`

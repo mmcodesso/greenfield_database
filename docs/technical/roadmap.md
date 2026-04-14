@@ -28,7 +28,7 @@ Phase 18 delivered:
 
 - richer employee master data with `EmployeeNumber`, `EmploymentStatus`, `TerminationDate`, `JobFamily`, `JobLevel`, and `WorkLocation`
 - richer item master data with collection, style family, material, finish, color, size, lifecycle, launch date, and supply-mode context
-- unique-role enforcement for CEO, CFO, Controller, Production Manager, and Accounting Manager in clean builds
+- unique-role enforcement for CEO, CFO, Controller, Production Manager, and Accounting Manager in the validation configuration
 - date-aware employee and item eligibility across operational generation
 - master-data anomaly coverage and starter analytics built on the improved employee and item masters
 
@@ -41,7 +41,7 @@ Phase 19 delivered:
 - broader starter SQL coverage across financial, managerial, audit, and cost-accounting topics
 - new working-capital, financial-statement bridge, product-portfolio, workforce-cost, and audit-review cases
 - updated analytics docs, Excel guidance, SQL guidance, and instructor sequencing
-- stronger use of the default anomaly-enabled build as the main classroom package
+- stronger use of the published teaching dataset as the main classroom package
 
 This phase did not change schema, posting, or generation behavior. It expanded the teaching layer on top of the current operational model.
 
@@ -52,7 +52,7 @@ This phase did not change schema, posting, or generation behavior. It expanded t
 Delivered:
 
 - broader starter SQL coverage across financial, managerial, and audit topics
-- richer audit anomaly coverage inside the main `standard` anomaly profile
+- richer audit anomaly coverage inside the main published anomaly set
 - case-style walkthrough docs and richer subprocess diagrams
 - dataset-only SQLite and Excel outputs plus a separate support workbook
 
@@ -83,7 +83,7 @@ Phase 20 delivered:
 - broader anomaly coverage around employee and item master controls
 - stronger approval-authority and current-state assignment exceptions
 - audit-query extensions that map directly to the new anomaly families
-- a stronger default anomaly-enabled audit path without a separate teaching profile
+- a stronger audit path within the same teaching dataset
 
 ## Recently Delivered: Phase 21 - Workforce Planning Detail
 

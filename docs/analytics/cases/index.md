@@ -8,25 +8,25 @@ sidebar_label: Analytics Cases
 
 ## Walkthrough Set
 
-| Case | Recommended build mode | Best paired query packs |
+| Case | Recommended use | Best paired query packs |
 |---|---|---|
-| [O2C Trace Case](o2c-trace-case.md) | Clean or default | financial + audit |
-| [P2P Accrual Case](p2p-accrual-settlement-case.md) | Clean or default | financial + audit |
-| [Manufacturing Labor Case](manufacturing-labor-cost-case.md) | Clean or default | managerial + financial |
-| [Workforce Audit Case](master-data-and-workforce-audit-case.md) | Default anomaly-enabled | audit + managerial |
-| [Product Portfolio Case](product-portfolio-and-lifecycle-case.md) | Clean or default | managerial + cost accounting |
-| [Working Capital and Cash Conversion Case](working-capital-and-cash-conversion-case.md) | Clean or default | financial |
-| [Financial Statement Bridge Case](financial-statement-bridge-case.md) | Clean or default | financial + audit |
-| [Product Portfolio Profitability Case](product-portfolio-profitability-case.md) | Default anomaly-enabled or clean | managerial + financial |
-| [Workforce Cost and Org-Control Case](workforce-cost-and-org-control-case.md) | Default anomaly-enabled | managerial + audit + financial |
-| [Workforce Coverage and Attendance Case](workforce-coverage-and-attendance-case.md) | Default anomaly-enabled or clean | managerial + audit |
-| [Demand Planning and Replenishment Case](demand-planning-and-replenishment-case.md) | Default anomaly-enabled or clean | managerial + financial + cost accounting |
-| [Pricing and Margin Governance Case](pricing-and-margin-governance-case.md) | Default anomaly-enabled or clean | financial + managerial |
-| [Audit Review Pack Case](audit-review-pack-case.md) | Default anomaly-enabled | audit + support workbook |
-| [Attendance Control Audit Case](attendance-control-audit-case.md) | Default anomaly-enabled | audit + support workbook |
-| [Replenishment Support Audit Case](replenishment-support-audit-case.md) | Default anomaly-enabled | audit + support workbook |
-| [Pricing Governance Audit Case](pricing-governance-audit-case.md) | Default anomaly-enabled | audit + support workbook |
-| [Audit Exception Lab](audit-exception-lab.md) | Default anomaly-enabled | audit |
+| [O2C Trace Case](o2c-trace-case.md) | core walkthrough | financial + audit |
+| [P2P Accrual Case](p2p-accrual-settlement-case.md) | core walkthrough | financial + audit |
+| [Manufacturing Labor Case](manufacturing-labor-cost-case.md) | core walkthrough | managerial + financial |
+| [Workforce Audit Case](master-data-and-workforce-audit-case.md) | exception review | audit + managerial |
+| [Product Portfolio Case](product-portfolio-and-lifecycle-case.md) | core walkthrough | managerial + cost accounting |
+| [Working Capital and Cash Conversion Case](working-capital-and-cash-conversion-case.md) | core walkthrough | financial |
+| [Financial Statement Bridge Case](financial-statement-bridge-case.md) | core walkthrough | financial + audit |
+| [Product Portfolio Profitability Case](product-portfolio-profitability-case.md) | analytical comparison | managerial + financial |
+| [Workforce Cost and Org-Control Case](workforce-cost-and-org-control-case.md) | exception review | managerial + audit + financial |
+| [Workforce Coverage and Attendance Case](workforce-coverage-and-attendance-case.md) | analytical comparison | managerial + audit |
+| [Demand Planning and Replenishment Case](demand-planning-and-replenishment-case.md) | analytical comparison | managerial + financial + cost accounting |
+| [Pricing and Margin Governance Case](pricing-and-margin-governance-case.md) | analytical comparison | financial + managerial |
+| [Audit Review Pack Case](audit-review-pack-case.md) | exception review | audit + support workbook |
+| [Attendance Control Audit Case](attendance-control-audit-case.md) | exception review | audit + support workbook |
+| [Replenishment Support Audit Case](replenishment-support-audit-case.md) | exception review | audit + support workbook |
+| [Pricing Governance Audit Case](pricing-governance-audit-case.md) | exception review | audit + support workbook |
+| [Audit Exception Lab](audit-exception-lab.md) | exception review | audit |
 
 ## Suggested Phase 19 to Phase 23 Sequence
 

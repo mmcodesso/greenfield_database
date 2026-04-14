@@ -40,17 +40,16 @@ Phase 18 through Phase 23 make the current analytics layer stronger in these way
 - richer employee analysis through `EmployeeNumber`, `EmploymentStatus`, `JobFamily`, `JobLevel`, and `WorkLocation`
 - richer product analysis through `CollectionName`, `StyleFamily`, `PrimaryMaterial`, `LifecycleStatus`, `LaunchDate`, and `SupplyMode`
 - clearer working-capital, payroll-cost, and financial-statement bridge exercises
-- better anomaly-enabled audit labs without requiring a separate teaching profile
+- stronger audit labs supported by the published dataset and the support workbook
 - richer workforce-planning review through rosters, absences, raw punches, and overtime approvals
 - weekly demand-planning and MRP review through forecasts, policies, recommendations, component plans, and rough-cut capacity
 - formal commercial-pricing review through price lists, promotions, override approvals, and line-level pricing lineage
 
-## Default Build Guidance
+## Using the Published Dataset
 
-- The default anomaly-enabled build is the main student-facing package.
-- Use the clean validation build mainly for instructor prep, quick checks, or baseline comparison.
-- Financial and managerial queries work well on either build.
-- Audit queries are usually more informative on the default anomaly-enabled build.
+- Financial and managerial analysis can begin directly in the SQLite database or Excel workbook.
+- Audit work often benefits from `greenfield_support.xlsx` because it adds anomaly and validation context.
+- Some audit queries are designed to surface exceptions that appear in the published dataset.
 
 ## Where to Go Next
 

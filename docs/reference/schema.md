@@ -208,7 +208,7 @@ If you need the big-picture map first, start with [Dataset Guide](../start-here/
 ## Important Schema Notes
 
 - `CashReceipt.SalesInvoiceID` is compatibility metadata only. The authoritative settlement link is `CashReceiptApplication`.
-- Price-list and promotion lineage live directly on `SalesOrderLine`, `SalesInvoiceLine`, and `CreditMemoLine`; postings still remain net revenue rather than separate contra-revenue discount postings.
+- Price-list and promotion lineage live directly on `SalesOrderLine`, `SalesInvoiceLine`, and `CreditMemoLine`. Postings remain net revenue, and the model does not use separate contra-revenue discount postings.
 - `PurchaseOrder.RequisitionID` is compatibility metadata when a PO batches multiple requisitions.
 - `PurchaseInvoiceLine.GoodsReceiptLineID` is the main match key for receipt-based inventory invoicing.
 - `PurchaseInvoiceLine.AccrualJournalEntryID` links direct service invoices back to accrual journals.

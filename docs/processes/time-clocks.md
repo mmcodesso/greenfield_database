@@ -46,7 +46,7 @@ flowchart LR
     REM --> GL
 ```
 
-Read the diagram from workforce planning to approved attendance and then to downstream use. The important teaching idea is that time clocks do not exist only for payroll. They also support labor tracing, overtime analysis, manufacturing support, and control testing.
+Read the diagram from workforce planning to approved attendance and then to downstream use. Time clocks support payroll, labor tracing, overtime analysis, manufacturing support, and control testing.
 
 ## Step-by-Step Walkthrough
 
@@ -132,7 +132,7 @@ Main downstream tables:
 
 ### 8. Review exceptions
 
-The clean build keeps attendance exceptions limited, but anomaly mode can add issues such as:
+Attendance review can surface issues such as:
 
 - missing clock-out
 - duplicate time-clock day
@@ -155,7 +155,7 @@ Main table:
 | `TimeClockPunch` | Raw attendance punch event |
 | `OvertimeApproval` | Approval support for worked overtime |
 | `TimeClockEntry` | Approved daily attendance row for hourly employees |
-| `AttendanceException` | Logged time-and-attendance issues, mainly in anomaly mode |
+| `AttendanceException` | Logged time-and-attendance issues used for control review |
 | `LaborTimeEntry` | Labor allocation record used for costing and payroll traceability |
 | `WorkOrderOperation` | Operation-level production link for direct labor |
 | `PayrollRegister` | Downstream payroll header that uses approved clock hours for hourly pay |
@@ -188,12 +188,12 @@ The posting events happen later in the payroll process:
 
 ## What to Notice in the Data
 
-- The clean build now includes raw `TimeClockPunch` rows beneath the approved daily `TimeClockEntry`.
-- Salaried employees do not receive routine time-clock rows in the clean build.
+- The published dataset includes raw `TimeClockPunch` rows beneath the approved daily `TimeClockEntry`.
+- Salaried employees generally do not receive routine time-clock rows.
 - Hourly payroll earnings use approved time-clock hours as the source for regular and overtime pay.
 - Direct manufacturing time clocks can link to `WorkOrderOperationID`, which makes operation-level labor analytics possible.
 - Daily roster rows make it possible to compare scheduled hours to worked hours, absence hours, and overtime approvals.
-- Attendance exceptions are most useful in anomaly-enabled builds.
+- Attendance exceptions support control review and exception analysis.
 
 ## Subprocess Spotlight: Shift Expectation to Approved Hours
 

@@ -9,13 +9,9 @@ sidebar_label: Audit Exception Lab
 
 ## Business Scenario
 
-The finance and audit team receives the standard five-year build with a moderate set of planted anomalies. The goal is not to find every issue from scratch. The goal is to learn how to trace flagged exceptions to source documents, understand which control they violate, and explain the business risk in plain language. In class, you can narrow the review to one fiscal year with a filter if you want a smaller lab.
+The finance and audit team receives the published five-year dataset with a moderate set of planted anomalies. This lab teaches students how to trace flagged exceptions to source documents, identify the related control, and explain the business risk in plain language. In class, you can narrow the review to one fiscal year with a filter when you want a smaller lab.
 
-## Recommended Build Mode
-
-- standard anomaly-enabled teaching package
-
-If you are preparing that package yourself, use [Dataset Delivery and Build Setup](../../technical/dataset-delivery.md).
+Use `greenfield_support.xlsx` with the published dataset. If you are preparing the files yourself, use [Dataset Delivery and Build Setup](../../technical/dataset-delivery.md).
 
 ## Main Tables and Worksheets
 
@@ -55,7 +51,7 @@ If you are preparing that package yourself, use [Dataset Delivery and Build Setu
 
 - The anomaly log is a teaching aid, not a substitute for source-document review.
 - Several audit starter queries are intentionally written to surface the same anomaly family from different angles.
-- The `standard` profile is moderate on purpose; it should create teachable results without turning the whole dataset into an exception dump.
+- The published dataset includes a moderate anomaly set that creates teachable results without turning the whole dataset into an exception dump.
 
 ## Follow-Up Questions
 

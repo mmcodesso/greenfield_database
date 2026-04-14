@@ -2,7 +2,7 @@
 
 ## Business Storyline
 
-Greenfield is not only an operational database. The finance team also records the recurring and period-end activity that students expect in a real accounting system. That includes rent, utilities, depreciation, month-end accruals, rare accrual adjustments, factory-overhead journals, manufacturing labor and overhead reclasses, and year-end close.
+Greenfield includes both operational activity and finance-controlled journal activity. The finance team also records the recurring and period-end activity that students expect in a real accounting system. That includes rent, utilities, depreciation, month-end accruals, rare accrual adjustments, factory-overhead journals, manufacturing labor and overhead reclasses, and year-end close.
 
 This page matters because it shows what happens outside the normal document chains. Students can compare operational postings from shipments, receipts, payroll, and purchasing with finance-controlled entries that start directly in the journal process.
 
@@ -76,7 +76,7 @@ Current recurring categories:
 ## Common Student Questions
 
 - Which journal types recur each month?
-- Which accrued expenses later clear through AP rather than through automatic reversal?
+- Which accrued expenses later clear through AP through supplier invoicing and payment?
 - Which entries support manufacturing cost accounting even though they are journal-based?
 - How much manual journal activity exists beside operational postings?
 - How should year-end close entries be treated in multi-year income-statement analysis?
@@ -86,7 +86,7 @@ Current recurring categories:
 - Manual journal detail is represented through `JournalEntry` headers plus linked `GLEntry` rows. There is no separate journal-line table.
 - `ReversesJournalEntryID` is used for rare accrual adjustments that point back to the original accrual.
 - Most accrued expenses are cleared operationally through direct service `PurchaseInvoice` and `DisbursementPayment` activity.
-- Clean-build payroll is now operationally modeled through payroll tables, so payroll accrual and payroll settlement journals are no longer part of the clean recurring-journal set.
+- Payroll is operationally modeled through payroll tables, so payroll accrual and payroll settlement journals are not part of the recurring-journal set.
 - For raw multi-year income-statement analysis, exclude the two year-end close entry types.
 
 ## Subprocess Spotlight: Accrual Estimate to Settlement to Adjustment

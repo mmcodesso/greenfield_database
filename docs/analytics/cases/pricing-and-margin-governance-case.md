@@ -11,14 +11,9 @@ sidebar_label: Pricing and Margin Case
 - audience: financial analytics, managerial analytics, and commercial-policy students
 - purpose: connect list price, negotiated pricing, promotions, and net margin without introducing a separate quote system
 
-## Recommended Build Mode
-
-- default anomaly-enabled build for the main walk-through
-- clean build when you want a baseline pricing pattern before control failures are introduced
-
 ## Business Scenario
 
-Greenfield now prices from formal segment and customer price lists instead of ad hoc line discounts. Students need to explain how price realization changes by customer mix, where promotions dilute revenue, and when override approvals become commercially significant.
+Greenfield now prices from formal segment and customer price lists with explicit promotions and override approvals. Students need to explain how price realization changes by customer mix, where promotions dilute revenue, and when override approvals become commercially significant.
 
 ## Query Sequence
 
@@ -38,7 +33,7 @@ Greenfield now prices from formal segment and customer price lists instead of ad
 
 ## What Students Should Notice
 
-- price realization now comes from explicit commercial rules rather than random line variation
+- price realization now comes from explicit commercial rules
 - promotions lower net revenue through the line discount field while revenue still posts net in the GL
 - customer-specific pricing should concentrate in a minority of strategic accounts, not across the full customer base
 - override pressure should be visible but rare relative to total order-line volume

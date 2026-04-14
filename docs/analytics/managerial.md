@@ -92,4 +92,4 @@ sidebar_label: Managerial Analytics
 - Phase 22 adds a weekly planning layer. Students can now compare forecast, policy, recommendation, and rough-cut capacity pressure before execution starts.
 - Phase 23 adds a commercial-pricing layer. Students can now compare list price, resolved price-list pricing, promotions, overrides, and net realized margin without introducing a separate quote system.
 - The current manufacturing model is still a foundation. It supports operations, labor, and contribution-margin analysis without switching inventory valuation to actual cost.
-- Demand-planning analysis is most useful when students connect `DemandForecast`, `InventoryPolicy`, `SupplyPlanRecommendation`, `MaterialRequirementPlan`, and `RoughCutCapacityPlan` instead of reading each table in isolation.
+- Demand-planning analysis is most useful when students connect `DemandForecast`, `InventoryPolicy`, `SupplyPlanRecommendation`, `MaterialRequirementPlan`, and `RoughCutCapacityPlan` in one analytical path.

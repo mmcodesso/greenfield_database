@@ -63,7 +63,7 @@ Move into the analysis layer from the path that matches your assignment:
 
 ## 6. Use Guided Cases When You Need Structure
 
-If you do not want to start from a blank page, use [Analytics Cases](../analytics/cases/index.md). The case set pairs process context with starter SQL, interpretation prompts, and structured walkthroughs.
+Use [Analytics Cases](../analytics/cases/index.md) when you want a guided assignment path. The case set pairs process context with starter SQL, interpretation prompts, and structured walkthroughs.
 
 ## Where to Go Next
 

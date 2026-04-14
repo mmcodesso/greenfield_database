@@ -2,7 +2,7 @@
 
 ## Business Storyline
 
-Greenfield runs payroll as a real operating cycle, not only as a journal simulation. Every pay period, payroll gathers approved support, calculates gross pay, records withholdings and employer burden, pays employees, and later remits the related liabilities. For manufacturing employees, payroll also helps move labor and overhead into the product-cost story.
+Greenfield runs payroll as an operating cycle. Every pay period, payroll gathers approved support, calculates gross pay, records withholdings and employer burden, pays employees, and later remits the related liabilities. For manufacturing employees, payroll also helps move labor and overhead into the product-cost story.
 
 This page is about the pay cycle and its accounting. Students should use [Time Clocks](time-clocks.md) for the upstream attendance and shift story, then use this page to understand how those approved hours become expense, liabilities, cash payments, and manufacturing reclass activity.
 
@@ -192,13 +192,13 @@ Payroll creates several accounting events:
 
 ## What to Notice in the Data
 
-- Payroll is now an operational subledger, not only a recurring journal pattern.
-- The clean build no longer uses payroll accrual or payroll settlement journals.
+- Payroll operates as an operational subledger with dedicated tables and ledger postings.
+- The dataset records payroll through payroll tables and related settlement activity. It does not use payroll accrual and settlement journals.
 - Hourly payroll hours are sourced from approved `TimeClockEntry` rows.
 - Approved `TimeClockEntry` rows are now derived from raw punches plus roster context.
 - Direct labor affects manufacturing through reclass journals and work-order close, not through a separate job-cost ledger.
 - Direct labor is assigned at the routing-operation level for manufactured work orders.
-- The clean model now separates planned roster rows, raw punches, absences, overtime approvals, and approved daily time summaries.
+- The dataset separates planned roster rows, raw punches, absences, overtime approvals, and approved daily time summaries.
 - The manufacturing model remains standard-cost based even though payroll provides actual labor detail.
 
 ## Subprocess Spotlight: Gross-to-Net and Liability Remittance

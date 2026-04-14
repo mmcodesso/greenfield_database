@@ -1,6 +1,6 @@
 ---
 title: Audit Review Pack Case
-description: Guided walkthrough for running a default anomaly-enabled audit review pack with the support workbook and the expanded Phase 20 and Phase 21 audit queries.
+description: Guided walkthrough for an audit review pack that uses the support workbook and the expanded Phase 20 and Phase 21 audit queries.
 sidebar_label: Audit Review Pack
 ---
 
@@ -8,11 +8,7 @@ sidebar_label: Audit Review Pack
 
 ## Audience and Purpose
 
-Use this case when students need a structured anomaly-enabled audit lab that combines the support workbook with source-table SQL review.
-
-## Recommended Build Mode
-
-- Default anomaly-enabled build
+Use this case when students need a structured audit lab that combines the support workbook with source-table SQL review.
 
 ## Business Scenario
 
@@ -63,12 +59,12 @@ The internal-audit team receives the normal five-year package and needs to triag
 ## What Students Should Notice
 
 - The support workbook is a guide, not a substitute for source-document review.
-- Several audit queries now focus on master data and org structure, not only document timing.
+- Several audit queries now focus on master data and org structure as well as document timing.
 - The audit pack now also separates roster issues, punch issues, absence issues, and overtime-approval issues.
 - Current-state assignment issues and approval-limit exceptions can be reviewed separately from broader role-family questions.
 - Planning-support issues can now be reviewed separately from operational execution failures.
 - The same anomaly family can appear in both a summary query and a more detailed control query.
-- An anomaly-enabled dataset should still be explainable. It should not feel random.
+- The published dataset should remain explainable. Students should be able to trace each exception to its business context.
 
 ## Follow-Up Questions
 

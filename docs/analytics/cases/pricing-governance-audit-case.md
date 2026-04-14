@@ -11,10 +11,6 @@ sidebar_label: Pricing Governance Audit
 - audience: audit, AIS, and controls-focused analytics students
 - purpose: review whether formal price lists, promotions, and override approvals are being used as designed
 
-## Recommended Build Mode
-
-- default anomaly-enabled build
-
 ## Business Scenario
 
 Greenfield now maintains formal price lists, seasonal promotions, and explicit override approvals. Students need to determine whether the commercial-control design is being followed and where transaction pricing no longer matches the approved pricing framework.

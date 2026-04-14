@@ -10,13 +10,9 @@ sidebar_label: Working Capital Case
 
 Use this case when students need to connect operating documents to month-end working-capital balances and cash-conversion timing.
 
-## Recommended Build Mode
-
-- Clean or default build
-
 ## Business Scenario
 
-Greenfield’s finance team wants to explain why working capital moves from month to month. The question is not only whether AR or AP went up. The question is how invoices, receipts, applications, supplier payments, payroll liabilities, customer deposits, and accrued expenses combine into a working-capital story.
+Greenfield’s finance team wants to explain why working capital moves from month to month. The core question is how invoices, receipts, applications, supplier payments, payroll liabilities, customer deposits, and accrued expenses combine into a working-capital story.
 
 ## Main Tables and Worksheets
 
@@ -49,7 +45,7 @@ Greenfield’s finance team wants to explain why working capital moves from mont
 
 ## What Students Should Notice
 
-- Working capital is a timing story, not only a balance-sheet story.
+- Working capital is a timing story as well as a balance-sheet story.
 - Customer deposits and unapplied cash can move independently from AR.
 - Goods receipt to payment timing is not the same as purchase invoice to payment timing.
 - Payroll liabilities and accrued expenses are part of working capital, even though they do not look like sales or inventory activity.

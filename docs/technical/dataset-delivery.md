@@ -13,7 +13,6 @@ sidebar_label: Dataset Delivery
 Use this page if you are:
 
 - preparing the SQLite and Excel files for a class
-- choosing between the clean and anomaly-enabled teaching packages
 - running the generator locally for instructor prep
 
 Students usually do **not** need this page.
@@ -34,28 +33,11 @@ Then point students to:
 - [Dataset Guide](../start-here/dataset-overview.md)
 - [Analytics Hub](../analytics/index.md)
 
-## Recommended Build Options
+## Recommended Local Generation Path
 
-### Standard teaching package
+Use `config/settings.yaml` when you want the released five-year teaching dataset.
 
-Use `config/settings.yaml` when you want the normal five-year teaching build with the standard anomaly pack enabled.
-
-This is the best default when you want:
-
-- SQL and Excel starter work
-- audit and controls exercises
-- guided cases
-- anomaly-focused class discussions
-
-### Clean baseline package
-
-Use `config/settings_validation.yaml` when you want a faster clean baseline for prep, demos, or exercises that should minimize anomaly-driven exceptions.
-
-This is useful when you want:
-
-- a quick instructor preview build
-- baseline process tracing before exceptions
-- a cleaner first exposure to the data model
+Additional settings files remain available for local validation and performance work, but the published teaching package follows the released teaching configuration.
 
 ## How to Generate the Dataset Locally
 
@@ -68,17 +50,11 @@ python3 -m pip install -r requirements.txt
 python3 generate_dataset.py
 ```
 
-For the clean baseline profile:
-
-```bash
-python3 generate_dataset.py config/settings_validation.yaml
-```
-
 Generated files are written to `outputs/`.
 
 ## What the Build Produces
 
-The default teaching build writes:
+The generator writes:
 
 - `outputs/greenfield.sqlite`
 - `outputs/greenfield.xlsx`
@@ -86,7 +62,7 @@ The default teaching build writes:
 - `outputs/greenfield_csv.zip`
 - `outputs/generation.log`
 
-The main SQLite database and main Excel workbook are the core student-facing dataset files. Share the support workbook when students need anomaly or validation guidance. Share the CSV zip when flat-file delivery is useful.
+The main SQLite database and main Excel workbook are the core student-facing dataset files. Share the support workbook when the course uses exception review or validation context. Share the CSV zip when flat-file delivery is useful.
 
 ## Packaging Guidance
 
@@ -97,13 +73,7 @@ The main SQLite database and main Excel workbook are the core student-facing dat
 - Publish the student files through GitHub Releases or your course LMS.
 - Keep `generation.log` for instructor review only.
 - Ask students to start from the documentation site, not from the codebase.
-- If you want a smaller assignment, filter to one fiscal year in SQL or Excel instead of creating many custom classroom variants.
-
-## Clean vs Anomaly-Enabled Teaching Use
-
-- Use the standard package when you want audit exercises to surface meaningful exceptions.
-- Use the clean package when you want process learning and table navigation without anomaly-heavy results.
-- Explain the difference to students before they compare outputs across sections or assignments.
+- If you want a smaller assignment, filter to one fiscal year in SQL or Excel without creating many custom classroom variants.
 
 ## Where to Go Next
 

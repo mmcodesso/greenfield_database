@@ -11,11 +11,6 @@ sidebar_label: O2C Trace Case
 
 A customer places an order for finished goods. Greenfield ships what inventory allows, invoices from the shipped lines, records the customer payment, and applies that cash against open invoices. In some cases the customer later returns part of the billed quantity, but the core trace begins with the normal order-to-cash path.
 
-## Recommended Build Mode
-
-- Clean build for baseline traceability
-- Default build if you also want to discuss exception-oriented follow-up
-
 ## Main Tables and Worksheets
 
 - `SalesOrder`

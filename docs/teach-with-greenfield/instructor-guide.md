@@ -45,12 +45,11 @@ Suggested student sequence:
 5. [Analytics Hub](../analytics/index.md)
 6. topic-specific analytics pages and cases
 
-### 4. Decide how you will use the default versus clean build
+### 4. Decide how you will deliver the published dataset
 
-- Use the default five-year anomaly-enabled package as the main student path.
-- Use the clean baseline package mainly for instructor prep, quick demonstrations, or contrast.
-- Make the distinction explicit to students. Some audit queries are supposed to return exceptions only on the default anomaly-enabled build.
-- Use [Dataset Delivery and Build Setup](../technical/dataset-delivery.md) for the exact local build commands and profile choices.
+- Use the published SQLite database and Excel workbook as the core student file set.
+- Share `greenfield_support.xlsx` when the course includes exception review, audit exercises, or validation context.
+- Use [Dataset Delivery and Build Setup](../technical/dataset-delivery.md) when you need local generation commands or release preparation details.
 
 ## What to Share With Students vs Keep for Teaching Setup
 
@@ -109,24 +108,24 @@ This sequence compresses cleanly into fewer modules or expands into a full semes
 
 - Start with why each document exists before discussing table structure.
 - Use `GLEntry` only after students understand which source events post and which do not.
-- For auditing classes, explain the clean-vs-anomaly distinction early.
+- For auditing classes, explain how the published dataset and support workbook work together.
 - For beginner SQL classes, start from the provided queries before moving to blank-screen assignments.
-- For Excel-heavy classes, use the workbook and process docs together so students can interpret patterns instead of only producing pivots.
+- For Excel-heavy classes, use the workbook and process docs together so students can interpret patterns while they build pivots.
 
 ## Recommended Phase 19 to Phase 23 Classroom Sequence
 
-1. Use the default anomaly-enabled package as the standard student file set.
+1. Use the published dataset package as the core student file set.
 2. Start financial classes with the working-capital and statement-bridge cases.
 3. Start managerial classes with the product-portfolio profitability case.
 4. Start audit classes with the workforce cost and org-control case, then move to the audit review pack.
-5. Use the expanded Phase 20 audit queries to separate role-family issues, approval-limit issues, current-state assignment issues, and item-status issues without changing the default build profile.
+5. Use the expanded Phase 20 audit queries to separate role-family issues, approval-limit issues, current-state assignment issues, and item-status issues within the published dataset.
 6. Add the Phase 21 workforce coverage case when students are ready to compare rostered hours, worked hours, absences, and overtime.
 7. Add the attendance control audit case when students need a deeper roster, punch, and overtime-control lab.
 8. Add the Phase 22 demand-planning case when students are ready to connect forecast, replenishment, MRP, and rough-cut capacity.
 9. Add the replenishment-support audit case when students need to test forecast approval, policy status, and recommendation conversion support.
 10. Add the Phase 23 pricing and margin case when students are ready to connect list price, promotions, overrides, and realized margin.
 11. Add the pricing-governance audit case when students need a commercial-controls lab around expired pricing, price-floor breaches, and override completeness.
-12. Use the clean build only when you want a baseline comparison after students understand the default dataset.
+12. Use guided comparisons across years, processes, or topic packs after students understand the core dataset.
 
 ## Where to Go Next
 

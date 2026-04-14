@@ -11,7 +11,7 @@ Use this page when you need the codebase-level view of how Greenfield is generat
 
 For table structure and join fields, use [Schema Reference](../reference/schema.md). For event-to-ledger behavior, use [GLEntry Posting Reference](../reference/posting.md). For planned future changes, use [Roadmap](roadmap.md).
 
-Phase 23 adds a commercial-pricing layer on top of the current Phase 22 planning baseline. The current system now includes demand forecasts, inventory policies, supply recommendations, component-demand planning, rough-cut capacity tieout, and explicit O2C pricing lineage through price lists, promotions, and override approvals while still keeping the Phase 21 workforce-planning layer beneath the approved daily time-clock model.
+Phase 23 extends the current system with a commercial-pricing layer. The dataset now includes demand forecasts, inventory policies, supply recommendations, component-demand planning, rough-cut capacity tieout, and explicit O2C pricing lineage through price lists, promotions, and override approvals. It also retains the workforce-planning layer that supports the approved daily time-clock model.
 
 ## Current System at a Glance
 
@@ -65,7 +65,7 @@ In plain language, the build:
 2. creates empty tables from the schema definition
 3. generates master, planning, operational, payroll, and journal activity
 4. posts accounting events into `GLEntry`
-5. validates the clean build, injects anomalies when configured, and exports outputs
+5. runs validations, injects anomalies when configured, and exports outputs
 
 ## Module Responsibilities
 
@@ -96,11 +96,11 @@ The current analytics layer now includes:
 
 - broader starter SQL coverage across financial, managerial, and audit topics
 - case-based walkthroughs under `docs/analytics/cases/`
-- default-build-first documentation that treats the anomaly-enabled package as the main classroom artifact
+- a documentation set that centers the published teaching dataset as the classroom artifact
 - workforce-planning detail for rosters, absences, punches, and overtime approvals that supports new attendance and staffing analytics
 - weekly planning support for forecast, policy, recommendation, MRP, and rough-cut capacity analysis
 - commercial-pricing support for segment and customer price lists, promotions, override approvals, and price-realization analysis
-Phase 22 extends the generator itself through planning outputs that support normal replenishment activity rather than existing only as analytics-only side data. Phase 23 extends the O2C layer itself through formal commercial-pricing resolution rather than ad hoc random line-price variation.
+Phase 22 extends the generator through planning outputs that support normal replenishment activity. Phase 23 extends the O2C layer through formal commercial-pricing resolution and explicit pricing lineage.
 
 ## Posting, Validation, and Outputs
 
@@ -117,9 +117,9 @@ The validation layer checks:
 - voucher balance, trial balance, and control-account roll-forwards
 - journal-header-to-GL agreement and close-cycle completeness
 
-The current build supports these common configuration profiles:
+Local generation commonly uses these configuration files:
 
-- `config/settings.yaml` for release-grade full builds
+- `config/settings.yaml` for the released five-year teaching dataset
 - `config/settings_validation.yaml` for one-year fast validation
 - `config/settings_perf.yaml` for short-horizon performance profiling
 
@@ -137,4 +137,4 @@ The current generator exports:
 - CSV zip package with one CSV per dataset table
 - text generation log
 
-Most course users should start with those generated files rather than the Python code.
+Most course users should start with those generated files and the documentation site.

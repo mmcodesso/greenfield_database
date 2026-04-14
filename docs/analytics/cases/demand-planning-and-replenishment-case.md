@@ -11,11 +11,6 @@ sidebar_label: Demand Planning Case
 - audience: managerial analytics, operations, cost accounting, and supply-chain planning students
 - purpose: connect weekly demand forecasts to replenishment recommendations, purchase support, manufacturing release, and rough-cut capacity pressure
 
-## Recommended Build Mode
-
-- default anomaly-enabled build for the main run
-- clean build only when you want to contrast the same logic without planted planning exceptions
-
 ## Business Scenario
 
 Greenfield now plans replenishment weekly. Students need to explain how forecasted demand becomes supply recommendations, why some recommendations are expedited, and where rough-cut capacity tightens before execution starts.
@@ -46,7 +41,6 @@ Greenfield now plans replenishment weekly. Students need to explain how forecast
 ## Follow-Up Questions
 
 1. Which item families carry the highest recurring expedite pressure?
-2. Where does forecast bias appear systematic rather than random?
+2. Where does forecast bias appear systematic?
 3. Which work centers become tight first when manufactured demand rises?
 4. How would a planner explain the mix of forecast-driven versus backlog-driven recommendations?
-

@@ -11,7 +11,7 @@ sidebar_label: Why Greenfield
 
 Accounting analytics is hard to teach when students see tables first and business logic later. Many classes can show journal entries. Many classes can show sample spreadsheets. Far fewer can show how a business event creates a document chain, moves through operational activity, and finally reaches the ledger. That gap slows learning and weakens explanation.
 
-Greenfield addresses that problem with a synthetic, integrated, ERP-style accounting analytics environment. It combines business context, process flows, source documents, posted GLEntry activity, and teaching materials in one openly shareable package. Students can trace business activity from operations to accounting. Instructors can adopt a ready-to-use environment instead of assembling disconnected examples from several sources.
+Greenfield addresses that problem with a synthetic, integrated, ERP-style accounting analytics environment. It combines business context, process flows, source documents, posted GLEntry activity, and teaching materials in one openly shareable package. Students can trace business activity from operations to accounting. Instructors can adopt a ready-to-use environment with one coherent model and supporting materials.
 
 ## Why This Project Was Necessary
 
@@ -64,7 +64,7 @@ Greenfield supports that work because posted ledger rows include the traceabilit
 - `FiscalYear`
 - `FiscalPeriod`
 
-Those fields turn the ledger into a teaching asset instead of a dead end. An instructor can ask students to explain a revenue posting from its shipment and invoice records. A student can start in `GLEntry` and work back to the source document chain. An auditing assignment can test whether the ledger reflects the expected document path. That is the difference between a narratively interesting dataset and a traceable accounting analytics environment. For the event-by-event rules, use [GLEntry Posting Reference](../reference/posting.md). For the table-level structure behind those paths, use [Schema Reference](../reference/schema.md).
+Those fields make the ledger a usable teaching asset. An instructor can ask students to explain a revenue posting from its shipment and invoice records. A student can start in `GLEntry` and work back to the source document chain. An auditing assignment can test whether the ledger reflects the expected document path. For the event-by-event rules, use [GLEntry Posting Reference](../reference/posting.md). For the table-level structure behind those paths, use [Schema Reference](../reference/schema.md).
 
 ## What Teaching Materials Come With It
 
@@ -87,7 +87,7 @@ These materials reduce setup friction. Students do not need to guess why a table
 
 Greenfield is designed as an open educational resource. In plain language, that means instructors and institutions can adopt it, adapt it, and extend it for teaching. The project uses the `CC BY-SA 4.0` license so users can share the material with attribution and keep derivative versions under the same open terms.
 
-That licensing model is part of the educational value. Faculty can revise assignments, localize cases, add course notes, or build new teaching sequences on top of the same foundation. Curriculum developers can use the model as a reusable platform instead of a one-time classroom artifact.
+That licensing model is part of the educational value. Faculty can revise assignments, localize cases, add course notes, or build new teaching sequences on top of the same foundation. Curriculum developers can use the model as a reusable platform for continued teaching and development.
 
 ## Who Should Use It
 

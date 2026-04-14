@@ -23,7 +23,7 @@ It connects:
 - subledger logic
 - posted GLEntry records
 
-The goal is not only to store tables. The goal is to let you move from business activity to source documents, then from source documents to ledger impact.
+The dataset lets you move from business activity to source documents and from source documents to ledger impact.
 
 ## What the Dataset Contains
 
