@@ -4,6 +4,9 @@ description: Guided walkthrough for workforce mix, payroll cost concentration, a
 sidebar_label: Workforce Cost Case
 ---
 
+import { QuerySequence } from "@site/src/components/QueryReference";
+import { caseQuerySequences } from "@site/src/generated/queryDocCollections";
+
 # Workforce Cost and Org-Control Case
 
 ## Audience and Purpose
@@ -30,11 +33,7 @@ Greenfield’s leadership wants to understand where people cost sits, how workfo
 
 ## Recommended Query Sequence
 
-1. Run [../../../queries/financial/22_payroll_and_people_cost_mix_by_cost_center_job_family_level.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/financial/22_payroll_and_people_cost_mix_by_cost_center_job_family_level.sql).
-2. Run [../../../queries/managerial/34_labor_and_headcount_by_work_location_job_family_cost_center.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/34_labor_and_headcount_by_work_location_job_family_cost_center.sql).
-3. Run [../../../queries/audit/29_executive_role_uniqueness_and_control_assignment_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/29_executive_role_uniqueness_and_control_assignment_review.sql).
-4. Run [../../../queries/audit/32_approval_authority_review_by_expected_role_family.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/32_approval_authority_review_by_expected_role_family.sql).
-5. Run [../../../queries/audit/28_approval_role_review_by_org_position.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/28_approval_role_review_by_org_position.sql).
+<QuerySequence items={caseQuerySequences["workforce-cost-and-org-control-case"]} />
 
 ## Suggested Excel Sequence
 

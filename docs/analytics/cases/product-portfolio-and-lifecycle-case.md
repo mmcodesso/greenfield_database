@@ -4,6 +4,9 @@ description: Guided walkthrough for product naming, catalog attributes, lifecycl
 sidebar_label: Product Portfolio Case
 ---
 
+import { QuerySequence } from "@site/src/components/QueryReference";
+import { caseQuerySequences } from "@site/src/generated/queryDocCollections";
+
 # Product Portfolio and Lifecycle Case
 
 
@@ -24,10 +27,7 @@ This case uses that richer item master to connect catalog realism to managerial 
 
 ## Recommended Query Sequence
 
-1. Run [../../../queries/managerial/30_sales_margin_by_collection_style_material.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/30_sales_margin_by_collection_style_material.sql).
-2. Run [../../../queries/managerial/06_basic_product_profitability.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/06_basic_product_profitability.sql).
-3. Run [../../../queries/managerial/14_absorption_vs_contribution_margin.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/14_absorption_vs_contribution_margin.sql).
-4. Run [../../../queries/managerial/26_returns_and_refund_impact_by_customer_and_item.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/26_returns_and_refund_impact_by_customer_and_item.sql).
+<QuerySequence items={caseQuerySequences["product-portfolio-and-lifecycle-case"]} />
 
 ## Suggested Excel Sequence
 

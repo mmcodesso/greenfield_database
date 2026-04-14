@@ -4,6 +4,9 @@ description: Guided walkthrough for roster, punch, overtime-approval, and absenc
 sidebar_label: Attendance Control Case
 ---
 
+import { QuerySequence } from "@site/src/components/QueryReference";
+import { caseQuerySequences } from "@site/src/generated/queryDocCollections";
+
 # Attendance Control Audit Case
 
 ## Audience and Purpose
@@ -30,11 +33,7 @@ Internal audit has been asked to review whether scheduled work, raw punches, app
 
 ## Recommended Query Sequence
 
-1. Run [../../../queries/audit/37_scheduled_without_punch_and_punch_without_schedule_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/37_scheduled_without_punch_and_punch_without_schedule_review.sql).
-2. Run [../../../queries/audit/38_overtime_without_approval_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/38_overtime_without_approval_review.sql).
-3. Run [../../../queries/audit/39_absence_with_worked_time_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/39_absence_with_worked_time_review.sql).
-4. Run [../../../queries/audit/40_overlapping_or_incomplete_punch_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/40_overlapping_or_incomplete_punch_review.sql).
-5. Run [../../../queries/audit/41_roster_after_termination_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/41_roster_after_termination_review.sql).
+<QuerySequence items={caseQuerySequences["attendance-control-audit-case"]} />
 
 ## Suggested Excel Sequence
 

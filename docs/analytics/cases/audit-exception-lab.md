@@ -4,6 +4,9 @@ description: Guided audit lab focused on anomaly review and control testing in G
 sidebar_label: Audit Exception Lab
 ---
 
+import { QuerySequence } from "@site/src/components/QueryReference";
+import { caseQuerySequences } from "@site/src/generated/queryDocCollections";
+
 # Audit Exception Lab
 
 
@@ -33,11 +36,9 @@ Use `greenfield_support.xlsx` with the published dataset. If you are preparing t
 
 1. Open `greenfield_support.xlsx` and review `AnomalyLog`.
 2. Pick one anomaly row and note the source document keys shown in the workbook.
-3. Run [../../../queries/audit/05_duplicate_payment_reference_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/05_duplicate_payment_reference_review.sql).
-4. Run [../../../queries/audit/11_payroll_control_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/11_payroll_control_review.sql).
-5. Run [../../../queries/audit/14_missing_routing_or_operation_link_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/14_missing_routing_or_operation_link_review.sql).
-6. Run [../../../queries/audit/15_operation_sequence_and_final_completion_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/15_operation_sequence_and_final_completion_review.sql).
-7. Run [../../../queries/audit/19_time_clock_exceptions_by_employee_supervisor_work_center.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/19_time_clock_exceptions_by_employee_supervisor_work_center.sql).
+3. Then work through the SQL sequence below.
+
+<QuerySequence items={caseQuerySequences["audit-exception-lab"]} />
 
 ## Suggested Excel Sequence
 

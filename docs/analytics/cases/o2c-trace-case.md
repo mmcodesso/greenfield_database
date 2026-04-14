@@ -4,6 +4,9 @@ description: Guided walkthrough for tracing a customer sale from order through s
 sidebar_label: O2C Trace Case
 ---
 
+import { QuerySequence } from "@site/src/components/QueryReference";
+import { caseQuerySequences } from "@site/src/generated/queryDocCollections";
+
 # O2C Trace Case
 
 
@@ -25,10 +28,7 @@ A customer places an order for finished goods. Greenfield ships what inventory a
 
 ## Recommended Query Sequence
 
-1. Run [../../../queries/audit/01_o2c_document_chain_completeness.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/01_o2c_document_chain_completeness.sql).
-2. Run [../../../queries/financial/01_monthly_revenue_and_gross_margin.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/financial/01_monthly_revenue_and_gross_margin.sql).
-3. Run [../../../queries/financial/02_ar_aging_open_invoices.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/financial/02_ar_aging_open_invoices.sql).
-4. If you want the exception follow-up, run [../../../queries/audit/07_backorder_and_return_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/07_backorder_and_return_review.sql).
+<QuerySequence items={caseQuerySequences["o2c-trace-case"]} />
 
 ## Suggested Excel Sequence
 

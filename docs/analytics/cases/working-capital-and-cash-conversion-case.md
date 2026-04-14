@@ -4,6 +4,9 @@ description: Guided walkthrough for control-account balances and settlement timi
 sidebar_label: Working Capital Case
 ---
 
+import { QuerySequence } from "@site/src/components/QueryReference";
+import { caseQuerySequences } from "@site/src/generated/queryDocCollections";
+
 # Working Capital and Cash Conversion Case
 
 ## Audience and Purpose
@@ -30,12 +33,7 @@ Greenfield’s finance team wants to explain why working capital moves from mont
 
 ## Recommended Query Sequence
 
-1. Run [../../../queries/financial/19_working_capital_bridge_by_month.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/financial/19_working_capital_bridge_by_month.sql).
-2. Run [../../../queries/financial/20_cash_conversion_timing_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/financial/20_cash_conversion_timing_review.sql).
-3. Run [../../../queries/financial/02_ar_aging_open_invoices.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/financial/02_ar_aging_open_invoices.sql).
-4. Run [../../../queries/financial/03_ap_aging_open_invoices.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/financial/03_ap_aging_open_invoices.sql).
-5. Run [../../../queries/financial/12_accrued_expense_rollforward.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/financial/12_accrued_expense_rollforward.sql).
-6. Run [../../../queries/financial/15_customer_deposits_and_unapplied_cash_aging.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/financial/15_customer_deposits_and_unapplied_cash_aging.sql).
+<QuerySequence items={caseQuerySequences["working-capital-and-cash-conversion-case"]} />
 
 ## Suggested Excel Sequence
 

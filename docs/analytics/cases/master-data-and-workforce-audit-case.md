@@ -4,6 +4,9 @@ description: Guided walkthrough for employee lifecycle, approval-role, and maste
 sidebar_label: Workforce Audit Case
 ---
 
+import { QuerySequence } from "@site/src/components/QueryReference";
+import { caseQuerySequences } from "@site/src/generated/queryDocCollections";
+
 # Master Data and Workforce Audit Case
 
 
@@ -33,14 +36,7 @@ This case asks students to test whether operational activity, approvals, and pay
 
 ## Recommended Query Sequence
 
-1. Run [../../../queries/managerial/29_headcount_by_cost_center_job_family_status.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/29_headcount_by_cost_center_job_family_status.sql).
-2. Run [../../../queries/audit/27_terminated_employee_activity_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/27_terminated_employee_activity_review.sql).
-3. Run [../../../queries/audit/34_current_state_employee_assignment_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/34_current_state_employee_assignment_review.sql).
-4. Run [../../../queries/audit/28_approval_role_review_by_org_position.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/28_approval_role_review_by_org_position.sql).
-5. Run [../../../queries/audit/35_approval_authority_limit_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/35_approval_authority_limit_review.sql).
-6. Run [../../../queries/audit/41_roster_after_termination_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/41_roster_after_termination_review.sql).
-7. Run [../../../queries/audit/38_overtime_without_approval_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/38_overtime_without_approval_review.sql).
-8. Open `greenfield_support.xlsx` and filter `AnomalyLog` to the workforce-related anomaly types.
+<QuerySequence items={caseQuerySequences["master-data-and-workforce-audit-case"]} />
 
 ## Suggested Excel Sequence
 

@@ -4,6 +4,9 @@ description: Guided walkthrough for staffing coverage, rostered hours, attendanc
 sidebar_label: Workforce Coverage Case
 ---
 
+import { QuerySequence } from "@site/src/components/QueryReference";
+import { caseQuerySequences } from "@site/src/generated/queryDocCollections";
+
 # Workforce Coverage and Attendance Case
 
 ## Audience and Purpose
@@ -27,11 +30,7 @@ Greenfield operations leaders want to understand whether work-center staffing ke
 
 ## Recommended Query Sequence
 
-1. Run [../../../queries/managerial/36_staffing_coverage_vs_work_center_planned_load.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/36_staffing_coverage_vs_work_center_planned_load.sql).
-2. Run [../../../queries/managerial/37_rostered_vs_worked_hours_by_work_center_shift.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/37_rostered_vs_worked_hours_by_work_center_shift.sql).
-3. Run [../../../queries/managerial/38_absence_rate_by_work_location_job_family_month.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/38_absence_rate_by_work_location_job_family_month.sql).
-4. Run [../../../queries/managerial/39_overtime_approval_coverage_and_concentration.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/39_overtime_approval_coverage_and_concentration.sql).
-5. Run [../../../queries/managerial/41_late_arrival_early_departure_by_shift_department.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/41_late_arrival_early_departure_by_shift_department.sql).
+<QuerySequence items={caseQuerySequences["workforce-coverage-and-attendance-case"]} />
 
 ## Suggested Excel Sequence
 

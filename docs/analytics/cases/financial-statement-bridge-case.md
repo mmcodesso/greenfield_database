@@ -4,6 +4,9 @@ description: Guided walkthrough for tracing operational activity into the ledger
 sidebar_label: Statement Bridge Case
 ---
 
+import { QuerySequence } from "@site/src/components/QueryReference";
+import { caseQuerySequences } from "@site/src/generated/queryDocCollections";
+
 # Financial Statement Bridge Case
 
 ## Audience and Purpose
@@ -29,12 +32,7 @@ The accounting team has operational evidence for sales, purchasing, payroll, man
 
 ## Recommended Query Sequence
 
-1. Run [../../../queries/financial/04_trial_balance_by_period.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/financial/04_trial_balance_by_period.sql).
-2. Run [../../../queries/financial/05_journal_and_close_cycle_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/financial/05_journal_and_close_cycle_review.sql).
-3. Run [../../../queries/financial/06_control_account_reconciliation.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/financial/06_control_account_reconciliation.sql).
-4. Run [../../../queries/financial/16_retained_earnings_and_close_entry_impact.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/financial/16_retained_earnings_and_close_entry_impact.sql).
-5. Run [../../../queries/financial/17_manufacturing_cost_component_bridge.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/financial/17_manufacturing_cost_component_bridge.sql).
-6. Run [../../../queries/financial/19_working_capital_bridge_by_month.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/financial/19_working_capital_bridge_by_month.sql).
+<QuerySequence items={caseQuerySequences["financial-statement-bridge-case"]} />
 
 ## Suggested Excel Sequence
 

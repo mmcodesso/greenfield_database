@@ -47,11 +47,6 @@ The current analytics layer is organized around these strengths:
 - weekly demand-planning and MRP review through forecasts, policies, recommendations, component plans, and rough-cut capacity
 - formal commercial-pricing review through price lists, promotions, override approvals, and line-level pricing lineage
 
-## Using the Published Dataset
-
-- Financial and managerial analysis can begin directly in the SQLite database or Excel workbook.
-- Audit work often benefits from `greenfield_support.xlsx` because it adds anomaly and validation context.
-- Some audit queries are designed to surface exceptions that appear in the published dataset.
 
 ## Where to Go Next
 

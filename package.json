@@ -8,8 +8,12 @@
     "webpack": "5.103.0"
   },
   "scripts": {
+    "generate-query-manifest": "node scripts/generate-query-manifest.mjs",
+    "prestart": "npm run generate-query-manifest",
     "start": "docusaurus start",
+    "prebuild": "npm run generate-query-manifest",
     "build": "docusaurus build",
+    "preserve": "npm run generate-query-manifest",
     "serve": "docusaurus serve",
     "clear": "docusaurus clear",
     "deploy": "docusaurus deploy"

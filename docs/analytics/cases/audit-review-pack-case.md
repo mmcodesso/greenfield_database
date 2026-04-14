@@ -4,6 +4,9 @@ description: Guided walkthrough for an audit review pack that uses the support w
 sidebar_label: Audit Review Pack
 ---
 
+import { QuerySequence } from "@site/src/components/QueryReference";
+import { caseQuerySequences } from "@site/src/generated/queryDocCollections";
+
 # Audit Review Pack Case
 
 ## Audience and Purpose
@@ -31,24 +34,9 @@ The internal-audit team receives the normal five-year package and needs to triag
 ## Recommended Query Sequence
 
 1. Open `greenfield_support.xlsx` and summarize `AnomalyLog` by `anomaly_type`.
-2. Run [../../../queries/audit/29_executive_role_uniqueness_and_control_assignment_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/29_executive_role_uniqueness_and_control_assignment_review.sql).
-3. Run [../../../queries/audit/34_current_state_employee_assignment_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/34_current_state_employee_assignment_review.sql).
-4. Run [../../../queries/audit/35_approval_authority_limit_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/35_approval_authority_limit_review.sql).
-5. Run [../../../queries/audit/30_item_master_completeness_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/30_item_master_completeness_review.sql).
-6. Run [../../../queries/audit/36_item_status_alignment_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/36_item_status_alignment_review.sql).
-7. Run [../../../queries/audit/31_discontinued_or_prelaunch_item_activity_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/31_discontinued_or_prelaunch_item_activity_review.sql).
-8. Run [../../../queries/audit/32_approval_authority_review_by_expected_role_family.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/32_approval_authority_review_by_expected_role_family.sql).
-9. Run [../../../queries/audit/33_terminated_employee_activity_rollup_by_process_area.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/33_terminated_employee_activity_rollup_by_process_area.sql).
-10. Run [../../../queries/audit/37_scheduled_without_punch_and_punch_without_schedule_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/37_scheduled_without_punch_and_punch_without_schedule_review.sql).
-11. Run [../../../queries/audit/38_overtime_without_approval_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/38_overtime_without_approval_review.sql).
-12. Run [../../../queries/audit/39_absence_with_worked_time_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/39_absence_with_worked_time_review.sql).
-13. Run [../../../queries/audit/40_overlapping_or_incomplete_punch_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/40_overlapping_or_incomplete_punch_review.sql).
-14. Run [../../../queries/audit/41_roster_after_termination_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/41_roster_after_termination_review.sql).
-15. Run [../../../queries/audit/42_forecast_approval_and_override_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/42_forecast_approval_and_override_review.sql).
-16. Run [../../../queries/audit/43_inactive_or_stale_inventory_policy_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/43_inactive_or_stale_inventory_policy_review.sql).
-17. Run [../../../queries/audit/44_requisitions_and_work_orders_without_planning_support.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/44_requisitions_and_work_orders_without_planning_support.sql).
-18. Run [../../../queries/audit/45_recommendation_converted_after_need_by_date_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/45_recommendation_converted_after_need_by_date_review.sql).
-19. Run [../../../queries/audit/46_discontinued_or_prelaunch_planning_activity_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/46_discontinued_or_prelaunch_planning_activity_review.sql).
+2. Then work through the SQL sequence below.
+
+<QuerySequence items={caseQuerySequences["audit-review-pack-case"]} />
 
 ## Suggested Excel Sequence
 

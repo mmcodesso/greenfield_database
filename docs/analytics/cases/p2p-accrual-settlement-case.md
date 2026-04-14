@@ -4,6 +4,9 @@ description: Guided walkthrough for tracing accruals, invoices, and payment timi
 sidebar_label: P2P Accrual Case
 ---
 
+import { QuerySequence } from "@site/src/components/QueryReference";
+import { caseQuerySequences } from "@site/src/generated/queryDocCollections";
+
 # P2P and Accrued-Expense Settlement Case
 
 
@@ -26,11 +29,7 @@ Greenfield buys inventory and materials through the normal P2P process, but fina
 
 ## Recommended Query Sequence
 
-1. Run [../../../queries/audit/02_p2p_document_chain_completeness.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/02_p2p_document_chain_completeness.sql).
-2. Run [../../../queries/financial/03_ap_aging_open_invoices.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/financial/03_ap_aging_open_invoices.sql).
-3. Run [../../../queries/financial/12_accrued_expense_rollforward.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/financial/12_accrued_expense_rollforward.sql).
-4. Run [../../../queries/financial/13_accrued_vs_invoiced_vs_paid_timing.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/financial/13_accrued_vs_invoiced_vs_paid_timing.sql).
-5. For audit follow-up, run [../../../queries/audit/23_accrued_service_settlement_exception_review.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/audit/23_accrued_service_settlement_exception_review.sql).
+<QuerySequence items={caseQuerySequences["p2p-accrual-settlement-case"]} />
 
 ## Suggested Excel Sequence
 

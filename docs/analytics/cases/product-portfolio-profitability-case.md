@@ -4,6 +4,9 @@ description: Guided walkthrough for collection, style, lifecycle, supply mode, a
 sidebar_label: Portfolio Profitability Case
 ---
 
+import { QuerySequence } from "@site/src/components/QueryReference";
+import { caseQuerySequences } from "@site/src/generated/queryDocCollections";
+
 # Product Portfolio Profitability Case
 
 ## Audience and Purpose
@@ -25,11 +28,7 @@ Greenfield’s management team wants to know which collections and lifecycle gro
 
 ## Recommended Query Sequence
 
-1. Run [../../../queries/managerial/31_product_portfolio_mix_by_collection_style_lifecycle_supply_mode.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/31_product_portfolio_mix_by_collection_style_lifecycle_supply_mode.sql).
-2. Run [../../../queries/financial/21_revenue_and_gross_margin_by_collection_style_lifecycle_supply_mode.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/financial/21_revenue_and_gross_margin_by_collection_style_lifecycle_supply_mode.sql).
-3. Run [../../../queries/managerial/32_contribution_margin_by_collection_material_lifecycle_supply_mode.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/32_contribution_margin_by_collection_material_lifecycle_supply_mode.sql).
-4. Run [../../../queries/managerial/33_customer_service_impact_by_collection_style.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/33_customer_service_impact_by_collection_style.sql).
-5. Run [../../../queries/managerial/35_portfolio_return_refund_impact_by_collection_lifecycle.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/35_portfolio_return_refund_impact_by_collection_lifecycle.sql).
+<QuerySequence items={caseQuerySequences["product-portfolio-profitability-case"]} />
 
 ## Suggested Excel Sequence
 

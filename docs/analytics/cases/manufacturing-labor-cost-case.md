@@ -4,6 +4,9 @@ description: Guided walkthrough for manufacturing labor, cost, and productivity 
 sidebar_label: Manufacturing Labor Case
 ---
 
+import { QuerySequence } from "@site/src/components/QueryReference";
+import { caseQuerySequences } from "@site/src/generated/queryDocCollections";
+
 # Manufacturing and Labor Cost Case
 
 
@@ -29,11 +32,7 @@ Greenfield manufactures a subset of finished goods. A work order is released bec
 
 ## Recommended Query Sequence
 
-1. Run [../../../queries/managerial/07_bom_standard_cost_rollup.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/07_bom_standard_cost_rollup.sql).
-2. Run [../../../queries/managerial/13_unit_cost_bridge_dm_dl_varoh_fixedoh.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/13_unit_cost_bridge_dm_dl_varoh_fixedoh.sql).
-3. Run [../../../queries/managerial/18_work_center_activity_and_operation_hours.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/18_work_center_activity_and_operation_hours.sql).
-4. Run [../../../queries/managerial/28_paid_hours_vs_productive_labor_by_work_center.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/managerial/28_paid_hours_vs_productive_labor_by_work_center.sql).
-5. Run [../../../queries/financial/17_manufacturing_cost_component_bridge.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/financial/17_manufacturing_cost_component_bridge.sql).
+<QuerySequence items={caseQuerySequences["manufacturing-labor-cost-case"]} />
 
 ## Suggested Excel Sequence
 

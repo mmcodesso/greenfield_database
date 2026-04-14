@@ -10,9 +10,9 @@ sidebar_label: SQL Guide
 
 | Folder | Coverage |
 |---|---|
-| [queries/financial](https://github.com/mmcodesso/greenfield_database/tree/main/queries/financial) | revenue, margin, working capital, AR, AP, accrued expenses, payroll liabilities, close-cycle, planning, and price-realization review |
-| [queries/managerial](https://github.com/mmcodesso/greenfield_database/tree/main/queries/managerial) | budget, product portfolio, lifecycle mix, labor, service levels, BOMs, work orders, capacity, forecast, replenishment, pricing governance, and contribution margin |
-| [queries/audit](https://github.com/mmcodesso/greenfield_database/tree/main/queries/audit) | document-chain completeness, approvals, cut-off, payroll and time controls, master-data controls, planning support, pricing governance, and anomaly-oriented review |
+| `queries/financial` | revenue, margin, working capital, AR, AP, accrued expenses, payroll liabilities, close-cycle, planning, and price-realization review |
+| `queries/managerial` | budget, product portfolio, lifecycle mix, labor, service levels, BOMs, work orders, capacity, forecast, replenishment, pricing governance, and contribution margin |
+| `queries/audit` | document-chain completeness, approvals, cut-off, payroll and time controls, master-data controls, planning support, pricing governance, and anomaly-oriented review |
 
 Each file is a single SQLite-friendly `SELECT` statement with short comment headers that explain:
 
@@ -30,7 +30,7 @@ Each file is a single SQLite-friendly `SELECT` statement with short comment head
    - [Financial Analytics](financial.md)
    - [Managerial Analytics](managerial.md)
    - [Audit Analytics](audit.md)
-4. Run the corresponding SQL files.
+4. Expand the SQL blocks on that page, copy a query, and run it in your SQL tool.
 5. Then open the paired case in [Analytics Cases](cases/index.md).
 6. Recreate one result in Excel when you want students to move from SQL to workbook interpretation.
 
