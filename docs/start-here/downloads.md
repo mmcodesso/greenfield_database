@@ -22,5 +22,5 @@ sidebar_label: Downloads
 After downloading the files:
 
 1. Read [Start Here](index.md).
-2. Read [Company Story](company-story.md).
-3. Read [Process Flows](process-flows.md).
+2. Read [Company Story](../learn-the-business/company-story.md).
+3. Read [Process Flows](../learn-the-business/process-flows.md).

@@ -4,14 +4,18 @@ const sidebars = {
     {
       type: "category",
       label: "Start Here",
-      items: ["index", "downloads", "dataset-overview"],
+      items: [
+        "start-here/index",
+        "start-here/downloads",
+        "start-here/dataset-overview",
+      ],
     },
     {
       type: "category",
       label: "Learn the Business",
       items: [
-        "company-story",
-        "process-flows",
+        "learn-the-business/company-story",
+        "learn-the-business/process-flows",
         "processes/o2c",
         "processes/o2c-returns-credits-refunds",
         "processes/p2p",
@@ -59,12 +63,16 @@ const sidebars = {
     {
       type: "category",
       label: "Teach With Greenfield",
-      items: ["instructor-guide"],
+      items: ["teach-with-greenfield/instructor-guide"],
     },
     {
       type: "category",
       label: "Technical",
-      items: ["technical-guide", "teach-with-greenfield/dataset-delivery", "roadmap"],
+      items: [
+        "technical/technical-guide",
+        "technical/dataset-delivery",
+        "technical/roadmap",
+      ],
     },
   ],
 };

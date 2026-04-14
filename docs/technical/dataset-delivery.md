@@ -29,9 +29,9 @@ For most courses, share these files:
 
 Then point students to:
 
-- [Start Here](../index.md)
-- [Downloads](../downloads.md)
-- [Dataset Guide](../dataset-overview.md)
+- [Start Here](../start-here/index.md)
+- [Downloads](../start-here/downloads.md)
+- [Dataset Guide](../start-here/dataset-overview.md)
 - [Analytics Hub](../analytics/index.md)
 
 ## Recommended Build Options
@@ -107,6 +107,6 @@ The main SQLite database and main Excel workbook are the core student-facing dat
 
 ## Where to Go Next
 
-- Read [Instructor Adoption Guide](../instructor-guide.md) for course sequencing.
+- Read [Instructor Adoption Guide](../teach-with-greenfield/instructor-guide.md) for course sequencing.
 - Read [SQL Guide](../analytics/sql-guide.md) if students will work primarily in SQLite.
 - Read [Excel Guide](../analytics/excel-guide.md) if students will work primarily in the workbook.

@@ -1,6 +1,7 @@
 ---
 title: Roadmap
 description: Planned future expansion areas for the Greenfield dataset and documentation.
+slug: /roadmap
 sidebar_label: Roadmap
 ---
 

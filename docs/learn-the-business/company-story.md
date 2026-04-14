@@ -1,6 +1,7 @@
 ---
 title: Company Story
 description: Business context for students before they move into tables, SQL, or analytics.
+slug: /company-story
 sidebar_label: Company Story
 ---
 
@@ -108,6 +109,6 @@ Those topics remain future extensions.
 
 ## Recommended Next Reading
 
-1. Read [Dataset Guide](dataset-overview.md) for scope, glossary, and navigation.
+1. Read [Dataset Guide](../start-here/dataset-overview.md) for scope, glossary, and navigation.
 2. Read [Process Flows](process-flows.md) for the process map.
-3. Read [Analytics Hub](analytics/index.md) when you are ready to start the analysis layer.
+3. Read [Analytics Hub](../analytics/index.md) when you are ready to start the analysis layer.

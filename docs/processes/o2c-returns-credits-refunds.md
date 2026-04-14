@@ -97,5 +97,5 @@ That distinction matters for AR analysis, cash analysis, and audit testing.
 ## Where to Go Next
 
 - Read [O2C](o2c.md) for the main revenue cycle.
-- Read [Dataset Guide](../dataset-overview.md) for the joins that connect shipment, invoice, return, and refund records.
+- Read [Dataset Guide](../start-here/dataset-overview.md) for the joins that connect shipment, invoice, return, and refund records.
 - Read [GLEntry Posting Reference](../reference/posting.md) for the detailed posting reference.

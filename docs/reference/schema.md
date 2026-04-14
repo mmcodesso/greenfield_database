@@ -8,7 +8,7 @@ sidebar_label: Schema Reference
 
 Use this page when you need a lookup tool: which tables belong to each business area, which fields matter most for joins, and which columns are the fastest way back to the source document.
 
-If you need the big-picture map first, start with [Dataset Guide](../dataset-overview.md). The canonical schema lives in `src/greenfield_dataset/schema.py` as `TABLE_COLUMNS`.
+If you need the big-picture map first, start with [Dataset Guide](../start-here/dataset-overview.md). The canonical schema lives in `src/greenfield_dataset/schema.py` as `TABLE_COLUMNS`.
 
 ## How to Use This Page
 
@@ -219,6 +219,6 @@ If you need the big-picture map first, start with [Dataset Guide](../dataset-ove
 
 ## Where to Go Next
 
-- Read [Dataset Guide](../dataset-overview.md) when you need the mental model, main paths, and posting overview.
-- Read [Process Flows](../process-flows.md) when you want the business-cycle story behind the tables.
+- Read [Dataset Guide](../start-here/dataset-overview.md) when you need the mental model, main paths, and posting overview.
+- Read [Process Flows](../learn-the-business/process-flows.md) when you want the business-cycle story behind the tables.
 - Read [GLEntry Posting Reference](posting.md) when you want the exact event-to-ledger rules.

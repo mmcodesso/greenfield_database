@@ -9,7 +9,7 @@ sidebar_label: Dataset Guide
 
 Use this page when you need the mental model for the dataset: what is in it, how the table families fit together, which paths matter most, and how operational activity reaches `GLEntry`.
 
-If you need field-level lookup, use [Schema Reference](reference/schema.md). If you need business narrative, use [Company Story](company-story.md) and [Process Flows](process-flows.md).
+If you need field-level lookup, use [Schema Reference](../reference/schema.md). If you need business narrative, use [Company Story](../learn-the-business/company-story.md) and [Process Flows](../learn-the-business/process-flows.md).
 
 ## What the Dataset Is
 
@@ -99,7 +99,7 @@ You do not need every key on day one. Start with the keys that anchor document c
 | `AccountID` | `GLEntry` and `Budget` to the chart of accounts |
 | `CostCenterID` | Operating activity, labor, budgets, and reporting by organization unit |
 
-For exact field-level lookup, go to [Schema Reference](reference/schema.md).
+For exact field-level lookup, go to [Schema Reference](../reference/schema.md).
 
 ## Core Navigation Paths
 
@@ -181,7 +181,7 @@ The most important mental rule is simple: planning and setup tables usually do *
 | Settlements and clearances | Yes | `CashReceipt`, `CashReceiptApplication`, `DisbursementPayment`, `PayrollPayment`, `PayrollLiabilityRemittance`, `CustomerRefund` |
 | Finance-controlled entries | Yes | `JournalEntry`, `WorkOrderClose`, accruals, reclasses, year-end close |
 
-When you want the exact posting rules behind one event, use [GLEntry Posting Reference](reference/posting.md).
+When you want the exact posting rules behind one event, use [GLEntry Posting Reference](../reference/posting.md).
 
 ## How to Start Navigating by Topic
 
@@ -227,7 +227,7 @@ Start with:
 - payroll and time chain tables
 - GLEntry
 - the companion support workbook
-- the transaction chains in [Process Flows](process-flows.md)
+- the transaction chains in [Process Flows](../learn-the-business/process-flows.md)
 
 ## Practical Starting Tips
 
@@ -254,7 +254,7 @@ Start with:
 
 ## Where to Go Next
 
-- Read [Schema Reference](reference/schema.md) for table-level lookup and high-value fields.
-- Read [Process Flows](process-flows.md) for the business-cycle reading path.
-- Read [GLEntry Posting Reference](reference/posting.md) when you need event-to-ledger rules.
-- Read [Analytics Hub](analytics/index.md) when you are ready to move into the analysis layer.
+- Read [Schema Reference](../reference/schema.md) for table-level lookup and high-value fields.
+- Read [Process Flows](../learn-the-business/process-flows.md) for the business-cycle reading path.
+- Read [GLEntry Posting Reference](../reference/posting.md) when you need event-to-ledger rules.
+- Read [Analytics Hub](../analytics/index.md) when you are ready to move into the analysis layer.

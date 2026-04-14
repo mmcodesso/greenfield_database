@@ -259,4 +259,4 @@ Best paired cases:
 
 - Read [SQL Guide](sql-guide.md) for the matching query workflow.
 - Read [Analytics Cases](cases/index.md) for guided walkthroughs.
-- Read [Instructor Adoption Guide](../instructor-guide.md) for classroom sequencing.
+- Read [Instructor Adoption Guide](../teach-with-greenfield/instructor-guide.md) for classroom sequencing.

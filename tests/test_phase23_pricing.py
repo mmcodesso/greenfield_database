@@ -261,11 +261,11 @@ def test_phase23_docs_and_sidebar_entries_exist() -> None:
     managerial_guide = Path("docs/analytics/managerial.md").read_text(encoding="utf-8")
     audit_guide = Path("docs/analytics/audit.md").read_text(encoding="utf-8")
     sql_guide = Path("docs/analytics/sql-guide.md").read_text(encoding="utf-8")
-    instructor_guide = Path("docs/instructor-guide.md").read_text(encoding="utf-8")
+    instructor_guide = Path("docs/teach-with-greenfield/instructor-guide.md").read_text(encoding="utf-8")
     o2c_guide = Path("docs/processes/o2c.md").read_text(encoding="utf-8")
     returns_guide = Path("docs/processes/o2c-returns-credits-refunds.md").read_text(encoding="utf-8")
     schema_guide = Path("docs/reference/schema.md").read_text(encoding="utf-8")
-    dataset_guide = Path("docs/dataset-overview.md").read_text(encoding="utf-8")
+    dataset_guide = Path("docs/start-here/dataset-overview.md").read_text(encoding="utf-8")
 
     assert "25_price_realization_vs_list_by_segment_customer_region_collection_style.sql" in financial_guide
     assert "26_gross_margin_impact_of_promotions_vs_nonpromotion_sales.sql" in financial_guide

@@ -179,7 +179,7 @@ def test_phase22_docs_and_sidebar_entries_exist() -> None:
     audit_guide = Path("docs/analytics/audit.md").read_text(encoding="utf-8")
     managerial_guide = Path("docs/analytics/managerial.md").read_text(encoding="utf-8")
     sql_guide = Path("docs/analytics/sql-guide.md").read_text(encoding="utf-8")
-    instructor_guide = Path("docs/instructor-guide.md").read_text(encoding="utf-8")
+    instructor_guide = Path("docs/teach-with-greenfield/instructor-guide.md").read_text(encoding="utf-8")
 
     assert "42_forecast_approval_and_override_review.sql" in audit_guide
     assert "43_inactive_or_stale_inventory_policy_review.sql" in audit_guide

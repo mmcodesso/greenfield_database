@@ -100,7 +100,7 @@ def test_phase20_docs_reference_new_audit_queries() -> None:
     audit_guide = Path("docs/analytics/audit.md").read_text(encoding="utf-8")
     audit_case = Path("docs/analytics/cases/audit-review-pack-case.md").read_text(encoding="utf-8")
     workforce_case = Path("docs/analytics/cases/master-data-and-workforce-audit-case.md").read_text(encoding="utf-8")
-    instructor_guide = Path("docs/instructor-guide.md").read_text(encoding="utf-8")
+    instructor_guide = Path("docs/teach-with-greenfield/instructor-guide.md").read_text(encoding="utf-8")
 
     assert "34_current_state_employee_assignment_review.sql" in audit_guide
     assert "35_approval_authority_limit_review.sql" in audit_guide

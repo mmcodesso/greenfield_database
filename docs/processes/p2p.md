@@ -109,5 +109,5 @@ Students should treat both as valid AP behavior, but not as the same control pat
 ## Where to Go Next
 
 - Read [Manufacturing](manufacturing.md) to see how purchasing supports work orders and material availability.
-- Read [Dataset Guide](../dataset-overview.md) for navigation patterns.
+- Read [Dataset Guide](../start-here/dataset-overview.md) for navigation patterns.
 - Read [GLEntry Posting Reference](../reference/posting.md) for the technical posting rules.

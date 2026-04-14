@@ -1,6 +1,7 @@
 ---
 title: Technical Guide
 description: System-level guide to how the Greenfield generator builds, posts, validates, and exports the dataset.
+slug: /technical-guide
 sidebar_label: Technical Guide
 ---
 
@@ -8,7 +9,7 @@ sidebar_label: Technical Guide
 
 Use this page when you need the codebase-level view of how Greenfield is generated.
 
-For table structure and join fields, use [Schema Reference](reference/schema.md). For event-to-ledger behavior, use [GLEntry Posting Reference](reference/posting.md). For planned future changes, use [Roadmap](roadmap.md).
+For table structure and join fields, use [Schema Reference](../reference/schema.md). For event-to-ledger behavior, use [GLEntry Posting Reference](../reference/posting.md). For planned future changes, use [Roadmap](roadmap.md).
 
 Phase 23 adds a commercial-pricing layer on top of the current Phase 22 planning baseline. The current system now includes demand forecasts, inventory policies, supply recommendations, component-demand planning, rough-cut capacity tieout, and explicit O2C pricing lineage through price lists, promotions, and override approvals while still keeping the Phase 21 workforce-planning layer beneath the approved daily time-clock model.
 
@@ -103,7 +104,7 @@ Phase 22 extends the generator itself through planning outputs that support norm
 
 ## Posting, Validation, and Outputs
 
-The posting model is event-based. Operational and payroll events are generated first, then converted into balanced `GLEntry` rows through `posting_engine.py`. Use [GLEntry Posting Reference](reference/posting.md) when you need the detailed event-to-account mapping.
+The posting model is event-based. Operational and payroll events are generated first, then converted into balanced `GLEntry` rows through `posting_engine.py`. Use [GLEntry Posting Reference](../reference/posting.md) when you need the detailed event-to-account mapping.
 
 The validation layer checks:
 

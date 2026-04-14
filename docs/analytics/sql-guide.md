@@ -25,7 +25,7 @@ Each file is a single SQLite-friendly `SELECT` statement with short comment head
 ## Recommended Workflow
 
 1. Open the SQLite file shared for your course or section.
-2. If you are preparing the dataset yourself, use [Dataset Delivery and Build Setup](../teach-with-greenfield/dataset-delivery.md).
+2. If you are preparing the dataset yourself, use [Dataset Delivery and Build Setup](../technical/dataset-delivery.md).
 3. Start with one topic page:
    - [Financial Analytics](financial.md)
    - [Managerial Analytics](managerial.md)
@@ -164,4 +164,4 @@ sqlite3 greenfield.sqlite < queries/financial/19_working_capital_bridge_by_month
 ## Where to Go Next
 
 - Read [Excel Guide](excel-guide.md) to recreate similar analyses in the workbook.
-- Read [Instructor Adoption Guide](../instructor-guide.md) for topic sequencing in class.
+- Read [Instructor Adoption Guide](../teach-with-greenfield/instructor-guide.md) for topic sequencing in class.
