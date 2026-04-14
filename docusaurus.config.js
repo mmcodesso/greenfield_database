@@ -125,11 +125,11 @@ const config = {
             },
             {
               label: "Contributing",
-              href: "https://github.com/mmcodesso/greenfield_database/blob/main/CONTRIBUTING.md",
+              to: "/docs/technical/contributing",
             },
             {
               label: "License",
-              href: "https://github.com/mmcodesso/greenfield_database/blob/main/LICENSE",
+              to: "/docs/technical/license",
             },
           ],
         },

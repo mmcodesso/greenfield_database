@@ -73,6 +73,8 @@ const sidebars = {
         "technical/technical-guide",
         "technical/dataset-delivery",
         "technical/roadmap",
+        "technical/contributing",
+        "technical/license",
       ],
     },
   ],
