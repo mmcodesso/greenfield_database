@@ -112,7 +112,12 @@
 
 .codePanel :global(pre) {
   max-width: 100%;
-  overflow-x: auto;
+  overflow-x: hidden;
+}
+
+.codePanel :global(pre code) {
+  white-space: pre-wrap !important;
+  overflow-wrap: anywhere;
 }
 
 .tableWrapper {

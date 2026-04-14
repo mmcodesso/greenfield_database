@@ -4,9 +4,9 @@ description: Starter auditing and controls analytics paths using the Greenfield 
 sidebar_label: Audit Analytics
 ---
 
-import { QueryCatalog, QueryMatrix } from "@site/src/components/QueryReference";
+import { QueryCatalog } from "@site/src/components/QueryReference";
 import {
-  auditAnomalyCoverage,
+  auditAnomalyQueryCards,
   starterQueryMaps,
 } from "@site/src/generated/queryDocCollections";
 
@@ -82,6 +82,6 @@ Pair those sheets with [Audit Review Pack Case](cases/audit-review-pack-case.md)
 - Pricing-control review should distinguish price-list master-data failures from transaction-level override and promotion-use failures.
 - Support-workbook review should accelerate tracing, not replace source-document review.
 
-## Anomaly Coverage Matrix
+## Anomaly Coverage Queries
 
-<QueryMatrix items={auditAnomalyCoverage} />
+<QueryCatalog items={auditAnomalyQueryCards} />

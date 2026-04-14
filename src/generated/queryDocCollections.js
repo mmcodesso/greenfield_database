@@ -1090,3 +1090,8 @@ export const auditAnomalyCoverage = [
     "mainTables": "`PriceOverrideApproval`, `SalesOrderLine`, `PriceListLine`, `Customer`, `Employee`"
   }
 ];
+
+export const auditAnomalyQueryCards = auditAnomalyCoverage.map((item) => ({
+  label: item.recommendedUse,
+  queryKey: item.queryKey,
+}));
