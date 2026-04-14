@@ -6,6 +6,7 @@ const sidebars = {
       label: "Start Here",
       items: [
         "start-here/index",
+        "start-here/why-greenfield",
         "start-here/downloads",
         "start-here/dataset-overview",
       ],
