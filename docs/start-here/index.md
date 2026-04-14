@@ -31,7 +31,7 @@ That sequence gives you the operating story before you start writing joins, trac
 
 ## 3. Know What the Dataset Covers
 
-The current dataset includes **55 tables** across:
+The current dataset includes tables across:
 
 - accounting core
 - order-to-cash
