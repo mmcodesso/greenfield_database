@@ -1,152 +1,199 @@
-import clsx from "clsx";
 import Link from "@docusaurus/Link";
 import Layout from "@theme/Layout";
 
 import styles from "./index.module.css";
 
-const startCards = [
+const proofPoints = [
   {
-    title: "Start here",
-    text: "Begin with the main docs page for downloads, business context, references, and the recommended reading order.",
+    title: "Process-to-ledger traceability",
+    text: "Follow business events from source documents through process flow and into GLEntry instead of teaching from disconnected tables.",
+  },
+  {
+    title: "SQL and Excel ready",
+    text: "Use one integrated environment for query work, workbook analysis, and guided interpretation without rebuilding the dataset first.",
+  },
+  {
+    title: "Teaching materials included",
+    text: "Pair process guides, schema and posting references, analytics pages, and cases so students learn the business before the joins.",
+  },
+];
+
+const classroomUses = [
+  {
+    title: "AIS and business process courses",
+    text: "Teach why each document exists, how process cycles connect, and which events actually reach the ledger.",
+  },
+  {
+    title: "SQL and accounting analytics",
+    text: "Support structured query work with one company model that already connects process logic, documents, and accounting outcomes.",
+  },
+  {
+    title: "Excel analytics and interpretation",
+    text: "Use the same environment for pivots, workbook-based analysis, and classroom discussion without losing business context.",
+  },
+  {
+    title: "Auditing, controls, and managerial analysis",
+    text: "Trace approvals, exceptions, labor, variance, portfolio behavior, and control logic inside one integrated teaching dataset.",
+  },
+];
+
+const adoptionPoints = [
+  "One company and one dataset can support multiple accounting courses.",
+  "The same environment works for demos, guided labs, process tracing, SQL, Excel, and open-ended assignments.",
+  "Students can start with business context and then move into analysis without switching models or file structures.",
+];
+
+const nextSteps = [
+  {
+    title: "Start Here",
+    text: "Open the main student entry page for the recommended reading order, downloads, and core references.",
     href: "/docs/",
-    cta: "Open Start Here",
   },
   {
-    title: "Analyze the data",
-    text: "Move into SQL, Excel, financial, managerial, and audit analytics once you know the business flow.",
-    href: "/docs/analytics",
-    cta: "Open analytics",
+    title: "See Process Flows",
+    text: "Go straight to the business cycles if you want to understand documents, process logic, and ledger touchpoints.",
+    href: "/docs/process-flows",
   },
   {
-    title: "Adopt in a course",
-    text: "Use the instructor adoption guide when you need teaching sequence, setup notes, and assignment planning.",
+    title: "Adopt in a Course",
+    text: "Use the instructor guide when you want teaching sequence, setup notes, and course-ready adoption support.",
     href: "/docs/teach-with-greenfield/instructor-adoption",
-    cta: "Read the adoption guide",
   },
-];
-
-const highlights = [
-  "55 linked tables across accounting, O2C, P2P, manufacturing, payroll, time, and planning.",
-  "Ready for SQL labs, Excel analysis, auditing analytics, and process-to-ledger tracing.",
-  "Built around a fictional hybrid manufacturer-distributor with five fiscal years of activity.",
-];
-
-const deliverables = [
-  "SQLite database for query work",
-  "Excel workbook for pivots and classroom exercises",
-  "Ready-to-use files published through GitHub Releases",
 ];
 
 export default function Home() {
   return (
     <Layout
-      title="Student-first accounting analytics documentation"
-      description="Greenfield Accounting Dataset provides student-first documentation and teaching materials for accounting analytics courses."
+      title="Why Greenfield"
+      description="Greenfield is a synthetic ERP-style accounting analytics environment for teaching business process, source documents, and ledger traceability with SQL, Excel, and guided classroom materials."
     >
       <main className={styles.page}>
         <section className={styles.hero}>
           <div className={styles.heroBackdrop} />
           <div className={styles.heroContent}>
-            <p className={styles.kicker}>Accounting analytics database</p>
+            <p className={styles.kicker}>Accounting analytics environment</p>
             <h1 className={styles.title}>Teach the business before the joins.</h1>
             <p className={styles.lede}>
-              Greenfield Accounting Dataset is a synthetic business database for
-              accounting students who need business context, process logic, SQL,
-              Excel, and audit-style analysis in one place.
+              Greenfield is a synthetic ERP-style accounting analytics
+              environment that helps students trace business activity from
+              source documents to GLEntry using SQL, Excel, and guided teaching
+              materials.
             </p>
             <div className={styles.actions}>
               <Link className="button button--primary button--lg" to="/docs/">
-                Open Start Here
+                Start Here
               </Link>
-              <Link className="button button--secondary button--lg" to="/docs/downloads">
-                Download the data
+              <Link className="button button--secondary button--lg" to="/docs/process-flows">
+                See Process Flows
               </Link>
               <Link className="button button--secondary button--lg" to="/docs/teach-with-greenfield/instructor-adoption">
-                Adopt it in a course
+                Adopt in a Course
               </Link>
             </div>
             <div className={styles.ribbon}>
-              <span>Hybrid manufacturer-distributor</span>
-              <span>Five fiscal years</span>
-              <span>Student-first docs</span>
+              <span>Source documents to GLEntry</span>
+              <span>SQL and Excel ready</span>
+              <span>Classroom-ready teaching materials</span>
             </div>
           </div>
         </section>
 
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
-            <p className={styles.sectionLabel}>How to use the site</p>
-            <h2>Start with the docs, then move into analysis or teaching setup.</h2>
+            <p className={styles.sectionLabel}>Why Greenfield</p>
+            <h2>The point is not more tables. The point is more understanding.</h2>
+          </div>
+          <p className={styles.whyText}>
+            Students often see tables before they understand the business
+            process and accounting logic behind them. Greenfield exists to solve
+            that teaching problem by connecting business events, source
+            documents, process flows, and posted ledger activity in one
+            integrated model.
+          </p>
+        </section>
+
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <p className={styles.sectionLabel}>What Makes It Different</p>
+            <h2>One teaching model, three proof points.</h2>
           </div>
           <div className={styles.cardGrid}>
-            {startCards.map((card) => (
-              <article key={card.title} className={styles.card}>
-                <h3>{card.title}</h3>
-                <p>{card.text}</p>
-                <Link className={styles.cardLink} to={card.href}>
-                  {card.cta}
-                </Link>
+            {proofPoints.map((point) => (
+              <article key={point.title} className={styles.card}>
+                <h3>{point.title}</h3>
+                <p>{point.text}</p>
               </article>
             ))}
           </div>
         </section>
 
-        <section className={clsx(styles.section, styles.splitSection)}>
-          <div className={styles.panel}>
-            <p className={styles.sectionLabel}>What the database includes</p>
-            <ul className={styles.list}>
-              {highlights.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <p className={styles.sectionLabel}>What You Can Do With It</p>
+            <h2>Use one environment across multiple accounting teaching paths.</h2>
           </div>
-          <div className={styles.panel}>
-            <p className={styles.sectionLabel}>Typical teaching package</p>
-            <ul className={styles.list}>
-              {deliverables.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-            <p className={styles.panelNote}>
-              Most students should download the SQLite database and Excel workbook
-              from the latest release, then start with the docs.
-            </p>
+          <div className={styles.cardGrid}>
+            {classroomUses.map((item) => (
+              <article key={item.title} className={styles.card}>
+                <h3>{item.title}</h3>
+                <p>{item.text}</p>
+              </article>
+            ))}
           </div>
         </section>
 
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
-            <p className={styles.sectionLabel}>Choose a path</p>
-            <h2>Move from orientation to analysis without getting lost in the repo.</h2>
+            <p className={styles.sectionLabel}>Why Instructors Adopt It</p>
+            <h2>One company, one dataset, multiple course and assignment styles.</h2>
           </div>
-          <div className={styles.pathGrid}>
-            <Link className={styles.pathCard} to="/docs/company-story">
-              <strong>Learn the business</strong>
-              <span>Company context, process flows, and why each document exists.</span>
-            </Link>
-            <Link className={styles.pathCard} to="/docs/analytics">
-              <strong>Analyze the data</strong>
-              <span>Starter SQL, Excel workflows, and guided accounting analytics cases.</span>
-            </Link>
-            <Link className={styles.pathCard} to="/docs/reference/schema">
-              <strong>Reference the model</strong>
-              <span>Schema groups, join paths, and posting behavior for analysis and coursework.</span>
-            </Link>
+          <div className={styles.adoptionBlock}>
+            <p className={styles.adoptionText}>
+              Greenfield is designed for reuse across AIS, business process,
+              SQL, Excel, audit, and managerial accounting work. Instead of
+              switching between disconnected examples, instructors can keep one
+              integrated environment and vary the emphasis by course, module,
+              or assignment type.
+            </p>
+            <ul className={styles.list}>
+              {adoptionPoints.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
           </div>
         </section>
 
         <section className={styles.section}>
-          <div className={styles.repoBanner}>
-            <div>
-              <p className={styles.sectionLabel}>Repository</p>
-              <h2>Need teaching setup notes, source files, or contribution guidance?</h2>
-            </div>
-            <div className={styles.repoActions}>
-              <Link className="button button--primary" href="https://github.com/mmcodesso/greenfield_database">
-                Open GitHub
+          <div className={styles.sectionHeader}>
+            <p className={styles.sectionLabel}>Choose Your Next Step</p>
+            <h2>Start with the route that matches what you need next.</h2>
+          </div>
+          <div className={styles.pathGrid}>
+            {nextSteps.map((step) => (
+              <Link key={step.title} className={styles.pathCard} to={step.href}>
+                <strong>{step.title}</strong>
+                <span>{step.text}</span>
               </Link>
-              <Link className="button button--secondary" to="/docs/technical/dataset-delivery">
-                Build and delivery guide
+            ))}
+          </div>
+        </section>
+
+        <section className={styles.section}>
+          <div className={styles.oerBlock}>
+            <p className={styles.sectionLabel}>Open Educational Resource</p>
+            <p className={styles.oerText}>
+              Greenfield is an openly licensed open educational resource
+              designed for reuse, adaptation, and course adoption.
+            </p>
+            <div className={styles.oerActions}>
+              <Link className="button button--primary" to="/docs/">
+                Start Here
+              </Link>
+              <Link className="button button--secondary" to="/docs/process-flows">
+                See Process Flows
+              </Link>
+              <Link className="button button--secondary" to="/docs/teach-with-greenfield/instructor-adoption">
+                Adopt in a Course
               </Link>
             </div>
           </div>

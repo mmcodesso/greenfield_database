@@ -118,6 +118,22 @@ html[data-theme="dark"] .ribbon span {
   line-height: 1.05;
 }
 
+.whyText,
+.adoptionText,
+.oerText {
+  max-width: 48rem;
+  margin: 0;
+  font-size: 1.08rem;
+  line-height: 1.8;
+  color: #355244;
+}
+
+html[data-theme="dark"] .whyText,
+html[data-theme="dark"] .adoptionText,
+html[data-theme="dark"] .oerText {
+  color: #d7e8de;
+}
+
 .cardGrid,
 .pathGrid {
   display: grid;
@@ -129,9 +145,7 @@ html[data-theme="dark"] .ribbon span {
 }
 
 .card,
-.panel,
-.pathCard,
-.repoBanner {
+.pathCard {
   border: 1px solid rgba(31, 107, 82, 0.12);
   border-radius: 1.5rem;
   background: rgba(255, 253, 248, 0.78);
@@ -139,9 +153,7 @@ html[data-theme="dark"] .ribbon span {
 }
 
 html[data-theme="dark"] .card,
-html[data-theme="dark"] .panel,
-html[data-theme="dark"] .pathCard,
-html[data-theme="dark"] .repoBanner {
+html[data-theme="dark"] .pathCard {
   border-color: rgba(132, 201, 168, 0.18);
   background: rgba(28, 48, 40, 0.84);
   box-shadow: none;
@@ -152,29 +164,13 @@ html[data-theme="dark"] .repoBanner {
 }
 
 .card h3,
-.panel h2,
-.pathCard strong,
-.repoBanner h2 {
+.pathCard strong {
   margin: 0 0 0.9rem;
 }
 
 .card p {
-  margin: 0 0 1rem;
+  margin: 0;
   line-height: 1.65;
-}
-
-.cardLink {
-  font-weight: 700;
-}
-
-.splitSection {
-  display: grid;
-  gap: 1.25rem;
-  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
-}
-
-.panel {
-  padding: 1.5rem;
 }
 
 .list {
@@ -184,11 +180,6 @@ html[data-theme="dark"] .repoBanner {
 
 .list li + li {
   margin-top: 0.75rem;
-}
-
-.panelNote {
-  margin: 1rem 0 0;
-  color: var(--ifm-color-emphasis-700);
 }
 
 .pathGrid {
@@ -219,19 +210,46 @@ html[data-theme="dark"] .repoBanner {
   line-height: 1.6;
 }
 
-.repoBanner {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+.adoptionBlock,
+.oerBlock {
+  border: 1px solid rgba(31, 107, 82, 0.12);
+  border-radius: 1.5rem;
+  background: rgba(255, 253, 248, 0.78);
+  box-shadow: 0 1.25rem 3rem rgba(23, 58, 47, 0.08);
   padding: 1.6rem;
 }
 
-.repoActions {
+html[data-theme="dark"] .adoptionBlock,
+html[data-theme="dark"] .oerBlock {
+  border-color: rgba(132, 201, 168, 0.18);
+  background: rgba(28, 48, 40, 0.84);
+  box-shadow: none;
+}
+
+.adoptionBlock {
+  display: grid;
+  gap: 1rem;
+}
+
+.oerBlock {
+  text-align: center;
+}
+
+.oerBlock .sectionLabel {
+  justify-self: center;
+}
+
+.oerText {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.oerActions {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 0.75rem;
+  margin-top: 1.5rem;
 }
 
 @media (max-width: 996px) {
@@ -241,9 +259,5 @@ html[data-theme="dark"] .repoBanner {
 
   .title {
     max-width: 32rem;
-  }
-
-  .repoBanner {
-    align-items: flex-start;
   }
 }
