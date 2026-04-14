@@ -7,6 +7,8 @@ sidebar_label: Analytics Hub
 
 # Analytics Starter Layer
 
+Use this page as the main entry point for the analytics section. The sidebar groups the three topic guides under `Analytics Hub`, then keeps the SQL, Excel, and case paths directly accessible below.
+
 ## What This Starter Layer Includes
 
 - topic guides for financial, managerial, and audit analytics

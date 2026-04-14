@@ -30,10 +30,17 @@ const sidebars = {
       type: "category",
       label: "Analyze the Data",
       items: [
-        "analytics/index",
-        "analytics/financial",
-        "analytics/managerial",
-        "analytics/audit",
+        {
+          type: "category",
+          label: "Analytics Hub",
+          link: { type: "doc", id: "analytics/index" },
+          collapsed: true,
+          items: [
+            "analytics/financial",
+            "analytics/managerial",
+            "analytics/audit",
+          ],
+        },
         "analytics/sql-guide",
         "analytics/excel-guide",
         {
