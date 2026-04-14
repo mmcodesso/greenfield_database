@@ -226,6 +226,15 @@ REPEATABLE_ROLE_SEQUENCE = [
     ("Research and Development", "Design Coordinator"),
     ("Marketing", "Marketing Specialist"),
 ]
+CAPACITY_ALIGNMENT_ACTIVE_ROLE_SPECS = [
+    ("Manufacturing", "Assembler"),
+    ("Manufacturing", "Assembler"),
+    ("Manufacturing", "Assembler"),
+    ("Manufacturing", "Machine Operator"),
+    ("Manufacturing", "Machine Operator"),
+    ("Manufacturing", "Quality Technician"),
+]
+MIN_NON_CAPACITY_ACTIVE_ROLE_COUNT = 1
 
 ROLE_METADATA = {
     "Chief Executive Officer": {
@@ -1034,10 +1043,15 @@ def build_employee_role_specs(context: GenerationContext) -> list[dict[str, obje
         {"CostCenterName": cost_center_name, "JobTitle": job_title, "Protected": True}
         for cost_center_name, job_title in (UNIQUE_ACTIVE_ROLE_SPECS + CORE_ACTIVE_ROLE_SPECS)
     ]
+    desired_capacity_alignment_count = min(
+        len(CAPACITY_ALIGNMENT_ACTIVE_ROLE_SPECS),
+        max(employee_count - len(base_specs) - MIN_NON_CAPACITY_ACTIVE_ROLE_COUNT, 0),
+    )
     terminated_target = workforce_target_terminated_count(employee_count)
-    max_pair_count = max((employee_count - len(base_specs)) // 2, 0)
+    max_pair_count = max((employee_count - len(base_specs) - desired_capacity_alignment_count) // 2, 0)
     terminated_target = min(terminated_target, max_pair_count)
     extra_active_count = max(employee_count - len(base_specs) - (2 * terminated_target), 0)
+    capacity_alignment_count = min(extra_active_count, len(CAPACITY_ALIGNMENT_ACTIVE_ROLE_SPECS))
 
     specs = list(base_specs)
     for index in range(terminated_target):
@@ -1057,7 +1071,17 @@ def build_employee_role_specs(context: GenerationContext) -> list[dict[str, obje
             "IsReplacement": True,
         })
 
-    for index in range(extra_active_count):
+    fiscal_start, _ = fiscal_start_end(context)
+    for index in range(capacity_alignment_count):
+        cost_center_name, job_title = CAPACITY_ALIGNMENT_ACTIVE_ROLE_SPECS[index]
+        specs.append({
+            "CostCenterName": cost_center_name,
+            "JobTitle": job_title,
+            "Protected": True,
+            "FixedHireDate": fiscal_start.strftime("%Y-%m-%d"),
+        })
+
+    for index in range(max(extra_active_count - capacity_alignment_count, 0)):
         cost_center_name, job_title = REPEATABLE_ROLE_SEQUENCE[(terminated_target + index) % len(REPEATABLE_ROLE_SEQUENCE)]
         specs.append({
             "CostCenterName": cost_center_name,
@@ -1133,6 +1157,8 @@ def generate_employees(context: GenerationContext) -> None:
             is_active = 0
         elif "ReplacementPair" in spec and bool(spec.get("IsReplacement")):
             hire_date_value = pd.Timestamp(pair_dates[int(spec["ReplacementPair"])]["replacement_hire_date"])
+        elif spec.get("FixedHireDate") is not None:
+            hire_date_value = pd.Timestamp(spec["FixedHireDate"])
         else:
             hire_date_value = active_hire_date(context, rng, allow_recent=not bool(spec.get("Protected", False)))
 

@@ -31,6 +31,7 @@ from greenfield_dataset.manufacturing import (
     generate_work_center_calendars,
     generate_work_centers_and_routings,
     manufacturing_capacity_state,
+    manufacturing_work_center_utilization_by_code,
     manufacturing_open_state,
 )
 from greenfield_dataset.master_data import (
@@ -887,6 +888,7 @@ def build_full_dataset(
             revenue_state = o2c_open_state(context)
             manufacturing_state = manufacturing_open_state(context)
             capacity_state = manufacturing_capacity_state(context, year, month)
+            bottleneck_state = manufacturing_work_center_utilization_by_code(context, year, month)
             new_cash_receipts = context.tables["CashReceipt"][
                 pd.to_datetime(context.tables["CashReceipt"]["ReceiptDate"]).dt.year.eq(year)
                 & pd.to_datetime(context.tables["CashReceipt"]["ReceiptDate"]).dt.month.eq(month)
@@ -950,19 +952,22 @@ def build_full_dataset(
                 manufacturing_state["manufacturing_variance_posted"],
             )
             LOGGER.info(
-                "CAPACITY CHECKPOINT | %s-%02d | available_hours=%s | scheduled_hours=%s | utilization_pct=%s | fully_booked_days=%s | late_operations=%s | late_work_orders=%s | open_backlog_hours=%s",
+                "CAPACITY CHECKPOINT | %s-%02d | available_hours=%s | scheduled_hours=%s | utilization_pct=%s | assembly_utilization=%s | cut_utilization=%s | finish_utilization=%s | fully_booked_days=%s | late_operations=%s | late_work_orders=%s | open_backlog_hours=%s",
                 year,
                 month,
                 capacity_state["available_work_center_hours"],
                 capacity_state["scheduled_work_center_hours"],
                 capacity_state["utilization_pct"],
+                bottleneck_state["ASSEMBLY"],
+                bottleneck_state["CUT"],
+                bottleneck_state["FINISH"],
                 int(capacity_state["fully_booked_days"]),
                 int(capacity_state["late_operations"]),
                 int(capacity_state["late_work_orders"]),
                 capacity_state["open_backlog_hours"],
             )
             LOGGER.info(
-                "PAYROLL CHECKPOINT | %s-%02d | periods_processed=%s | shift_rosters_created=%s | absences_created=%s | overtime_approvals_created=%s | time_clock_entries_created=%s | punch_rows_created=%s | labor_entries_created=%s | payroll_registers_created=%s | payroll_payments_created=%s | liability_remittances_created=%s | direct_labor_reclass_amount=%s | manufacturing_overhead_reclass_amount=%s",
+                "PAYROLL CHECKPOINT | %s-%02d | periods_processed=%s | shift_rosters_created=%s | absences_created=%s | overtime_approvals_created=%s | time_clock_entries_created=%s | punch_rows_created=%s | labor_entries_created=%s | payroll_registers_created=%s | payroll_payments_created=%s | liability_remittances_created=%s | fallback_direct_allocations=%s | direct_labor_reclass_amount=%s | manufacturing_overhead_reclass_amount=%s",
                 year,
                 month,
                 int(payroll_state["periods_processed"]),
@@ -975,6 +980,7 @@ def build_full_dataset(
                 len(context.tables["PayrollRegister"]) - payroll_register_count_before,
                 len(context.tables["PayrollPayment"]) - payroll_payment_count_before,
                 len(context.tables["PayrollLiabilityRemittance"]) - payroll_remittance_count_before,
+                int(payroll_state["fallback_direct_allocations"]),
                 payroll_state["direct_labor_reclass_amount"],
                 payroll_state["manufacturing_overhead_reclass_amount"],
             )

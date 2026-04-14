@@ -20,6 +20,7 @@ from greenfield_dataset.manufacturing import (
     work_order_actual_conversion_cost_map,
     work_order_completed_quantity_map,
     work_order_material_issue_cost_map,
+    work_order_schedule_bounds,
     work_order_standard_direct_labor_cost_map,
     work_order_standard_overhead_cost_map,
     work_order_standard_conversion_cost_map,
@@ -1520,6 +1521,19 @@ def validate_manufacturing_controls(context: GenerationContext) -> dict[str, Any
                 "type": "released_work_order_without_schedule",
                 "message": f"Released work order {int(row.WorkOrderID)} has no operation schedule rows.",
             })
+
+        schedule_bounds = work_order_schedule_bounds(context)
+        for row in work_orders.itertuples(index=False):
+            bounds = schedule_bounds.get(int(row.WorkOrderID))
+            if bounds is None or pd.isna(row.DueDate):
+                continue
+            if pd.Timestamp(bounds[1]) > pd.Timestamp(row.DueDate):
+                exceptions.append({
+                    "type": "work_order_scheduled_after_due_date",
+                    "message": f"Work order {int(row.WorkOrderID)} schedules beyond its due date.",
+                })
+                if len(exceptions) >= 250:
+                    break
 
     if not work_order_operations.empty:
         scheduled_operation_ids = (

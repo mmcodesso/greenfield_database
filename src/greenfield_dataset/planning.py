@@ -55,6 +55,10 @@ LEAD_TIME_DEFAULTS = {
     "Packaging": 7,
     "Raw Materials": 9,
 }
+MANUFACTURED_TARGET_UTILIZATION = 0.85
+MANUFACTURED_POLICY_BUFFER_DAYS = 7
+MANUFACTURED_POLICY_MIN_LEAD_DAYS = 56
+WORKING_DAY_TO_CALENDAR_DAY_FACTOR = 7.0 / 5.0
 DEMAND_FORECAST_PROGRESS_INTERVAL = 25
 
 
@@ -497,6 +501,29 @@ def open_work_order_supply_by_item_warehouse_week(context: GenerationContext) ->
     return {key: round(value, 2) for key, value in supply.items()}
 
 
+def planned_recommendation_supply_by_item_warehouse_week(
+    context: GenerationContext,
+    recommendation_type: str | None = None,
+) -> dict[tuple[str, int, int], float]:
+    recommendations = context.tables["SupplyPlanRecommendation"]
+    if recommendations.empty:
+        return {}
+    planned = recommendations[
+        recommendations["RecommendationStatus"].eq("Planned")
+        & recommendations["RecommendedOrderQuantity"].astype(float).gt(0)
+    ].copy()
+    if recommendation_type is not None:
+        planned = planned[planned["RecommendationType"].eq(str(recommendation_type))].copy()
+    if planned.empty:
+        return {}
+
+    supply: dict[tuple[str, int, int], float] = defaultdict(float)
+    for row in planned.itertuples(index=False):
+        bucket = str(row.BucketWeekStartDate)
+        supply[(bucket, int(row.ItemID), int(row.WarehouseID))] += float(row.RecommendedOrderQuantity)
+    return {key: round(value, 2) for key, value in supply.items()}
+
+
 def _adjust_recommendation_quantity(policy_type: str, reorder_quantity: float, net_requirement: float) -> float:
     if net_requirement <= 0:
         return 0.0
@@ -519,6 +546,9 @@ def generate_inventory_policies(context: GenerationContext) -> None:
 
     rows: list[dict[str, Any]] = []
     role_cache: dict[tuple[str, str], tuple[int, int]] = {}
+    active_routing_by_parent = _active_routing_lookup(context)
+    routing_ops_by_routing = _routing_operations_lookup(context)
+    average_daily_available = _average_daily_available_hours_by_work_center(context)
     for item in items.sort_values("ItemID").itertuples(index=False):
         if str(item.ItemGroup) == "Services":
             continue
@@ -543,8 +573,21 @@ def generate_inventory_policies(context: GenerationContext) -> None:
                 reorder_quantity = 36.0
 
             if str(item.SupplyMode) == "Manufactured":
-                policy_type = "Lot-for-Lot"
-                planning_lead_time_days = max(int(item.ProductionLeadTimeDays or 0), 5)
+                policy_type = "Min-Max"
+                reorder_quantity = max(float(reorder_quantity), 48.0 if lifecycle_status == "Core" else 60.0)
+                typical_manufacturing_lot = max(
+                    float(reorder_quantity),
+                    float(safety_stock) * 4.0,
+                    float(target_days) * 6.0,
+                )
+                planning_lead_time_days = _manufactured_planning_lead_time_days(
+                    int(item.ItemID),
+                    typical_manufacturing_lot,
+                    int(item.ProductionLeadTimeDays or 0),
+                    active_routing_by_parent,
+                    routing_ops_by_routing,
+                    average_daily_available,
+                )
             else:
                 policy_type = "Min-Max"
                 planning_lead_time_days = LEAD_TIME_DEFAULTS.get(str(item.ItemGroup), 9)
@@ -744,6 +787,72 @@ def _available_hours_by_work_center_week(context: GenerationContext) -> dict[tup
     return {(str(index[0].strftime("%Y-%m-%d")), int(index[1])): float(value) for index, value in summary.items()}
 
 
+def _average_daily_available_hours_by_work_center(context: GenerationContext) -> dict[int, float]:
+    calendar = context.tables["WorkCenterCalendar"]
+    if calendar.empty:
+        return {}
+    working = calendar[calendar["AvailableHours"].astype(float).gt(0)].copy()
+    if working.empty:
+        return {}
+    averages = working.groupby("WorkCenterID")["AvailableHours"].mean().round(2)
+    return {
+        int(work_center_id): float(hours)
+        for work_center_id, hours in averages.items()
+    }
+
+
+def _routing_elapsed_days_at_target_utilization(
+    item_id: int,
+    typical_quantity: float,
+    active_routing_by_parent: dict[int, dict[str, Any]],
+    routing_ops_by_routing: dict[int, pd.DataFrame],
+    average_daily_available: dict[int, float],
+) -> int:
+    routing = active_routing_by_parent.get(int(item_id))
+    if routing is None:
+        return 0
+    routing_operations = routing_ops_by_routing.get(int(routing["RoutingID"]), pd.DataFrame())
+    if routing_operations.empty:
+        return 0
+
+    elapsed_days = 0
+    for operation in routing_operations.sort_values("OperationSequence").itertuples(index=False):
+        daily_hours = float(average_daily_available.get(int(operation.WorkCenterID), 0.0))
+        effective_daily_hours = daily_hours * MANUFACTURED_TARGET_UTILIZATION
+        planned_load_hours = float(operation.StandardSetupHours) + float(operation.StandardRunHoursPerUnit) * float(typical_quantity)
+        if planned_load_hours > 0 and effective_daily_hours > 0:
+            operation_days = max(int(np.ceil(planned_load_hours / effective_daily_hours)), 1)
+        elif planned_load_hours > 0:
+            operation_days = 1
+        else:
+            operation_days = 0
+        calendar_operation_days = int(np.ceil(float(operation_days) * WORKING_DAY_TO_CALENDAR_DAY_FACTOR))
+        elapsed_days += calendar_operation_days + int(operation.StandardQueueDays)
+    return elapsed_days
+
+
+def _manufactured_planning_lead_time_days(
+    item_id: int,
+    typical_quantity: float,
+    production_lead_time_days: int,
+    active_routing_by_parent: dict[int, dict[str, Any]],
+    routing_ops_by_routing: dict[int, pd.DataFrame],
+    average_daily_available: dict[int, float],
+) -> int:
+    routing_elapsed_days = _routing_elapsed_days_at_target_utilization(
+        int(item_id),
+        float(typical_quantity),
+        active_routing_by_parent,
+        routing_ops_by_routing,
+        average_daily_available,
+    )
+    return max(
+        int(production_lead_time_days),
+        int(routing_elapsed_days + MANUFACTURED_POLICY_BUFFER_DAYS),
+        MANUFACTURED_POLICY_MIN_LEAD_DAYS,
+    )
+
+
 def _scheduled_component_supply_by_item_warehouse_week(
     purchase_supply: dict[tuple[str, int, int], float],
 ) -> dict[tuple[str, int, int], float]:
@@ -768,6 +877,7 @@ def generate_month_planning(context: GenerationContext, year: int, month: int) -
     backlog = open_sales_backlog_by_item_week(context)
     open_purchase_supply = open_purchase_supply_by_item_warehouse_week(context)
     open_work_order_supply = open_work_order_supply_by_item_warehouse_week(context)
+    planned_supply = planned_recommendation_supply_by_item_warehouse_week(context)
     available_hours = _available_hours_by_work_center_week(context)
     inventory_state = inventory_position_as_of(context, month_start - pd.Timedelta(days=1))
     active_bom_by_parent, bom_lines_by_bom = _active_bom_lookup(context)
@@ -781,6 +891,63 @@ def generate_month_planning(context: GenerationContext, year: int, month: int) -
     recommendation_rows: list[dict[str, Any]] = []
     material_plan_rows: list[dict[str, Any]] = []
     rough_cut_rows: list[dict[str, Any]] = []
+    updated_existing_recommendations = False
+    updated_manufacture_recommendation_ids: set[int] = set()
+
+    existing_planned_manufacture_indices: dict[tuple[str, int, int], int] = {}
+    existing_planned_manufacture_quantities: dict[tuple[str, int, int], float] = defaultdict(float)
+    existing_planned_manufacture_recommendations = context.tables["SupplyPlanRecommendation"][
+        context.tables["SupplyPlanRecommendation"]["RecommendationType"].eq("Manufacture")
+        & context.tables["SupplyPlanRecommendation"]["RecommendationStatus"].eq("Planned")
+        & context.tables["SupplyPlanRecommendation"]["RecommendedOrderQuantity"].astype(float).gt(0)
+    ].copy()
+    for row_index, row in existing_planned_manufacture_recommendations.iterrows():
+        key = (str(row["BucketWeekStartDate"]), int(row["ItemID"]), int(row["WarehouseID"]))
+        existing_planned_manufacture_quantities[key] += float(row["RecommendedOrderQuantity"])
+        existing_planned_manufacture_indices.setdefault(key, int(row_index))
+
+    def upsert_manufacture_recommendation(
+        recommendation_key: tuple[str, int, int],
+        recommendation_row: dict[str, Any],
+    ) -> dict[str, Any] | None:
+        nonlocal updated_existing_recommendations
+
+        existing_index = existing_planned_manufacture_indices.get(recommendation_key)
+        recommended_order_quantity = float(recommendation_row["RecommendedOrderQuantity"])
+        if existing_index is None:
+            if recommended_order_quantity <= 0:
+                existing_planned_manufacture_quantities[recommendation_key] = 0.0
+                return None
+            recommendation_rows.append(recommendation_row)
+            existing_planned_manufacture_quantities[recommendation_key] = recommended_order_quantity
+            return recommendation_row
+
+        recommendation_id = int(context.tables["SupplyPlanRecommendation"].loc[existing_index, "SupplyPlanRecommendationID"])
+        recommendation_row["SupplyPlanRecommendationID"] = recommendation_id
+        if recommended_order_quantity <= 0:
+            updated_manufacture_recommendation_ids.add(int(recommendation_id))
+            context.tables["SupplyPlanRecommendation"].loc[existing_index, "RecommendationStatus"] = "Cancelled"
+            context.tables["SupplyPlanRecommendation"].loc[existing_index, "RecommendedOrderQuantity"] = 0.0
+            context.tables["SupplyPlanRecommendation"].loc[existing_index, "NetRequirementQuantity"] = 0.0
+            context.tables["SupplyPlanRecommendation"].loc[existing_index, "GrossRequirementQuantity"] = float(recommendation_row["GrossRequirementQuantity"])
+            context.tables["SupplyPlanRecommendation"].loc[existing_index, "ProjectedAvailableQuantity"] = float(recommendation_row["ProjectedAvailableQuantity"])
+            context.tables["SupplyPlanRecommendation"].loc[existing_index, "PriorityCode"] = str(recommendation_row["PriorityCode"])
+            context.tables["SupplyPlanRecommendation"].loc[existing_index, "DriverType"] = str(recommendation_row["DriverType"])
+            context.tables["SupplyPlanRecommendation"].loc[existing_index, "PlannerEmployeeID"] = int(recommendation_row["PlannerEmployeeID"])
+            context.tables["SupplyPlanRecommendation"].loc[existing_index, "ConvertedDocumentType"] = None
+            context.tables["SupplyPlanRecommendation"].loc[existing_index, "ConvertedDocumentID"] = None
+            existing_planned_manufacture_quantities[recommendation_key] = 0.0
+            updated_existing_recommendations = True
+            return None
+
+        for column_name, value in recommendation_row.items():
+            if column_name == "SupplyPlanRecommendationID":
+                continue
+            context.tables["SupplyPlanRecommendation"].loc[existing_index, column_name] = value
+        updated_manufacture_recommendation_ids.add(int(recommendation_id))
+        existing_planned_manufacture_quantities[recommendation_key] = recommended_order_quantity
+        updated_existing_recommendations = True
+        return recommendation_row
 
     cumulative_capacity: dict[tuple[str, int], float] = defaultdict(float)
     component_projected: dict[tuple[int, int], float] = defaultdict(float)
@@ -815,9 +982,17 @@ def generate_month_planning(context: GenerationContext, year: int, month: int) -
                 if int(warehouse_id) == int(ranked_warehouses[0]):
                     backlog_qty = float(backlog.get((bucket_start.strftime("%Y-%m-%d"), int(item.ItemID)), 0.0))
                 gross_requirement = round(forecast_qty + backlog_qty, 2)
+                recommendation_key = (bucket_start.strftime("%Y-%m-%d"), int(item.ItemID), int(warehouse_id))
+                existing_planned_manufacture_qty = existing_planned_manufacture_quantities.get(recommendation_key, 0.0)
                 scheduled_supply = round(
                     float(open_purchase_supply.get((bucket_start.strftime("%Y-%m-%d"), int(item.ItemID), int(warehouse_id)), 0.0))
                     + float(open_work_order_supply.get((bucket_start.strftime("%Y-%m-%d"), int(item.ItemID), int(warehouse_id)), 0.0)),
+                    2,
+                )
+                scheduled_supply = round(
+                    scheduled_supply
+                    + float(planned_supply.get((bucket_start.strftime("%Y-%m-%d"), int(item.ItemID), int(warehouse_id)), 0.0))
+                    - existing_planned_manufacture_qty,
                     2,
                 )
                 projected_after_demand = round(projected_available + scheduled_supply - gross_requirement, 2)
@@ -863,11 +1038,17 @@ def generate_month_planning(context: GenerationContext, year: int, month: int) -
                     "ConvertedDocumentType": None,
                     "ConvertedDocumentID": None,
                 }
-                recommendation_rows.append(recommendation)
                 if recommendation_type == "Manufacture":
-                    manufacture_recommendations.append(recommendation)
+                    stored_recommendation = upsert_manufacture_recommendation(recommendation_key, recommendation)
+                    if stored_recommendation is not None:
+                        manufacture_recommendations.append(stored_recommendation)
+                else:
+                    recommendation_rows.append(recommendation)
 
-    component_scheduled_supply = _scheduled_component_supply_by_item_warehouse_week(open_purchase_supply)
+    component_scheduled_supply = _scheduled_component_supply_by_item_warehouse_week(
+        open_purchase_supply
+    )
+    planned_component_supply = planned_recommendation_supply_by_item_warehouse_week(context, recommendation_type="Purchase")
     for recommendation in sorted(
         manufacture_recommendations,
         key=lambda row: (row["BucketWeekStartDate"], row["ItemID"], row["WarehouseID"], row["SupplyPlanRecommendationID"]),
@@ -923,6 +1104,7 @@ def generate_month_planning(context: GenerationContext, year: int, month: int) -
             )
             policy = policies.get((int(bom_line.ComponentItemID), warehouse_id))
             scheduled_supply = float(component_scheduled_supply.get((week_key, int(bom_line.ComponentItemID), warehouse_id), 0.0))
+            scheduled_supply += float(planned_component_supply.get((week_key, int(bom_line.ComponentItemID), warehouse_id), 0.0))
             current_projected = float(component_projected.get((int(bom_line.ComponentItemID), warehouse_id), 0.0))
             safety_stock = float(policy["SafetyStockQuantity"]) if policy is not None else 0.0
             reorder_qty = float(policy["ReorderQuantity"]) if policy is not None else gross_requirement
@@ -980,6 +1162,16 @@ def generate_month_planning(context: GenerationContext, year: int, month: int) -
                 "ConvertedDocumentID": None,
             })
 
+    if updated_existing_recommendations:
+        invalidate_planning_caches(context, "SupplyPlanRecommendation")
+    if updated_manufacture_recommendation_ids:
+        for table_name in ["MaterialRequirementPlan", "RoughCutCapacityPlan"]:
+            table = context.tables[table_name]
+            if table.empty:
+                continue
+            recommendation_ids = pd.to_numeric(table["SupplyPlanRecommendationID"], errors="coerce").astype("Int64")
+            context.tables[table_name] = table.loc[~recommendation_ids.isin(updated_manufacture_recommendation_ids)].reset_index(drop=True)
+            invalidate_planning_caches(context, table_name)
     append_rows(context, "SupplyPlanRecommendation", recommendation_rows)
     append_rows(context, "MaterialRequirementPlan", material_plan_rows)
     append_rows(context, "RoughCutCapacityPlan", rough_cut_rows)

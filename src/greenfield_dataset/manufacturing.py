@@ -24,6 +24,7 @@ from greenfield_dataset.planning import (
 from greenfield_dataset.payroll import (
     labor_time_direct_cost_by_work_order,
     next_business_day,
+    payroll_period_lookup,
     work_order_overhead_cost_map,
 )
 from greenfield_dataset.schema import TABLE_COLUMNS
@@ -111,12 +112,15 @@ WORK_CENTER_DEFINITIONS = (
 )
 
 WORK_CENTER_NOMINAL_HOURS = {
-    "CUT": 16.0,
-    "ASSEMBLY": 24.0,
-    "FINISH": 16.0,
+    "CUT": 24.0,
+    "ASSEMBLY": 48.0,
+    "FINISH": 28.0,
     "PACK": 12.0,
     "QA": 8.0,
 }
+WORKFORCE_SCALED_WORK_CENTER_CODES = {"CUT", "ASSEMBLY", "FINISH"}
+WORKFORCE_CAPACITY_BASELINE_DIRECT_HEADCOUNT = 6
+WORKFORCE_CAPACITY_DIRECT_TITLES = {"Assembler", "Machine Operator", "Quality Technician"}
 
 REDUCED_CAPACITY_FACTOR_RANGE = {
     "CUT": (0.78, 0.90),
@@ -704,16 +708,33 @@ def generate_work_centers_and_routings(context: GenerationContext) -> None:
         return
 
     warehouses = warehouse_ids(context)
+    employees = context.tables["Employee"]
+    workforce_capacity_multiplier = 1.0
+    if not employees.empty:
+        active_direct_workers = employees[
+            employees["IsActive"].astype(int).eq(1)
+            & employees["PayClass"].eq("Hourly")
+            & employees["JobTitle"].isin(WORKFORCE_CAPACITY_DIRECT_TITLES)
+        ].copy()
+        if not active_direct_workers.empty:
+            workforce_capacity_multiplier = max(
+                float(len(active_direct_workers)) / float(WORKFORCE_CAPACITY_BASELINE_DIRECT_HEADCOUNT),
+                1.0,
+            )
     work_center_rows: list[dict[str, Any]] = []
     for index, definition in enumerate(WORK_CENTER_DEFINITIONS):
+        work_center_code = str(definition["WorkCenterCode"])
+        nominal_daily_capacity = float(WORK_CENTER_NOMINAL_HOURS[work_center_code])
+        if work_center_code in WORKFORCE_SCALED_WORK_CENTER_CODES:
+            nominal_daily_capacity = money(nominal_daily_capacity * workforce_capacity_multiplier)
         work_center_rows.append({
             "WorkCenterID": next_id(context, "WorkCenter"),
-            "WorkCenterCode": definition["WorkCenterCode"],
+            "WorkCenterCode": work_center_code,
             "WorkCenterName": definition["WorkCenterName"],
             "Department": definition["Department"],
             "WarehouseID": int(warehouses[index % len(warehouses)]),
             "ManagerEmployeeID": manager_for_titles(context, definition["ManagerTitles"]),
-            "NominalDailyCapacityHours": float(WORK_CENTER_NOMINAL_HOURS[definition["WorkCenterCode"]]),
+            "NominalDailyCapacityHours": nominal_daily_capacity,
             "IsActive": 1,
         })
     append_rows(context, "WorkCenter", work_center_rows)
@@ -1240,6 +1261,53 @@ def manufacturing_capacity_state(context: GenerationContext, year: int, month: i
     }
 
 
+def manufacturing_work_center_utilization_by_code(
+    context: GenerationContext,
+    year: int,
+    month: int,
+    work_center_codes: tuple[str, ...] = ("ASSEMBLY", "CUT", "FINISH"),
+) -> dict[str, float]:
+    month_start, month_end = month_bounds(year, month)
+    work_centers = context.tables["WorkCenter"]
+    calendars = context.tables["WorkCenterCalendar"]
+    schedules = context.tables["WorkOrderOperationSchedule"]
+    if work_centers.empty or calendars.empty:
+        return {code: 0.0 for code in work_center_codes}
+
+    work_center_id_by_code = {
+        str(row.WorkCenterCode): int(row.WorkCenterID)
+        for row in work_centers.itertuples(index=False)
+    }
+    month_calendars = calendars[
+        pd.to_datetime(calendars["CalendarDate"]).between(month_start, month_end)
+    ].copy()
+    month_schedules = (
+        schedules[pd.to_datetime(schedules["ScheduleDate"]).between(month_start, month_end)].copy()
+        if not schedules.empty
+        else schedules.head(0).copy()
+    )
+    state: dict[str, float] = {}
+    for work_center_code in work_center_codes:
+        work_center_id = work_center_id_by_code.get(str(work_center_code))
+        if work_center_id is None:
+            state[str(work_center_code)] = 0.0
+            continue
+        available_hours = float(
+            month_calendars.loc[
+                month_calendars["WorkCenterID"].astype(int).eq(int(work_center_id)),
+                "AvailableHours",
+            ].astype(float).sum()
+        )
+        scheduled_hours = float(
+            month_schedules.loc[
+                month_schedules["WorkCenterID"].astype(int).eq(int(work_center_id)),
+                "ScheduledHours",
+            ].astype(float).sum()
+        ) if not month_schedules.empty else 0.0
+        state[str(work_center_code)] = round(scheduled_hours / available_hours, 4) if available_hours > 0 else 0.0
+    return state
+
+
 def finished_goods_shortage_by_item(context: GenerationContext, month_end: pd.Timestamp) -> dict[int, dict[str, float]]:
     inventory = shadow_inventory_state(context)
     manufactured = manufactured_items(context, month_end)
@@ -1310,12 +1378,13 @@ def schedule_operation_rows(
     work_center_id: int,
     earliest_start: pd.Timestamp,
     planned_load_hours: float,
+    due_date: pd.Timestamp,
 ) -> list[dict[str, Any]]:
     lookup = work_center_calendar_lookup(context)
     usage = schedule_usage_map(context)
     working_dates = work_center_working_dates(context).get(int(work_center_id), ())
     working_date_index = work_center_working_date_index(context).get(int(work_center_id), {})
-    end_date = pd.Timestamp(context.settings.fiscal_year_end)
+    end_date = min(pd.Timestamp(context.settings.fiscal_year_end), pd.Timestamp(due_date).normalize())
     current_date = next_schedulable_day(context, int(work_center_id), pd.Timestamp(earliest_start))
     remaining_hours = money(planned_load_hours)
     schedule_rows: list[dict[str, Any]] = []
@@ -1342,6 +1411,9 @@ def schedule_operation_rows(
             break
         current_date = pd.Timestamp(working_dates[current_index + 1])
 
+    if remaining_hours > 0:
+        rollback_schedule_usage(context, schedule_rows)
+        return []
     return schedule_rows
 
 
@@ -1360,10 +1432,17 @@ def build_work_order_operations(
     operation_rows: list[dict[str, Any]] = []
     schedule_rows: list[dict[str, Any]] = []
     current_start = pd.Timestamp(release_date)
+    due_date = pd.Timestamp(due_date).normalize()
 
     for row in routing_rows.itertuples(index=False):
         work_center_id = int(row.WorkCenterID)
+        if current_start > due_date:
+            rollback_schedule_usage(context, schedule_rows)
+            return [], []
         current_start = next_schedulable_day(context, work_center_id, current_start)
+        if current_start > due_date:
+            rollback_schedule_usage(context, schedule_rows)
+            return [], []
         planned_load_hours = money(
             float(row.StandardSetupHours) + float(row.StandardRunHoursPerUnit) * float(planned_quantity)
         )
@@ -1374,6 +1453,7 @@ def build_work_order_operations(
             work_center_id,
             current_start,
             planned_load_hours,
+            due_date,
         )
         if not operation_schedule_rows:
             rollback_schedule_usage(context, schedule_rows)
@@ -1381,6 +1461,9 @@ def build_work_order_operations(
 
         planned_start = pd.Timestamp(operation_schedule_rows[0]["ScheduleDate"])
         planned_end = pd.Timestamp(operation_schedule_rows[-1]["ScheduleDate"])
+        if planned_end > due_date:
+            rollback_schedule_usage(context, schedule_rows + operation_schedule_rows)
+            return [], []
 
         operation_rows.append({
             "WorkOrderOperationID": work_order_operation_id,
@@ -1687,12 +1770,13 @@ def generate_month_work_orders_and_requisitions(context: GenerationContext, year
         update_recommendation_conversion(context, conversion_mapping)
         expire_recommendations(context, expired_recommendation_ids)
         LOGGER.info(
-            "MANUFACTURING CONVERSION | %s-%02d | planned=%s | converted=%s | expired=%s",
+            "MANUFACTURING CONVERSION | %s-%02d | planned=%s | converted=%s | expired=%s | conversion_rate=%.4f",
             year,
             month,
             len(planned_recommendations),
             len(conversion_mapping),
             len(expired_recommendation_ids),
+            (len(conversion_mapping) / len(planned_recommendations)) if len(planned_recommendations) > 0 else 0.0,
         )
         return
 
@@ -1952,15 +2036,93 @@ def work_order_issued_support_quantity_map(context: GenerationContext) -> dict[i
     return {int(work_order_id): qty(float(amount)) for work_order_id, amount in state["support_quantities"].items()}
 
 
+def payroll_period_for_work_date(context: GenerationContext, work_date: pd.Timestamp | str) -> dict[str, Any] | None:
+    timestamp = pd.Timestamp(work_date)
+    for period in payroll_period_lookup(context).values():
+        period_start = pd.Timestamp(period["PeriodStartDate"])
+        period_end = pd.Timestamp(period["PeriodEndDate"])
+        if period_start <= timestamp <= period_end:
+            return period
+    return None
+
+
+def payroll_period_end_for_date(context: GenerationContext, work_date: pd.Timestamp | str) -> pd.Timestamp | None:
+    period = payroll_period_for_work_date(context, work_date)
+    if period is None:
+        return None
+    return pd.Timestamp(period["PeriodEndDate"])
+
+
+def payroll_period_processing_gate_date(context: GenerationContext, work_date: pd.Timestamp | str) -> pd.Timestamp | None:
+    period = payroll_period_for_work_date(context, work_date)
+    if period is None:
+        return None
+    return pd.Timestamp(period["PayDate"])
+
+
+def latest_direct_labor_activity_dates(context: GenerationContext) -> dict[int, pd.Timestamp]:
+    cached = getattr(context, "_latest_direct_labor_activity_dates_cache", None)
+    if cached is not None:
+        return cached
+
+    dates: dict[int, pd.Timestamp] = {}
+    labor_entries = context.tables["LaborTimeEntry"]
+    if not labor_entries.empty:
+        direct_entries = labor_entries[
+            labor_entries["LaborType"].eq("Direct Manufacturing")
+            & labor_entries["WorkOrderID"].notna()
+            & labor_entries["WorkDate"].notna()
+        ]
+        for row in direct_entries.itertuples(index=False):
+            dates[int(row.WorkOrderID)] = max(
+                dates.get(int(row.WorkOrderID), pd.Timestamp.min),
+                pd.Timestamp(row.WorkDate),
+            )
+    setattr(context, "_latest_direct_labor_activity_dates_cache", dates)
+    return dates
+
+
+def completed_not_closed_older_than_one_payroll_period_count(
+    context: GenerationContext,
+    month_end: pd.Timestamp,
+) -> int:
+    work_orders = context.tables["WorkOrder"]
+    if work_orders.empty:
+        return 0
+    periods = context.tables["PayrollPeriod"]
+    if periods.empty:
+        return 0
+    relevant_periods = periods[pd.to_datetime(periods["PeriodEndDate"]).le(month_end)].copy()
+    if len(relevant_periods) < 2:
+        return 0
+    prior_period_end = pd.to_datetime(relevant_periods["PeriodEndDate"]).sort_values().iloc[-2]
+    completed_not_closed = work_orders[
+        work_orders["Status"].eq("Completed")
+        & work_orders["CompletedDate"].notna()
+    ].copy()
+    if completed_not_closed.empty:
+        return 0
+    return int((pd.to_datetime(completed_not_closed["CompletedDate"]) < prior_period_end).sum())
+
+
 def generate_month_manufacturing_activity(context: GenerationContext, year: int, month: int) -> None:
     candidates = work_orders_due_for_month(context, year, month)
+    _, month_end = month_bounds(year, month)
     if candidates.empty:
         work_orders = context.tables["WorkOrder"]
         scheduled_ids = scheduled_work_order_ids(context)
         released_without_schedule = 0
+        released_with_schedule = 0
         open_work_orders = 0
+        older_completed_not_closed = completed_not_closed_older_than_one_payroll_period_count(context, month_end)
         if not work_orders.empty:
             open_work_orders = int(work_orders["Status"].isin(["Released", "In Progress", "Completed"]).sum())
+            released_with_schedule = int(
+                (
+                    work_orders["Status"].eq("Released")
+                    & work_orders["WorkOrderID"].astype(int).isin(scheduled_ids)
+                ).sum()
+            )
             released_without_schedule = int(
                 (
                     work_orders["Status"].eq("Released")
@@ -1968,11 +2130,13 @@ def generate_month_manufacturing_activity(context: GenerationContext, year: int,
                 ).sum()
             )
         LOGGER.info(
-            "MANUFACTURING ACTIVITY | %s-%02d | candidates=0 | scheduled_candidates=0 | open_work_orders=%s | released_without_schedule=%s | issues_created=0 | completions_created=0",
+            "MANUFACTURING ACTIVITY | %s-%02d | candidates=0 | scheduled_candidates=0 | open_work_orders=%s | released_with_schedule=%s | released_without_schedule=%s | completed_not_closed_older_than_period=%s | issues_created=0 | completions_created=0",
             year,
             month,
             open_work_orders,
+            released_with_schedule,
             released_without_schedule,
+            older_completed_not_closed,
         )
         return
 
@@ -2175,6 +2339,12 @@ def generate_month_manufacturing_activity(context: GenerationContext, year: int,
     append_rows(context, "ProductionCompletionLine", completion_lines)
     work_orders = context.tables["WorkOrder"]
     scheduled_ids = scheduled_work_order_ids(context)
+    released_with_schedule = int(
+        (
+            work_orders["Status"].eq("Released")
+            & work_orders["WorkOrderID"].astype(int).isin(scheduled_ids)
+        ).sum()
+    ) if not work_orders.empty else 0
     released_without_schedule = int(
         (
             work_orders["Status"].eq("Released")
@@ -2182,14 +2352,17 @@ def generate_month_manufacturing_activity(context: GenerationContext, year: int,
         ).sum()
     ) if not work_orders.empty else 0
     open_work_orders = int(work_orders["Status"].isin(["Released", "In Progress", "Completed"]).sum()) if not work_orders.empty else 0
+    older_completed_not_closed = completed_not_closed_older_than_one_payroll_period_count(context, month_end)
     LOGGER.info(
-        "MANUFACTURING ACTIVITY | %s-%02d | candidates=%s | scheduled_candidates=%s | open_work_orders=%s | released_without_schedule=%s | issues_created=%s | completions_created=%s",
+        "MANUFACTURING ACTIVITY | %s-%02d | candidates=%s | scheduled_candidates=%s | open_work_orders=%s | released_with_schedule=%s | released_without_schedule=%s | completed_not_closed_older_than_period=%s | issues_created=%s | completions_created=%s",
         year,
         month,
         len(candidates),
         len(candidates),
         open_work_orders,
+        released_with_schedule,
         released_without_schedule,
+        older_completed_not_closed,
         len(issue_headers),
         len(completion_headers),
     )
@@ -2246,6 +2419,7 @@ def close_eligible_work_orders(context: GenerationContext, year: int, month: int
     actual_direct_labor_map = labor_time_direct_cost_by_work_order(context)
     actual_overhead_map = work_order_overhead_cost_map(context)
     activity_dates = final_work_order_activity_dates(context)
+    direct_labor_dates = latest_direct_labor_activity_dates(context)
     close_rows: list[dict[str, Any]] = []
 
     for work_order in work_orders.sort_values("WorkOrderID").itertuples(index=False):
@@ -2264,7 +2438,19 @@ def close_eligible_work_orders(context: GenerationContext, year: int, month: int
             continue
 
         activity_date = max(activity_dates.get(int(work_order.WorkOrderID), completed_date), completed_date)
-        close_date = min(month_end, next_business_day(activity_date + pd.Timedelta(days=2)))
+        direct_labor_date = direct_labor_dates.get(int(work_order.WorkOrderID))
+        if direct_labor_date is not None:
+            activity_date = max(activity_date, direct_labor_date)
+        payroll_gate_date = payroll_period_processing_gate_date(context, activity_date)
+        if payroll_gate_date is not None and payroll_gate_date > month_end:
+            continue
+        if direct_labor_date is None:
+            completion_payroll_gate = payroll_period_processing_gate_date(context, completed_date)
+            if completion_payroll_gate is not None and completion_payroll_gate > month_end:
+                continue
+        payroll_period_end = payroll_period_end_for_date(context, activity_date)
+        close_anchor_date = max(activity_date, payroll_period_end) if payroll_period_end is not None else activity_date
+        close_date = min(month_end, next_business_day(close_anchor_date + pd.Timedelta(days=2)))
         if close_date < month_start:
             close_date = month_start
 

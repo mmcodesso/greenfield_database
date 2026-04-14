@@ -123,7 +123,7 @@ STANDARD_SHIFT_REGULAR_HOURS_RANGE = (7.5, 8.25)
 STANDARD_SHIFT_OVERTIME_RANGE = (0.0, 2.25)
 DIRECT_SUPPORT_TOPUP_HOURS_RANGE = (74.0, 82.0)
 MAX_CLOCK_HOURS_PER_DAY = 11.5
-FALLBACK_DIRECT_MAX_CLOCK_HOURS_PER_DAY = 12.0
+FALLBACK_DIRECT_MAX_CLOCK_HOURS_PER_DAY = 12.5
 TIMECLOCK_APPROVED_STATUS = "Approved"
 ROSTER_STATUSES = {"Scheduled", "Absent", "Reassigned", "Cancelled"}
 ABSENCE_TYPES = ("Vacation", "Sick", "Personal")
@@ -174,6 +174,8 @@ def invalidate_payroll_caches(context: GenerationContext, table_name: str) -> No
             "_direct_labor_cost_by_month_work_order_cache",
             "_work_order_overhead_cost_map_cache",
             "_approved_time_clock_hours_by_employee_period_cache",
+            "_final_work_order_activity_dates_cache",
+            "_latest_direct_labor_activity_dates_cache",
         ],
         "PayrollRegister": [
             "_payroll_register_lookup_cache",
@@ -937,6 +939,10 @@ def build_direct_time_clock_specs(
     worker_ids_by_work_center = direct_worker_candidates_by_work_center(context, direct_workers)
     assigned_period_hours: dict[int, float] = defaultdict(float)
     assigned_direct_work_orders: set[int] = set()
+    fallback_counts_by_period = getattr(context, "_payroll_fallback_allocations_by_period", None)
+    if fallback_counts_by_period is None:
+        fallback_counts_by_period = defaultdict(int)
+        setattr(context, "_payroll_fallback_allocations_by_period", fallback_counts_by_period)
 
     for work_order_id in sorted(operation_targets):
         operation_target_rows = operation_targets.get(int(work_order_id), [])
@@ -1025,8 +1031,8 @@ def build_direct_time_clock_specs(
         operation_target_rows = operation_targets.get(int(work_order_id), [])
         if not operation_target_rows:
             continue
-        fallback_target_cost = money(sum(float(row["TargetCost"]) for row in operation_target_rows))
-        if fallback_target_cost <= 0:
+        remaining_fallback_target_cost = money(sum(float(row["TargetCost"]) for row in operation_target_rows))
+        if remaining_fallback_target_cost <= 0:
             continue
 
         fallback_targets = sorted(
@@ -1040,6 +1046,8 @@ def build_direct_time_clock_specs(
         )
         allocated_fallback = False
         for operation_target in fallback_targets:
+            if remaining_fallback_target_cost <= 0:
+                break
             operation_id = operation_target["WorkOrderOperationID"]
             operation = operation_lookup.get(int(operation_id)) if operation_id is not None else None
             work_center_id = int(operation["WorkCenterID"]) if operation is not None else None
@@ -1051,6 +1059,8 @@ def build_direct_time_clock_specs(
             if not candidate_working_dates:
                 continue
             for work_date in reversed(candidate_working_dates):
+                if remaining_fallback_target_cost <= 0:
+                    break
                 candidate_workers = worker_ids_by_work_center.get(work_center_id) or worker_ids_by_work_center.get(None, [])
                 candidate_workers = [
                     int(employee_id)
@@ -1069,6 +1079,8 @@ def build_direct_time_clock_specs(
                     ),
                 )
                 for employee_id in candidate_workers:
+                    if remaining_fallback_target_cost <= 0:
+                        break
                     employee = employee_lookup[int(employee_id)]
                     hourly_rate = implied_hourly_rate(employee, work_date.year)
                     if hourly_rate <= 0:
@@ -1078,7 +1090,7 @@ def build_direct_time_clock_specs(
                         float(existing_spec["RegularHours"]) + float(existing_spec["OvertimeHours"])
                     )
                     available_hours = max(FALLBACK_DIRECT_MAX_CLOCK_HOURS_PER_DAY - existing_hours, 0.0)
-                    additional_hours = qty(min(float(fallback_target_cost) / hourly_rate, available_hours))
+                    additional_hours = qty(min(float(remaining_fallback_target_cost) / hourly_rate, available_hours))
                     if additional_hours <= 0:
                         continue
                     regular_hours, overtime_hours = regular_and_overtime_split(existing_hours, additional_hours)
@@ -1096,16 +1108,19 @@ def build_direct_time_clock_specs(
                         work_order_id=int(work_order_id),
                         work_order_operation_id=None if operation_id is None else int(operation_id),
                     )
-                    assigned_direct_work_orders.add(int(work_order_id))
+                    allocated_cost = money((float(regular_hours) + float(overtime_hours)) * hourly_rate)
+                    remaining_fallback_target_cost = money(max(float(remaining_fallback_target_cost) - allocated_cost, 0.0))
                     assigned_period_hours[int(employee_id)] = qty(
                         assigned_period_hours.get(int(employee_id), 0.0) + regular_hours + overtime_hours
                     )
                     allocated_fallback = True
+                if remaining_fallback_target_cost <= 0:
                     break
-                if allocated_fallback:
-                    break
-            if allocated_fallback:
+            if remaining_fallback_target_cost <= 0:
                 break
+        if allocated_fallback:
+            assigned_direct_work_orders.add(int(work_order_id))
+            fallback_counts_by_period[int(payroll_period_id)] += 1
 
     for employee in direct_workers.itertuples(index=False):
         rng = stable_rng(context, "direct-worker-topup", payroll_period_id, int(employee.EmployeeID))
@@ -2102,6 +2117,7 @@ def monthly_payroll_state(context: GenerationContext, year: int, month: int) -> 
             "liability_remittances_created": 0.0,
             "direct_labor_reclass_amount": 0.0,
             "manufacturing_overhead_reclass_amount": 0.0,
+            "fallback_direct_allocations": 0.0,
         }
 
     period_ids = periods[
@@ -2118,6 +2134,7 @@ def monthly_payroll_state(context: GenerationContext, year: int, month: int) -> 
             "liability_remittances_created": 0.0,
             "direct_labor_reclass_amount": 0.0,
             "manufacturing_overhead_reclass_amount": 0.0,
+            "fallback_direct_allocations": 0.0,
         }
 
     labor_entries = context.tables["LaborTimeEntry"]
@@ -2125,6 +2142,7 @@ def monthly_payroll_state(context: GenerationContext, year: int, month: int) -> 
     payroll_registers = context.tables["PayrollRegister"]
     payroll_payments = context.tables["PayrollPayment"]
     remittances = context.tables["PayrollLiabilityRemittance"]
+    fallback_counts_by_period = getattr(context, "_payroll_fallback_allocations_by_period", {})
     register_ids = payroll_registers.loc[
         payroll_registers["PayrollPeriodID"].astype(int).isin(period_ids),
         "PayrollRegisterID",
@@ -2139,4 +2157,7 @@ def monthly_payroll_state(context: GenerationContext, year: int, month: int) -> 
         "liability_remittances_created": float(len(remittances[remittances["PayrollPeriodID"].astype(int).isin(period_ids)])),
         "direct_labor_reclass_amount": monthly_direct_labor_reclass_amount(context, year, month),
         "manufacturing_overhead_reclass_amount": monthly_manufacturing_overhead_pool_amount(context, year, month),
+        "fallback_direct_allocations": float(
+            sum(int(fallback_counts_by_period.get(int(period_id), 0)) for period_id in period_ids)
+        ),
     }
