@@ -5,7 +5,7 @@
 
 Greenfield does not buy inventory at random. A department identifies a need, purchasing turns that need into supplier orders, warehouse staff receive the goods when they arrive, accounts payable records the supplier invoice, and treasury pays it when approved. Some demand comes from routine replenishment, while some comes from manufacturing's need for raw materials and packaging.
 
-From Phase 22 onward, the normal replenishment path is planned first. Weekly demand forecasts and inventory policies feed `SupplyPlanRecommendation`, and those planning rows become the primary support for new requisitions.
+The normal replenishment path is planned first. Weekly demand forecasts and inventory policies feed `SupplyPlanRecommendation`, and those planning rows become the primary support for new requisitions.
 
 That sequence gives students a realistic three-way-match environment where ordering, receiving, invoicing, and payment do not always happen on the same day or even in the same month.
 
@@ -79,7 +79,7 @@ Read the diagram as internal demand, supplier commitment, physical receipt, supp
 ## What to Notice in the Data
 
 - `PurchaseOrderLine.RequisitionID` is the authoritative requisition link when POs batch several requisitions.
-- `PurchaseRequisition.SupplyPlanRecommendationID` is the authoritative Phase 22 planning-support link for normal replenishment demand.
+- `PurchaseRequisition.SupplyPlanRecommendationID` is the authoritative planning-support link for normal replenishment demand.
 - `PurchaseInvoiceLine.GoodsReceiptLineID` is the authoritative receipt-match link for inventory invoicing.
 - `PurchaseInvoiceLine.AccrualJournalEntryID` is the authoritative link for direct accrued-service invoice settlement.
 - P2P flow is multi-period in the current generator. Receiving, invoicing, and payment do not need to occur in the same month.

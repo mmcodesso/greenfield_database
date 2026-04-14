@@ -7,107 +7,54 @@ sidebar_label: Roadmap
 
 # Roadmap
 
-Use this page for current-versus-future scope. The rest of the documentation is intentionally focused on present behavior and present teaching use.
+Use this page for current-versus-future scope. The rest of the documentation describes the current Greenfield release and current teaching workflow.
 
-## Current Delivered Scope
+## Implemented in the Current Release
 
-The current generator already delivers:
+### Core business processes and accounting
 
 - five fiscal years of data from 2026 through 2030
-- order-to-cash and procure-to-pay transaction generation
-- manufacturing foundation with BOMs, routings, work centers, work orders, operations, issues, completions, and close
-- payroll, approved daily time clocks, and labor allocation support
-- weekly demand planning, replenishment recommendations, material-requirement planning, and rough-cut capacity tieout
-- richer employee and item master data for role, lifecycle, and portfolio analysis
-- event-based postings into `GLEntry`
-- validations, anomaly injection, starter analytics assets, walkthrough cases, and exports
+- order-to-cash, returns, procure-to-pay, manufacturing, payroll, and close-cycle activity
+- event-based postings into `GLEntry` with source-to-ledger traceability
+- accrued-expense settlement, payroll cash movement, and year-end close activity
 
-## Recently Delivered: Phase 18 - Master Data Realism and Workforce Lifecycle Foundation
+### Workforce, payroll, and time tracking
 
-Phase 18 delivered:
+- approved daily time clocks, attendance exceptions, overtime approvals, and payroll periods
+- labor allocation that connects payroll support to manufacturing activity
+- richer employee master data with role, lifecycle, work location, and current-state assignment coverage
+- audit coverage for employee validity, approvals, roster controls, punch controls, and overtime controls
 
-- richer employee master data with `EmployeeNumber`, `EmploymentStatus`, `TerminationDate`, `JobFamily`, `JobLevel`, and `WorkLocation`
-- richer item master data with collection, style family, material, finish, color, size, lifecycle, launch date, and supply-mode context
-- unique-role enforcement for CEO, CFO, Controller, Production Manager, and Accounting Manager in the validation configuration
-- date-aware employee and item eligibility across operational generation
-- master-data anomaly coverage and starter analytics built on the improved employee and item masters
-
-This phase improved realism and teaching value without adding a new operational subledger.
-
-## Recently Delivered: Phase 19 - Analytics Starter Pack 2.0 and Case Library Expansion
-
-Phase 19 delivered:
-
-- broader starter SQL coverage across financial, managerial, audit, and cost-accounting topics
-- new working-capital, financial-statement bridge, product-portfolio, workforce-cost, and audit-review cases
-- updated analytics docs, Excel guidance, SQL guidance, and instructor sequencing
-- stronger use of the published teaching dataset as the main classroom package
-
-This phase did not change schema, posting, or generation behavior. It expanded the teaching layer on top of the current operational model.
-
-## Earlier Delivered Foundations
-
-### Phase 17 - Starter Analytics and Audit Anomaly Teaching Expansion
-
-Delivered:
-
-- broader starter SQL coverage across financial, managerial, and audit topics
-- richer audit anomaly coverage inside the main published anomaly set
-- case-style walkthrough docs and richer subprocess diagrams
-- dataset-only SQLite and Excel outputs plus a separate support workbook
-
-### Phase 16 - Time Clocks and Shift Labor
-
-Delivered:
-
-- `ShiftDefinition`
-- `EmployeeShiftAssignment`
-- `TimeClockEntry`
-- `AttendanceException`
-- hourly payroll sourced from approved time-clock hours
-- direct manufacturing labor linked to both work-order operations and time-clock support
-
-### Phase 15.2 - Performance and Validation Hardening
-
-Delivered:
-
-- shared cache support through `state_cache.py`
-- scoped validation entry points: `core`, `operational`, and `full`
-- a dedicated profiling config at `config/settings_perf.yaml`
-- cleaner build helpers through `build_phase15_2(...)`
-
-## Recently Delivered: Phase 20 - Master Data and Workforce Audit Anomaly Expansion
-
-Phase 20 delivered:
-
-- broader anomaly coverage around employee and item master controls
-- stronger approval-authority and current-state assignment exceptions
-- audit-query extensions that map directly to the new anomaly families
-- a stronger audit path within the same teaching dataset
-
-## Recently Delivered: Phase 21 - Workforce Planning Detail
-
-Phase 21 delivered:
-
-- raw punch-event detail beneath approved daily time-clock rows
-- daily shift rosters, explicit absences, and overtime approvals
-- deeper attendance, overtime, and roster-control starter analytics and cases
-- stronger payroll-to-time-to-labor traceability
-
-## Recently Delivered: Phase 22 - Demand Planning and MRP Foundation
-
-Phase 22 delivered:
+### Planning and replenishment
 
 - weekly demand forecasts and inventory policies
-- replenishment recommendations that now support normal requisition and work-order creation
-- component-demand explosion through `MaterialRequirementPlan`
-- rough-cut capacity tieout through `RoughCutCapacityPlan`
-- starter analytics and audit queries for forecast quality, planning support, and recommendation timing
+- replenishment recommendations for purchasing and manufacturing demand
+- `MaterialRequirementPlan` and `RoughCutCapacityPlan` to connect planning pressure to execution
+- analytics and audit queries for forecast quality, planning support, and recommendation timing
 
-This phase strengthens the planning-to-execution bridge without changing valuation away from standard cost.
+### Pricing and commercial governance
 
-## Recently Completed Sequence
+- formal price lists, promotions, and override approvals
+- pricing lineage from commercial policy into O2C documents and margin analysis
+- audit coverage for price-floor review, expired pricing, promotion scope, and override completeness
 
-1. Phase 20 - Master Data and Workforce Audit Anomaly Expansion
-2. Phase 21 - Workforce Planning Detail
-3. Phase 22 - Demand Planning and MRP Foundation
+### Analytics, cases, and teaching materials
+
+- starter SQL coverage across financial, managerial, audit, and cost-accounting topics
+- guided walkthrough cases that connect business context, queries, and interpretation
+- company, process, dataset, schema, and posting documentation that supports classroom adoption
+- Excel and support-workbook guidance for workbook-based analysis and exception review
+
+### Technical delivery and validation
+
+- SQLite, Excel, support workbook, CSV zip, and generation log outputs
+- validation scopes for `core`, `operational`, and `full` checks
+- anomaly logging and validation exception reporting
+- local generation settings for full release, fast validation, and performance profiling
+
+## Future Implementations and Improvements
+
+- deeper workforce detail, including raw punch-event tables beneath approved daily time rows
+- richer schedule modeling, including rotating shift rosters and shift-level capacity calendars
+- deeper manufacturing structure, including subassemblies and multi-level BOM support
+- continued growth in analytics cases, teaching notes, and adoption materials as the classroom library expands

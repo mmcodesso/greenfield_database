@@ -38,7 +38,7 @@ Internal audit has been asked to review whether scheduled work, raw punches, app
 
 ## Suggested Excel Sequence
 
-1. Filter `AnomalyLog` to Phase 21 workforce anomaly families.
+1. Filter `AnomalyLog` to the workforce-related anomaly families.
 2. Trace the affected employee/date combinations into `EmployeeShiftRoster`, `TimeClockPunch`, and `TimeClockEntry`.
 3. Use `ValidationExceptions` to compare planted anomalies with the control failures identified by the validation workflow.
 

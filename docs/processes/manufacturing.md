@@ -239,7 +239,7 @@ Manufacturing creates both operational and journal-driven accounting:
 ## What to Notice in the Data
 
 - Manufactured demand is tied to sales backlog and finished-goods availability.
-- Phase 22 makes that link explicit through `DemandForecast`, `InventoryPolicy`, and `SupplyPlanRecommendation`.
+- That link is explicit through `DemandForecast`, `InventoryPolicy`, and `SupplyPlanRecommendation`.
 - Raw-material replenishment uses the existing P2P flow.
 - The current manufacturing model uses single-level BOMs.
 - Direct labor is assigned at the operation level, and operations are scheduled against finite daily work-center capacity.

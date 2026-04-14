@@ -25,7 +25,7 @@ Recommended first steps:
 3. identify the sheets that match the query or case you are running
 4. create a working sheet for pivots, formulas, and charts
 
-## Phase 19 to Phase 23 Workflow Pattern
+## Recommended Workflow Pattern
 
 For most classes, use this sequence:
 

@@ -112,18 +112,18 @@ This sequence compresses cleanly into fewer modules or expands into a full semes
 - For beginner SQL classes, start from the provided queries before moving to blank-screen assignments.
 - For Excel-heavy classes, use the workbook and process docs together so students can interpret patterns while they build pivots.
 
-## Recommended Phase 19 to Phase 23 Classroom Sequence
+## Recommended Classroom Sequence
 
 1. Use the published dataset package as the core student file set.
 2. Start financial classes with the working-capital and statement-bridge cases.
 3. Start managerial classes with the product-portfolio profitability case.
 4. Start audit classes with the workforce cost and org-control case, then move to the audit review pack.
-5. Use the expanded Phase 20 audit queries to separate role-family issues, approval-limit issues, current-state assignment issues, and item-status issues within the published dataset.
-6. Add the Phase 21 workforce coverage case when students are ready to compare rostered hours, worked hours, absences, and overtime.
+5. Use the expanded audit queries to separate role-family issues, approval-limit issues, current-state assignment issues, and item-status issues within the published dataset.
+6. Add the workforce coverage case when students are ready to compare rostered hours, worked hours, absences, and overtime.
 7. Add the attendance control audit case when students need a deeper roster, punch, and overtime-control lab.
-8. Add the Phase 22 demand-planning case when students are ready to connect forecast, replenishment, MRP, and rough-cut capacity.
+8. Add the demand-planning case when students are ready to connect forecast, replenishment, MRP, and rough-cut capacity.
 9. Add the replenishment-support audit case when students need to test forecast approval, policy status, and recommendation conversion support.
-10. Add the Phase 23 pricing and margin case when students are ready to connect list price, promotions, overrides, and realized margin.
+10. Add the pricing and margin case when students are ready to connect list price, promotions, overrides, and realized margin.
 11. Add the pricing-governance audit case when students need a commercial-controls lab around expired pricing, price-floor breaches, and override completeness.
 12. Use guided comparisons across years, processes, or topic packs after students understand the core dataset.
 

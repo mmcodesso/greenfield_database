@@ -50,7 +50,7 @@ sidebar_label: Financial Analytics
 | Price realization versus list price by customer and collection | [25_price_realization_vs_list_by_segment_customer_region_collection_style.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/financial/25_price_realization_vs_list_by_segment_customer_region_collection_style.sql) |
 | Gross-margin impact of promotions versus non-promotion sales | [26_gross_margin_impact_of_promotions_vs_nonpromotion_sales.sql](https://github.com/mmcodesso/greenfield_database/blob/main/queries/financial/26_gross_margin_impact_of_promotions_vs_nonpromotion_sales.sql) |
 
-## Phase 19 to Phase 23 Pairings
+## Recommended Case Pairings
 
 - Use [Working Capital and Cash Conversion Case](cases/working-capital-and-cash-conversion-case.md) when you want a balance-sheet and settlement-timing exercise.
 - Use [Financial Statement Bridge Case](cases/financial-statement-bridge-case.md) when you want to move from operations into `GLEntry`, control accounts, and close entries.
@@ -64,8 +64,8 @@ sidebar_label: Financial Analytics
 - `CashReceipt` does not equal settled AR by itself. Use `CashReceiptApplication`.
 - Payroll register activity records liabilities first; cash leaves through payroll payments and remittances later.
 - Working-capital analysis gets stronger when students separate balances from timing.
-- Phase 22 adds forecast, policy, and replenishment tables that support planning-informed working-capital and inventory-timing analysis.
-- Phase 23 adds explicit price-list, promotion, and override lineage so revenue and margin can be analyzed against commercial rules.
+- Forecast, policy, and replenishment tables support planning-informed working-capital and inventory-timing analysis.
+- Explicit price-list, promotion, and override lineage lets students analyze revenue and margin against commercial rules.
 - The richer item master now supports collection, style family, lifecycle, and supply-mode financial analysis without changing the underlying posting model.
 - The richer employee master now supports job-family, job-level, and people-cost review without requiring a separate HR-history subledger.
 - Customer deposits and unapplied cash analysis should start from `CashReceipt` and `CashReceiptApplication`, alongside AR.

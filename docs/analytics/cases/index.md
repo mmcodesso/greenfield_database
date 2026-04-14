@@ -28,7 +28,7 @@ sidebar_label: Analytics Cases
 | [Pricing Governance Audit Case](pricing-governance-audit-case.md) | exception review | audit + support workbook |
 | [Audit Exception Lab](audit-exception-lab.md) | exception review | audit |
 
-## Suggested Phase 19 to Phase 23 Sequence
+## Suggested Case Sequence
 
 1. start with the topic page in [Financial Analytics](../financial.md), [Managerial Analytics](../managerial.md), or [Audit Analytics](../audit.md)
 2. run the paired SQL files in order
@@ -36,13 +36,13 @@ sidebar_label: Analytics Cases
 4. recreate one result in Excel
 5. answer the follow-up questions without using an answer key
 
-Phase 22 adds a planning layer on top of that sequence:
+When the class is ready for planning and replenishment work, extend the sequence with:
 
 6. trace weekly forecasts into supply recommendations and replenishment documents
 7. use the demand-planning case for managerial and cost-accounting discussion
 8. use the replenishment-support audit case for planning-governance controls
 
-Phase 23 adds a pricing-governance layer on top of that sequence:
+When the class is ready for pricing and margin governance, extend the sequence with:
 
 9. trace list price into resolved price-list pricing, promotions, and net realized revenue
 10. use the pricing and margin case for financial and managerial pricing analysis

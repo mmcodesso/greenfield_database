@@ -105,7 +105,7 @@ The current implementation does **not** include:
 - rotating shift rosters or shift-level capacity calendars
 - subassemblies or multi-level BOMs
 
-Those topics remain future extensions.
+Those topics are outside the current release scope. Use [Roadmap](../technical/roadmap.md) for planned improvements.
 
 ## Recommended Next Reading
 

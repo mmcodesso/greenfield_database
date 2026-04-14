@@ -1,6 +1,6 @@
 ---
 title: Audit Review Pack Case
-description: Guided walkthrough for an audit review pack that uses the support workbook and the expanded Phase 20 and Phase 21 audit queries.
+description: Guided walkthrough for an audit review pack that uses the support workbook and the expanded workforce, approval, and master-data audit queries.
 sidebar_label: Audit Review Pack
 ---
 

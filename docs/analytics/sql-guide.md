@@ -78,7 +78,7 @@ sqlite3 greenfield.sqlite < queries/financial/19_working_capital_bridge_by_month
 - Some audit queries are designed to surface exceptions that are documented in the support workbook.
 - Anomaly and validation companion content lives in the support workbook, not in SQLite.
 
-## Suggested Phase 19 to Phase 23 Sequence
+## Suggested Sequence by Topic
 
 ### Financial
 

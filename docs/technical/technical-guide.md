@@ -9,9 +9,9 @@ sidebar_label: Technical Guide
 
 Use this page when you need the codebase-level view of how Greenfield is generated.
 
-For table structure and join fields, use [Schema Reference](../reference/schema.md). For event-to-ledger behavior, use [GLEntry Posting Reference](../reference/posting.md). For planned future changes, use [Roadmap](roadmap.md).
+For table structure and join fields, use [Schema Reference](../reference/schema.md). For event-to-ledger behavior, use [GLEntry Posting Reference](../reference/posting.md). For current scope and planned improvements, use [Roadmap](roadmap.md).
 
-Phase 23 extends the current system with a commercial-pricing layer. The dataset now includes demand forecasts, inventory policies, supply recommendations, component-demand planning, rough-cut capacity tieout, and explicit O2C pricing lineage through price lists, promotions, and override approvals. It also retains the workforce-planning layer that supports the approved daily time-clock model.
+The current system includes demand forecasts, inventory policies, supply recommendations, component-demand planning, rough-cut capacity tieout, and explicit O2C pricing lineage through price lists, promotions, and override approvals. It also includes the workforce-planning layer that supports the approved daily time-clock model.
 
 ## Current System at a Glance
 
@@ -90,9 +90,9 @@ In plain language, the build:
 | `utils.py` | Support numbering, rounding, and shared helper logic |
 | `main.py` | Orchestrate the full run and write the generation log |
 
-## Phase 19 to Phase 23 Teaching Layer
+## Current Teaching and Analytics Layer
 
-The current analytics layer now includes:
+The current teaching and analytics layer includes:
 
 - broader starter SQL coverage across financial, managerial, and audit topics
 - case-based walkthroughs under `docs/analytics/cases/`
@@ -100,7 +100,8 @@ The current analytics layer now includes:
 - workforce-planning detail for rosters, absences, punches, and overtime approvals that supports new attendance and staffing analytics
 - weekly planning support for forecast, policy, recommendation, MRP, and rough-cut capacity analysis
 - commercial-pricing support for segment and customer price lists, promotions, override approvals, and price-realization analysis
-Phase 22 extends the generator through planning outputs that support normal replenishment activity. Phase 23 extends the O2C layer through formal commercial-pricing resolution and explicit pricing lineage.
+
+Planning outputs support normal replenishment activity. The O2C layer also includes formal commercial-pricing resolution and explicit pricing lineage.
 
 ## Posting, Validation, and Outputs
 
