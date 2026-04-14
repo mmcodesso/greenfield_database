@@ -11,7 +11,7 @@ sidebar_label: Instructor Adoption
 
 ### 1. Choose the student entry point
 
-For most classes, students should start with the teaching files and the website, not the codebase.
+For most classes, students should start with the published teaching files and the documentation site.
 
 Give students:
 
@@ -19,8 +19,7 @@ Give students:
 - the Excel workbook for spreadsheet-based analysis
 - the documentation site for orientation and guided reading
 
-Use the generator itself mainly for instructor prep, custom builds, or contribution work.
-Use [Dataset Delivery and Build Setup](../technical/dataset-delivery.md) when you need to produce or package those files locally.
+Use [Customize](../technical/dataset-delivery.md) only when you want to create a local variant or adjust generation parameters.
 
 ### 2. Pick the course emphasis
 
@@ -49,7 +48,6 @@ Suggested student sequence:
 
 - Use the published SQLite database and Excel workbook as the core student file set.
 - Share `greenfield_support.xlsx` when the course includes exception review, audit exercises, or validation context.
-- Use [Dataset Delivery and Build Setup](../technical/dataset-delivery.md) when you need local generation commands or release preparation details.
 
 ## What to Share With Students vs Keep for Teaching Setup
 
@@ -73,9 +71,8 @@ Share these directly with students:
 
 ### Instructor-only or setup-focused material
 
-Use these when you need local build setup, generator context, or release-planning detail:
+Use these when you need optional customization, generator context, or release-planning detail:
 
-- [Dataset Delivery and Build Setup](../technical/dataset-delivery.md)
 - [Technical Guide](../technical/technical-guide.md)
 - [Roadmap](../technical/roadmap.md)
 
@@ -97,8 +94,7 @@ This sequence compresses cleanly into fewer modules or expands into a full semes
 ## Adoption Checklist
 
 - Decide whether students will work primarily in SQL, Excel, or both.
-- Share the packaged output files before asking students to inspect code.
-- Use [Dataset Delivery and Build Setup](../technical/dataset-delivery.md) when you need to build or refresh the package locally.
+- Share the packaged output files before the first analysis assignment.
 - Assign the company and process reading before the first query exercise.
 - Pick one analytics track first: financial, managerial, or audit.
 - Use guided cases before open-ended student prompts if the class is new to integrated business datasets.

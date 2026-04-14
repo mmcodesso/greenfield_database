@@ -1,25 +1,24 @@
 ---
-title: Dataset Delivery and Build Setup
-description: Instructor-focused guide for generating, packaging, and sharing the Greenfield teaching dataset.
+title: Customize
+description: Optional instructor guide for creating a local Greenfield dataset and adjusting generation settings.
 slug: /technical/dataset-delivery
-sidebar_label: Dataset Delivery
+sidebar_label: Customize
 ---
 
-# Dataset Delivery and Build Setup
+# Customize
 
 
 ## When to Use This Page
 
-Use this page if you are:
+Use this page when you want to create a local Greenfield dataset or adjust the generation settings for a specific teaching need.
 
-- preparing the SQLite and Excel files for a class
-- running the generator locally for instructor prep
+Most instructors can teach directly from the published package and the documentation site. Use customization only when you need a different date range, different dataset size, different outputs, or a different validation or anomaly setting.
 
-Students usually do **not** need this page.
+If you want to customize Greenfield locally, use the repository workflow described on this page.
 
-## What to Share With Students
+## Default Teaching Package
 
-For most courses, share these files:
+For most courses, start with the published teaching package:
 
 - `greenfield.sqlite`
 - `greenfield.xlsx`
@@ -33,11 +32,17 @@ Then point students to:
 - [Dataset Guide](../start-here/dataset-overview.md)
 - [Analytics Hub](../analytics/index.md)
 
-## Recommended Local Generation Path
+## When Customization Is Useful
 
-Use `config/settings.yaml` when you want the released five-year teaching dataset.
+Customize the dataset when you want to:
 
-Additional settings files remain available for local validation and performance work, but the published teaching package follows the released teaching configuration.
+- shorten the fiscal range for a smaller assignment
+- change the number of employees, customers, suppliers, items, or warehouses
+- change which outputs are exported
+- produce a local validation or performance-focused run
+- change anomaly behavior for instructor preparation or internal testing
+
+The published release remains the default classroom package. Local settings files are optional tools for instructor customization and validation.
 
 ## How to Generate the Dataset Locally
 
@@ -52,7 +57,74 @@ python3 generate_dataset.py
 
 Generated files are written to `outputs/`.
 
-## What the Build Produces
+By default, `generate_dataset.py` reads `config/settings.yaml`. You can also pass a settings file and validation scope explicitly:
+
+```bash
+python3 generate_dataset.py config/settings_validation.yaml core
+```
+
+The validation scope options are `core`, `operational`, and `full`.
+
+## Settings You Can Adjust
+
+Greenfield currently exposes these instructor-facing settings in the YAML files under `config/`:
+
+### Fiscal range
+
+- `fiscal_year_start`
+- `fiscal_year_end`
+
+Use these when you want a shorter or longer teaching horizon.
+
+### Entity counts
+
+- `employee_count`
+- `customer_count`
+- `supplier_count`
+- `item_count`
+- `warehouse_count`
+
+Use these when you want to scale the dataset up or down for course difficulty, performance, or assignment size.
+
+### Export controls and output paths
+
+- `export_sqlite`
+- `export_excel`
+- `export_support_excel`
+- `export_csv_zip`
+- `sqlite_path`
+- `excel_path`
+- `support_excel_path`
+- `csv_zip_path`
+- `generation_log_path`
+
+Use these when you want to control which files are produced and where they are written.
+
+### Anomaly behavior
+
+- `anomaly_mode`
+
+Use this when you need a local run with or without anomaly injection for instructor preparation or validation work.
+
+### Other teaching parameters
+
+- `random_seed`
+- `company_name`
+- `tax_rate`
+
+Use these when you need stable reruns or limited local adjustments to the generated environment.
+
+## Available Settings Files
+
+The repository currently includes these settings files:
+
+- `config/settings.yaml` as the main local generation template
+- `config/settings_validation.yaml` for a smaller validation-oriented run
+- `config/settings_perf.yaml` for short-horizon performance profiling
+
+These files support local generation workflows. The published teaching package is distributed separately and should remain the normal starting point for classroom use.
+
+## What Local Generation Produces
 
 The generator writes:
 
@@ -64,7 +136,7 @@ The generator writes:
 
 The main SQLite database and main Excel workbook are the core student-facing dataset files. Share the support workbook when the course uses exception review or validation context. Share the CSV zip when flat-file delivery is useful.
 
-## Packaging Guidance
+## How to Share a Customized Package
 
 - Share the SQLite database for SQL work.
 - Share the Excel workbook for pivot and chart-based analysis.
@@ -72,7 +144,7 @@ The main SQLite database and main Excel workbook are the core student-facing dat
 - Share the CSV zip when students or analysts need one CSV per table.
 - Publish the student files through GitHub Releases or your course LMS.
 - Keep `generation.log` for instructor review only.
-- Ask students to start from the documentation site, not from the codebase.
+- Ask students to start from the documentation site and the published teaching files, not from the local generation workflow.
 - If you want a smaller assignment, filter to one fiscal year in SQL or Excel without creating many custom classroom variants.
 
 ## Where to Go Next

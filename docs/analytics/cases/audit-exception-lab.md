@@ -11,7 +11,7 @@ sidebar_label: Audit Exception Lab
 
 The finance and audit team receives the published five-year dataset with a moderate set of planted anomalies. This lab teaches students how to trace flagged exceptions to source documents, identify the related control, and explain the business risk in plain language. In class, you can narrow the review to one fiscal year with a filter when you want a smaller lab.
 
-Use `greenfield_support.xlsx` with the published dataset. If you are preparing the files yourself, use [Dataset Delivery and Build Setup](../../technical/dataset-delivery.md).
+Use `greenfield_support.xlsx` with the published dataset. If you are preparing the files yourself, use [Customize](../../technical/dataset-delivery.md).
 
 ## Main Tables and Worksheets
 

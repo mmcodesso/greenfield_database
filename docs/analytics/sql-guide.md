@@ -25,7 +25,7 @@ Each file is a single SQLite-friendly `SELECT` statement with short comment head
 ## Recommended Workflow
 
 1. Open the SQLite file shared for your course or section.
-2. If you are preparing the dataset yourself, use [Dataset Delivery and Build Setup](../technical/dataset-delivery.md).
+2. If you are preparing the dataset yourself, use [Customize](../technical/dataset-delivery.md).
 3. Start with one topic page:
    - [Financial Analytics](financial.md)
    - [Managerial Analytics](managerial.md)
