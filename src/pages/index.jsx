@@ -101,7 +101,7 @@ export default function Home() {
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
             <p className={styles.sectionLabel}>Why Greenfield</p>
-            <h2>The point is not more tables. The point is more understanding.</h2>
+            <h2>Connect business activity to ledger impact.</h2>
           </div>
           <p className={styles.whyText}>
             Students often see tables before they understand the business

@@ -11,7 +11,7 @@ sidebar_label: Why Greenfield
 
 Accounting analytics is hard to teach when students see tables first and business logic later. Many classes can show journal entries. Many classes can show sample spreadsheets. Far fewer can show how a business event creates a document chain, moves through operational activity, and finally reaches the ledger. That gap slows learning and weakens explanation.
 
-Greenfield addresses that problem with a synthetic, integrated, ERP-style accounting analytics environment. It combines business context, process flows, source documents, posted `GLEntry` activity, and teaching materials in one openly shareable package. Students can trace business activity from operations to accounting. Instructors can adopt a ready-to-use environment instead of assembling disconnected examples from several sources.
+Greenfield addresses that problem with a synthetic, integrated, ERP-style accounting analytics environment. It combines business context, process flows, source documents, posted GLEntry activity, and teaching materials in one openly shareable package. Students can trace business activity from operations to accounting. Instructors can adopt a ready-to-use environment instead of assembling disconnected examples from several sources.
 
 ## Why This Project Was Necessary
 
@@ -19,7 +19,7 @@ Publicly shareable ERP-style accounting datasets with end-to-end process logic a
 
 Many available teaching options solve only part of the problem. Some datasets are easy to share but flatten the business story into disconnected tables. Some examples show transactions without the upstream operational documents that created them. Some systems offer rich process context but sit behind proprietary platforms or limited teaching environments. The result is predictable. Students learn how to query fields without learning how the business works. Or they learn the business story without getting a traceable dataset they can analyze directly.
 
-Greenfield closes that gap. It gives instructors one integrated teaching model that can support process tracing, SQL work, Excel work, subledger review, control analysis, and source-to-ledger explanation. That makes the project useful in AIS, accounting analytics, auditing, managerial accounting, and business process courses.
+Greenfield closes that gap. It gives instructors one integrated teaching model that can support process mining, SQL work, Excel work, visualization, subledger review, control analysis, and source-to-ledger explanation. That makes the project useful in AIS, accounting analytics, auditing, financial accounting, managerial accounting, and business process courses.
 
 ## Why Synthetic Data Is the Right Choice
 
@@ -68,7 +68,7 @@ Those fields turn the ledger into a teaching asset instead of a dead end. An ins
 
 ## What Teaching Materials Come With It
 
-Greenfield is not only a dataset. It is a teaching package with linked materials that support orientation, analysis, and course adoption.
+Greenfield is a teaching package with linked materials that support orientation, analysis, and course adoption.
 
 - [Company Story](../learn-the-business/company-story.md): explains the business model and why the company structure matters for accounting analysis
 - [Process Flows](../learn-the-business/process-flows.md): shows the major business cycles and how events move toward the ledger
@@ -81,25 +81,13 @@ Greenfield is not only a dataset. It is a teaching package with linked materials
 - [Analytics Cases](../analytics/cases/index.md): provides guided walkthroughs that connect business context, starter SQL, and interpretation
 - [Instructor Adoption Guide](../teach-with-greenfield/instructor-guide.md): helps instructors sequence the material and choose assignment paths
 
-These materials matter because they reduce setup friction. Students do not need to guess why a table exists. Instructors do not need to build the business context from scratch. The site gives a coherent path from orientation to analysis.
+These materials reduce setup friction. Students do not need to guess why a table exists. Instructors do not need to build the business context from scratch. The site gives a coherent path from orientation to analysis.
 
 ## Why It Works as an OER
 
 Greenfield is designed as an open educational resource. In plain language, that means instructors and institutions can adopt it, adapt it, and extend it for teaching. The project uses the `CC BY-SA 4.0` license so users can share the material with attribution and keep derivative versions under the same open terms.
 
 That licensing model is part of the educational value. Faculty can revise assignments, localize cases, add course notes, or build new teaching sequences on top of the same foundation. Curriculum developers can use the model as a reusable platform instead of a one-time classroom artifact.
-
-## What the Dataset Is Not
-
-Greenfield is a teaching model. It is not a full ERP simulation. That distinction is important because the project aims for clarity, traceability, and classroom usefulness before exhaustive operational detail.
-
-Current simplifications include:
-
-- no raw punch-event tables beneath the approved daily time rows
-- no rotating shift rosters or shift-level capacity calendars
-- no multi-level BOMs or subassembly structures
-
-These limits are intentional. They keep the model teachable while preserving the main process and accounting logic. The dataset should help students reason clearly about business activity, document chains, and ledger impact. It does not need to replicate every edge case of a production ERP system to do that well.
 
 ## Who Should Use It
 
