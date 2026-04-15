@@ -8,15 +8,15 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from CharlesRiver_dataset.master_data import (
+from generator_dataset.master_data import (
     ITEM_GROUP_CONFIG,
     approver_employee_id,
     current_role_employee_id,
     employee_ids_for_cost_center_as_of,
     eligible_item_mask,
 )
-from CharlesRiver_dataset.o2c import opening_inventory_map, sales_order_line_shipped_quantities, shadow_inventory_state
-from CharlesRiver_dataset.planning import (
+from generator_dataset.o2c import opening_inventory_map, sales_order_line_shipped_quantities, shadow_inventory_state
+from generator_dataset.planning import (
     cancel_recommendations,
     expire_recommendations,
     manufacture_recommendations_for_month,
@@ -26,15 +26,15 @@ from CharlesRiver_dataset.planning import (
     week_end,
     week_start,
 )
-from CharlesRiver_dataset.payroll import (
+from generator_dataset.payroll import (
     labor_time_direct_cost_by_work_order,
     next_business_day,
     payroll_period_lookup,
     work_order_overhead_cost_map,
 )
-from CharlesRiver_dataset.schema import TABLE_COLUMNS
-from CharlesRiver_dataset.settings import GenerationContext
-from CharlesRiver_dataset.utils import format_doc_number, money, next_id, qty
+from generator_dataset.schema import TABLE_COLUMNS
+from generator_dataset.settings import GenerationContext
+from generator_dataset.utils import format_doc_number, money, next_id, qty
 
 
 LOGGER = logging.getLogger(__name__)

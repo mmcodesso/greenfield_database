@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pandas as pd
 
-from CharlesRiver_dataset.main import build_phase5
-from CharlesRiver_dataset.o2c import (
+from generator_dataset.main import build_phase5
+from generator_dataset.o2c import (
     TARGET_INVOICE_RETURN_RATE_MAX,
     TARGET_INVOICE_RETURN_RATE_MIN,
     generate_month_cash_receipts,
@@ -13,7 +13,7 @@ from CharlesRiver_dataset.o2c import (
     generate_month_sales_returns,
     generate_month_shipments,
 )
-from CharlesRiver_dataset.p2p import (
+from generator_dataset.p2p import (
     generate_month_disbursements,
     generate_month_goods_receipts,
     generate_month_p2p,

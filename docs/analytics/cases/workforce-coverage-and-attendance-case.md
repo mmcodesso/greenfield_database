@@ -15,7 +15,7 @@ Use this case when students need to connect planned staffing, approved worked ti
 
 ## Business Scenario
 
-Charles River operations leaders want to understand whether work-center staffing kept pace with scheduled load, where absences concentrated, and how overtime was used to protect throughput.
+Operations leaders want to understand whether work-center staffing kept pace with scheduled load, where absences concentrated, and how overtime was used to protect throughput.
 
 ## Main Tables and Worksheets
 

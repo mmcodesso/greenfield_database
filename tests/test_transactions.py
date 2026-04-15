@@ -1,7 +1,7 @@
-from CharlesRiver_dataset.main import build_phase2
-from CharlesRiver_dataset.o2c import generate_month_o2c
-from CharlesRiver_dataset.p2p import generate_month_p2p
-from CharlesRiver_dataset.validations import validate_phase3
+from generator_dataset.main import build_phase2
+from generator_dataset.o2c import generate_month_o2c
+from generator_dataset.p2p import generate_month_p2p
+from generator_dataset.validations import validate_phase3
 
 
 def test_generate_phase3_monthly_transactions() -> None:

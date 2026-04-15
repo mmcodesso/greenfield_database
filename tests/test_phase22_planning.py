@@ -8,11 +8,11 @@ import pandas as pd
 import pytest
 import yaml
 
-from CharlesRiver_dataset.main import build_full_dataset
-from CharlesRiver_dataset.main import build_phase22
-from CharlesRiver_dataset.settings import load_settings
-from CharlesRiver_dataset.schema import TABLE_COLUMNS
-from CharlesRiver_dataset.validations import validate_phase22
+from generator_dataset.main import build_full_dataset
+from generator_dataset.main import build_phase22
+from generator_dataset.settings import load_settings
+from generator_dataset.schema import TABLE_COLUMNS
+from generator_dataset.validations import validate_phase22
 
 
 PHASE22_FINANCIAL_QUERIES = [
@@ -179,7 +179,7 @@ def test_phase22_docs_and_sidebar_entries_exist() -> None:
     audit_guide = Path("docs/analytics/audit.md").read_text(encoding="utf-8")
     managerial_guide = Path("docs/analytics/managerial.md").read_text(encoding="utf-8")
     sql_guide = Path("docs/analytics/sql-guide.md").read_text(encoding="utf-8")
-    instructor_guide = Path("docs/teach-with-CharlesRiver/instructor-guide.md").read_text(encoding="utf-8")
+    instructor_guide = Path("docs/teach-with-data/instructor-guide.md").read_text(encoding="utf-8")
 
     assert "42_forecast_approval_and_override_review.sql" in audit_guide
     assert "43_inactive_or_stale_inventory_policy_review.sql" in audit_guide

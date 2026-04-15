@@ -1,28 +1,26 @@
 ---
 title: Customize
-description: Optional instructor guide for creating a local Charles River dataset and adjusting generation settings.
+description: Optional instructor guide for creating a local dataset and adjusting generation settings.
 slug: /technical/dataset-delivery
 sidebar_label: Customize
 ---
 
 # Customize
 
- When you want to create a local Charles River dataset or adjust the generation settings for a specific teaching need.
+Use this page when you want to create a local dataset or adjust the generation settings for a specific teaching need.
 
 Most instructors can teach directly from the published package and the documentation site. Use customization only when you need a different date range, different dataset size, different outputs, or a different validation or anomaly setting.
 
-If you want to customize Charles River locally, use the repository workflow described on this page.
+If you want to customize <DisplayName /> locally, use the repository workflow described on this page.
 
 ## Default Teaching Package
 
 For most courses, start with the published teaching package:
 
-- `CharlesRiver.sqlite`
-- `CharlesRiver.xlsx`
-- `CharlesRiver_csv.zip`
-
-
-- `CharlesRiver_support.xlsx` 
+- <FileName type="sqlite" />
+- <FileName type="excel" />
+- <FileName type="csv" />
+- <FileName type="support" />
 
 Then point students to:
 
@@ -66,7 +64,7 @@ The validation scope options are `core`, `operational`, and `full`.
 
 ## Settings You Can Adjust
 
-Charles River currently exposes these instructor-facing settings in the YAML files under `config/`:
+The generator currently exposes these instructor-facing settings in the YAML files under `config/`:
 
 ### Fiscal range
 
@@ -109,6 +107,8 @@ Use this when you need a local run with or without anomaly injection for instruc
 
 - `random_seed`
 - `company_name`
+- `short_name`
+- `base_url`
 - `tax_rate`
 
 Use these when you need stable reruns or limited local adjustments to the generated environment.
@@ -127,10 +127,10 @@ These files support local generation workflows. The published teaching package i
 
 The generator writes:
 
-- `outputs/CharlesRiver.sqlite`
-- `outputs/CharlesRiver.xlsx`
-- `outputs/CharlesRiver_support.xlsx`
-- `outputs/CharlesRiver_csv.zip`
+- <FileName type="sqlite" prefix="outputs/" />
+- <FileName type="excel" prefix="outputs/" />
+- <FileName type="support" prefix="outputs/" />
+- <FileName type="csv" prefix="outputs/" />
 - `outputs/generation.log`
 
 The main SQLite database and main Excel workbook are the core student-facing dataset files. Share the support workbook when the course uses exception review or validation context. Share the CSV zip when flat-file delivery is useful.
@@ -148,6 +148,6 @@ The main SQLite database and main Excel workbook are the core student-facing dat
 
 ## Where to Go Next
 
-- Read [Instructor Adoption Guide](../teach-with-CharlesRiver/instructor-guide.md) for course sequencing.
+- Read [Instructor Adoption Guide](../teach-with-data/instructor-guide.md) for course sequencing.
 - Read [SQL Guide](../analytics/sql-guide.md) if students will work primarily in SQLite.
 - Read [Excel Guide](../analytics/excel-guide.md) if students will work primarily in the workbook.

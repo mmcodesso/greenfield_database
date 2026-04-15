@@ -1,5 +1,5 @@
 {
-  "name": "CharlesRiver-dataset-docs",
+  "name": "accounting-dataset-docs",
   "private": true,
   "engines": {
     "node": ">=20.0"
@@ -8,12 +8,13 @@
     "webpack": "5.103.0"
   },
   "scripts": {
+    "generate-site-branding": "node scripts/generate-site-branding.mjs",
     "generate-query-manifest": "node scripts/generate-query-manifest.mjs",
-    "prestart": "npm run generate-query-manifest",
+    "prestart": "npm run generate-site-branding && npm run generate-query-manifest",
     "start": "docusaurus start",
-    "prebuild": "npm run generate-query-manifest",
+    "prebuild": "npm run generate-site-branding && npm run generate-query-manifest",
     "build": "docusaurus build",
-    "preserve": "npm run generate-query-manifest",
+    "preserve": "npm run generate-site-branding && npm run generate-query-manifest",
     "serve": "docusaurus serve",
     "clear": "docusaurus clear",
     "deploy": "docusaurus deploy"
@@ -26,6 +27,7 @@
     "@mdx-js/react": "^3.1.1",
     "@mermaid-js/layout-elk": "^0.1.9",
     "clsx": "^2.1.1",
+    "js-yaml": "^4.1.0",
     "panzoom": "^9.4.4",
     "prism-react-renderer": "^2.4.1",
     "react": "^19.2.5",

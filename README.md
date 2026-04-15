@@ -7,7 +7,7 @@ The documentation website is the primary starting point:
 - [Charles River documentation site](https://CharlesRiver.AccountingAnalyticsHub.com/)
 - [Start Here](https://CharlesRiver.AccountingAnalyticsHub.com/docs/)
 - [Downloads](https://CharlesRiver.AccountingAnalyticsHub.com/docs/downloads)
-- [Instructor adoption guide](https://CharlesRiver.AccountingAnalyticsHub.com/docs/teach-with-CharlesRiver/instructor-adoption)
+- [Instructor adoption guide](https://CharlesRiver.AccountingAnalyticsHub.com/docs/teach-with-data/instructor-adoption)
 
 Most students should begin with the documentation site and the packaged output files rather than the Python generator.
 

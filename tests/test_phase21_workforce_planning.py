@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pandas as pd
 
-from CharlesRiver_dataset.main import build_phase21
-from CharlesRiver_dataset.schema import TABLE_COLUMNS
-from CharlesRiver_dataset.validations import validate_phase21
+from generator_dataset.main import build_phase21
+from generator_dataset.schema import TABLE_COLUMNS
+from generator_dataset.validations import validate_phase21
 
 
 PHASE21_MANAGERIAL_QUERIES = [

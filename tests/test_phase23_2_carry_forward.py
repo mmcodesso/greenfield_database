@@ -6,10 +6,10 @@ import pandas as pd
 import pytest
 import yaml
 
-from CharlesRiver_dataset.main import build_full_dataset, build_phase23
-from CharlesRiver_dataset.planning import manufacture_recommendations_for_month, purchase_recommendations_for_month
-from CharlesRiver_dataset.schema import TABLE_COLUMNS, create_empty_tables
-from CharlesRiver_dataset.settings import initialize_context, load_settings
+from generator_dataset.main import build_full_dataset, build_phase23
+from generator_dataset.planning import manufacture_recommendations_for_month, purchase_recommendations_for_month
+from generator_dataset.schema import TABLE_COLUMNS, create_empty_tables
+from generator_dataset.settings import initialize_context, load_settings
 
 
 def _recommendation_row(

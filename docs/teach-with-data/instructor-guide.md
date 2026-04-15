@@ -1,15 +1,15 @@
 ---
 title: Instructor Adoption Guide
-description: Course adoption guidance for instructors using the Charles River Accounting Dataset in accounting analytics classes.
-slug: /teach-with-CharlesRiver/instructor-adoption
+description: Course adoption guidance for instructors using this accounting dataset in analytics classes.
+slug: /teach-with-data/instructor-adoption
 sidebar_label: Instructor Adoption
 ---
 
 # Instructor Adoption Guide
 
-## Why instructors adopt CharlesRiver
+## Why instructors adopt this dataset
 
-Charles River is ready for classroom use from the published teaching files and the documentation site. Instructors do not need to assemble a separate business case, build process notes, or create a starter query path before the first assignment. The site already connects business context, process logic, dataset navigation, references, analytics guides, and case-based activities in one teaching environment.
+<DisplayName /> is ready for classroom use from the published teaching files and the documentation site. Instructors do not need to assemble a separate business case, build process notes, or create a starter query path before the first assignment. The site already connects business context, process logic, dataset navigation, references, analytics guides, and case-based activities in one teaching environment.
 
 That structure makes adoption practical across several accounting courses. The same dataset can support AIS, business-process instruction, SQL and accounting analytics, Excel-based analysis, auditing and controls, and managerial or cost-accounting work. Instructors can begin with a clear default path and expand into cases, references, and optional customization only when the course needs it.
 
@@ -17,12 +17,12 @@ That structure makes adoption practical across several accounting courses. The s
 
 For most courses, start students with the published teaching files and the teaching-facing documentation.
 
-- Use `CharlesRiver.sqlite` when the course emphasizes SQL, joins, and query-based analysis.
-- Use `CharlesRiver.xlsx` when the course emphasizes pivots, filters, formulas, charts, and workbook-based interpretation.
+- Use <FileName type="sqlite" /> when the course emphasizes SQL, joins, and query-based analysis.
+- Use <FileName type="excel" /> when the course emphasizes pivots, filters, formulas, charts, and workbook-based interpretation.
 - Use [Start Here](../start-here/index.md), [Company Story](../learn-the-business/company-story.md), [Process Flows](../learn-the-business/process-flows.md), and [Dataset Guide](../start-here/dataset-overview.md) before the first technical assignment.
 
 
-## Where Charles River fits in the curriculum
+## Where the dataset fits in the curriculum
 
 | Course emphasis | Begin with | Then use |
 |---|---|---|
@@ -48,7 +48,7 @@ This order helps students understand the business and the process logic before t
 
 ## When to use the support workbook
 
-Include `CharlesRiver_support.xlsx` when you want students to:
+Include <FileName type="support" /> when you want students to:
 
 - review anomaly families alongside source-table evidence
 - compare validation exceptions to operational or accounting records
@@ -69,7 +69,7 @@ This progression usually produces stronger explanations and better query design 
 
 ## Optional customization
 
-Most instructors can adopt Charles River successfully with the published teaching package. Use [Customize](../technical/dataset-delivery.md) only when you want a local variant, a different fiscal range, different scale settings, or a different output set for instructor preparation.
+Most instructors can adopt <DisplayName /> successfully with the published teaching package. Use [Customize](../technical/dataset-delivery.md) only when you want a local variant, a different fiscal range, different scale settings, or a different output set for instructor preparation.
 
 ## Adoption checklist
 

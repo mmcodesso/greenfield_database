@@ -3,7 +3,7 @@
 
 ## Business Storyline
 
-Charles River does not buy inventory at random. A department identifies a need, purchasing turns that need into supplier orders, warehouse staff receive the goods when they arrive, accounts payable records the supplier invoice, and treasury pays it when approved. Some demand comes from routine replenishment, while some comes from manufacturing's need for raw materials and packaging.
+The company does not buy inventory at random. A department identifies a need, purchasing turns that need into supplier orders, warehouse staff receive the goods when they arrive, accounts payable records the supplier invoice, and treasury pays it when approved. Some demand comes from routine replenishment, while some comes from manufacturing's need for raw materials and packaging.
 
 The normal replenishment path is planned first. Weekly demand forecasts and inventory policies feed `SupplyPlanRecommendation`, and those planning rows become the primary support for new requisitions.
 

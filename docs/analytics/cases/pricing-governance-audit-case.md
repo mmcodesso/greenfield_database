@@ -13,7 +13,7 @@ sidebar_label: Pricing Governance Audit
 
 ## Business Scenario
 
-Charles River now maintains formal price lists, seasonal promotions, and explicit override approvals. Students need to determine whether the commercial-control design is being followed and where transaction pricing no longer matches the approved pricing framework.
+The dataset maintains formal price lists, seasonal promotions, and explicit override approvals. Students need to determine whether the commercial-control design is being followed and where transaction pricing no longer matches the approved pricing framework.
 
 ## Query Sequence
 

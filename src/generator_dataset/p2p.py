@@ -7,15 +7,15 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from CharlesRiver_dataset.journals import ACCRUAL_ACCOUNT_METADATA, accrual_journal_details
-from CharlesRiver_dataset.master_data import approver_employee_id, employee_ids_for_cost_center_as_of, eligible_item_mask
-from CharlesRiver_dataset.planning import primary_warehouse_rank, purchase_recommendations_for_month, update_recommendation_conversion
-from CharlesRiver_dataset.schema import TABLE_COLUMNS
-from CharlesRiver_dataset.settings import GenerationContext
-from CharlesRiver_dataset.utils import format_doc_number, money, next_id, qty, random_date_in_month
+from generator_dataset.journals import ACCRUAL_ACCOUNT_METADATA, accrual_journal_details
+from generator_dataset.master_data import approver_employee_id, employee_ids_for_cost_center_as_of, eligible_item_mask
+from generator_dataset.planning import primary_warehouse_rank, purchase_recommendations_for_month, update_recommendation_conversion
+from generator_dataset.schema import TABLE_COLUMNS
+from generator_dataset.settings import GenerationContext
+from generator_dataset.utils import format_doc_number, money, next_id, qty, random_date_in_month
 
 
-LOGGER = logging.getLogger("CharlesRiver_dataset")
+LOGGER = logging.getLogger("generator_dataset")
 
 
 ITEM_GROUP_REQUISITION_WEIGHTS = {

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pandas as pd
 
-from CharlesRiver_dataset.main import build_phase13
-from CharlesRiver_dataset.schema import TABLE_COLUMNS
+from generator_dataset.main import build_phase13
+from generator_dataset.schema import TABLE_COLUMNS
 
 
 def test_phase13_schema_extensions_exist() -> None:

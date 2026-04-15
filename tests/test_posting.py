@@ -1,6 +1,6 @@
-from CharlesRiver_dataset.posting_engine import post_all_transactions
-from CharlesRiver_dataset.main import build_phase5
-from CharlesRiver_dataset.validations import validate_phase6
+from generator_dataset.posting_engine import post_all_transactions
+from generator_dataset.main import build_phase5
+from generator_dataset.validations import validate_phase6
 
 
 def test_posting_engine_posts_phase5_transactions() -> None:

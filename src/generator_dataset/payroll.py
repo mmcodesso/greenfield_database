@@ -6,11 +6,11 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from CharlesRiver_dataset.master_data import current_role_employee_id
-from CharlesRiver_dataset.schema import TABLE_COLUMNS
-from CharlesRiver_dataset.state_cache import drop_context_attributes, get_or_build_cache
-from CharlesRiver_dataset.settings import GenerationContext
-from CharlesRiver_dataset.utils import format_doc_number, money, next_id, qty
+from generator_dataset.master_data import current_role_employee_id
+from generator_dataset.schema import TABLE_COLUMNS
+from generator_dataset.state_cache import drop_context_attributes, get_or_build_cache
+from generator_dataset.settings import GenerationContext
+from generator_dataset.utils import format_doc_number, money, next_id, qty
 
 
 DIRECT_MANUFACTURING_TITLES = {

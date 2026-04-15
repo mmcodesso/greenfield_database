@@ -13,7 +13,7 @@ sidebar_label: Demand Planning Case
 
 ## Business Scenario
 
-Charles River now plans replenishment weekly. Students need to explain how forecasted demand becomes supply recommendations, why some recommendations are expedited, and where rough-cut capacity tightens before execution starts.
+The dataset plans replenishment weekly. Students need to explain how forecasted demand becomes supply recommendations, why some recommendations are expedited, and where rough-cut capacity tightens before execution starts.
 
 ## Query Sequence
 

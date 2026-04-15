@@ -8,10 +8,10 @@ import pandas as pd
 import pytest
 import yaml
 
-from CharlesRiver_dataset.main import build_full_dataset, build_phase23
-from CharlesRiver_dataset.schema import TABLE_COLUMNS
-from CharlesRiver_dataset.settings import load_settings
-from CharlesRiver_dataset.validations import validate_phase23
+from generator_dataset.main import build_full_dataset, build_phase23
+from generator_dataset.schema import TABLE_COLUMNS
+from generator_dataset.settings import load_settings
+from generator_dataset.validations import validate_phase23
 
 
 PHASE23_FINANCIAL_QUERIES = [
@@ -261,7 +261,7 @@ def test_phase23_docs_and_sidebar_entries_exist() -> None:
     managerial_guide = Path("docs/analytics/managerial.md").read_text(encoding="utf-8")
     audit_guide = Path("docs/analytics/audit.md").read_text(encoding="utf-8")
     sql_guide = Path("docs/analytics/sql-guide.md").read_text(encoding="utf-8")
-    instructor_guide = Path("docs/teach-with-CharlesRiver/instructor-guide.md").read_text(encoding="utf-8")
+    instructor_guide = Path("docs/teach-with-data/instructor-guide.md").read_text(encoding="utf-8")
     o2c_guide = Path("docs/processes/o2c.md").read_text(encoding="utf-8")
     returns_guide = Path("docs/processes/o2c-returns-credits-refunds.md").read_text(encoding="utf-8")
     schema_guide = Path("docs/reference/schema.md").read_text(encoding="utf-8")

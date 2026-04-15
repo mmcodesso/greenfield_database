@@ -1,6 +1,6 @@
 ---
 title: Dataset Guide
-description: Student-friendly guide to what the Charles River dataset contains and how to navigate it.
+description: Student-friendly guide to what the dataset contains and how to navigate it.
 slug: /dataset-overview
 sidebar_label: Dataset Guide
 ---
@@ -13,7 +13,7 @@ If you need field-level lookup, use [Schema Reference](../reference/schema.md). 
 
 ## What the Dataset Is
 
-Charles River Accounting Dataset models one integrated business: **Charles River Home Furnishings, Inc.**
+<DatasetName /> models one integrated business: <CompanyName />.
 
 It connects:
 
@@ -42,9 +42,9 @@ The current implementation contains **68 tables** across eight areas:
 
 Most classes use these ready-to-use files:
 
-- `CharlesRiver.sqlite`
-- `CharlesRiver.xlsx`
-- `CharlesRiver_csv.zip`
+- <FileName type="sqlite" />
+- <FileName type="excel" />
+- <FileName type="csv" />
 
 Download them from [Downloads](downloads.md) or use the copies already shared for your course.
 

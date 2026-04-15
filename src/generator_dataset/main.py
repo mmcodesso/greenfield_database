@@ -9,21 +9,21 @@ from typing import Any, Iterable, Iterator
 
 import pandas as pd
 
-from CharlesRiver_dataset.anomalies import inject_anomalies, invalidate_all_caches
-from CharlesRiver_dataset.budgets import generate_budgets, generate_opening_balances
-from CharlesRiver_dataset.exporters import (
+from generator_dataset.anomalies import inject_anomalies, invalidate_all_caches
+from generator_dataset.budgets import generate_budgets, generate_opening_balances
+from generator_dataset.exporters import (
     export_csv_zip,
     export_excel,
     export_sqlite,
     export_support_excel,
     export_validation_report,
 )
-from CharlesRiver_dataset.journals import (
+from generator_dataset.journals import (
     generate_accrual_adjustment_journals,
     generate_recurring_manual_journals,
     generate_year_end_close_journals,
 )
-from CharlesRiver_dataset.manufacturing import (
+from generator_dataset.manufacturing import (
     close_eligible_work_orders,
     generate_boms,
     generate_month_manufacturing_activity,
@@ -35,7 +35,7 @@ from CharlesRiver_dataset.manufacturing import (
     manufacturing_open_state,
     seed_opening_manufacturing_pipeline,
 )
-from CharlesRiver_dataset.master_data import (
+from generator_dataset.master_data import (
     backfill_cost_center_managers,
     generate_cost_centers,
     generate_customers,
@@ -45,7 +45,7 @@ from CharlesRiver_dataset.master_data import (
     generate_warehouses,
     load_accounts,
 )
-from CharlesRiver_dataset.o2c import (
+from generator_dataset.o2c import (
     generate_price_lists,
     generate_promotions,
     generate_month_cash_receipts,
@@ -56,7 +56,7 @@ from CharlesRiver_dataset.o2c import (
     generate_month_shipments,
     o2c_open_state,
 )
-from CharlesRiver_dataset.p2p import (
+from generator_dataset.p2p import (
     generate_accrued_service_settlements,
     generate_month_disbursements,
     generate_month_goods_receipts,
@@ -66,21 +66,21 @@ from CharlesRiver_dataset.p2p import (
     generate_month_purchase_invoices,
     p2p_open_state,
 )
-from CharlesRiver_dataset.payroll import (
+from generator_dataset.payroll import (
     generate_month_payroll,
     generate_payroll_periods,
     generate_shift_definitions_and_assignments,
     monthly_payroll_state,
 )
-from CharlesRiver_dataset.planning import (
+from generator_dataset.planning import (
     generate_demand_forecasts,
     generate_inventory_policies,
     generate_month_planning,
 )
-from CharlesRiver_dataset.posting_engine import post_all_transactions
-from CharlesRiver_dataset.schema import create_empty_tables
-from CharlesRiver_dataset.settings import GenerationContext, Settings, initialize_context, load_settings
-from CharlesRiver_dataset.validations import (
+from generator_dataset.posting_engine import post_all_transactions
+from generator_dataset.schema import create_empty_tables
+from generator_dataset.settings import GenerationContext, Settings, initialize_context, load_settings
+from generator_dataset.validations import (
     validate_phase1,
     validate_phase2,
     validate_phase3,
@@ -107,7 +107,7 @@ from CharlesRiver_dataset.validations import (
 )
 
 
-LOGGER = logging.getLogger("CharlesRiver_dataset")
+LOGGER = logging.getLogger("generator_dataset")
 
 
 def generation_log_path(context_or_settings: GenerationContext | Settings) -> Path:
@@ -762,7 +762,7 @@ def build_full_dataset(
 ) -> GenerationContext:
     settings = load_settings(config_path)
     configure_generation_logging(generation_log_path(settings))
-    LOGGER.info("Starting Charles River dataset generation.")
+    LOGGER.info("Starting dataset generation for %s.", settings.company_name)
     log_settings(settings, config_path)
     LOGGER.info("Validation scope: %s", validation_scope)
     context = initialize_context(settings)
@@ -1190,7 +1190,7 @@ def build_full_dataset(
         LOGGER.info("SKIP | CSV zip export disabled.")
 
     log_all_table_counts(context, "final")
-    LOGGER.info("Finished Charles River dataset generation.")
+    LOGGER.info("Finished dataset generation for %s.", context.settings.company_name)
     close_generation_logging()
 
     return context

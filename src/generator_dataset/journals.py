@@ -6,15 +6,15 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from CharlesRiver_dataset.master_data import approver_employee_id, current_role_employee_id, valid_employees
-from CharlesRiver_dataset.payroll import (
+from generator_dataset.master_data import approver_employee_id, current_role_employee_id, valid_employees
+from generator_dataset.payroll import (
     monthly_direct_labor_reclass_amount,
     monthly_factory_overhead_amount,
     monthly_manufacturing_overhead_pool_amount,
 )
-from CharlesRiver_dataset.schema import TABLE_COLUMNS
-from CharlesRiver_dataset.settings import GenerationContext
-from CharlesRiver_dataset.utils import money, next_id
+from generator_dataset.schema import TABLE_COLUMNS
+from generator_dataset.settings import GenerationContext
+from generator_dataset.utils import money, next_id
 
 
 ANNUAL_GROWTH_RATE = 0.035

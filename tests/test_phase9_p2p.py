@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pandas as pd
 
-from CharlesRiver_dataset.main import build_phase5
-from CharlesRiver_dataset.p2p import (
+from generator_dataset.main import build_phase5
+from generator_dataset.p2p import (
     generate_month_disbursements,
     generate_month_goods_receipts,
     generate_month_p2p,

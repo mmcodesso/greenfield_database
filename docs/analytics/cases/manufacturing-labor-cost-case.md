@@ -12,7 +12,7 @@ import { caseQuerySequences } from "@site/src/generated/queryDocCollections";
 
 ## Business Scenario
 
-Charles River manufactures a subset of finished goods. A work order is released because demand and finished-goods buffers indicate shortage. Materials are issued, operations are scheduled, hourly workers record approved time clocks, direct labor is allocated, finished goods are completed, and the work order is later closed with any remaining variance.
+The company manufactures a subset of finished goods. A work order is released because demand and finished-goods buffers indicate shortage. Materials are issued, operations are scheduled, hourly workers record approved time clocks, direct labor is allocated, finished goods are completed, and the work order is later closed with any remaining variance.
 
 ## Main Tables and Worksheets
 

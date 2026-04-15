@@ -4,17 +4,17 @@ from typing import Any
 
 import pandas as pd
 
-from CharlesRiver_dataset.journals import accrual_journal_details
-from CharlesRiver_dataset.p2p import (
+from generator_dataset.journals import accrual_journal_details
+from generator_dataset.p2p import (
     goods_receipt_line_cost_center_map,
     purchase_invoice_line_cost_center_map,
     purchase_invoice_line_matched_basis_map,
     purchase_invoice_unique_cost_center_map,
 )
-from CharlesRiver_dataset.o2c import credit_memo_allocation_map
-from CharlesRiver_dataset.schema import TABLE_COLUMNS
-from CharlesRiver_dataset.settings import GenerationContext
-from CharlesRiver_dataset.utils import money, next_id
+from generator_dataset.o2c import credit_memo_allocation_map
+from generator_dataset.schema import TABLE_COLUMNS
+from generator_dataset.settings import GenerationContext
+from generator_dataset.utils import money, next_id
 
 
 SYSTEM_EMPLOYEE_ID = 1

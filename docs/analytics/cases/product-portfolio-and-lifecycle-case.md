@@ -12,7 +12,7 @@ import { caseQuerySequences } from "@site/src/generated/queryDocCollections";
 
 ## Business Scenario
 
-Charles River no longer uses generic item names. Finished goods now belong to collections and style families, use more meaningful materials and finishes, and carry lifecycle labels such as `Core`, `Seasonal`, and `Discontinued`.
+The dataset no longer uses generic item names. Finished goods now belong to collections and style families, use more meaningful materials and finishes, and carry lifecycle labels such as `Core`, `Seasonal`, and `Discontinued`.
 
 This case uses that richer item master to connect catalog realism to managerial and cost-accounting analysis.
 

@@ -5,20 +5,20 @@ from pathlib import Path
 
 import pandas as pd
 
-from CharlesRiver_dataset.budgets import generate_budgets, generate_opening_balances
-from CharlesRiver_dataset.main import (
+from generator_dataset.budgets import generate_budgets, generate_opening_balances
+from generator_dataset.main import (
     _generate_phase2_master_data_and_planning,
     build_phase22,
     close_generation_logging,
     configure_generation_logging,
     logged_step,
 )
-from CharlesRiver_dataset.manufacturing import (
+from generator_dataset.manufacturing import (
     generate_boms,
     generate_work_center_calendars,
     generate_work_centers_and_routings,
 )
-from CharlesRiver_dataset.master_data import (
+from generator_dataset.master_data import (
     approver_employee_id,
     backfill_cost_center_managers,
     current_role_employee_id,
@@ -30,17 +30,17 @@ from CharlesRiver_dataset.master_data import (
     generate_warehouses,
     load_accounts,
 )
-from CharlesRiver_dataset.payroll import generate_payroll_periods, generate_shift_definitions_and_assignments
-from CharlesRiver_dataset.planning import (
+from generator_dataset.payroll import generate_payroll_periods, generate_shift_definitions_and_assignments
+from generator_dataset.planning import (
     forecast_approver_id,
     forecast_planner_id,
     generate_demand_forecasts,
     generate_inventory_policies,
     week_starts_in_fiscal_range,
 )
-from CharlesRiver_dataset.schema import create_empty_tables
-from CharlesRiver_dataset.settings import initialize_context, load_settings
-from CharlesRiver_dataset.validations import validate_phase1
+from generator_dataset.schema import create_empty_tables
+from generator_dataset.settings import initialize_context, load_settings
+from generator_dataset.validations import validate_phase1
 
 
 def _prepare_forecast_context(config_path: str) -> object:

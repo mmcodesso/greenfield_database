@@ -5,9 +5,9 @@ from typing import Any
 
 import pandas as pd
 
-from CharlesRiver_dataset.journals import ACCRUAL_ACCOUNT_METADATA, accrual_journal_details
-from CharlesRiver_dataset.master_data import ACCRUAL_SERVICE_ITEMS
-from CharlesRiver_dataset.manufacturing import (
+from generator_dataset.journals import ACCRUAL_ACCOUNT_METADATA, accrual_journal_details
+from generator_dataset.master_data import ACCRUAL_SERVICE_ITEMS
+from generator_dataset.manufacturing import (
     CAPACITY_EXCEPTION_REASONS,
     active_routing_by_item,
     manufacturing_capacity_state,
@@ -26,7 +26,7 @@ from CharlesRiver_dataset.manufacturing import (
     work_order_standard_conversion_cost_map,
     work_order_standard_material_cost_map,
 )
-from CharlesRiver_dataset.o2c import (
+from generator_dataset.o2c import (
     credit_memo_allocation_map,
     credit_memo_refunded_amounts,
     invoice_cash_application_amounts,
@@ -40,13 +40,13 @@ from CharlesRiver_dataset.o2c import (
     shipment_line_billed_quantities,
     shipment_line_returned_quantities,
 )
-from CharlesRiver_dataset.p2p import (
+from generator_dataset.p2p import (
     goods_receipt_line_invoiced_quantities,
     invoice_paid_amounts,
     po_line_received_quantities,
     purchase_invoice_line_matched_basis_map,
 )
-from CharlesRiver_dataset.payroll import (
+from generator_dataset.payroll import (
     approved_time_clock_hours_by_employee_period,
     employee_shift_roster_lookup,
     overtime_approval_lookup,
@@ -58,10 +58,10 @@ from CharlesRiver_dataset.payroll import (
     time_clock_entry_lookup,
     time_clock_punches_by_entry,
 )
-from CharlesRiver_dataset.planning import first_forecast_week_start
-from CharlesRiver_dataset.schema import TABLE_COLUMNS
-from CharlesRiver_dataset.settings import GenerationContext
-from CharlesRiver_dataset.utils import money, qty
+from generator_dataset.planning import first_forecast_week_start
+from generator_dataset.schema import TABLE_COLUMNS
+from generator_dataset.settings import GenerationContext
+from generator_dataset.utils import money, qty
 
 
 def planning_week_start(value: pd.Timestamp | str) -> pd.Timestamp:

@@ -1,6 +1,6 @@
 ---
 title: Excel Guide
-description: How to use the Charles River Excel workbooks for student and classroom analysis.
+description: How to use the published Excel workbooks for student and classroom analysis.
 sidebar_label: Excel Guide
 ---
 
@@ -20,8 +20,8 @@ The companion support workbook contains:
 
 Recommended first steps:
 
-1. open `CharlesRiver.xlsx`
-2. open `CharlesRiver_support.xlsx` if the exercise is anomaly-focused
+1. open <FileName type="excel" />
+2. open <FileName type="support" /> if the exercise is anomaly-focused
 3. identify the sheets that match the query or case you are running
 4. create a working sheet for pivots, formulas, and charts
 
@@ -200,7 +200,7 @@ Use:
 - `LaborTimeEntry`
 - `PurchaseOrder`
 - `JournalEntry`
-- `CharlesRiver_support.xlsx`
+- the support workbook
 
 Suggested outputs:
 
@@ -251,12 +251,12 @@ Best paired cases:
 
 ## Using the Workbook and Support Workbook
 
-- `CharlesRiver.xlsx` is the main workbook for dataset tables and Excel analysis.
-- `CharlesRiver_support.xlsx` provides anomaly and validation context for exception-oriented review.
+- <FileName type="excel" /> is the main workbook for dataset tables and Excel analysis.
+- <FileName type="support" /> provides anomaly and validation context for exception-oriented review.
 - Workbook exercises can start from either the published dataset tables or the support workbook, depending on the assignment.
 
 ## Where to Go Next
 
 - Read [SQL Guide](sql-guide.md) for the matching query workflow.
 - Read [Analytics Cases](cases/index.md) for guided walkthroughs.
-- Read [Instructor Adoption Guide](../teach-with-CharlesRiver/instructor-guide.md) for classroom sequencing.
+- Read [Instructor Adoption Guide](../teach-with-data/instructor-guide.md) for classroom sequencing.

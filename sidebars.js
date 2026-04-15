@@ -1,3 +1,7 @@
+const { loadSiteBranding } = require("./config/loadSiteBranding.cjs");
+
+const branding = loadSiteBranding();
+
 /** @type {import('@docusaurus/plugin-content-docs').SidebarsConfig} */
 const sidebars = {
   docsSidebar: [
@@ -6,7 +10,7 @@ const sidebars = {
       label: "Start Here",
       items: [
         "start-here/index",
-        "start-here/why-CharlesRiver",
+        "start-here/why-this-dataset",
         "start-here/downloads",
         "start-here/dataset-overview",
       ],
@@ -105,8 +109,8 @@ const sidebars = {
     },
     {
       type: "category",
-      label: "Teach With CharlesRiver",
-      items: ["teach-with-CharlesRiver/instructor-guide"],
+      label: branding.instructorLabel,
+      items: ["teach-with-data/instructor-guide"],
     },
     {
       type: "category",

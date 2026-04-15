@@ -13,7 +13,7 @@ sidebar_label: Pricing and Margin Case
 
 ## Business Scenario
 
-Charles River now prices from formal segment and customer price lists with explicit promotions and override approvals. Students need to explain how price realization changes by customer mix, where promotions dilute revenue, and when override approvals become commercially significant.
+The dataset prices from formal segment and customer price lists with explicit promotions and override approvals. Students need to explain how price realization changes by customer mix, where promotions dilute revenue, and when override approvals become commercially significant.
 
 ## Query Sequence
 

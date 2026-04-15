@@ -6,7 +6,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from CharlesRiver_dataset.settings import GenerationContext
+from generator_dataset.settings import GenerationContext
 
 
 def next_id(context: GenerationContext, table_name: str) -> int:

@@ -1,21 +1,21 @@
 ---
 title: Downloads
-description: Download the ready-to-use Charles River SQLite database and Excel workbook from GitHub Releases.
+description: Download the ready-to-use SQLite database and Excel workbook from GitHub Releases.
 slug: /downloads
 sidebar_label: Downloads
 ---
 
 # Downloads
 
-- [Download the SQLite database](https://github.com/mmcodesso/CharlesRiver_database/releases/latest/download/CharlesRiver.sqlite)
-- [Download the Excel workbook](https://github.com/mmcodesso/CharlesRiver_database/releases/latest/download/CharlesRiver.xlsx)
-- [Download the CSV zip package](https://github.com/mmcodesso/CharlesRiver_database/releases/latest/download/CharlesRiver_csv.zip)
+- <ReleaseDownloadLink type="sqlite">Download the SQLite database</ReleaseDownloadLink>
+- <ReleaseDownloadLink type="excel">Download the Excel workbook</ReleaseDownloadLink>
+- <ReleaseDownloadLink type="csv">Download the CSV zip package</ReleaseDownloadLink>
 
 ## Which File Should You Use?
 
-- Use `CharlesRiver.sqlite` for SQL work.
-- Use `CharlesRiver.xlsx` for pivots, charts, filters, and workbook-based analysis.
-- Use `CharlesRiver_csv.zip` when you want one CSV per dataset table.
+- Use <FileName type="sqlite" /> for SQL work.
+- Use <FileName type="excel" /> for pivots, charts, filters, and workbook-based analysis.
+- Use <FileName type="csv" /> when you want one CSV per dataset table.
 
 ## Recommended Next Step
 

@@ -1,6 +1,6 @@
 ---
 title: GLEntry Posting Reference
-description: Student-friendly guide to how Charles River business events become posted ledger entries.
+description: Student-friendly guide to how business events become posted ledger entries.
 sidebar_label: GLEntry Posting
 ---
 
@@ -107,7 +107,7 @@ Each operational posting written to `GLEntry` includes:
 
 ## Validation Coverage
 
-`src/CharlesRiver_dataset/validations.py` checks:
+`src/generator_dataset/validations.py` checks:
 
 - voucher-level balance
 - overall trial balance equality

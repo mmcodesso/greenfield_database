@@ -1,15 +1,15 @@
 from dataclasses import replace
 
-from CharlesRiver_dataset.anomalies import inject_anomalies
-from CharlesRiver_dataset.journals import (
+from generator_dataset.anomalies import inject_anomalies
+from generator_dataset.journals import (
     generate_accrual_adjustment_journals,
     generate_recurring_manual_journals,
     generate_year_end_close_journals,
 )
-from CharlesRiver_dataset.main import build_phase5
-from CharlesRiver_dataset.p2p import generate_accrued_service_settlements
-from CharlesRiver_dataset.posting_engine import post_all_transactions
-from CharlesRiver_dataset.validations import validate_phase8, validate_phase13
+from generator_dataset.main import build_phase5
+from generator_dataset.p2p import generate_accrued_service_settlements
+from generator_dataset.posting_engine import post_all_transactions
+from generator_dataset.validations import validate_phase8, validate_phase13
 
 
 def test_generate_recurring_manual_journals_counts_and_links() -> None:

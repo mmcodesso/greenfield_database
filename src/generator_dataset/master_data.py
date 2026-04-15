@@ -11,10 +11,10 @@ try:
 except ModuleNotFoundError:
     Faker = None
 
-from CharlesRiver_dataset.schema import TABLE_COLUMNS
-from CharlesRiver_dataset.state_cache import drop_context_attributes, get_or_build_cache
-from CharlesRiver_dataset.settings import GenerationContext
-from CharlesRiver_dataset.utils import money, next_id
+from generator_dataset.schema import TABLE_COLUMNS
+from generator_dataset.state_cache import drop_context_attributes, get_or_build_cache
+from generator_dataset.settings import GenerationContext
+from generator_dataset.utils import money, next_id
 
 
 COST_CENTER_ROWS = [
@@ -491,7 +491,7 @@ class SimpleFaker:
     def company(self) -> str:
         self.index += 1
         suffixes = ["LLC", "Inc.", "Company", "Group", "Partners"]
-        return f"Charles River Counterparty {self.index:03d} {suffixes[self.index % len(suffixes)]}"
+        return f"Counterparty {self.index:03d} {suffixes[self.index % len(suffixes)]}"
 
     def street_address(self) -> str:
         self.index += 1
@@ -1262,7 +1262,10 @@ def generate_employees(context: GenerationContext) -> None:
             "EmployeeName": fake.name(),
             "CostCenterID": int(cost_center_ids[cost_center_name]),
             "JobTitle": job_title,
-            "Email": f"employee{employee_id:03d}@CharlesRiver.example",
+            "Email": (
+                f"employee{employee_id:03d}@"
+                f"{context.settings.short_name.lower()}.example"
+            ),
             "Address": fake.street_address(),
             "City": fake.city(),
             "State": fake.state_abbr(),

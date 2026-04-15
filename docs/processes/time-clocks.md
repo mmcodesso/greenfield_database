@@ -2,7 +2,7 @@
 
 ## Business Storyline
 
-Charles River models time and attendance as the bridge between workforce planning and payroll. Supervisors define the expected shift pattern, hourly employees work against those expectations, and the approved daily clock becomes the support for both payroll hours and labor analysis.
+The dataset models time and attendance as the bridge between workforce planning and payroll. Supervisors define the expected shift pattern, hourly employees work against those expectations, and the approved daily clock becomes the support for both payroll hours and labor analysis.
 
 This page is about the workforce side of the story: when employees were expected to work, when they actually worked, how overtime appears, how direct manufacturing time can be tied to a work-order operation, and where attendance exceptions show up. The actual pay cycle is covered on the separate [Payroll](payroll.md) page.
 
@@ -52,7 +52,7 @@ Read the diagram from workforce planning to approved attendance and then to down
 
 ### 1. Define the shift structure
 
-Charles River starts by defining standard shifts for areas such as manufacturing, warehouse, and customer service. Those shift definitions tell students what "on time" and "normal hours" are supposed to look like.
+The process starts by defining standard shifts for areas such as manufacturing, warehouse, and customer service. Those shift definitions tell students what "on time" and "normal hours" are supposed to look like.
 
 Main table:
 
@@ -68,7 +68,7 @@ Main table:
 
 ### 3. Build the daily shift roster
 
-Charles River now adds a daily planned roster beneath the approved daily time summary. The roster tells students who was supposed to work, on which date, in which work center, and for how many scheduled hours.
+The dataset adds a daily planned roster beneath the approved daily time summary. The roster tells students who was supposed to work, on which date, in which work center, and for how many scheduled hours.
 
 Main table:
 
@@ -88,7 +88,7 @@ Main tables:
 
 ### 5. Record raw punches and derive approved daily time clocks
 
-For each worked day, Charles River now records raw badge-style punches first. Those punches roll up into one approved `TimeClockEntry` row that captures the daily attendance summary:
+For each worked day, the dataset records raw badge-style punches first. Those punches roll up into one approved `TimeClockEntry` row that captures the daily attendance summary:
 
 - `Clock In`
 - `Meal Start`

@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import pandas as pd
 
-from CharlesRiver_dataset.main import build_phase2, build_phase23
-from CharlesRiver_dataset.planning import open_work_order_supply_by_item_warehouse_week
-from CharlesRiver_dataset.schema import TABLE_COLUMNS, create_empty_tables
-from CharlesRiver_dataset.settings import initialize_context, load_settings
+from generator_dataset.main import build_phase2, build_phase23
+from generator_dataset.planning import open_work_order_supply_by_item_warehouse_week
+from generator_dataset.schema import TABLE_COLUMNS, create_empty_tables
+from generator_dataset.settings import initialize_context, load_settings
 
 
 def _row(table_name: str, **values: object) -> dict[str, object]:

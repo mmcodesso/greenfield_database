@@ -1,6 +1,6 @@
 ---
 title: Financial Analytics
-description: Starter financial-accounting analysis paths using the Charles River dataset.
+description: Starter financial-accounting analysis paths using the published dataset.
 sidebar_label: Financial Analytics
 ---
 

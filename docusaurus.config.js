@@ -1,14 +1,17 @@
 const { themes } = require("prism-react-renderer");
+const { loadSiteBranding } = require("./config/loadSiteBranding.cjs");
+
+const branding = loadSiteBranding();
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: "Charles River Accounting Dataset",
+  title: branding.datasetName,
   tagline: "Student-first documentation for accounting analytics courses.",
   favicon: "img/favicon.svg",
-  url: "https://CharlesRiver.AccountingAnalyticsHub.com",
+  url: branding.baseUrl,
   baseUrl: "/",
   organizationName: "mmcodesso",
-  projectName: "CharlesRiver_database",
+  projectName: "greenfield_database",
   trailingSlash: false,
   onBrokenLinks: "throw",
   staticDirectories: ["static", "queries"],
@@ -54,8 +57,11 @@ const config = {
       },
     ],
   ],
+  customFields: {
+    branding,
+  },
   themeConfig: {
-    image: "img/CharlesRiver-social-card.svg",
+    image: "img/site-social-card.svg",
     colorMode: {
       defaultMode: "light",
       disableSwitch: false,
@@ -79,12 +85,12 @@ const config = {
       },
     },
     navbar: {
-      title: "CharlesRiver",
+      title: branding.displayName,
       items: [
         { to: "/docs/", label: "Start Here", position: "left" },
         { to: "/docs/analytics", label: "Analytics", position: "left" },
         {
-          to: "/docs/teach-with-CharlesRiver/instructor-adoption",
+          to: "/docs/teach-with-data/instructor-adoption",
           label: "Adopt",
           position: "left",
         },
@@ -111,7 +117,7 @@ const config = {
           items: [
             {
               label: "Instructor Adoption Guide",
-              to: "/docs/teach-with-CharlesRiver/instructor-adoption",
+              to: "/docs/teach-with-data/instructor-adoption",
             },
             { label: "Analytics Hub", to: "/docs/analytics" },
             { label: "Process Flows", to: "/docs/process-flows" },
@@ -122,7 +128,7 @@ const config = {
           items: [
             {
               label: "GitHub Repository",
-              href: "https://github.com/mmcodesso/CharlesRiver_database",
+              href: branding.repositoryUrl,
             },
             {
               label: "Contributing",
@@ -135,7 +141,7 @@ const config = {
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} Charles River Accounting Dataset.`,
+      copyright: `Copyright © ${new Date().getFullYear()} ${branding.datasetName}.`,
     },
     prism: {
       theme: themes.github,

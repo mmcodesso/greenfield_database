@@ -5,9 +5,9 @@ from pathlib import Path
 
 import pandas as pd
 
-from CharlesRiver_dataset.budgets import generate_budgets, generate_opening_balances
-from CharlesRiver_dataset.main import build_phase22
-from CharlesRiver_dataset.manufacturing import (
+from generator_dataset.budgets import generate_budgets, generate_opening_balances
+from generator_dataset.main import build_phase22
+from generator_dataset.manufacturing import (
     close_eligible_work_orders,
     generate_boms,
     generate_month_manufacturing_activity,
@@ -15,7 +15,7 @@ from CharlesRiver_dataset.manufacturing import (
     generate_work_center_calendars,
     generate_work_centers_and_routings,
 )
-from CharlesRiver_dataset.master_data import (
+from generator_dataset.master_data import (
     approver_employee_id,
     backfill_cost_center_managers,
     employee_ids_for_cost_center_as_of,
@@ -29,7 +29,7 @@ from CharlesRiver_dataset.master_data import (
     generate_warehouses,
     load_accounts,
 )
-from CharlesRiver_dataset.o2c import (
+from generator_dataset.o2c import (
     generate_month_cash_receipts,
     generate_month_customer_refunds,
     generate_month_o2c,
@@ -37,26 +37,26 @@ from CharlesRiver_dataset.o2c import (
     generate_month_sales_returns,
     generate_month_shipments,
 )
-from CharlesRiver_dataset.p2p import (
+from generator_dataset.p2p import (
     generate_month_disbursements,
     generate_month_goods_receipts,
     generate_month_purchase_invoices,
     generate_month_purchase_orders,
     generate_month_requisitions,
 )
-from CharlesRiver_dataset.payroll import (
+from generator_dataset.payroll import (
     employee_available_for_work_date,
     generate_month_payroll,
     generate_payroll_periods,
     generate_shift_definitions_and_assignments,
 )
-from CharlesRiver_dataset.planning import (
+from generator_dataset.planning import (
     generate_demand_forecasts,
     generate_inventory_policies,
     generate_month_planning,
 )
-from CharlesRiver_dataset.schema import create_empty_tables
-from CharlesRiver_dataset.settings import GenerationContext, initialize_context, load_settings
+from generator_dataset.schema import create_empty_tables
+from generator_dataset.settings import GenerationContext, initialize_context, load_settings
 
 
 MONTH_STEP_SEQUENCE = [

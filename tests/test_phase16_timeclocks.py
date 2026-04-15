@@ -4,10 +4,10 @@ from collections import Counter
 
 import pandas as pd
 
-from CharlesRiver_dataset.anomalies import inject_anomalies
-from CharlesRiver_dataset.main import build_full_dataset, build_phase15_2, build_phase16
-from CharlesRiver_dataset.schema import TABLE_COLUMNS
-from CharlesRiver_dataset.validations import validate_phase8
+from generator_dataset.anomalies import inject_anomalies
+from generator_dataset.main import build_full_dataset, build_phase15_2, build_phase16
+from generator_dataset.schema import TABLE_COLUMNS
+from generator_dataset.validations import validate_phase8
 
 
 def test_phase15_2_validation_scope_helper_runs_clean() -> None:

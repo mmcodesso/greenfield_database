@@ -1,13 +1,13 @@
 ---
 title: Start Here
-description: The main entry page for learning the Charles River Accounting Dataset from files to analysis.
+description: The main entry page for learning the accounting dataset from files to analysis.
 slug: /
 sidebar_label: Start Here
 ---
 
 # Start Here
 
-Charles River Accounting Dataset is a synthetic business database for accounting analytics courses. Use this page to move from the classroom file package to the business story, process logic, reference pages, and analytics work without getting lost in the repository.
+<DatasetName /> is a synthetic business database for accounting analytics courses. Use this page to move from the classroom file package to the business story, process logic, reference pages, and analytics work without getting lost in the documentation.
 
 ## 1. Start With the Files
 
@@ -15,9 +15,9 @@ Begin with the ready-to-use classroom package from [Downloads](downloads.md).
 
 The main files are:
 
-- `CharlesRiver.sqlite` for SQL work
-- `CharlesRiver.xlsx` for Excel pivots, charts, filters, and workbook-based analysis
-- `CharlesRiver_csv.zip` for one-CSV-per-table delivery
+- <FileName type="sqlite" /> for SQL work
+- <FileName type="excel" /> for Excel pivots, charts, filters, and workbook-based analysis
+- <FileName type="csv" /> for one-CSV-per-table delivery
 
 ## 2. Learn the Business Before the Tables
 

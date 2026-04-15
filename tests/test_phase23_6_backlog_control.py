@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from CharlesRiver_dataset.manufacturing import work_order_schedule_bounds
+from generator_dataset.manufacturing import work_order_schedule_bounds
 
 
 def test_phase23_6_inventory_policies_use_execution_window(

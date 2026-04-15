@@ -1,6 +1,6 @@
 ---
 title: Managerial Analytics
-description: Starter managerial and cost-accounting analysis paths using the Charles River dataset.
+description: Starter managerial and cost-accounting analysis paths using the published dataset.
 sidebar_label: Managerial Analytics
 ---
 

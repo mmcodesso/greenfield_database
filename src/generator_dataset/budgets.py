@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import pandas as pd
 
-from CharlesRiver_dataset.master_data import approver_employee_id, current_role_employee_id
-from CharlesRiver_dataset.schema import TABLE_COLUMNS
-from CharlesRiver_dataset.settings import GenerationContext
-from CharlesRiver_dataset.utils import money, next_id
+from generator_dataset.master_data import approver_employee_id, current_role_employee_id
+from generator_dataset.schema import TABLE_COLUMNS
+from generator_dataset.settings import GenerationContext
+from generator_dataset.utils import money, next_id
 
 
 OPENING_BALANCE_AMOUNTS = {

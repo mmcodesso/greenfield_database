@@ -1,5 +1,5 @@
-from CharlesRiver_dataset.manufacturing import generate_boms
-from CharlesRiver_dataset.master_data import (
+from generator_dataset.manufacturing import generate_boms
+from generator_dataset.master_data import (
     backfill_cost_center_managers,
     generate_cost_centers,
     generate_customers,
@@ -9,8 +9,8 @@ from CharlesRiver_dataset.master_data import (
     generate_warehouses,
     load_accounts,
 )
-from CharlesRiver_dataset.schema import create_empty_tables
-from CharlesRiver_dataset.settings import initialize_context, load_settings
+from generator_dataset.schema import create_empty_tables
+from generator_dataset.settings import initialize_context, load_settings
 
 
 def build_context():

@@ -5,10 +5,10 @@ from zipfile import ZipFile
 
 from openpyxl import load_workbook
 
-from CharlesRiver_dataset.anomalies import inject_anomalies
-from CharlesRiver_dataset.exporters import export_csv_zip, export_excel, export_sqlite, export_support_excel
-from CharlesRiver_dataset.main import build_phase6
-from CharlesRiver_dataset.validations import validate_phase7
+from generator_dataset.anomalies import inject_anomalies
+from generator_dataset.exporters import export_csv_zip, export_excel, export_sqlite, export_support_excel
+from generator_dataset.main import build_phase6
+from generator_dataset.validations import validate_phase7
 
 
 def test_phase7_anomalies_and_exports(tmp_path: Path) -> None:

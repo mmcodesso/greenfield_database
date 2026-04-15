@@ -2,7 +2,7 @@
 
 ## Business Storyline
 
-Charles River runs payroll as an operating cycle. Every pay period, payroll gathers approved support, calculates gross pay, records withholdings and employer burden, pays employees, and later remits the related liabilities. For manufacturing employees, payroll also helps move labor and overhead into the product-cost story.
+The dataset runs payroll as an operating cycle. Every pay period, payroll gathers approved support, calculates gross pay, records withholdings and employer burden, pays employees, and later remits the related liabilities. For manufacturing employees, payroll also helps move labor and overhead into the product-cost story.
 
 This page is about the pay cycle and its accounting. Students should use [Time Clocks](time-clocks.md) for the upstream attendance and shift story, then use this page to understand how those approved hours become expense, liabilities, cash payments, and manufacturing reclass activity.
 
@@ -60,7 +60,7 @@ Read the diagram as pay-period setup, payroll support, gross-to-net calculation,
 
 ### 1. Open a pay period
 
-Payroll begins with the pay calendar. Charles River uses continuous biweekly payroll periods so students can compare labor activity, payroll postings, and cash settlement across months and years.
+Payroll begins with the pay calendar. The dataset uses continuous biweekly payroll periods so students can compare labor activity, payroll postings, and cash settlement across months and years.
 
 Main table:
 

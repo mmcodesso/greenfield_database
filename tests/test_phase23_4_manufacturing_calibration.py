@@ -7,9 +7,9 @@ import pandas as pd
 import pytest
 import yaml
 
-from CharlesRiver_dataset.main import build_full_dataset, build_phase1, build_phase23
-from CharlesRiver_dataset.master_data import STANDARD_LABOR_HOURS_RANGE, manufacturing_staffing_targets
-from CharlesRiver_dataset.settings import load_settings
+from generator_dataset.main import build_full_dataset, build_phase1, build_phase23
+from generator_dataset.master_data import STANDARD_LABOR_HOURS_RANGE, manufacturing_staffing_targets
+from generator_dataset.settings import load_settings
 
 
 @pytest.fixture(scope="session")

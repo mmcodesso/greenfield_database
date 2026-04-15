@@ -2,11 +2,11 @@
 
 ## Business Storyline
 
-At CharlesRiver, the order-to-cash cycle starts when the sales team promises goods to a customer and ends only when that sale is settled in cash. Several teams touch the process along the way. Sales captures demand, warehouse staff ship what is available, accounting bills what actually left the warehouse, and treasury records the money when the customer pays.
+In this dataset, the order-to-cash cycle starts when the sales team promises goods to a customer and ends only when that sale is settled in cash. Several teams touch the process along the way. Sales captures demand, warehouse staff ship what is available, accounting bills what actually left the warehouse, and treasury records the money when the customer pays.
 
 That sequence matters because a customer order is not the same thing as revenue, and an invoice is not the same thing as cash. Students can see those stages separately in the data and trace each one to its own documents and postings.
 
-Most sales end with shipment, billing, and settlement. Returns are handled on a separate page because Charles River models them as an exception path, not as the normal outcome of most invoices.
+Most sales end with shipment, billing, and settlement. Returns are handled on a separate page because the dataset models them as an exception path, not as the normal outcome of most invoices.
 
 ## Process Diagram
 
@@ -35,7 +35,7 @@ Read the diagram as promise, fulfillment, billing, cash, and settlement. Orders 
 
 ## Step-by-Step Walkthrough
 
-1. Before the order is priced, Charles River resolves the commercial rules for that customer and item. Segment or customer price lists provide the base commercial price, one promotion may apply, and rare below-floor exceptions require an explicit override approval.
+1. Before the order is priced, the dataset resolves the commercial rules for that customer and item. Segment or customer price lists provide the base commercial price, one promotion may apply, and rare below-floor exceptions require an explicit override approval.
 2. Sales records the customer order. In the data, that promise appears in `SalesOrder` and `SalesOrderLine`.
 3. Warehouse staff fulfill what is available. If inventory is short, some quantity stays open or backordered until stock is available.
 4. When goods leave the warehouse, the shipment is recorded in `Shipment` and `ShipmentLine`. This is the first point where the physical movement of inventory is visible.

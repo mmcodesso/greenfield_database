@@ -26,7 +26,7 @@ Internal audit has been asked to review whether scheduled work, raw punches, app
 - `OvertimeApproval`
 - `AttendanceException`
 - `Employee`
-- `CharlesRiver_support.xlsx`
+- <FileName type="support" />
   - `AnomalyLog`
   - `ValidationChecks`
   - `ValidationExceptions`

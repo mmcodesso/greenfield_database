@@ -19,7 +19,7 @@ The internal-audit team receives the normal five-year package and needs to triag
 
 ## Main Tables and Worksheets
 
-- `CharlesRiver_support.xlsx`
+- <FileName type="support" />
 - `AnomalyLog`
 - `ValidationStages`
 - `ValidationChecks`
@@ -33,7 +33,7 @@ The internal-audit team receives the normal five-year package and needs to triag
 
 ## Recommended Query Sequence
 
-1. Open `CharlesRiver_support.xlsx` and summarize `AnomalyLog` by `anomaly_type`.
+1. Open <FileName type="support" /> and summarize `AnomalyLog` by `anomaly_type`.
 2. Then work through the SQL sequence below.
 
 <QuerySequence items={caseQuerySequences["audit-review-pack-case"]} />

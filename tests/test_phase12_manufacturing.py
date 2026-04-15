@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from CharlesRiver_dataset.main import build_phase2, build_phase12
-from CharlesRiver_dataset.manufacturing import MANUFACTURED_ITEM_SHARE_MAX, MANUFACTURED_ITEM_SHARE_MIN
-from CharlesRiver_dataset.schema import TABLE_COLUMNS
+from generator_dataset.main import build_phase2, build_phase12
+from generator_dataset.manufacturing import MANUFACTURED_ITEM_SHARE_MAX, MANUFACTURED_ITEM_SHARE_MIN
+from generator_dataset.schema import TABLE_COLUMNS
 
 
 def test_phase12_schema_extensions_exist() -> None:

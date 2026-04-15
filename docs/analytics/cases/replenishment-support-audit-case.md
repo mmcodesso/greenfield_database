@@ -13,7 +13,7 @@ sidebar_label: Replenishment Audit Case
 
 ## Business Scenario
 
-Charles River now expects weekly planning support behind normal replenishment activity. The audit task is to identify missing forecast approval, inactive policy coverage, unsupported requisitions or work orders, late recommendation conversion, and prelaunch or discontinued planning activity.
+The dataset expects weekly planning support behind normal replenishment activity. The audit task is to identify missing forecast approval, inactive policy coverage, unsupported requisitions or work orders, late recommendation conversion, and prelaunch or discontinued planning activity.
 
 ## Query Sequence
 

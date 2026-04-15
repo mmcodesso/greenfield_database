@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from CharlesRiver_dataset.settings import GenerationContext
+from generator_dataset.settings import GenerationContext
 
 
 TABLE_COLUMNS = {

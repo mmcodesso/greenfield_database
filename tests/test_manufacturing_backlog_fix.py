@@ -5,24 +5,24 @@ from pathlib import Path
 
 import pandas as pd
 
-from CharlesRiver_dataset.main import _generate_phase2_master_data_and_planning
-from CharlesRiver_dataset.main import build_phase23
-from CharlesRiver_dataset.main import fiscal_months
-from CharlesRiver_dataset.main import generate_month_planning
-from CharlesRiver_dataset.manufacturing import (
+from generator_dataset.main import _generate_phase2_master_data_and_planning
+from generator_dataset.main import build_phase23
+from generator_dataset.main import fiscal_months
+from generator_dataset.main import generate_month_planning
+from generator_dataset.manufacturing import (
     generate_month_manufacturing_activity,
     generate_month_work_orders_and_requisitions,
     scheduled_work_order_ids,
     close_eligible_work_orders,
 )
-from CharlesRiver_dataset.master_data import (
+from generator_dataset.master_data import (
     backfill_cost_center_managers,
     generate_cost_centers,
     generate_employees,
     generate_warehouses,
     load_accounts,
 )
-from CharlesRiver_dataset.o2c import (
+from generator_dataset.o2c import (
     generate_month_cash_receipts,
     generate_month_customer_refunds,
     generate_month_o2c,
@@ -30,16 +30,16 @@ from CharlesRiver_dataset.o2c import (
     generate_month_sales_returns,
     generate_month_shipments,
 )
-from CharlesRiver_dataset.p2p import (
+from generator_dataset.p2p import (
     generate_month_disbursements,
     generate_month_goods_receipts,
     generate_month_purchase_invoices,
     generate_month_purchase_orders,
     generate_month_requisitions,
 )
-from CharlesRiver_dataset.payroll import generate_month_payroll, labor_time_entries
-from CharlesRiver_dataset.schema import create_empty_tables
-from CharlesRiver_dataset.settings import GenerationContext, initialize_context, load_settings
+from generator_dataset.payroll import generate_month_payroll, labor_time_entries
+from generator_dataset.schema import create_empty_tables
+from generator_dataset.settings import GenerationContext, initialize_context, load_settings
 
 
 MONTH_STEP_SEQUENCE = [

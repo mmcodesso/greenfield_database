@@ -5,8 +5,8 @@ from pathlib import Path
 import pytest
 import yaml
 
-from CharlesRiver_dataset.main import build_full_dataset
-from CharlesRiver_dataset.settings import load_settings
+from generator_dataset.main import build_full_dataset
+from generator_dataset.settings import load_settings
 
 
 @pytest.fixture(scope="session")
