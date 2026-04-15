@@ -12,7 +12,7 @@ import { caseQuerySequences } from "@site/src/generated/queryDocCollections";
 
 ## Business Scenario
 
-Greenfield now keeps a more realistic employee master. The company has one CEO, one CFO, one Controller, one Production Manager, and one Accounting Manager. Frontline roles repeat where that makes business sense. Some employees terminate during the modeled range, replacements are hired into the same operating structure, and the historical rows remain in the employee master for traceability.
+Charles River now keeps a more realistic employee master. The company has one CEO, one CFO, one Controller, one Production Manager, and one Accounting Manager. Frontline roles repeat where that makes business sense. Some employees terminate during the modeled range, replacements are hired into the same operating structure, and the historical rows remain in the employee master for traceability.
 
 This case asks students to test whether operational activity, approvals, and payroll behavior still respect that workforce lifecycle.
 
@@ -29,7 +29,7 @@ This case asks students to test whether operational activity, approvals, and pay
 - `OvertimeApproval`
 - `PurchaseOrder`
 - `JournalEntry`
-- `greenfield_support.xlsx` sheets:
+- `CharlesRiver_support.xlsx` sheets:
   - `AnomalyLog`
   - `ValidationChecks`
   - `ValidationExceptions`
@@ -56,6 +56,6 @@ This case asks students to test whether operational activity, approvals, and pay
 
 ## Follow-Up Questions
 
-- Which roles should be unique in a company like Greenfield, and why?
+- Which roles should be unique in a company like CharlesRiver, and why?
 - Why is it useful to keep terminated employees in the master table for historical traceability?
 - Which approvals would you expect the CFO, Controller, Accounting Manager, and Production Manager to own?

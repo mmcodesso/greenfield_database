@@ -4,7 +4,7 @@
 
 Some sales do not end with the original invoice. A customer may return goods because the order was damaged, incorrect, or no longer needed. Warehouse staff receive the goods back, accounting issues the financial correction, and treasury may later return cash if the customer had already paid.
 
-This is one of the most useful student exception paths in the dataset because it shows that correcting revenue is both an operational process and an accounting process. Greenfield keeps it as a minority path so students can compare normal sales with exception handling.
+This is one of the most useful student exception paths in the dataset because it shows that correcting revenue is both an operational process and an accounting process. Charles River keeps it as a minority path so students can compare normal sales with exception handling.
 
 ## Process Diagram
 

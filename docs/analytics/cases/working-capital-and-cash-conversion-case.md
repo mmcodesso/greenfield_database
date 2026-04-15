@@ -15,7 +15,7 @@ Use this case when students need to connect operating documents to month-end wor
 
 ## Business Scenario
 
-Greenfield’s finance team wants to explain why working capital moves from month to month. The core question is how invoices, receipts, applications, supplier payments, payroll liabilities, customer deposits, and accrued expenses combine into a working-capital story.
+CharlesRiver’s finance team wants to explain why working capital moves from month to month. The core question is how invoices, receipts, applications, supplier payments, payroll liabilities, customer deposits, and accrued expenses combine into a working-capital story.
 
 ## Main Tables and Worksheets
 
@@ -28,7 +28,7 @@ Greenfield’s finance team wants to explain why working capital moves from mont
 - `GoodsReceipt`
 - `PayrollRegister`
 - `PayrollLiabilityRemittance`
-- `greenfield_support.xlsx`:
+- `CharlesRiver_support.xlsx`:
   - `ValidationChecks`
 
 ## Recommended Query Sequence

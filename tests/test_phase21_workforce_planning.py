@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pandas as pd
 
-from greenfield_dataset.main import build_phase21
-from greenfield_dataset.schema import TABLE_COLUMNS
-from greenfield_dataset.validations import validate_phase21
+from CharlesRiver_dataset.main import build_phase21
+from CharlesRiver_dataset.schema import TABLE_COLUMNS
+from CharlesRiver_dataset.validations import validate_phase21
 
 
 PHASE21_MANAGERIAL_QUERIES = [

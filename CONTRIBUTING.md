@@ -25,7 +25,7 @@ python generate_dataset.py
 ## Contribution Guidelines
 
 - Keep generated outputs out of Git.
-- Keep `src/greenfield_dataset/schema.py` as the canonical schema registry.
+- Keep `src/CharlesRiver_dataset/schema.py` as the canonical schema registry.
 - Add or update tests when changing generation rules.
 - Preserve voucher-level GL balance.
 - Preserve deterministic output for a fixed `random_seed`.

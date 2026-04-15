@@ -1,5 +1,5 @@
-from greenfield_dataset.manufacturing import generate_boms
-from greenfield_dataset.master_data import (
+from CharlesRiver_dataset.manufacturing import generate_boms
+from CharlesRiver_dataset.master_data import (
     backfill_cost_center_managers,
     generate_cost_centers,
     generate_customers,
@@ -9,8 +9,8 @@ from greenfield_dataset.master_data import (
     generate_warehouses,
     load_accounts,
 )
-from greenfield_dataset.schema import create_empty_tables
-from greenfield_dataset.settings import initialize_context, load_settings
+from CharlesRiver_dataset.schema import create_empty_tables
+from CharlesRiver_dataset.settings import initialize_context, load_settings
 
 
 def build_context():

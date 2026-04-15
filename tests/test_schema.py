@@ -1,5 +1,5 @@
-from greenfield_dataset.schema import TABLE_COLUMNS, create_empty_tables
-from greenfield_dataset.settings import initialize_context, load_settings
+from CharlesRiver_dataset.schema import TABLE_COLUMNS, create_empty_tables
+from CharlesRiver_dataset.settings import initialize_context, load_settings
 
 
 def test_create_empty_tables_registers_all_tables() -> None:

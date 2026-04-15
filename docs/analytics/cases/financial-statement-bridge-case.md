@@ -26,7 +26,7 @@ The accounting team has operational evidence for sales, purchasing, payroll, man
 - `PurchaseInvoice`
 - `WorkOrderClose`
 - `PayrollRegister`
-- `greenfield_support.xlsx`:
+- `CharlesRiver_support.xlsx`:
   - `ValidationStages`
   - `ValidationChecks`
 

@@ -1,6 +1,6 @@
 ---
 title: Managerial Analytics
-description: Starter managerial and cost-accounting analysis paths using the Greenfield dataset.
+description: Starter managerial and cost-accounting analysis paths using the Charles River dataset.
 sidebar_label: Managerial Analytics
 ---
 

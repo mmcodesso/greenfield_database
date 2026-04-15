@@ -18,7 +18,7 @@ from pandas.api.types import (
     is_numeric_dtype,
 )
 
-from greenfield_dataset.settings import GenerationContext
+from CharlesRiver_dataset.settings import GenerationContext
 
 
 ANOMALY_LOG_COLUMNS = [

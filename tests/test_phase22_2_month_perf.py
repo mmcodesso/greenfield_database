@@ -5,9 +5,9 @@ from pathlib import Path
 
 import pandas as pd
 
-from greenfield_dataset.budgets import generate_budgets, generate_opening_balances
-from greenfield_dataset.main import build_phase22
-from greenfield_dataset.manufacturing import (
+from CharlesRiver_dataset.budgets import generate_budgets, generate_opening_balances
+from CharlesRiver_dataset.main import build_phase22
+from CharlesRiver_dataset.manufacturing import (
     close_eligible_work_orders,
     generate_boms,
     generate_month_manufacturing_activity,
@@ -15,7 +15,7 @@ from greenfield_dataset.manufacturing import (
     generate_work_center_calendars,
     generate_work_centers_and_routings,
 )
-from greenfield_dataset.master_data import (
+from CharlesRiver_dataset.master_data import (
     approver_employee_id,
     backfill_cost_center_managers,
     employee_ids_for_cost_center_as_of,
@@ -29,7 +29,7 @@ from greenfield_dataset.master_data import (
     generate_warehouses,
     load_accounts,
 )
-from greenfield_dataset.o2c import (
+from CharlesRiver_dataset.o2c import (
     generate_month_cash_receipts,
     generate_month_customer_refunds,
     generate_month_o2c,
@@ -37,26 +37,26 @@ from greenfield_dataset.o2c import (
     generate_month_sales_returns,
     generate_month_shipments,
 )
-from greenfield_dataset.p2p import (
+from CharlesRiver_dataset.p2p import (
     generate_month_disbursements,
     generate_month_goods_receipts,
     generate_month_purchase_invoices,
     generate_month_purchase_orders,
     generate_month_requisitions,
 )
-from greenfield_dataset.payroll import (
+from CharlesRiver_dataset.payroll import (
     employee_available_for_work_date,
     generate_month_payroll,
     generate_payroll_periods,
     generate_shift_definitions_and_assignments,
 )
-from greenfield_dataset.planning import (
+from CharlesRiver_dataset.planning import (
     generate_demand_forecasts,
     generate_inventory_policies,
     generate_month_planning,
 )
-from greenfield_dataset.schema import create_empty_tables
-from greenfield_dataset.settings import GenerationContext, initialize_context, load_settings
+from CharlesRiver_dataset.schema import create_empty_tables
+from CharlesRiver_dataset.settings import GenerationContext, initialize_context, load_settings
 
 
 MONTH_STEP_SEQUENCE = [

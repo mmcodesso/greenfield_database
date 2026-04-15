@@ -1,13 +1,13 @@
 ---
 title: Technical Guide
-description: System-level guide to how the Greenfield generator builds, posts, validates, and exports the dataset.
+description: System-level guide to how the Charles River generator builds, posts, validates, and exports the dataset.
 slug: /technical-guide
 sidebar_label: Technical Guide
 ---
 
 # Technical Guide
 
-Use this page when you need the codebase-level view of how Greenfield is generated.
+Use this page when you need the codebase-level view of how Charles River is generated.
 
 For table structure and join fields, use [Schema Reference](../reference/schema.md). For event-to-ledger behavior, use [GLEntry Posting Reference](../reference/posting.md). For current scope and planned improvements, use [Roadmap](roadmap.md).
 
@@ -19,20 +19,20 @@ The current implementation has six layers:
 
 | Layer | Main content |
 |---|---|
-| Business and process layer | Greenfield Home Furnishings, operating processes, and source documents |
+| Business and process layer | Charles River Home Furnishings, operating processes, and source documents |
 | Operational data layer | O2C, P2P, manufacturing, payroll, time, and master-data tables |
 | Accounting layer | `JournalEntry`, `GLEntry`, and the chart of accounts |
 | Control layer | Validations, anomaly injection, validation reporting, and generation logging |
 | Delivery layer | SQLite, Excel, support-workbook, CSV zip, and text-log exports |
 | Configuration layer | settings, runtime context, fiscal calendar, and validation scopes |
 
-The implemented schema is defined in `src/greenfield_dataset/schema.py` through `TABLE_COLUMNS`.
+The implemented schema is defined in `src/CharlesRiver_dataset/schema.py` through `TABLE_COLUMNS`.
 
 ## Entrypoints and Runtime Objects
 
 - `generate_dataset.py` is the simplest repository-root entrypoint.
-- `src/greenfield_dataset/main.py` orchestrates the full run.
-- `src/greenfield_dataset/settings.py` defines the runtime settings and the shared generation context.
+- `src/CharlesRiver_dataset/main.py` orchestrates the full run.
+- `src/CharlesRiver_dataset/settings.py` defines the runtime settings and the shared generation context.
 
 The two runtime objects that matter most are:
 

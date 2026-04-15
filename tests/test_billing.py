@@ -1,7 +1,7 @@
-from greenfield_dataset.main import build_phase4
-from greenfield_dataset.o2c import generate_month_cash_receipts, generate_month_sales_invoices
-from greenfield_dataset.p2p import generate_month_disbursements, generate_month_purchase_invoices
-from greenfield_dataset.validations import validate_phase5
+from CharlesRiver_dataset.main import build_phase4
+from CharlesRiver_dataset.o2c import generate_month_cash_receipts, generate_month_sales_invoices
+from CharlesRiver_dataset.p2p import generate_month_disbursements, generate_month_purchase_invoices
+from CharlesRiver_dataset.validations import validate_phase5
 
 
 def test_generate_phase5_billing_and_payments() -> None:

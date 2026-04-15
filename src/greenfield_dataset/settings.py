@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import yaml
 
-from greenfield_dataset.calendar import build_calendar
+from CharlesRiver_dataset.calendar import build_calendar
 
 OPERATIONAL_HORIZON_BUFFER_DAYS = 84
 
@@ -31,9 +31,9 @@ class Settings:
     sqlite_path: str
     excel_path: str
     export_support_excel: bool = False
-    support_excel_path: str = "outputs/greenfield_support.xlsx"
+    support_excel_path: str = "outputs/CharlesRiver_support.xlsx"
     export_csv_zip: bool = False
-    csv_zip_path: str = "outputs/greenfield_csv.zip"
+    csv_zip_path: str = "outputs/CharlesRiver_csv.zip"
     validation_report_path: str | None = None
     generation_log_path: str = "outputs/generation.log"
 
@@ -63,11 +63,11 @@ def load_settings(config_path: str | Path) -> Settings:
         if legacy_validation_path:
             normalized["support_excel_path"] = str(Path(legacy_validation_path).with_suffix(".xlsx"))
         else:
-            excel_path = Path(str(normalized.get("excel_path", "outputs/greenfield.xlsx")))
+            excel_path = Path(str(normalized.get("excel_path", "outputs/CharlesRiver.xlsx")))
             normalized["support_excel_path"] = str(excel_path.with_name(f"{excel_path.stem}_support.xlsx"))
 
     if "csv_zip_path" not in normalized:
-        excel_path = Path(str(normalized.get("excel_path", "outputs/greenfield.xlsx")))
+        excel_path = Path(str(normalized.get("excel_path", "outputs/CharlesRiver.xlsx")))
         normalized["csv_zip_path"] = str(excel_path.with_name(f"{excel_path.stem}_csv.zip"))
 
     if "export_support_excel" not in normalized:

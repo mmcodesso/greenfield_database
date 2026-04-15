@@ -2,7 +2,7 @@
 
 ## Business Storyline
 
-Greenfield does not manufacture every product it sells. It buys some finished goods ready-made, but it also produces a selected subset of furniture, lighting, and textile items in-house. That hybrid model is one of the most useful teaching features in the dataset because students can compare purchased inventory with manufactured inventory inside the same company.
+Charles River does not manufacture every product it sells. It buys some finished goods ready-made, but it also produces a selected subset of furniture, lighting, and textile items in-house. That hybrid model is one of the most useful teaching features in the dataset because students can compare purchased inventory with manufactured inventory inside the same company.
 
 The manufacturing story begins when weekly planning sees that demand and inventory levels are moving out of balance. Demand forecasts, inventory policies, and open backlog create replenishment signals. Manufactured signals convert into work orders, purchasing helps replenish any missing materials, warehouse staff issue components into production, supervisors and workers move the order through scheduled operations, payroll-supported labor is traced into the job, and accounting closes the order when standard and actual amounts are resolved.
 
@@ -59,7 +59,7 @@ Read the diagram as demand, planning, scheduling, material support, labor suppor
 
 ### 1. Define the standard recipe
 
-Before production begins, Greenfield needs a standard recipe for each manufactured item. That recipe is stored as one active bill of material for the finished good, with the required raw materials, packaging components, quantities, and scrap assumptions.
+Before production begins, Charles River needs a standard recipe for each manufactured item. That recipe is stored as one active bill of material for the finished good, with the required raw materials, packaging components, quantities, and scrap assumptions.
 
 Main tables:
 
@@ -69,7 +69,7 @@ Main tables:
 
 ### 2. Define the routing and work centers
 
-Greenfield also defines how the work should happen. Each manufactured item has one active routing that breaks production into `2` to `4` ordered operations and assigns those operations to work centers such as cutting, assembly, finishing, packing, or selected quality checks.
+Charles River also defines how the work should happen. Each manufactured item has one active routing that breaks production into `2` to `4` ordered operations and assigns those operations to work centers such as cutting, assembly, finishing, packing, or selected quality checks.
 
 Main tables:
 

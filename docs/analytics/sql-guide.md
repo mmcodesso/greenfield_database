@@ -1,6 +1,6 @@
 ---
 title: SQL Guide
-description: How to use the starter SQL packs against the Greenfield SQLite export.
+description: How to use the starter SQL packs against the Charles River SQLite export.
 sidebar_label: SQL Guide
 ---
 
@@ -57,7 +57,7 @@ import sqlite3
 import pandas as pd
 
 sql = Path("queries/financial/19_working_capital_bridge_by_month.sql").read_text(encoding="utf-8")
-with sqlite3.connect("greenfield.sqlite") as connection:
+with sqlite3.connect("CharlesRiver.sqlite") as connection:
     df = pd.read_sql_query(sql, connection)
 
 print(df.head())
@@ -68,7 +68,7 @@ print(df.head())
 If the `sqlite3` command-line tool is installed on your system, you can also run:
 
 ```bash
-sqlite3 greenfield.sqlite < queries/financial/19_working_capital_bridge_by_month.sql
+sqlite3 CharlesRiver.sqlite < queries/financial/19_working_capital_bridge_by_month.sql
 ```
 
 ## Using the Published Dataset
@@ -163,4 +163,4 @@ sqlite3 greenfield.sqlite < queries/financial/19_working_capital_bridge_by_month
 ## Where to Go Next
 
 - Read [Excel Guide](excel-guide.md) to recreate similar analyses in the workbook.
-- Read [Instructor Adoption Guide](../teach-with-greenfield/instructor-guide.md) for topic sequencing in class.
+- Read [Instructor Adoption Guide](../teach-with-CharlesRiver/instructor-guide.md) for topic sequencing in class.

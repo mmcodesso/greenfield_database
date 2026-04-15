@@ -2,13 +2,13 @@ const { themes } = require("prism-react-renderer");
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: "Greenfield Accounting Dataset",
+  title: "Charles River Accounting Dataset",
   tagline: "Student-first documentation for accounting analytics courses.",
   favicon: "img/favicon.svg",
-  url: "https://greenfield.accountinganalyticshub.com",
+  url: "https://CharlesRiver.AccountingAnalyticsHub.com",
   baseUrl: "/",
   organizationName: "mmcodesso",
-  projectName: "greenfield_database",
+  projectName: "CharlesRiver_database",
   trailingSlash: false,
   onBrokenLinks: "throw",
   staticDirectories: ["static", "queries"],
@@ -55,7 +55,7 @@ const config = {
     ],
   ],
   themeConfig: {
-    image: "img/greenfield-social-card.svg",
+    image: "img/CharlesRiver-social-card.svg",
     colorMode: {
       defaultMode: "light",
       disableSwitch: false,
@@ -79,12 +79,12 @@ const config = {
       },
     },
     navbar: {
-      title: "Greenfield",
+      title: "CharlesRiver",
       items: [
         { to: "/docs/", label: "Start Here", position: "left" },
         { to: "/docs/analytics", label: "Analytics", position: "left" },
         {
-          to: "/docs/teach-with-greenfield/instructor-adoption",
+          to: "/docs/teach-with-CharlesRiver/instructor-adoption",
           label: "Adopt",
           position: "left",
         },
@@ -111,7 +111,7 @@ const config = {
           items: [
             {
               label: "Instructor Adoption Guide",
-              to: "/docs/teach-with-greenfield/instructor-adoption",
+              to: "/docs/teach-with-CharlesRiver/instructor-adoption",
             },
             { label: "Analytics Hub", to: "/docs/analytics" },
             { label: "Process Flows", to: "/docs/process-flows" },
@@ -122,7 +122,7 @@ const config = {
           items: [
             {
               label: "GitHub Repository",
-              href: "https://github.com/mmcodesso/greenfield_database",
+              href: "https://github.com/mmcodesso/CharlesRiver_database",
             },
             {
               label: "Contributing",
@@ -135,7 +135,7 @@ const config = {
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} Greenfield Accounting Dataset.`,
+      copyright: `Copyright © ${new Date().getFullYear()} Charles River Accounting Dataset.`,
     },
     prism: {
       theme: themes.github,

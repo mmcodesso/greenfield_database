@@ -6,16 +6,16 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from greenfield_dataset.master_data import (
+from CharlesRiver_dataset.master_data import (
     approver_employee_id,
     employee_active_mask,
     employee_ids_for_cost_center_as_of,
     eligible_item_mask,
 )
-from greenfield_dataset.planning import monthly_forecast_targets
-from greenfield_dataset.schema import TABLE_COLUMNS
-from greenfield_dataset.settings import GenerationContext
-from greenfield_dataset.utils import format_doc_number, money, next_id, qty, random_date_in_month
+from CharlesRiver_dataset.planning import monthly_forecast_targets
+from CharlesRiver_dataset.schema import TABLE_COLUMNS
+from CharlesRiver_dataset.settings import GenerationContext
+from CharlesRiver_dataset.utils import format_doc_number, money, next_id, qty, random_date_in_month
 
 
 SEGMENT_ORDER_WEIGHTS = {
@@ -59,7 +59,7 @@ RETURN_LINE_COUNT_PROBABILITIES = ((1, 0.82), (2, 0.18))
 PARTIAL_RETURN_FRACTION_RANGE = (0.10, 0.40)
 FULL_RETURN_REASON_PROBABILITY = 0.20
 
-CARRIERS = ["Greenfield Fleet", "FedEx Freight", "UPS Freight", "DHL Supply Chain"]
+CARRIERS = ["Charles River Fleet", "FedEx Freight", "UPS Freight", "DHL Supply Chain"]
 PAYMENT_METHODS = ["ACH", "Wire Transfer", "Check", "Credit Card"]
 SEGMENT_PRICE_DISCOUNTS = {
     "Strategic": 0.12,

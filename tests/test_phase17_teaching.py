@@ -8,7 +8,7 @@ from zipfile import ZipFile
 import pandas as pd
 from openpyxl import load_workbook
 
-from greenfield_dataset.main import build_phase17
+from CharlesRiver_dataset.main import build_phase17
 
 
 TARGETED_AUDIT_QUERY_EXPECTATIONS = {

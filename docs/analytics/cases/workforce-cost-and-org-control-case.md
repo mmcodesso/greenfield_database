@@ -15,7 +15,7 @@ Use this case when students need to connect people-cost analysis to workforce st
 
 ## Business Scenario
 
-Greenfield’s leadership wants to understand where people cost sits, how workforce structure varies by location and cost center, and whether approval activity lines up with the intended organization design.
+CharlesRiver’s leadership wants to understand where people cost sits, how workforce structure varies by location and cost center, and whether approval activity lines up with the intended organization design.
 
 ## Main Tables and Worksheets
 
@@ -27,7 +27,7 @@ Greenfield’s leadership wants to understand where people cost sits, how workfo
 - `PurchaseRequisition`
 - `PurchaseOrder`
 - `JournalEntry`
-- `greenfield_support.xlsx`:
+- `CharlesRiver_support.xlsx`:
   - `AnomalyLog`
   - `ValidationChecks`
 

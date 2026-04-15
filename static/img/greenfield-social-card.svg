@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
-  <title id="title">Greenfield Accounting Dataset</title>
+  <title id="title">Charles River Accounting Dataset</title>
   <desc id="desc">Student-first documentation for accounting analytics courses.</desc>
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
@@ -18,7 +18,7 @@
   <rect x="208" y="310" width="210" height="20" rx="10" fill="#1f6b52" opacity="0.56" />
   <circle cx="518" cy="338" r="42" fill="#e1a43a" />
   <text x="670" y="210" fill="#173a2f" font-family="Georgia, serif" font-size="58" font-weight="700">
-    Greenfield Accounting Dataset
+    Charles River Accounting Dataset
   </text>
   <text x="670" y="294" fill="#173a2f" font-family="Arial, sans-serif" font-size="32">
     Student-first docs for accounting analytics

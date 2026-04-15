@@ -1,6 +1,6 @@
 ---
 title: Financial Analytics
-description: Starter financial-accounting analysis paths using the Greenfield dataset.
+description: Starter financial-accounting analysis paths using the Charles River dataset.
 sidebar_label: Financial Analytics
 ---
 

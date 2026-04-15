@@ -1,13 +1,13 @@
 ---
 title: Contributing
-description: Development workflow and contribution guidelines for the Greenfield repository.
+description: Development workflow and contribution guidelines for the Charles River repository.
 sidebar_label: Contributing
 slug: /technical/contributing
 ---
 
 # Contributing
 
-Use this page when you are contributing code, documentation, or tests to Greenfield.
+Use this page when you are contributing code, documentation, or tests to CharlesRiver.
 
 ## Development Setup
 
@@ -22,7 +22,7 @@ pip install -r requirements.txt
 ## Core Working Rules
 
 - Keep generated outputs out of Git.
-- Keep `src/greenfield_dataset/schema.py` as the canonical schema registry.
+- Keep `src/CharlesRiver_dataset/schema.py` as the canonical schema registry.
 - Add or update tests when generation rules change.
 - Preserve voucher-level `GLEntry` balance.
 - Preserve deterministic output for a fixed `random_seed`.

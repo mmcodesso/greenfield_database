@@ -1,6 +1,6 @@
 ---
 title: Audit Exception Lab
-description: Guided audit lab focused on anomaly review and control testing in Greenfield.
+description: Guided audit lab focused on anomaly review and control testing in CharlesRiver.
 sidebar_label: Audit Exception Lab
 ---
 
@@ -14,11 +14,11 @@ import { caseQuerySequences } from "@site/src/generated/queryDocCollections";
 
 The finance and audit team receives the published five-year dataset with a moderate set of planted anomalies. This lab teaches students how to trace flagged exceptions to source documents, identify the related control, and explain the business risk in plain language. In class, you can narrow the review to one fiscal year with a filter when you want a smaller lab.
 
-Use `greenfield_support.xlsx` with the published dataset. If you are preparing the files yourself, use [Customize](../../technical/dataset-delivery.md).
+Use `CharlesRiver_support.xlsx` with the published dataset. If you are preparing the files yourself, use [Customize](../../technical/dataset-delivery.md).
 
 ## Main Tables and Worksheets
 
-- `greenfield_support.xlsx`
+- `CharlesRiver_support.xlsx`
 - `AnomalyLog`
 - `ValidationStages`
 - `ValidationChecks`
@@ -34,7 +34,7 @@ Use `greenfield_support.xlsx` with the published dataset. If you are preparing t
 
 ## Recommended Query Sequence
 
-1. Open `greenfield_support.xlsx` and review `AnomalyLog`.
+1. Open `CharlesRiver_support.xlsx` and review `AnomalyLog`.
 2. Pick one anomaly row and note the source document keys shown in the workbook.
 3. Then work through the SQL sequence below.
 
@@ -42,7 +42,7 @@ Use `greenfield_support.xlsx` with the published dataset. If you are preparing t
 
 ## Suggested Excel Sequence
 
-1. Open `greenfield_support.xlsx`.
+1. Open `CharlesRiver_support.xlsx`.
 2. Open `AnomalyLog` and group by `anomaly_type`.
 3. Pick one anomaly from AP, one from payroll, and one from manufacturing.
 4. Use the source-document sheets to trace each exception.

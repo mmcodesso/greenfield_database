@@ -12,7 +12,7 @@ import { caseQuerySequences } from "@site/src/generated/queryDocCollections";
 
 ## Business Scenario
 
-Greenfield buys inventory and materials through the normal P2P process, but finance also records month-end accrued expenses for insurance, software, and professional fees. Those estimates are later cleared through direct supplier service invoices and normal disbursement payments.
+Charles River buys inventory and materials through the normal P2P process, but finance also records month-end accrued expenses for insurance, software, and professional fees. Those estimates are later cleared through direct supplier service invoices and normal disbursement payments.
 
 ## Main Tables and Worksheets
 

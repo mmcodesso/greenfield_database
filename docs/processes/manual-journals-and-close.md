@@ -2,7 +2,7 @@
 
 ## Business Storyline
 
-Greenfield includes both operational activity and finance-controlled journal activity. The finance team also records the recurring and period-end activity that students expect in a real accounting system. That includes rent, utilities, depreciation, month-end accruals, rare accrual adjustments, factory-overhead journals, manufacturing labor and overhead reclasses, and year-end close.
+Charles River includes both operational activity and finance-controlled journal activity. The finance team also records the recurring and period-end activity that students expect in a real accounting system. That includes rent, utilities, depreciation, month-end accruals, rare accrual adjustments, factory-overhead journals, manufacturing labor and overhead reclasses, and year-end close.
 
 This page matters because it shows what happens outside the normal document chains. Students can compare operational postings from shipments, receipts, payroll, and purchasing with finance-controlled entries that start directly in the journal process.
 

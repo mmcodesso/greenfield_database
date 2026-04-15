@@ -1,7 +1,7 @@
-from greenfield_dataset.budgets import generate_budgets, generate_opening_balances
-from greenfield_dataset.main import build_phase1
-from greenfield_dataset.master_data import generate_customers, generate_items, generate_suppliers
-from greenfield_dataset.validations import validate_phase2
+from CharlesRiver_dataset.budgets import generate_budgets, generate_opening_balances
+from CharlesRiver_dataset.main import build_phase1
+from CharlesRiver_dataset.master_data import generate_customers, generate_items, generate_suppliers
+from CharlesRiver_dataset.validations import validate_phase2
 
 
 def test_generate_opening_balances_and_budgets() -> None:

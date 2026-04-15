@@ -8,13 +8,13 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from greenfield_dataset.master_data import approver_employee_id, current_role_employee_id, eligible_item_mask
-from greenfield_dataset.schema import TABLE_COLUMNS
-from greenfield_dataset.settings import GenerationContext
-from greenfield_dataset.utils import money, next_id, qty
+from CharlesRiver_dataset.master_data import approver_employee_id, current_role_employee_id, eligible_item_mask
+from CharlesRiver_dataset.schema import TABLE_COLUMNS
+from CharlesRiver_dataset.settings import GenerationContext
+from CharlesRiver_dataset.utils import money, next_id, qty
 
 
-LOGGER = logging.getLogger("greenfield_dataset")
+LOGGER = logging.getLogger("CharlesRiver_dataset")
 
 OPENING_STOCK_RANGES = {
     "Furniture": (45, 95),

@@ -6,9 +6,9 @@ from typing import Any
 import pandas as pd
 import yaml
 
-from greenfield_dataset.schema import TABLE_COLUMNS
-from greenfield_dataset.settings import GenerationContext
-from greenfield_dataset.utils import money, next_id, qty
+from CharlesRiver_dataset.schema import TABLE_COLUMNS
+from CharlesRiver_dataset.settings import GenerationContext
+from CharlesRiver_dataset.utils import money, next_id, qty
 
 
 APPROVAL_ROLE_FAMILIES_BY_DOCUMENT = {

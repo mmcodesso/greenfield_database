@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import TypeVar
 
-from greenfield_dataset.settings import GenerationContext
+from CharlesRiver_dataset.settings import GenerationContext
 
 
 T = TypeVar("T")

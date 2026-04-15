@@ -57,15 +57,15 @@ const nextSteps = [
   {
     title: "Adopt in a Course",
     text: "Use the instructor guide when you want teaching sequence, setup notes, and course-ready adoption support.",
-    href: "/docs/teach-with-greenfield/instructor-adoption",
+    href: "/docs/teach-with-CharlesRiver/instructor-adoption",
   },
 ];
 
 export default function Home() {
   return (
     <Layout
-      title="Why Greenfield"
-      description="Greenfield is a synthetic ERP-style accounting analytics environment for teaching business process, source documents, and ledger traceability with SQL, Excel, and guided classroom materials."
+      title="Why CharlesRiver"
+      description="Charles River is a synthetic ERP-style accounting analytics environment for teaching business process, source documents, and ledger traceability with SQL, Excel, and guided classroom materials."
     >
       <main className={styles.page}>
         <section className={styles.hero}>
@@ -74,7 +74,7 @@ export default function Home() {
             <p className={styles.kicker}>Accounting analytics environment</p>
             <h1 className={styles.title}>Teach the business before the joins.</h1>
             <p className={styles.lede}>
-              Greenfield is a synthetic ERP-style accounting analytics
+              Charles River is a synthetic ERP-style accounting analytics
               environment that helps students trace business activity from
               source documents to GLEntry using SQL, Excel, and guided teaching
               materials.
@@ -86,7 +86,7 @@ export default function Home() {
               <Link className="button button--secondary button--lg" to="/docs/process-flows">
                 See Process Flows
               </Link>
-              <Link className="button button--secondary button--lg" to="/docs/teach-with-greenfield/instructor-adoption">
+              <Link className="button button--secondary button--lg" to="/docs/teach-with-CharlesRiver/instructor-adoption">
                 Adopt in a Course
               </Link>
             </div>
@@ -100,12 +100,12 @@ export default function Home() {
 
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
-            <p className={styles.sectionLabel}>Why Greenfield</p>
+            <p className={styles.sectionLabel}>Why CharlesRiver</p>
             <h2>Connect business activity to ledger impact.</h2>
           </div>
           <p className={styles.whyText}>
             Students often see tables before they understand the business
-            process and accounting logic behind them. Greenfield exists to solve
+            process and accounting logic behind them. Charles River exists to solve
             that teaching problem by connecting business events, source
             documents, process flows, and posted ledger activity in one
             integrated model.
@@ -149,7 +149,7 @@ export default function Home() {
           </div>
           <div className={styles.adoptionBlock}>
             <p className={styles.adoptionText}>
-              Greenfield is designed for reuse across AIS, business process,
+              Charles River is designed for reuse across AIS, business process,
               SQL, Excel, audit, and managerial accounting work. Instructors
               can keep one integrated environment and vary the emphasis by
               course, module, or assignment type.
@@ -181,7 +181,7 @@ export default function Home() {
           <div className={styles.oerBlock}>
             <p className={styles.sectionLabel}>Open Educational Resource</p>
             <p className={styles.oerText}>
-              Greenfield is an openly licensed open educational resource
+              Charles River is an openly licensed open educational resource
               designed for reuse, adaptation, and course adoption.
             </p>
             <div className={styles.oerActions}>
@@ -191,7 +191,7 @@ export default function Home() {
               <Link className="button button--secondary" to="/docs/process-flows">
                 See Process Flows
               </Link>
-              <Link className="button button--secondary" to="/docs/teach-with-greenfield/instructor-adoption">
+              <Link className="button button--secondary" to="/docs/teach-with-CharlesRiver/instructor-adoption">
                 Adopt in a Course
               </Link>
             </div>

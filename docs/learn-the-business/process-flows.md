@@ -18,12 +18,12 @@ Start with the process that matches your class question:
 | Core O2C | [O2C](../processes/o2c.md) | To follow a sale from customer order through shipment, invoice, cash receipt, and application |
 | Returns and credits | [Returns, Credits, and Refunds](../processes/o2c-returns-credits-refunds.md) | To study the exception path when a billed sale is corrected |
 | P2P | [P2P](../processes/p2p.md) | To trace internal demand through supplier ordering, receiving, invoicing, and payment |
-| Manufacturing | [Manufacturing](../processes/manufacturing.md) | To see how Greenfield turns materials, labor, and schedules into finished goods |
+| Manufacturing | [Manufacturing](../processes/manufacturing.md) | To see how Charles River turns materials, labor, and schedules into finished goods |
 | Time clocks and shifts | [Time Clocks](../processes/time-clocks.md) | To understand attendance, shift expectations, labor support, and exception analysis |
 | Payroll | [Payroll](../processes/payroll.md) | To follow gross-to-net payroll, liabilities, payments, remittances, and labor reclass |
 | Journals and close | [Manual Journals and Close](../processes/manual-journals-and-close.md) | To study finance-controlled entries that sit outside the day-to-day document cycles |
 
-## Greenfield Process Map
+## Charles River Process Map
 
 ```mermaid
 flowchart LR
@@ -117,7 +117,7 @@ The most important traceability fields are:
 1. Read [Company Story](company-story.md) to understand the business model.
 2. Read [O2C](../processes/o2c.md) and [P2P](../processes/p2p.md) to learn the customer and supplier cycles.
 3. Read [Returns, Credits, and Refunds](../processes/o2c-returns-credits-refunds.md) for the main customer-side exception path.
-4. Read [Manufacturing](../processes/manufacturing.md) to see how Greenfield produces selected goods internally.
+4. Read [Manufacturing](../processes/manufacturing.md) to see how Charles River produces selected goods internally.
 5. Read [Time Clocks](../processes/time-clocks.md) to understand workforce scheduling, approved attendance, and labor support.
 6. Read [Payroll](../processes/payroll.md) to follow the pay cycle and related accounting.
 7. Read [Manual Journals and Close](../processes/manual-journals-and-close.md) for the finance-led activity outside the operational subledgers.

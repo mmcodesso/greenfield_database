@@ -8,9 +8,9 @@ sidebar_label: Company Story
 # The Company
 
 
-Greenfield Home Furnishings, Inc. is a fictional mid-sized U.S. company that sells home furnishings to commercial buyers, interior-design firms, and repeat regional customers.
+Charles River Home Furnishings, Inc. is a fictional mid-sized U.S. company that sells home furnishings to commercial buyers, interior-design firms, and repeat regional customers.
 
-Greenfield operates in two ways at the same time:
+Charles River operates in two ways at the same time:
 
 - it **buys** some finished goods from suppliers and resells them
 - it **manufactures** a selected subset of finished goods in-house from raw materials and packaging
@@ -25,9 +25,9 @@ That hybrid model connects:
 - accounting results
 - a realistic people-and-product master-data layer used for control and analytics work
 
-## What Greenfield Sells
+## What Charles River Sells
 
-Greenfield sells product families that are easy to visualize and analyze:
+Charles River sells product families that are easy to visualize and analyze:
 
 - furniture
 - lighting
@@ -38,9 +38,9 @@ Some of those products are purchased ready-made. Others are produced internally 
 
 The catalog uses named collections and style families. That structure makes product-profitability and lifecycle analysis more realistic for classroom work.
 
-## How Greenfield Operates
+## How Charles River Operates
 
-Greenfield's business story has six main threads.
+CharlesRiver's business story has six main threads.
 
 ### 1. Sell and ship to customers
 
@@ -65,7 +65,7 @@ The manufacturing team plans work orders for selected finished goods. Raw materi
 
 ### 5. Run payroll and connect labor to cost
 
-Greenfield now processes payroll operationally. Hourly employees are assigned to shifts and receive approved daily time-clock records, employees are paid on a biweekly cycle, payroll liabilities are remitted later, and manufacturing labor is traced into product cost through labor-time entries and reclass journals.
+Charles River now processes payroll operationally. Hourly employees are assigned to shifts and receive approved daily time-clock records, employees are paid on a biweekly cycle, payroll liabilities are remitted later, and manufacturing labor is traced into product cost through labor-time entries and reclass journals.
 
 This matters because the same dataset can now support:
 
@@ -74,7 +74,7 @@ This matters because the same dataset can now support:
 - direct labor by work order
 - unit-cost bridges for manufactured products
 
-The employee master is also intentionally more realistic. Greenfield has one CEO, one CFO, one Controller, one Production Manager, and one Accounting Manager. Repeatable roles such as sales reps, buyers, assemblers, machine operators, and shipping clerks can appear many times. Employees who leave the company remain in the dataset for historical traceability, which creates useful audit scenarios.
+The employee master is also intentionally more realistic. Charles River has one CEO, one CFO, one Controller, one Production Manager, and one Accounting Manager. Repeatable roles such as sales reps, buyers, assemblers, machine operators, and shipping clerks can appear many times. Employees who leave the company remain in the dataset for historical traceability, which creates useful audit scenarios.
 
 ### 6. Close the books
 

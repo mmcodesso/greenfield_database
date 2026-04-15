@@ -1,9 +1,9 @@
 import pandas as pd
 
-from greenfield_dataset.anomalies import inject_anomalies
-from greenfield_dataset.main import build_phase2, build_phase15
-from greenfield_dataset.schema import TABLE_COLUMNS
-from greenfield_dataset.validations import validate_phase8
+from CharlesRiver_dataset.anomalies import inject_anomalies
+from CharlesRiver_dataset.main import build_phase2, build_phase15
+from CharlesRiver_dataset.schema import TABLE_COLUMNS
+from CharlesRiver_dataset.validations import validate_phase8
 
 
 def test_phase15_schema_extensions_exist() -> None:

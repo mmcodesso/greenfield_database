@@ -1,6 +1,6 @@
 ---
 title: Schema Reference
-description: Student-friendly reference for the 68 implemented Greenfield tables, key columns, and join patterns.
+description: Student-friendly reference for the 68 implemented Charles River tables, key columns, and join patterns.
 sidebar_label: Schema Reference
 ---
 

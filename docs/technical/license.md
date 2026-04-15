@@ -1,13 +1,13 @@
 ---
 title: License
-description: Licensing terms for the Greenfield open educational resource.
+description: Licensing terms for the Charles River open educational resource.
 sidebar_label: License
 slug: /technical/license
 ---
 
 # License
 
-Greenfield is licensed under the **Creative Commons Attribution-ShareAlike 4.0 International** license, also called `CC BY-SA 4.0`.
+Charles River is licensed under the **Creative Commons Attribution-ShareAlike 4.0 International** license, also called `CC BY-SA 4.0`.
 
 ## What This Allows
 
@@ -33,7 +33,7 @@ You may not apply legal or technical restrictions that prevent others from using
 - Full license text: [creativecommons.org/licenses/by-sa/4.0](https://creativecommons.org/licenses/by-sa/4.0/)
 - Human-readable summary: [creativecommons.org/licenses/by-sa/4.0/deed.en](https://creativecommons.org/licenses/by-sa/4.0/deed.en)
 
-## Greenfield Copyright
+## Charles River Copyright
 
 Copyright (c) 2026 Mauricio Codesso
 

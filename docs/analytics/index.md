@@ -1,6 +1,6 @@
 ---
 title: Analytics Hub
-description: Starter map for financial, managerial, and audit analytics using Greenfield.
+description: Starter map for financial, managerial, and audit analytics using CharlesRiver.
 slug: /analytics
 sidebar_label: Analytics Hub
 ---

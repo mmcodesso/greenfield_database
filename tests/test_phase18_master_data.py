@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pandas as pd
 
-from greenfield_dataset.main import build_phase18
-from greenfield_dataset.schema import TABLE_COLUMNS
+from CharlesRiver_dataset.main import build_phase18
+from CharlesRiver_dataset.schema import TABLE_COLUMNS
 
 
 UNIQUE_ROLE_TITLES = [

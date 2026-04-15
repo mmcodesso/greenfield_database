@@ -6,7 +6,7 @@ const sidebars = {
       label: "Start Here",
       items: [
         "start-here/index",
-        "start-here/why-greenfield",
+        "start-here/why-CharlesRiver",
         "start-here/downloads",
         "start-here/dataset-overview",
       ],
@@ -105,8 +105,8 @@ const sidebars = {
     },
     {
       type: "category",
-      label: "Teach With Greenfield",
-      items: ["teach-with-greenfield/instructor-guide"],
+      label: "Teach With CharlesRiver",
+      items: ["teach-with-CharlesRiver/instructor-guide"],
     },
     {
       type: "category",

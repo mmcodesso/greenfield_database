@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pandas as pd
 
-from greenfield_dataset.main import build_phase2, build_phase14
-from greenfield_dataset.schema import TABLE_COLUMNS
+from CharlesRiver_dataset.main import build_phase2, build_phase14
+from CharlesRiver_dataset.schema import TABLE_COLUMNS
 
 
 def test_phase14_schema_extensions_exist() -> None:

@@ -8,11 +8,11 @@ import pandas as pd
 import pytest
 import yaml
 
-from greenfield_dataset.main import build_full_dataset
-from greenfield_dataset.main import build_phase22
-from greenfield_dataset.settings import load_settings
-from greenfield_dataset.schema import TABLE_COLUMNS
-from greenfield_dataset.validations import validate_phase22
+from CharlesRiver_dataset.main import build_full_dataset
+from CharlesRiver_dataset.main import build_phase22
+from CharlesRiver_dataset.settings import load_settings
+from CharlesRiver_dataset.schema import TABLE_COLUMNS
+from CharlesRiver_dataset.validations import validate_phase22
 
 
 PHASE22_FINANCIAL_QUERIES = [
@@ -53,10 +53,10 @@ def phase22_anomaly_validation_artifacts(tmp_path_factory: pytest.TempPathFactor
         "export_excel": False,
         "export_support_excel": False,
         "export_csv_zip": False,
-        "sqlite_path": str(workdir / "greenfield_phase22_anomaly.sqlite"),
-        "excel_path": str(workdir / "greenfield_phase22_anomaly.xlsx"),
-        "support_excel_path": str(workdir / "greenfield_phase22_anomaly_support.xlsx"),
-        "csv_zip_path": str(workdir / "greenfield_phase22_anomaly_csv.zip"),
+        "sqlite_path": str(workdir / "CharlesRiver_phase22_anomaly.sqlite"),
+        "excel_path": str(workdir / "CharlesRiver_phase22_anomaly.xlsx"),
+        "support_excel_path": str(workdir / "CharlesRiver_phase22_anomaly_support.xlsx"),
+        "csv_zip_path": str(workdir / "CharlesRiver_phase22_anomaly_csv.zip"),
         "generation_log_path": str(workdir / "generation.log"),
     })
 
@@ -179,7 +179,7 @@ def test_phase22_docs_and_sidebar_entries_exist() -> None:
     audit_guide = Path("docs/analytics/audit.md").read_text(encoding="utf-8")
     managerial_guide = Path("docs/analytics/managerial.md").read_text(encoding="utf-8")
     sql_guide = Path("docs/analytics/sql-guide.md").read_text(encoding="utf-8")
-    instructor_guide = Path("docs/teach-with-greenfield/instructor-guide.md").read_text(encoding="utf-8")
+    instructor_guide = Path("docs/teach-with-CharlesRiver/instructor-guide.md").read_text(encoding="utf-8")
 
     assert "42_forecast_approval_and_override_review.sql" in audit_guide
     assert "43_inactive_or_stale_inventory_policy_review.sql" in audit_guide

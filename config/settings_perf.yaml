@@ -1,7 +1,7 @@
 random_seed: 20260401
 fiscal_year_start: "2026-01-01"
 fiscal_year_end: "2027-12-31"
-company_name: "Greenfield Home Furnishings, Inc."
+company_name: "Charles River Home Furnishings, Inc."
 tax_rate: 0.065
 employee_count: 32
 customer_count: 90
@@ -13,8 +13,8 @@ export_excel: false
 export_support_excel: false
 export_csv_zip: false
 anomaly_mode: "none"
-sqlite_path: "outputs/greenfield_perf.sqlite"
-excel_path: "outputs/greenfield_perf.xlsx"
-support_excel_path: "outputs/greenfield_perf_support.xlsx"
-csv_zip_path: "outputs/greenfield_perf_csv.zip"
+sqlite_path: "outputs/CharlesRiver_perf.sqlite"
+excel_path: "outputs/CharlesRiver_perf.xlsx"
+support_excel_path: "outputs/CharlesRiver_perf_support.xlsx"
+csv_zip_path: "outputs/CharlesRiver_perf_csv.zip"
 generation_log_path: "outputs/generation_perf.log"

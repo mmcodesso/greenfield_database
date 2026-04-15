@@ -15,7 +15,7 @@ Use this case when students need a richer portfolio-analysis exercise than simpl
 
 ## Business Scenario
 
-Greenfield’s management team wants to know which collections and lifecycle groups are carrying the business. They also want to know whether manufactured and purchased items behave differently on gross margin, contribution margin, service performance, and return pressure.
+CharlesRiver’s management team wants to know which collections and lifecycle groups are carrying the business. They also want to know whether manufactured and purchased items behave differently on gross margin, contribution margin, service performance, and return pressure.
 
 ## Main Tables and Worksheets
 

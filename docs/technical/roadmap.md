@@ -1,13 +1,13 @@
 ---
 title: Roadmap
-description: Planned future expansion areas for the Greenfield dataset and documentation.
+description: Planned future expansion areas for the Charles River dataset and documentation.
 slug: /roadmap
 sidebar_label: Roadmap
 ---
 
 # Roadmap
 
-Use this page for current-versus-future scope. The rest of the documentation describes the current Greenfield release and current teaching workflow.
+Use this page for current-versus-future scope. The rest of the documentation describes the current Charles River release and current teaching workflow.
 
 ## Implemented in the Current Release
 

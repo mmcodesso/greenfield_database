@@ -8,10 +8,10 @@ import pandas as pd
 import pytest
 import yaml
 
-from greenfield_dataset.main import build_full_dataset, build_phase23
-from greenfield_dataset.schema import TABLE_COLUMNS
-from greenfield_dataset.settings import load_settings
-from greenfield_dataset.validations import validate_phase23
+from CharlesRiver_dataset.main import build_full_dataset, build_phase23
+from CharlesRiver_dataset.schema import TABLE_COLUMNS
+from CharlesRiver_dataset.settings import load_settings
+from CharlesRiver_dataset.validations import validate_phase23
 
 
 PHASE23_FINANCIAL_QUERIES = [
@@ -59,10 +59,10 @@ def phase23_anomaly_validation_artifacts(tmp_path_factory: pytest.TempPathFactor
         "export_excel": False,
         "export_support_excel": False,
         "export_csv_zip": False,
-        "sqlite_path": str(workdir / "greenfield_phase23_anomaly.sqlite"),
-        "excel_path": str(workdir / "greenfield_phase23_anomaly.xlsx"),
-        "support_excel_path": str(workdir / "greenfield_phase23_anomaly_support.xlsx"),
-        "csv_zip_path": str(workdir / "greenfield_phase23_anomaly_csv.zip"),
+        "sqlite_path": str(workdir / "CharlesRiver_phase23_anomaly.sqlite"),
+        "excel_path": str(workdir / "CharlesRiver_phase23_anomaly.xlsx"),
+        "support_excel_path": str(workdir / "CharlesRiver_phase23_anomaly_support.xlsx"),
+        "csv_zip_path": str(workdir / "CharlesRiver_phase23_anomaly_csv.zip"),
         "generation_log_path": str(workdir / "generation.log"),
     })
 
@@ -261,7 +261,7 @@ def test_phase23_docs_and_sidebar_entries_exist() -> None:
     managerial_guide = Path("docs/analytics/managerial.md").read_text(encoding="utf-8")
     audit_guide = Path("docs/analytics/audit.md").read_text(encoding="utf-8")
     sql_guide = Path("docs/analytics/sql-guide.md").read_text(encoding="utf-8")
-    instructor_guide = Path("docs/teach-with-greenfield/instructor-guide.md").read_text(encoding="utf-8")
+    instructor_guide = Path("docs/teach-with-CharlesRiver/instructor-guide.md").read_text(encoding="utf-8")
     o2c_guide = Path("docs/processes/o2c.md").read_text(encoding="utf-8")
     returns_guide = Path("docs/processes/o2c-returns-credits-refunds.md").read_text(encoding="utf-8")
     schema_guide = Path("docs/reference/schema.md").read_text(encoding="utf-8")

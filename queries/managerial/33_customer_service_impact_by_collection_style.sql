@@ -2,7 +2,7 @@
 -- Main tables: SalesOrder, SalesOrderLine, Shipment, ShipmentLine, Item.
 -- Expected output shape: One row per item group, collection, and style family.
 -- Recommended build mode: Either.
--- Interpretation notes: This is a service-level query, not a financial one. It starts from ordered demand and asks how quickly and how fully Greenfield ships those orders.
+-- Interpretation notes: This is a service-level query, not a financial one. It starts from ordered demand and asks how quickly and how fully Charles River ships those orders.
 
 WITH shipment_summary AS (
     SELECT

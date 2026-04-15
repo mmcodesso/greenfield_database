@@ -12,7 +12,7 @@ import { caseQuerySequences } from "@site/src/generated/queryDocCollections";
 
 ## Business Scenario
 
-A customer places an order for finished goods. Greenfield ships what inventory allows, invoices from the shipped lines, records the customer payment, and applies that cash against open invoices. In some cases the customer later returns part of the billed quantity, but the core trace begins with the normal order-to-cash path.
+A customer places an order for finished goods. Charles River ships what inventory allows, invoices from the shipped lines, records the customer payment, and applies that cash against open invoices. In some cases the customer later returns part of the billed quantity, but the core trace begins with the normal order-to-cash path.
 
 ## Main Tables and Worksheets
 

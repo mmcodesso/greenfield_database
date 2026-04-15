@@ -1,4 +1,4 @@
--- Teaching objective: Compare how quickly Greenfield turns sales invoices, purchase invoices, and goods receipts into cash settlement events.
+-- Teaching objective: Compare how quickly Charles River turns sales invoices, purchase invoices, and goods receipts into cash settlement events.
 -- Main tables: SalesInvoice, CashReceiptApplication, PurchaseInvoice, DisbursementPayment, GoodsReceipt, GoodsReceiptLine, PurchaseInvoiceLine.
 -- Expected output shape: One row per source-month and timing metric family.
 -- Recommended build mode: Either; the default build usually produces a wider spread of timing patterns.

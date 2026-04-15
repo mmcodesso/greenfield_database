@@ -1,7 +1,7 @@
-"""Greenfield accounting dataset generator."""
+"""Charles River accounting dataset generator."""
 
-from greenfield_dataset.schema import TABLE_COLUMNS, create_empty_tables
-from greenfield_dataset.settings import GenerationContext, Settings, initialize_context, load_settings
+from CharlesRiver_dataset.schema import TABLE_COLUMNS, create_empty_tables
+from CharlesRiver_dataset.settings import GenerationContext, Settings, initialize_context, load_settings
 
 __all__ = [
     "GenerationContext",

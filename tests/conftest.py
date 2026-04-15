@@ -5,8 +5,8 @@ from pathlib import Path
 import pytest
 import yaml
 
-from greenfield_dataset.main import build_full_dataset
-from greenfield_dataset.settings import load_settings
+from CharlesRiver_dataset.main import build_full_dataset
+from CharlesRiver_dataset.settings import load_settings
 
 
 @pytest.fixture(scope="session")
@@ -20,10 +20,10 @@ def full_dataset_artifacts(tmp_path_factory: pytest.TempPathFactory) -> dict[str
         "export_excel": False,
         "export_support_excel": False,
         "export_csv_zip": False,
-        "sqlite_path": str(workdir / "greenfield.sqlite"),
-        "excel_path": str(workdir / "greenfield.xlsx"),
-        "support_excel_path": str(workdir / "greenfield_support.xlsx"),
-        "csv_zip_path": str(workdir / "greenfield_csv.zip"),
+        "sqlite_path": str(workdir / "CharlesRiver.sqlite"),
+        "excel_path": str(workdir / "CharlesRiver.xlsx"),
+        "support_excel_path": str(workdir / "CharlesRiver_support.xlsx"),
+        "csv_zip_path": str(workdir / "CharlesRiver_csv.zip"),
         "generation_log_path": str(workdir / "generation.log"),
     })
 
@@ -47,10 +47,10 @@ def default_anomaly_dataset_artifacts(tmp_path_factory: pytest.TempPathFactory) 
     settings = load_settings("config/settings.yaml")
     payload = dict(vars(settings))
     payload.update({
-        "sqlite_path": str(workdir / "greenfield_default.sqlite"),
-        "excel_path": str(workdir / "greenfield_default.xlsx"),
-        "support_excel_path": str(workdir / "greenfield_default_support.xlsx"),
-        "csv_zip_path": str(workdir / "greenfield_default_csv.zip"),
+        "sqlite_path": str(workdir / "CharlesRiver_default.sqlite"),
+        "excel_path": str(workdir / "CharlesRiver_default.xlsx"),
+        "support_excel_path": str(workdir / "CharlesRiver_default_support.xlsx"),
+        "csv_zip_path": str(workdir / "CharlesRiver_default_csv.zip"),
         "generation_log_path": str(workdir / "generation_default.log"),
     })
 
@@ -79,10 +79,10 @@ def clean_validation_dataset_artifacts(tmp_path_factory: pytest.TempPathFactory)
         "export_excel": False,
         "export_support_excel": False,
         "export_csv_zip": False,
-        "sqlite_path": str(workdir / "greenfield_validation.sqlite"),
-        "excel_path": str(workdir / "greenfield_validation.xlsx"),
-        "support_excel_path": str(workdir / "greenfield_validation_support.xlsx"),
-        "csv_zip_path": str(workdir / "greenfield_validation_csv.zip"),
+        "sqlite_path": str(workdir / "CharlesRiver_validation.sqlite"),
+        "excel_path": str(workdir / "CharlesRiver_validation.xlsx"),
+        "support_excel_path": str(workdir / "CharlesRiver_validation_support.xlsx"),
+        "csv_zip_path": str(workdir / "CharlesRiver_validation_csv.zip"),
         "generation_log_path": str(workdir / "generation.log"),
     })
 

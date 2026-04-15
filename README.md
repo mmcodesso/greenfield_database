@@ -1,13 +1,13 @@
-# Greenfield Accounting Dataset
+# Charles River Accounting Dataset
 
-Greenfield Accounting Dataset is a synthetic business database for undergraduate and graduate accounting analytics courses. It is designed for student work in SQL, Excel, auditing analytics, business-process tracing, and source-to-ledger analysis.
+Charles River Accounting Dataset is a synthetic business database for undergraduate and graduate accounting analytics courses. It is designed for student work in SQL, Excel, auditing analytics, business-process tracing, and source-to-ledger analysis.
 
 The documentation website is the primary starting point:
 
-- [Greenfield documentation site](https://greenfield.accountinganalyticshub.com/)
-- [Start Here](https://greenfield.accountinganalyticshub.com/docs/)
-- [Downloads](https://greenfield.accountinganalyticshub.com/docs/downloads)
-- [Instructor adoption guide](https://greenfield.accountinganalyticshub.com/docs/teach-with-greenfield/instructor-adoption)
+- [Charles River documentation site](https://CharlesRiver.AccountingAnalyticsHub.com/)
+- [Start Here](https://CharlesRiver.AccountingAnalyticsHub.com/docs/)
+- [Downloads](https://CharlesRiver.AccountingAnalyticsHub.com/docs/downloads)
+- [Instructor adoption guide](https://CharlesRiver.AccountingAnalyticsHub.com/docs/teach-with-CharlesRiver/instructor-adoption)
 
 Most students should begin with the documentation site and the packaged output files rather than the Python generator.
 
@@ -21,19 +21,19 @@ Most students should begin with the documentation site and the packaged output f
 
 Student download files:
 
-- `greenfield.sqlite`
-- `greenfield.xlsx`
-- `greenfield_support.xlsx`
-- `greenfield_csv.zip`
+- `CharlesRiver.sqlite`
+- `CharlesRiver.xlsx`
+- `CharlesRiver_support.xlsx`
+- `CharlesRiver_csv.zip`
 
 ## Teaching Package Setup
 
 If you need to generate or refresh the classroom dataset locally, use the teaching guide:
 
-- [Dataset Delivery and Build Setup](https://greenfield.accountinganalyticshub.com/docs/technical/dataset-delivery)
+- [Dataset Delivery and Build Setup](https://CharlesRiver.AccountingAnalyticsHub.com/docs/technical/dataset-delivery)
 
 ## Repository Links
 
-- [Documentation website](https://greenfield.accountinganalyticshub.com/)
+- [Documentation website](https://CharlesRiver.AccountingAnalyticsHub.com/)
 - [Contributing guide](CONTRIBUTING.md)
 - [License](LICENSE)
