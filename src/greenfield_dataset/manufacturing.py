@@ -17,7 +17,6 @@ from greenfield_dataset.master_data import (
 )
 from greenfield_dataset.o2c import opening_inventory_map, sales_order_line_shipped_quantities, shadow_inventory_state
 from greenfield_dataset.planning import (
-    MANUFACTURED_POLICY_MIN_LEAD_DAYS,
     cancel_recommendations,
     expire_recommendations,
     manufacture_recommendations_for_month,
@@ -123,7 +122,7 @@ WORK_CENTER_NOMINAL_HOURS = {
     "PACK": 12.0,
     "QA": 8.0,
 }
-WORKFORCE_SCALED_WORK_CENTER_CODES = {"CUT", "ASSEMBLY", "FINISH"}
+WORKFORCE_SCALED_WORK_CENTER_CODES = {"CUT", "ASSEMBLY", "FINISH", "PACK", "QA"}
 WORKFORCE_CAPACITY_BASELINE_DIRECT_HEADCOUNT = 6
 WORKFORCE_CAPACITY_DIRECT_TITLES = {"Assembler", "Machine Operator", "Quality Technician"}
 
@@ -135,7 +134,7 @@ REDUCED_CAPACITY_FACTOR_RANGE = {
     "QA": (0.80, 0.90),
 }
 
-WORK_CENTER_BOTTLENECK_CODES = {"ASSEMBLY", "FINISH"}
+WORK_CENTER_BOTTLENECK_CODES = {"ASSEMBLY", "FINISH", "PACK"}
 CAPACITY_EXCEPTION_REASONS = {"Normal", "Weekend", "Holiday", "Maintenance", "Reduced Capacity"}
 
 ROUTING_PATTERN_BY_GROUP = {
@@ -403,6 +402,24 @@ def next_schedulable_day(context: GenerationContext, work_center_id: int, candid
         if working_index < len(working_dates):
             return pd.Timestamp(working_dates[working_index])
     return end_date
+
+
+def previous_schedulable_day(
+    context: GenerationContext,
+    work_center_id: int,
+    candidate_date: pd.Timestamp,
+) -> pd.Timestamp | None:
+    working_dates = work_center_working_dates(context).get(int(work_center_id), ())
+    current = pd.Timestamp(candidate_date).normalize()
+    if not working_dates:
+        return None
+
+    working_index = bisect_left(working_dates, current)
+    if working_index < len(working_dates) and pd.Timestamp(working_dates[working_index]) == current:
+        return pd.Timestamp(working_dates[working_index])
+    if working_index <= 0:
+        return None
+    return pd.Timestamp(working_dates[working_index - 1])
 
 
 def add_schedulable_days(
@@ -1283,7 +1300,7 @@ def manufacturing_work_center_utilization_by_code(
     context: GenerationContext,
     year: int,
     month: int,
-    work_center_codes: tuple[str, ...] = ("ASSEMBLY", "CUT", "FINISH"),
+    work_center_codes: tuple[str, ...] = ("ASSEMBLY", "CUT", "FINISH", "PACK", "QA"),
 ) -> dict[str, float]:
     month_start, month_end = month_bounds(year, month)
     work_centers = context.tables["WorkCenter"]
@@ -1330,7 +1347,7 @@ def manufacturing_work_center_available_hours_by_code(
     context: GenerationContext,
     year: int,
     month: int,
-    work_center_codes: tuple[str, ...] = ("ASSEMBLY", "CUT", "FINISH"),
+    work_center_codes: tuple[str, ...] = ("ASSEMBLY", "CUT", "FINISH", "PACK", "QA"),
 ) -> dict[str, float]:
     month_start, month_end = month_bounds(year, month)
     work_centers = context.tables["WorkCenter"]
@@ -1366,7 +1383,7 @@ def manufacturing_work_center_available_hours_by_code(
 def manufacture_recommendation_load_by_work_center(
     context: GenerationContext,
     recommendations: pd.DataFrame,
-    work_center_codes: tuple[str, ...] = ("ASSEMBLY", "CUT", "FINISH"),
+    work_center_codes: tuple[str, ...] = ("ASSEMBLY", "CUT", "FINISH", "PACK", "QA"),
 ) -> dict[str, float]:
     if recommendations.empty:
         return {code: 0.0 for code in work_center_codes}
@@ -1475,18 +1492,22 @@ def schedule_operation_rows(
     work_center_id: int,
     earliest_start: pd.Timestamp,
     planned_load_hours: float,
-    due_date: pd.Timestamp,
+    latest_end: pd.Timestamp,
 ) -> list[dict[str, Any]]:
     lookup = work_center_calendar_lookup(context)
     usage = schedule_usage_map(context)
     working_dates = work_center_working_dates(context).get(int(work_center_id), ())
     working_date_index = work_center_working_date_index(context).get(int(work_center_id), {})
-    end_date = min(operational_calendar_end(context), pd.Timestamp(due_date).normalize())
-    current_date = next_schedulable_day(context, int(work_center_id), pd.Timestamp(earliest_start))
+    start_date = pd.Timestamp(earliest_start).normalize()
+    current_date = previous_schedulable_day(
+        context,
+        int(work_center_id),
+        min(operational_calendar_end(context), pd.Timestamp(latest_end).normalize()),
+    )
     remaining_hours = money(planned_load_hours)
     schedule_rows: list[dict[str, Any]] = []
 
-    while remaining_hours > 0 and current_date <= end_date:
+    while remaining_hours > 0 and current_date is not None and current_date >= start_date:
         date_key = current_date.strftime("%Y-%m-%d")
         calendar_row = lookup.get((int(work_center_id), date_key))
         available_hours = float(calendar_row["AvailableHours"]) if calendar_row is not None else 0.0
@@ -1504,13 +1525,14 @@ def schedule_operation_rows(
             usage[(int(work_center_id), date_key)] = money(used_hours + scheduled_hours)
             remaining_hours = money(remaining_hours - scheduled_hours)
         current_index = working_date_index.get(date_key)
-        if current_index is None or current_index + 1 >= len(working_dates):
+        if current_index is None or current_index <= 0:
             break
-        current_date = pd.Timestamp(working_dates[current_index + 1])
+        current_date = pd.Timestamp(working_dates[current_index - 1])
 
     if remaining_hours > 0:
         rollback_schedule_usage(context, schedule_rows)
         return []
+    schedule_rows.sort(key=lambda row: (str(row["ScheduleDate"]), int(row["WorkOrderOperationScheduleID"])))
     return schedule_rows
 
 
@@ -1526,20 +1548,21 @@ def build_work_order_operations(
     if routing_rows is None or routing_rows.empty:
         return [], []
 
-    operation_rows: list[dict[str, Any]] = []
-    schedule_rows: list[dict[str, Any]] = []
+    scheduled_operations: list[tuple[int, dict[str, Any], list[dict[str, Any]], pd.Timestamp]] = []
+    reserved_schedule_rows: list[dict[str, Any]] = []
     due_date = pd.Timestamp(due_date).normalize()
-    current_start = pd.Timestamp(release_date)
+    release_date = pd.Timestamp(release_date).normalize()
+    next_operation_start: pd.Timestamp | None = None
 
-    for row in routing_rows.itertuples(index=False):
+    for row in reversed(list(routing_rows.sort_values("OperationSequence").itertuples(index=False))):
         work_center_id = int(row.WorkCenterID)
-        if current_start > due_date:
-            rollback_schedule_usage(context, schedule_rows)
+        latest_end = due_date
+        if next_operation_start is not None:
+            latest_end = next_operation_start - pd.Timedelta(days=int(row.StandardQueueDays))
+        if latest_end < release_date:
+            rollback_schedule_usage(context, reserved_schedule_rows)
             return [], []
-        current_start = next_schedulable_day(context, work_center_id, current_start)
-        if current_start > due_date:
-            rollback_schedule_usage(context, schedule_rows)
-            return [], []
+
         planned_load_hours = money(
             float(row.StandardSetupHours) + float(row.StandardRunHoursPerUnit) * float(planned_quantity)
         )
@@ -1548,21 +1571,21 @@ def build_work_order_operations(
             context,
             work_order_operation_id,
             work_center_id,
-            current_start,
+            release_date,
             planned_load_hours,
-            due_date,
+            latest_end,
         )
         if not operation_schedule_rows:
-            rollback_schedule_usage(context, schedule_rows)
+            rollback_schedule_usage(context, reserved_schedule_rows)
             return [], []
 
         planned_start = pd.Timestamp(operation_schedule_rows[0]["ScheduleDate"])
         planned_end = pd.Timestamp(operation_schedule_rows[-1]["ScheduleDate"])
-        if planned_end > due_date:
-            rollback_schedule_usage(context, schedule_rows + operation_schedule_rows)
+        if planned_end > latest_end or planned_start < release_date:
+            rollback_schedule_usage(context, reserved_schedule_rows + operation_schedule_rows)
             return [], []
 
-        operation_rows.append({
+        operation_row = {
             "WorkOrderOperationID": work_order_operation_id,
             "WorkOrderID": int(work_order_id),
             "RoutingOperationID": int(row.RoutingOperationID),
@@ -1575,10 +1598,16 @@ def build_work_order_operations(
             "ActualStartDate": None,
             "ActualEndDate": None,
             "Status": "Released",
-        })
-        schedule_rows.extend(operation_schedule_rows)
-        current_start = planned_end + pd.Timedelta(days=int(row.StandardQueueDays))
+        }
+        scheduled_operations.append((int(row.OperationSequence), operation_row, operation_schedule_rows, planned_start))
+        reserved_schedule_rows.extend(operation_schedule_rows)
+        next_operation_start = planned_start
 
+    scheduled_operations.sort(key=lambda payload: payload[0])
+    operation_rows = [payload[1] for payload in scheduled_operations]
+    schedule_rows: list[dict[str, Any]] = []
+    for _, _, operation_schedule_rows, _ in scheduled_operations:
+        schedule_rows.extend(operation_schedule_rows)
     return operation_rows, schedule_rows
 
 
@@ -1596,14 +1625,14 @@ def _convert_manufacture_recommendations_to_work_orders(
             "expired": 0,
             "converted_recommendation_ids": [],
             "expired_recommendation_ids": [],
-            "converted_load_by_work_center": {"ASSEMBLY": 0.0, "CUT": 0.0, "FINISH": 0.0},
-            "expired_load_by_work_center": {"ASSEMBLY": 0.0, "CUT": 0.0, "FINISH": 0.0},
+            "converted_load_by_work_center": {"ASSEMBLY": 0.0, "CUT": 0.0, "FINISH": 0.0, "PACK": 0.0, "QA": 0.0},
+            "expired_load_by_work_center": {"ASSEMBLY": 0.0, "CUT": 0.0, "FINISH": 0.0, "PACK": 0.0, "QA": 0.0},
+            "expired_reason_counts": {"due_date_infeasible": 0, "missing_master_data": 0},
         }
 
     rng = context.rng
     month_end = pd.Timestamp(release_ceiling).normalize() if release_ceiling is not None else None
-    manufactured_lookup_date = month_end if month_end is not None else pd.Timestamp(release_floor).normalize()
-    manufactured_lookup = manufactured_items(context, manufactured_lookup_date).set_index("ItemID").to_dict("index")
+    manufactured_lookup = manufactured_items(context).set_index("ItemID").to_dict("index")
     manufacturing_cost_center = cost_center_id(context, "Manufacturing")
     bom_by_parent = bom_lookup(context)
     routing_by_parent = active_routing_by_item(context)
@@ -1623,6 +1652,7 @@ def _convert_manufacture_recommendations_to_work_orders(
     work_order_operation_schedule_rows: list[dict[str, Any]] = []
     conversion_mapping: dict[int, tuple[str, int]] = {}
     expired_recommendation_ids: list[int] = []
+    expired_reason_counts = {"due_date_infeasible": 0, "missing_master_data": 0}
 
     ordered_recommendations = planned_recommendations.copy()
     priority_rank = {"Expedite": 0, "Normal": 1}
@@ -1646,6 +1676,7 @@ def _convert_manufacture_recommendations_to_work_orders(
         planned_quantity = qty(float(recommendation.RecommendedOrderQuantity))
         if item_row is None or bom is None or routing is None or planned_quantity <= 0:
             expired_recommendation_ids.append(int(recommendation.SupplyPlanRecommendationID))
+            expired_reason_counts["missing_master_data"] += 1
             continue
 
         release_date = max(pd.Timestamp(release_floor).normalize(), pd.Timestamp(recommendation.ReleaseByDate).normalize())
@@ -1665,6 +1696,7 @@ def _convert_manufacture_recommendations_to_work_orders(
         )
         if not operation_rows or not operation_schedule_rows:
             expired_recommendation_ids.append(int(recommendation.SupplyPlanRecommendationID))
+            expired_reason_counts["due_date_infeasible"] += 1
             continue
 
         employee_pool = manufacturing_employee_ids(release_date)
@@ -1717,35 +1749,29 @@ def _convert_manufacture_recommendations_to_work_orders(
         "expired_recommendation_ids": expired_recommendation_ids,
         "converted_load_by_work_center": manufacture_recommendation_load_by_work_center(context, converted_rows),
         "expired_load_by_work_center": manufacture_recommendation_load_by_work_center(context, expired_rows),
+        "expired_reason_counts": {key: int(value) for key, value in expired_reason_counts.items()},
     }
 
 
 def seed_opening_manufacturing_pipeline(context: GenerationContext) -> dict[str, float]:
-    cached = getattr(context, "_opening_manufacturing_pipeline_state", None)
-    if cached is not None:
-        return dict(cached)
-
     fiscal_start = pd.Timestamp(context.settings.fiscal_year_start).normalize()
-    opening_window_end = fiscal_start + pd.Timedelta(days=MANUFACTURED_POLICY_MIN_LEAD_DAYS)
     recommendations = context.tables["SupplyPlanRecommendation"]
     if recommendations.empty:
         return {
             "opening_candidates": 0,
             "opening_wip_seeded": 0,
             "opening_wip_expired": 0,
+            "opening_fg_seeded_from_prefiscal": 0.0,
             "opening_fg_gap_units": 0.0,
         }
 
     release_dates = pd.to_datetime(recommendations["ReleaseByDate"], errors="coerce")
-    need_by_dates = pd.to_datetime(recommendations["NeedByDate"], errors="coerce")
     recommended_quantities = pd.to_numeric(recommendations["RecommendedOrderQuantity"], errors="coerce").fillna(0.0)
     opening_candidates = recommendations[
         recommendations["RecommendationType"].eq("Manufacture")
         & recommendations["RecommendationStatus"].eq("Planned")
         & release_dates.notna()
-        & need_by_dates.notna()
         & release_dates.lt(fiscal_start)
-        & need_by_dates.le(opening_window_end)
         & recommended_quantities.gt(0)
     ].copy()
     opening_candidates = opening_candidates.sort_values(
@@ -1759,6 +1785,7 @@ def seed_opening_manufacturing_pipeline(context: GenerationContext) -> dict[str,
     )
 
     opening_fg_gap_units = 0.0
+    opening_fg_seeded_from_prefiscal = 0.0
     opening_inventory_adjustments: dict[tuple[int, int], float] = dict(getattr(context, "_opening_inventory_adjustments", None) or {})
     opening_fg_recommendation_ids: set[int] = set()
     if conversion_state["expired_recommendation_ids"]:
@@ -1775,7 +1802,7 @@ def seed_opening_manufacturing_pipeline(context: GenerationContext) -> dict[str,
                 float(opening_inventory_adjustments.get(key, 0.0)) + float(row.RecommendedOrderQuantity),
                 2,
             )
-            opening_fg_gap_units += float(row.RecommendedOrderQuantity)
+            opening_fg_seeded_from_prefiscal += float(row.RecommendedOrderQuantity)
             opening_fg_recommendation_ids.add(int(row.SupplyPlanRecommendationID))
 
     manufactured_sellable = context.tables["Item"][
@@ -1852,14 +1879,16 @@ def seed_opening_manufacturing_pipeline(context: GenerationContext) -> dict[str,
         "opening_candidates": int(conversion_state["eligible_planned"]),
         "opening_wip_seeded": int(conversion_state["converted"]),
         "opening_wip_expired": int(conversion_state["expired"]),
+        "opening_fg_seeded_from_prefiscal": round(float(opening_fg_seeded_from_prefiscal), 2),
         "opening_fg_gap_units": round(float(opening_fg_gap_units), 2),
     }
     setattr(context, "_opening_manufacturing_pipeline_state", state)
     LOGGER.info(
-        "OPENING PIPELINE | opening_candidates=%s | opening_wip_seeded=%s | opening_wip_expired=%s | opening_fg_gap_units=%.2f",
+        "OPENING PIPELINE | opening_candidates=%s | opening_wip_seeded=%s | opening_wip_expired=%s | opening_fg_seeded_from_prefiscal=%.2f | opening_fg_gap_units=%.2f",
         state["opening_candidates"],
         state["opening_wip_seeded"],
         state["opening_wip_expired"],
+        state["opening_fg_seeded_from_prefiscal"],
         state["opening_fg_gap_units"],
     )
     return dict(state)
@@ -2096,13 +2125,15 @@ def generate_month_work_orders_and_requisitions(context: GenerationContext, year
         utilization_by_work_center = manufacturing_work_center_utilization_by_code(context, year, month)
         older_completed_not_closed = completed_not_closed_older_than_one_payroll_period_count(context, month_end)
         LOGGER.info(
-            "MANUFACTURING CONVERSION | %s-%02d | eligible_planned=%s | converted=%s | expired=%s | remaining_overdue_planned=%s | conversion_rate=%.4f",
+            "MANUFACTURING CONVERSION | %s-%02d | eligible_planned=%s | converted=%s | expired=%s | remaining_overdue_planned=%s | expired_due_date_infeasible=%s | expired_missing_master_data=%s | conversion_rate=%.4f",
             year,
             month,
             conversion_state["eligible_planned"],
             conversion_state["converted"],
             conversion_state["expired"],
             remaining_overdue_planned,
+            conversion_state["expired_reason_counts"]["due_date_infeasible"],
+            conversion_state["expired_reason_counts"]["missing_master_data"],
             (
                 conversion_state["converted"] / conversion_state["eligible_planned"]
                 if conversion_state["eligible_planned"] > 0
@@ -2110,21 +2141,29 @@ def generate_month_work_orders_and_requisitions(context: GenerationContext, year
             ),
         )
         LOGGER.info(
-            "MANUFACTURING LOAD | %s-%02d | converted_load_assembly=%s | converted_load_cut=%s | converted_load_finish=%s | expired_load_assembly=%s | expired_load_cut=%s | expired_load_finish=%s | available_hours_assembly=%s | available_hours_cut=%s | available_hours_finish=%s | assembly_utilization=%s | cut_utilization=%s | finish_utilization=%s | completed_not_closed_older_than_period=%s",
+            "MANUFACTURING LOAD | %s-%02d | converted_load_assembly=%s | converted_load_cut=%s | converted_load_finish=%s | converted_load_pack=%s | converted_load_qa=%s | expired_load_assembly=%s | expired_load_cut=%s | expired_load_finish=%s | expired_load_pack=%s | expired_load_qa=%s | available_hours_assembly=%s | available_hours_cut=%s | available_hours_finish=%s | available_hours_pack=%s | available_hours_qa=%s | assembly_utilization=%s | cut_utilization=%s | finish_utilization=%s | pack_utilization=%s | qa_utilization=%s | completed_not_closed_older_than_period=%s",
             year,
             month,
             conversion_state["converted_load_by_work_center"]["ASSEMBLY"],
             conversion_state["converted_load_by_work_center"]["CUT"],
             conversion_state["converted_load_by_work_center"]["FINISH"],
+            conversion_state["converted_load_by_work_center"]["PACK"],
+            conversion_state["converted_load_by_work_center"]["QA"],
             conversion_state["expired_load_by_work_center"]["ASSEMBLY"],
             conversion_state["expired_load_by_work_center"]["CUT"],
             conversion_state["expired_load_by_work_center"]["FINISH"],
+            conversion_state["expired_load_by_work_center"]["PACK"],
+            conversion_state["expired_load_by_work_center"]["QA"],
             available_hours_by_work_center["ASSEMBLY"],
             available_hours_by_work_center["CUT"],
             available_hours_by_work_center["FINISH"],
+            available_hours_by_work_center["PACK"],
+            available_hours_by_work_center["QA"],
             utilization_by_work_center["ASSEMBLY"],
             utilization_by_work_center["CUT"],
             utilization_by_work_center["FINISH"],
+            utilization_by_work_center["PACK"],
+            utilization_by_work_center["QA"],
             older_completed_not_closed,
         )
         return

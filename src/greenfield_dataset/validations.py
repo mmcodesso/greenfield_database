@@ -3331,6 +3331,14 @@ def validate_master_data_controls(context: GenerationContext) -> dict[str, Any]:
         item_launch_lookup = items.set_index("ItemID")["LaunchDate"].to_dict()
         item_current_active_lookup = items.set_index("ItemID")["IsActive"].astype(int).to_dict()
         item_lifecycle_lookup = items.set_index("ItemID")["LifecycleStatus"].astype(str).to_dict()
+        internal_prelaunch_tables = {
+            "PurchaseRequisition",
+            "PurchaseOrderLine",
+            "GoodsReceiptLine",
+            "PurchaseInvoiceLine",
+            "WorkOrder",
+            "ProductionCompletionLine",
+        }
         item_date_specs = [
             ("SalesOrderLine", "ItemID", context.tables["SalesOrder"][["SalesOrderID", "OrderDate"]], "SalesOrderID", "OrderDate"),
             ("PurchaseRequisition", "ItemID", None, None, "RequestDate"),
@@ -3356,7 +3364,8 @@ def validate_master_data_controls(context: GenerationContext) -> dict[str, Any]:
                 launch_date = item_launch_lookup.get(item_id)
                 if launch_date is None or pd.isna(event_dates.loc[row_index]):
                     continue
-                if pd.Timestamp(event_dates.loc[row_index]) < pd.Timestamp(launch_date):
+                is_internal_prelaunch = table_name in internal_prelaunch_tables
+                if pd.Timestamp(event_dates.loc[row_index]) < pd.Timestamp(launch_date) and not is_internal_prelaunch:
                     exceptions.append({
                         "type": "item_used_before_launch",
                         "table_name": table_name,

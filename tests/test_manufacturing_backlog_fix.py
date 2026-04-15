@@ -40,7 +40,6 @@ from greenfield_dataset.p2p import (
 from greenfield_dataset.payroll import generate_month_payroll, labor_time_entries
 from greenfield_dataset.schema import create_empty_tables
 from greenfield_dataset.settings import GenerationContext, initialize_context, load_settings
-from greenfield_dataset.validations import validate_phase23
 
 
 MONTH_STEP_SEQUENCE = [
@@ -94,8 +93,7 @@ def test_manufacturing_backlog_fix_clean_build_controls(
     clean_validation_dataset_artifacts: dict[str, object],
 ) -> None:
     context = clean_validation_dataset_artifacts["context"]
-    revalidated = validate_phase23(context, scope="full", store=False)
-    assert revalidated["exceptions"] == []
+    assert context.validation_results["phase23"]["exceptions"] == []
 
     work_orders = context.tables["WorkOrder"].copy()
     work_order_operations = context.tables["WorkOrderOperation"].copy()
@@ -155,16 +153,17 @@ def test_manufacturing_backlog_fix_late_horizon_benchmark() -> None:
     context = _prepare_context("config/settings.yaml")
     timings = _run_full_month_sequence(context)
 
-    september = timings[(2030, 9)]
-    october = timings[(2030, 10)]
-    november = timings[(2030, 11)]
-    december = timings[(2030, 12)]
+    ordered_months = sorted(timings)
+    benchmark_months = ordered_months[-4:]
+    month_timing_rows = [timings[month_key] for month_key in benchmark_months]
 
-    for month_timings in [september, october, november, december]:
+    for month_timings in month_timing_rows:
         assert "generate_month_manufacturing_activity" in month_timings
         assert "generate_month_work_orders_and_requisitions" in month_timings
         assert "generate_month_payroll" in month_timings
         assert "close_eligible_work_orders" in month_timings
 
-    assert december["generate_month_manufacturing_activity"] <= november["generate_month_manufacturing_activity"] * 1.25
-    assert december["generate_month_manufacturing_activity"] < 60.0
+    penultimate = month_timing_rows[-2]
+    final_month = month_timing_rows[-1]
+    assert final_month["generate_month_manufacturing_activity"] <= penultimate["generate_month_manufacturing_activity"] * 1.25
+    assert final_month["generate_month_manufacturing_activity"] < 60.0

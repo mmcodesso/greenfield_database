@@ -1295,4 +1295,16 @@ def cancel_recommendations(
     context.tables["SupplyPlanRecommendation"].loc[mask, "RecommendationStatus"] = "Cancelled"
     context.tables["SupplyPlanRecommendation"].loc[mask, "ConvertedDocumentType"] = None
     context.tables["SupplyPlanRecommendation"].loc[mask, "ConvertedDocumentID"] = None
+    normalized_id_index = set(normalized_ids)
+    for table_name in ["MaterialRequirementPlan", "RoughCutCapacityPlan"]:
+        table = context.tables[table_name]
+        if table.empty:
+            continue
+        linked_recommendation_ids = pd.to_numeric(
+            table["SupplyPlanRecommendationID"],
+            errors="coerce",
+        ).astype("Int64")
+        context.tables[table_name] = table.loc[
+            ~linked_recommendation_ids.isin(normalized_id_index)
+        ].reset_index(drop=True)
     invalidate_planning_caches(context, "SupplyPlanRecommendation")

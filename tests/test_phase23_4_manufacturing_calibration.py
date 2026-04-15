@@ -107,11 +107,18 @@ def test_phase23_4_one_year_clean_build_hits_manufacturing_targets(
     manufacture_status_counts = manufacture_rows["RecommendationStatus"].value_counts().to_dict()
     total_manufacture = max(len(manufacture_rows), 1)
     expiry_rate = float(manufacture_status_counts.get("Expired", 0)) / float(total_manufacture)
+    manufacture_release_dates = pd.to_datetime(manufacture_rows["ReleaseByDate"], errors="coerce")
+    prefiscal_expired = manufacture_rows[
+        manufacture_rows["RecommendationStatus"].eq("Expired")
+        & manufacture_release_dates.lt(pd.Timestamp("2026-01-01"))
+    ]
 
     assert phase23["exceptions"] == []
     assert overdue_purchase.empty
     assert overdue_manufacture.empty
     assert expiry_rate <= 0.02
+    assert int(manufacture_status_counts.get("Expired", 0)) == 0
+    assert prefiscal_expired.empty
     assert int(manufacture_status_counts.get("Converted", 0)) > int(manufacture_status_counts.get("Expired", 0))
 
 
@@ -120,10 +127,14 @@ def test_phase23_4_generation_log_contains_load_diagnostics_and_high_conversion(
 ) -> None:
     log_text = phase23_4_one_year_clean_artifacts["generation_log_path"].read_text(encoding="utf-8")
 
-    assert "MANUFACTURING LOAD | 2026-01 |" in log_text
+    assert "OPENING PIPELINE | opening_candidates=" in log_text
+    assert "MANUFACTURING LOAD | 2026-02 |" in log_text
     assert "converted_load_assembly=" in log_text
+    assert "converted_load_pack=" in log_text
     assert "expired_load_assembly=" in log_text
     assert "available_hours_assembly=" in log_text
+    assert "available_hours_pack=" in log_text
+    assert "opening_fg_seeded_from_prefiscal=" in log_text
 
     pattern = re.compile(
         r"MANUFACTURING CONVERSION \| 2026-(\d{2}) \| eligible_planned=(\d+) \| converted=(\d+) \| expired=(\d+) .*? conversion_rate=([0-9.]+)"

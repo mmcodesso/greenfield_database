@@ -1,4 +1,4 @@
-# Returns, Credit Memos, and Refunds
+# Returns and Refunds
 
 ## Business Storyline
 

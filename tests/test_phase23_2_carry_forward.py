@@ -163,5 +163,6 @@ def test_phase23_2_generation_log_includes_conversion_diagnostics(
     log_text = phase23_one_year_clean_artifacts["generation_log_path"].read_text(encoding="utf-8")
 
     assert "PURCHASE CONVERSION | 2026-01 | eligible_planned=" in log_text
-    assert "MANUFACTURING CONVERSION | 2026-01 | eligible_planned=" in log_text
+    assert "MANUFACTURING CONVERSION | 2026-02 | eligible_planned=" in log_text
     assert "remaining_overdue_planned=" in log_text
+    assert "OPENING PIPELINE | opening_candidates=" in log_text

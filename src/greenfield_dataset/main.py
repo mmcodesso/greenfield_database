@@ -734,6 +734,7 @@ def generate_all_months(context: GenerationContext) -> None:
         if year == int(fiscal_start.year) and month == int(fiscal_start.month):
             seed_opening_manufacturing_pipeline(context)
             generate_month_planning(context, year, month)
+            seed_opening_manufacturing_pipeline(context)
         generate_month_requisitions(context, year, month)
         generate_month_work_orders_and_requisitions(context, year, month)
         generate_month_purchase_orders(context, year, month)
@@ -857,6 +858,13 @@ def build_full_dataset(
                     month,
                     "generate_month_planning_after_opening_pipeline",
                     generate_month_planning,
+                )
+                _run_month_step(
+                    context,
+                    year,
+                    month,
+                    "seed_opening_manufacturing_pipeline_followup",
+                    lambda generation_context, _year, _month: seed_opening_manufacturing_pipeline(generation_context),
                 )
             _run_month_step(context, year, month, "generate_month_requisitions", generate_month_requisitions)
             _run_month_step(
