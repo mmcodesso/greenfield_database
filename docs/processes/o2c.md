@@ -1,14 +1,21 @@
 # Order-to-Cash Process
 
+## What Students Should Learn
+
+- Distinguish the order, shipment, invoice, cash receipt, and settlement stages in one customer sale.
+- Trace an O2C transaction from operational documents into `GLEntry`.
+- Identify the core tables used for revenue, receivables, fulfillment, and cash analysis.
+- Recognize timing differences that matter for cut-off, completeness, open-AR, and working-capital analysis.
+
 ## Business Storyline
 
-In this dataset, the order-to-cash cycle starts when the sales team promises goods to a customer and ends only when that sale is settled in cash. Several teams touch the process along the way. Sales captures demand, warehouse staff ship what is available, accounting bills what actually left the warehouse, and treasury records the money when the customer pays.
+In this dataset, the order-to-cash cycle starts when the sales team records customer demand and ends only when that sale is settled in cash. Several teams touch the process along the way. Sales captures the order, warehouse staff ship what is available, accounting bills what actually left the warehouse, treasury records the money when it arrives, and accounting applies that cash against open invoices.
 
-That sequence matters because a customer order is not the same thing as revenue, and an invoice is not the same thing as cash. Students can see those stages separately in the data and trace each one to its own documents and postings.
+That distinction matters. A customer order is not revenue. A shipment is not the same thing as an invoice. A cash receipt is not the same thing as settlement. Students can see those stages separately in the data and use that separation to answer both accounting and audit questions.
 
-Most sales end with shipment, billing, and settlement. Returns are handled on a separate page because the dataset models them as an exception path, not as the normal outcome of most invoices.
+Most sales follow the normal path of order, shipment, invoice, cash, and settlement. Returns and refunds are handled on a separate page because the dataset models them as an exception path rather than the normal outcome of most invoices.
 
-## Process Diagram
+## Normal Process Overview
 
 ```mermaid
 flowchart LR
@@ -31,91 +38,199 @@ flowchart LR
     CRA -. Clears AR from Customer Deposits .-> GL
 ```
 
-Read the diagram as promise, fulfillment, billing, cash, and settlement. Orders show customer demand, but the accounting entries happen later when goods ship, invoices post, cash is received, and receipts are applied.
+Read the main diagram as promise, fulfillment, billing, cash, and settlement. Orders show demand. Shipments show physical movement. Invoices create receivables and revenue. Cash receipts record the arrival of money. Cash applications show which invoices were actually settled.
 
-## Step-by-Step Walkthrough
+## How to Read This Process in the Data
 
-1. Before the order is priced, the dataset resolves the commercial rules for that customer and item. Segment or customer price lists provide the base commercial price, one promotion may apply, and rare below-floor exceptions require an explicit override approval.
-2. Sales records the customer order. In the data, that promise appears in `SalesOrder` and `SalesOrderLine`.
-3. Warehouse staff fulfill what is available. If inventory is short, some quantity stays open or backordered until stock is available.
-4. When goods leave the warehouse, the shipment is recorded in `Shipment` and `ShipmentLine`. This is the first point where the physical movement of inventory is visible.
-5. Accounting bills shipped quantities. The billing records appear in `SalesInvoice` and `SalesInvoiceLine`, and each billed line points back to the exact `ShipmentLineID`.
-6. Treasury records the incoming customer payment in `CashReceipt`.
-7. Accounting applies that payment against one or more open invoices through `CashReceiptApplication`.
-8. Students can then move into `GLEntry` to analyze revenue recognition, receivables, deposits or unapplied cash, and collection timing.
+This page is organized around business flow first and data navigation second. The main diagram shows the normal process. The smaller diagrams below show local lineage for one analytical task at a time. The fuller relationship map belongs on [Schema Reference](../reference/schema.md), not on this process page.
 
-## Main Tables in This Process
+:::tip
+Use this page to understand the business flow first. Then move into the subsection diagrams and tables when you need the exact trace for one analytical question.
+:::
 
-| Business step | Main tables | Why they matter |
-|---|---|---|
-| Commercial pricing | `PriceList`, `PriceListLine`, `PromotionProgram`, `PriceOverrideApproval` | Show how line-level selling price, promotion discount, and override approvals were determined |
-| Order capture | `SalesOrder`, `SalesOrderLine` | Show customer demand and requested items |
-| Fulfillment | `Shipment`, `ShipmentLine` | Show what actually shipped and when |
-| Billing | `SalesInvoice`, `SalesInvoiceLine` | Show what was billed from the shipped lines |
-| Cash movement | `CashReceipt` | Shows when customer money arrived |
-| Cash settlement | `CashReceiptApplication` | Shows which invoices the cash actually settled |
+## Core Tables and What They Represent
+
+| Process stage | Main tables | Grain or event represented | Why students use them |
+|---|---|---|---|
+| Pricing and commercial setup | `PriceList`, `PriceListLine`, `PromotionProgram`, `PriceOverrideApproval` | Pricing rules, promotions, and rare override approvals behind a sales line | Review commercial terms, pricing controls, and margin drivers |
+| Order capture | `SalesOrder`, `SalesOrderLine` | Customer order header and ordered line | See promised demand and ordered quantity before fulfillment |
+| Fulfillment | `Shipment`, `ShipmentLine` | Physical shipment event and shipped line | Measure what actually left the warehouse and when |
+| Billing | `SalesInvoice`, `SalesInvoiceLine` | Invoice header and billed line | Trace receivable creation and billed revenue back to shipment |
+| Cash receipt | `CashReceipt` | Cash arrival from the customer | Review collection timing, unapplied cash, and deposit behavior |
+| Settlement | `CashReceiptApplication` | Application of received cash to one or more invoices | Measure true invoice settlement and open-AR reduction |
 
 ## When Accounting Happens
 
-| Event | Accounting effect |
+| Event | Business meaning | Accounting effect |
+|---|---|---|
+| Shipment | Goods physically leave inventory and customer fulfillment occurs | Debit COGS and credit inventory |
+| Sales invoice | Accounting bills shipped quantity and creates the customer receivable | Debit AR and credit revenue plus sales tax payable |
+| Cash receipt | Customer money arrives, even if it is not yet matched to a specific invoice | Debit cash and credit customer deposits or unapplied cash |
+| Cash application | Accounting settles one or more open invoices with previously received cash | Debit customer deposits or unapplied cash and credit AR |
+
+## Key Traceability and Data Notes
+
+- `SalesInvoiceLine.ShipmentLineID` is the main shipment-to-invoice traceability field in the normal O2C path.
+- `CashReceiptApplication` is the true settlement table because it shows which invoices the cash actually cleared.
+- `CashReceipt.SalesInvoiceID` is compatibility metadata only and should not be treated as the authoritative settlement link.
+- `SalesOrderLine` carries pricing lineage through `BaseListPrice`, `PriceListLineID`, `PromotionID`, `PriceOverrideApprovalID`, and `PricingMethod`.
+- Some receipts remain unapplied for a period of time, which is useful for open-AR, unapplied-cash, and settlement-timing analysis.
+
+## Analytical Subsections
+
+### 1. Pricing and Commercial Terms
+
+Before warehouse activity or billing begins, the dataset resolves the commercial terms for the order line. Students should read this step as the pricing decision layer: what was the base price, did a promotion apply, was an override approved, and how did the final pricing method affect margin and pricing-control review. For the full process-level entity relationships, see the [Schema Reference](../reference/schema.md).
+
+```mermaid
+flowchart LR
+    CTX[Customer and Item Context]
+    PL[PriceList]
+    PLL[PriceListLine]
+    PROMO[PromotionProgram]
+    OVR[PriceOverrideApproval]
+    SOL[SalesOrderLine]
+
+    CTX --> PL --> PLL --> SOL
+    CTX --> PROMO --> SOL
+    CTX --> OVR --> SOL
+```
+
+**Tables involved**
+
+| Table | Why it matters here |
 |---|---|
-| Shipment | Debit COGS, credit inventory |
-| Sales invoice | Debit AR, credit revenue and sales tax payable |
-| Cash receipt | Debit cash, credit customer deposits and unapplied cash |
-| Cash receipt application | Debit customer deposits and unapplied cash, credit AR |
+| `PriceList`, `PriceListLine` | Provide the base commercial price by customer or segment scope |
+| `PromotionProgram` | Adds the promotion-based discount when one valid promotion applies |
+| `PriceOverrideApproval` | Captures rare below-floor approval support |
+| `SalesOrderLine` | Stores the final pricing lineage on the ordered line |
 
-## Common Student Questions
+**Starter analytical question:** Which sales lines used standard price-list logic versus promotion pricing versus approved override logic?
 
-- Which orders shipped immediately and which turned into backorders?
-- Which shipment lines were invoiced later than the shipment date?
-- Which invoices remain open after cash applications?
-- Which customers pay one invoice at a time versus several at once?
-- How do revenue, receivables, and cash collection timing differ by period?
+```sql
+-- Teaching objective: Compare pricing method, promotion use, and override approvals.
+-- Main join path: SalesOrderLine -> PriceListLine -> PriceList, plus PromotionProgram and PriceOverrideApproval.
+-- Suggested analysis: Group by PricingMethod, customer segment, item group, or sales rep.
+```
 
-## What to Notice in the Data
+### 2. Shipment to Invoice Traceability
 
-- `SalesInvoiceLine.ShipmentLineID` is the core shipment-to-invoice traceability field.
-- `SalesOrderLine` now carries explicit pricing lineage through `BaseListPrice`, `PriceListLineID`, `PromotionID`, `PriceOverrideApprovalID`, and `PricingMethod`.
-- `CashReceiptApplication` is the authoritative settlement table in O2C.
-- `CashReceipt.SalesInvoiceID` is compatibility metadata only and should not be treated as the main settlement link.
-- Some receipts remain temporarily unapplied, which supports customer-deposit and cash-application analysis.
+This view teaches students how billed revenue ties back to physical fulfillment. Treat this as a traceability diagram, not as a full ER diagram. For the full process-level entity relationships, see the [Schema Reference](../reference/schema.md). This subsection is especially useful for cutoff, completeness, and occurrence testing.
 
-## Subprocess Spotlight: Cash Application and Customer Deposits
+```mermaid
+flowchart LR
+    C[Customer]
+    SO[SalesOrder]
+    SOL[SalesOrderLine]
+    SH[Shipment]
+    SHL[ShipmentLine]
+    SI[SalesInvoice]
+    SIL[SalesInvoiceLine]
+    GL[GLEntry]
+
+    C --> SO --> SOL --> SH --> SHL --> SI --> SIL --> GL
+```
+
+**Tables involved**
+
+| Table | Why it matters here |
+|---|---|
+| `SalesOrder`, `SalesOrderLine` | Show the original customer promise and ordered quantity |
+| `Shipment`, `ShipmentLine` | Show what actually shipped and when it shipped |
+| `SalesInvoice`, `SalesInvoiceLine` | Show what was billed from the shipped quantity |
+| `GLEntry` | Shows the posted receivable and revenue effect |
+
+**Key joins**
+
+- `ShipmentLine.SalesOrderLineID -> SalesOrderLine.SalesOrderLineID`
+- `SalesInvoiceLine.ShipmentLineID -> ShipmentLine.ShipmentLineID`
+- `GLEntry.SourceDocumentType` plus `SourceDocumentID` or `SourceLineID` for posting trace
+
+```sql
+-- Teaching objective: Trace billed revenue back to the shipped line that supported it.
+-- Main join path: SalesOrderLine -> ShipmentLine -> SalesInvoiceLine.
+-- Suggested analysis: Filter invoice and shipment dates by month-end to test cutoff timing.
+```
+
+### 3. Cash Receipt, Application, and Settlement
+
+This is the section students often need most. The cash receipt is the cash event. The cash application is the settlement event. Those are related, but they are not the same accounting moment. This distinction drives open-AR analysis, unapplied-cash review, and receivables testing.
 
 ```mermaid
 flowchart LR
     CR[CashReceipt]
     DEP[Customer Deposits and Unapplied Cash]
     CRA[CashReceiptApplication]
-    INV[SalesInvoice]
+    SI[SalesInvoice]
     GL[GLEntry]
 
-    CR --> DEP --> CRA --> INV
-    CR -. Cash receipt posts cash and deposit liability .-> GL
-    CRA -. Application clears deposit liability into AR settlement .-> GL
+    CR --> DEP --> CRA --> SI --> GL
 ```
 
-The key teaching idea is that customer money can arrive before accounting applies it to one or more invoices. That makes `CashReceipt` the cash event and `CashReceiptApplication` the true settlement event.
+**Tables involved**
 
-## Subprocess Spotlight: Backorder to Shipment Lag
+| Table | Why it matters here |
+|---|---|
+| `CashReceipt` | Records when customer cash arrived |
+| `CashReceiptApplication` | Records which invoices were actually settled |
+| `SalesInvoice` | Provides the receivable being cleared |
+| `GLEntry` | Shows cash, liability, and AR-clearing effects |
+
+:::warning
+Do not use `CashReceipt.SalesInvoiceID` as the main settlement link. The authoritative settlement path is `CashReceiptApplication`, because one receipt can settle multiple invoices and some cash can remain unapplied temporarily.
+:::
+
+```sql
+-- Teaching objective: Separate cash arrival from invoice settlement.
+-- Main join path: CashReceipt -> CashReceiptApplication -> SalesInvoice.
+-- Suggested analysis: Compare receipt date, application date, and invoice due date for open-AR review.
+```
+
+### 4. Backorder to Shipment Lag
+
+Not every order ships immediately. This subsection helps students see why order date, shipment date, and invoice date can diverge when inventory is short. It is useful for fulfillment-lag analysis, billing-lag review, and period timing differences around month-end.
 
 ```mermaid
 flowchart LR
-    SO[SalesOrderLine]
-    AV[Available Inventory]
+    SOL[SalesOrderLine]
+    FG[Available Finished Goods]
     BO[Backordered Quantity]
-    SH[Later ShipmentLine]
-    SI[Later SalesInvoiceLine]
+    SHL[Later ShipmentLine]
+    SIL[Later SalesInvoiceLine]
 
-    SO --> AV
-    AV -->|Enough stock| SH --> SI
-    AV -->|Short stock| BO --> SH
+    SOL --> FG
+    FG -->|Enough stock| SHL --> SIL
+    FG -->|Short stock| BO --> SHL
 ```
 
-This mini-flow helps students see why order date, shipment date, and invoice date do not always match. Inventory availability drives fulfillment timing, and later shipments create later billing.
+**Tables involved**
+
+| Table | Why it matters here |
+|---|---|
+| `SalesOrderLine` | Shows the original promised quantity |
+| `ShipmentLine` | Shows what quantity left inventory and when |
+| `SalesInvoiceLine` | Shows when the delayed shipment was billed |
+
+**Starter analytical question:** Which customers or item groups show the longest lag between order capture, shipment, and billing?
+
+```sql
+-- Teaching objective: Measure fulfillment lag from ordered quantity to shipped quantity and billed quantity.
+-- Main join path: SalesOrderLine -> ShipmentLine -> SalesInvoiceLine.
+-- Suggested analysis: Compare order date, shipment date, and invoice date by customer, item group, or month.
+```
+
+## Common Student Questions
+
+- Which orders shipped immediately and which became backorders?
+- Which shipment lines were invoiced later than the shipment date?
+- Which invoices remain open after cash applications?
+- Which customers pay one invoice at a time versus several at once?
+- Which pricing methods appear most often by customer segment or item family?
+- How do revenue, receivables, unapplied cash, and collections timing differ by period?
 
 ## Where to Go Next
 
 - Read [Returns, Credits, and Refunds](o2c-returns-credits-refunds.md) for the return and refund path.
 - Read [Dataset Guide](../start-here/dataset-overview.md) for the main joins used in analysis.
 - Read [GLEntry Posting Reference](../reference/posting.md) when you want the detailed posting rules.
+- Read [Schema Reference for full table relationships](../reference/schema.md) when you need the broader process-level table map.
