@@ -24,7 +24,6 @@ flowchart LR
     TCE[Approved TimeClockEntry]
     LTE[LaborTimeEntry]
     PR[PayrollRegister]
-    PRL[PayrollRegisterLine]
     PAY[PayrollPayment]
     REM[PayrollLiabilityRemittance]
     JRN[Payroll and manufacturing reclass journals]
@@ -32,8 +31,7 @@ flowchart LR
 
     PP --> TCE
     SHIFT --> TCE --> LTE
-    TCE --> PR --> PRL
-    LTE --> PRL
+    TCE --> PR
     PR --> PAY
     PR --> REM
     PR --> GL
@@ -175,14 +173,12 @@ This is the core payroll accounting path. The payroll register creates gross pay
 ```mermaid
 flowchart LR
     PR[PayrollRegister]
-    PRL[PayrollRegisterLine]
     NET[Accrued Payroll]
     TAX[Payroll Liabilities]
     PAY[PayrollPayment]
     REM[PayrollLiabilityRemittance]
     GL[GLEntry]
 
-    PR --> PRL
     PR --> NET --> PAY
     PR --> TAX --> REM
     PR --> GL

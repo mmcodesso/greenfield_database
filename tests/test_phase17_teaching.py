@@ -217,6 +217,13 @@ def test_phase17_docs_include_cases_matrix_and_subprocess_diagrams() -> None:
     assert "## Returns, Credits, and Refunds" in o2c_text
     assert not Path("docs/processes/o2c-returns-credits-refunds.md").exists()
 
+    p2p_text = Path("docs/processes/p2p.md").read_text(encoding="utf-8")
+    assert "## Analytical Subsections" in p2p_text
+    assert "## Accruals and Direct Service Settlement" in p2p_text
+    assert "PurchaseInvoiceLine.GoodsReceiptLineID" in p2p_text
+    assert "PurchaseInvoiceLine.AccrualJournalEntryID" in p2p_text
+    assert "DisbursementPayment" in p2p_text
+
     payroll_text = Path("docs/processes/payroll.md").read_text(encoding="utf-8")
     assert "## Analytical Subsections" in payroll_text
     assert "### Time, Attendance, and Approved Hours" in payroll_text
@@ -228,7 +235,6 @@ def test_phase17_docs_include_cases_matrix_and_subprocess_diagrams() -> None:
     assert not Path("docs/processes/time-clocks.md").exists()
 
     for path in [
-        Path("docs/processes/p2p.md"),
         Path("docs/processes/manufacturing.md"),
         Path("docs/processes/manual-journals-and-close.md"),
     ]:
