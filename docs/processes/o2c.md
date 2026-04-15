@@ -20,17 +20,14 @@ Most sales follow the normal path of order, shipment, invoice, cash, and settlem
 ```mermaid
 flowchart LR
     C[Customer]
-    SO[SalesOrder]
-    SOL[SalesOrderLine]
+    SO[Sales Order]
     SH[Shipment]
-    SHL[ShipmentLine]
-    SI[SalesInvoice]
-    SIL[SalesInvoiceLine]
-    CR[CashReceipt]
-    CRA[CashReceiptApplication]
+    SI[Sales Invoice]
+    CR[Cash Receipt]
+    CRA[Cash Receipt Application]
     GL[GLEntry]
 
-    C --> SO --> SOL --> SH --> SHL --> SI --> SIL
+    C --> SO --> SH --> SI
     C --> CR --> CRA
     SH -. Posts COGS and Inventory .-> GL
     SI -. Posts AR Revenue and Sales Tax .-> GL
@@ -85,15 +82,14 @@ Before warehouse activity or billing begins, the dataset resolves the commercial
 ```mermaid
 flowchart LR
     CTX[Customer and Item Context]
-    PL[PriceList]
-    PLL[PriceListLine]
-    PROMO[PromotionProgram]
-    OVR[PriceOverrideApproval]
-    SOL[SalesOrderLine]
+    PL[Price List]
+    PROMO[Promotion Program]
+    OVR[Price Override Approval]
+    SO[Sales Order]
 
-    CTX --> PL --> PLL --> SOL
-    CTX --> PROMO --> SOL
-    CTX --> OVR --> SOL
+    CTX --> PL --> SO
+    CTX --> PROMO --> SO
+    CTX --> OVR --> SO
 ```
 
 **Tables involved**
@@ -120,15 +116,12 @@ This view teaches students how billed revenue ties back to physical fulfillment.
 ```mermaid
 flowchart LR
     C[Customer]
-    SO[SalesOrder]
-    SOL[SalesOrderLine]
+    SO[Sales Order]
     SH[Shipment]
-    SHL[ShipmentLine]
-    SI[SalesInvoice]
-    SIL[SalesInvoiceLine]
+    SI[Sales Invoice]
     GL[GLEntry]
 
-    C --> SO --> SOL --> SH --> SHL --> SI --> SIL --> GL
+    C --> SO -->  SH  --> SI  --> GL
 ```
 
 **Tables involved**
@@ -158,10 +151,10 @@ This is the section students often need most. The cash receipt is the cash event
 
 ```mermaid
 flowchart LR
-    CR[CashReceipt]
+    CR[Cash Receipt]
     DEP[Customer Deposits and Unapplied Cash]
-    CRA[CashReceiptApplication]
-    SI[SalesInvoice]
+    CRA[Cash Receipt Application]
+    SI[Sales Invoice]
     GL[GLEntry]
 
     CR --> DEP --> CRA --> SI --> GL
@@ -192,11 +185,11 @@ Not every order ships immediately. This subsection helps students see why order 
 
 ```mermaid
 flowchart LR
-    SOL[SalesOrderLine]
+    SOL[Sales Order]
     FG[Available Finished Goods]
     BO[Backordered Quantity]
-    SHL[Later ShipmentLine]
-    SIL[Later SalesInvoiceLine]
+    SHL[Later Shipment]
+    SIL[Later Sales Invoice]
 
     SOL --> FG
     FG -->|Enough stock| SHL --> SIL
@@ -225,16 +218,15 @@ Some sales do not end with the original invoice. In this dataset, returns are th
 
 ```mermaid
 flowchart LR
-    SHL[ShipmentLine]
-    SIL[SalesInvoiceLine]
-    SR[SalesReturn]
-    SRL[SalesReturnLine]
-    CM[CreditMemo]
-    CML[CreditMemoLine]
+    SHL[Shipment]
+    SIL[Sales Invoice]
+    SR[Sales Return]
+    SRL[Sales Return]
+    CM[Credit Memo]
     RF[CustomerRefund]
     GL[GLEntry]
 
-    SHL --> SIL --> SR --> SRL --> CM --> CML --> RF
+    SHL --> SIL --> SR --> SRL --> CM --> RF
     SR -. Restores Inventory and Reverses COGS .-> GL
     CM -. Posts Contra Revenue Tax Reversal and AR or Customer Credit .-> GL
     RF -. Clears Customer Credit and Cash .-> GL
@@ -262,11 +254,11 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    INV[Original SalesInvoice]
-    RET[SalesReturn]
-    CM[CreditMemo]
+    INV[Original Sales Invoice]
+    RET[Sales Return]
+    CM[Credit Memo]
     CC[Customer Credit]
-    RF[CustomerRefund]
+    RF[Customer Refund]
 
     INV --> RET --> CM
     CM -->|Invoice still open| INV

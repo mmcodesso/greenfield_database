@@ -7,19 +7,19 @@ sidebar_label: Process Flows
 
 # Process Flows
 
-Use this section after [Company Story](company-story.md). Each guide explains the business situation first, then the document flow, then the accounting effect. That sequence helps students connect what the company is doing with what the database records.
+Use this page after [Company Story](company-story.md). This is the bridge from business context into the detailed process guides. The goal is not to repeat every process page. It is to show how the major cycles relate to one another and how they eventually converge into `GLEntry`.
 
 ## How to Use This Section
 
 Start with the process that matches your class question:
 
-| Process area | Detailed guide | Why students use it |
-|---|---|---|
-| O2C | [O2C](../processes/o2c.md) | To follow a sale through order, shipment, invoice, cash receipt, application, and the main return/refund exception path |
-| P2P | [P2P](../processes/p2p.md) | To trace internal demand through supplier ordering, receiving, invoicing, and payment |
-| Manufacturing | [Manufacturing](../processes/manufacturing.md) | To see how the company turns materials, labor, and schedules into finished goods |
-| Payroll | [Payroll](../processes/payroll.md) | To follow time and attendance support, gross-to-net payroll, liabilities, payments, remittances, and labor reclass |
-| Journals and close | [Manual Journals and Close](../processes/manual-journals-and-close.md) | To study finance-controlled entries that sit outside the day-to-day document cycles |
+| Process | Why students use it |
+|---|---|
+| [O2C](../processes/o2c.md) | To follow a sale through order, shipment, invoice, cash receipt, application, and the main return or refund exception path |
+| [P2P](../processes/p2p.md) | To trace internal demand through supplier ordering, receiving, invoicing, and payment |
+| [Manufacturing](../processes/manufacturing.md) | To see how planning, materials, labor, and completion turn selected products into finished goods |
+| [Payroll](../processes/payroll.md) | To follow time and attendance support, gross-to-net payroll, liabilities, payments, remittances, and labor reclass |
+| [Manual Journals and Close](../processes/manual-journals-and-close.md) | To study recurring journals, accrual settlement, and boundary entries outside the day-to-day document cycles |
 
 ## Process Map
 
@@ -27,14 +27,14 @@ Start with the process that matches your class question:
 flowchart LR
     STORY[Company Operations]
     O2C[Order-to-Cash]
-    O2CEX[O2C Exception Path<br/>Returns Credits Refunds]
+    O2CEX[Returns Credits Refunds]
     P2P[Procure-to-Pay]
     MFG[Manufacturing]
     TIME[Time and Attendance Support]
     PAY[Payroll]
-    JE[Manual Journals and Close]
+    CLOSE[Manual Journals and Close]
     GL[GLEntry]
-    AN[Analytics and Coursework]
+    AN[Analytics and Reporting]
 
     STORY --> O2C
     STORY --> P2P
@@ -49,55 +49,33 @@ flowchart LR
     P2P --> GL
     MFG --> GL
     PAY --> GL
-    JE --> GL
+    CLOSE --> GL
     GL --> AN
 ```
 
-Read the map from left to right. Customer and supplier activity create the external business cycles. Manufacturing turns demand and materials into finished goods. Time and attendance support document when hourly labor was scheduled, approved, and reviewed. Payroll converts that support into expense, liabilities, employee pay, and later remittance. Finance journals complete the accounting picture. All of those threads eventually reach `GLEntry`.
+Read the map from left to right. Customer demand creates the O2C cycle. Supplier activity creates the P2P cycle. Manufacturing sits between demand and inventory availability, with P2P supporting materials and Payroll supporting labor. Manual journals and close sit beside the document-driven cycles and complete the accounting environment. All of those threads eventually reach `GLEntry`.
 
 ## Subledger-to-Ledger Traceability
 
 ```mermaid
 flowchart LR
-    SH[Shipment]
-    SI[SalesInvoice]
-    CRA[CashReceiptApplication]
-    SR[SalesReturn]
-    CM[CreditMemo]
-    RF[CustomerRefund]
-    GR[GoodsReceipt]
-    PI[PurchaseInvoice]
-    DP[DisbursementPayment]
-    MI[MaterialIssue]
-    PC[ProductionCompletion]
-    WC[WorkOrderClose]
-    PR[PayrollRegister]
-    PP[PayrollPayment]
-    RM[PayrollLiabilityRemittance]
-    JE[JournalEntry]
+    O2C[O2C source documents]
+    P2P[P2P source documents]
+    MFG[Manufacturing source documents]
+    PAY[Payroll and time source documents]
+    CLOSE[JournalEntry]
     GL[GLEntry]
-    R[Reporting and Analytics]
+    R[Financial and analytical reporting]
 
-    SH --> GL
-    SI --> GL
-    CRA --> GL
-    SR --> GL
-    CM --> GL
-    RF --> GL
-    GR --> GL
-    PI --> GL
-    DP --> GL
-    MI --> GL
-    PC --> GL
-    WC --> GL
-    PR --> GL
-    PP --> GL
-    RM --> GL
-    JE --> GL
+    O2C --> GL
+    P2P --> GL
+    MFG --> GL
+    PAY --> GL
+    CLOSE --> GL
     GL --> R
 ```
 
-This is the core design idea behind the dataset: many operational tables exist, but posted accounting analysis converges into `GLEntry`.
+This is the core design idea behind the dataset: many source processes exist, but posted accounting converges into `GLEntry`.
 
 The most important traceability fields are:
 
@@ -111,16 +89,16 @@ The most important traceability fields are:
 
 ## Recommended Reading Order
 
-1. Read [Company Story](company-story.md) to understand the business model.
+1. Read [Company Story](company-story.md) to understand the company identity and business model.
 2. Read [O2C](../processes/o2c.md) and [P2P](../processes/p2p.md) to learn the customer and supplier cycles.
 3. Use the return, credit, and refund section inside [O2C](../processes/o2c.md) for the main customer-side exception path.
-4. Read [Manufacturing](../processes/manufacturing.md) to see how the company produces selected goods internally.
+4. Read [Manufacturing](../processes/manufacturing.md) to see how planning, execution, and costing connect.
 5. Read [Payroll](../processes/payroll.md) for time and attendance support, the pay cycle, and related accounting.
-6. Read [Manual Journals and Close](../processes/manual-journals-and-close.md) for the finance-led activity outside the operational subledgers.
+6. Read [Manual Journals and Close](../processes/manual-journals-and-close.md) for recurring journals, accrual settlement, and close-cycle activity.
 7. Read [Dataset Guide](../start-here/dataset-overview.md) when you are ready to work directly with tables and joins.
 
 ## Where to Go Next
 
-- Read [Dataset Guide](../start-here/dataset-overview.md) for table families and join paths.
-- Read [Schema Reference](../reference/schema.md) when you need field-level table detail.
+- Read [Dataset Guide](../start-here/dataset-overview.md) for table families and navigation paths.
+- Read [Schema Reference](../reference/schema.md) when you need table relationships and join cues.
 - Read [GLEntry Posting Reference](../reference/posting.md) when you want the posting rules behind each process.

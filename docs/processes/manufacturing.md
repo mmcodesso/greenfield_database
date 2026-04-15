@@ -19,20 +19,20 @@ That distinction matters. A planning recommendation is not a work order. A rough
 
 ```mermaid
 flowchart LR
-    DF[DemandForecast]
-    IP[InventoryPolicy]
+    DF[Demand Forecast]
+    IP[Inventory Policy]
     SB[Sales backlog and FG position]
-    SPR[SupplyPlanRecommendation]
-    MRP[MaterialRequirementPlan]
-    RCCP[RoughCutCapacityPlan]
+    SPR[Supply Plan Recommendation]
+    MRP[Material Requirement Plan]
+    RCCP[Rough Cut Capacity Plan]
     BOM[BOM and routing setup]
-    WO[WorkOrder]
-    WOS[WorkOrderOperationSchedule]
+    WO[Work Order]
+    WOS[Work Order Operation Schedule]
     P2P[P2P component support]
     LAB[Payroll and labor support]
-    MI[MaterialIssue]
-    PC[ProductionCompletion]
-    WC[WorkOrderClose]
+    MI[Material Issue]
+    PC[Production Completion]
+    WC[Work Order Close]
     O2C[Finished goods available to O2C]
 
     DF --> SPR
@@ -96,11 +96,11 @@ This is the upstream manufacturing layer in the dataset. Weekly planning determi
 
 ```mermaid
 flowchart LR
-    DF[DemandForecast]
-    IP[InventoryPolicy]
-    SPR[SupplyPlanRecommendation]
-    MRP[MaterialRequirementPlan]
-    RCCP[RoughCutCapacityPlan]
+    DF[Demand Forecast]
+    IP[Inventory Policy]
+    SPR[Supply Plan Recommendation]
+    MRP[Material Requirement Plan]
+    RCCP[Rough Cut Capacity Plan]
 
     DF --> SPR
     IP --> SPR
@@ -137,14 +137,13 @@ Before a work order can be released, the item needs a standard recipe and a stan
 ```mermaid
 flowchart LR
     ITEM[Item]
-    BOM[BillOfMaterial]
-    BOML[BillOfMaterialLine]
+    BOM[Bill of Material]
     RT[Routing]
-    RTO[RoutingOperation]
-    WC[WorkCenter]
-    WCC[WorkCenterCalendar]
+    RTO[Routing Operation]
+    WC[Work Center]
+    WCC[Work Center Calendar]
 
-    ITEM --> BOM --> BOML
+    ITEM --> BOM
     ITEM --> RT --> RTO --> WC --> WCC
 ```
 
@@ -171,11 +170,11 @@ This is the start of detailed execution. Once a recommendation is released, the 
 
 ```mermaid
 flowchart LR
-    SPR[SupplyPlanRecommendation]
-    WO[WorkOrder]
-    WOO[WorkOrderOperation]
-    WOS[WorkOrderOperationSchedule]
-    WCC[WorkCenterCalendar]
+    SPR[Supply Plan Recommendation]
+    WO[Work Order]
+    WOO[Work Order Operation]
+    WOS[Work Order Operation Schedule]
+    WCC[Work Center Calendar]
 
     SPR --> WO --> WOO --> WOS
     WCC --> WOS
@@ -210,16 +209,15 @@ Manufacturing is not isolated from purchasing. When planned or released work ord
 
 ```mermaid
 flowchart LR
-    SPR[SupplyPlanRecommendation]
-    PR[PurchaseRequisition]
-    PO[PurchaseOrder]
-    GR[GoodsReceipt]
-    WO[WorkOrder]
-    MI[MaterialIssue]
-    MIL[MaterialIssueLine]
+    SPR[Supply Plan Recommendation]
+    PR[Purchase Requisition]
+    PO[Purchase Order]
+    GR[Goods Receipt]
+    WO[Work Order]
+    MI[Material Issue]
 
     SPR --> PR --> PO --> GR
-    WO --> MI --> MIL
+    WO --> MI
     GR --> MI
 ```
 
@@ -245,12 +243,12 @@ Material is only part of the manufacturing story. Approved time supports hourly 
 
 ```mermaid
 flowchart LR
-    ESR[EmployeeShiftRoster]
-    TCE[TimeClockEntry]
-    LTE[LaborTimeEntry]
-    PR[PayrollRegister]
-    JE[JournalEntry Reclass]
-    WOO[WorkOrderOperation]
+    ESR[Employee Shift Roster]
+    TCE[Time Clock Entry]
+    LTE[Labor Time Entry]
+    PR[Payroll Register]
+    JE[Journal Entry Reclass]
+    WOO[Work Order Operation]
 
     ESR --> TCE --> LTE --> WOO
     LTE --> PR --> JE
@@ -280,15 +278,14 @@ This is the costing and inventory handoff layer. `ProductionCompletion` moves fi
 
 ```mermaid
 flowchart LR
-    MI[MaterialIssue]
-    LTE[LaborTimeEntry]
-    PC[ProductionCompletion]
-    PCL[ProductionCompletionLine]
+    MI[Material Issue]
+    LTE[Labor Time Entry]
+    PC[Production Completion]
     WOC[WorkOrderClose]
     FG[Finished goods available to O2C]
 
-    MI --> PC --> PCL --> WOC --> FG
-    LTE --> PCL
+    MI --> PC  --> WOC --> FG
+    LTE --> WOC
 ```
 
 **Tables involved**

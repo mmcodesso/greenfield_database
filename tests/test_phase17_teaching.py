@@ -219,6 +219,12 @@ def test_phase17_docs_include_cases_matrix_and_subprocess_diagrams() -> None:
     assert "manufactures a selected subset" in company_story_text
     assert "## What Is Still Simplified" not in company_story_text
 
+    process_flows_text = Path("docs/learn-the-business/process-flows.md").read_text(encoding="utf-8")
+    assert "| Process | Why students use it |" in process_flows_text
+    assert "## Process Map" in process_flows_text
+    assert "## Subledger-to-Ledger Traceability" in process_flows_text
+    assert "GLEntry" in process_flows_text
+
     o2c_text = Path("docs/processes/o2c.md").read_text(encoding="utf-8")
     assert "## Analytical Subsections" in o2c_text
     assert "## Returns, Credits, and Refunds" in o2c_text

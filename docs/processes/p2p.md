@@ -20,17 +20,14 @@ Most P2P activity follows the normal inventory and materials path: plan, requisi
 ```mermaid
 flowchart LR
     PLAN[Planning Support]
-    PR[PurchaseRequisition]
-    PO[PurchaseOrder]
-    POL[PurchaseOrderLine]
-    GR[GoodsReceipt]
-    GRL[GoodsReceiptLine]
-    PI[PurchaseInvoice]
-    PIL[PurchaseInvoiceLine]
-    DP[DisbursementPayment]
+    PR[Purchase Requisition]
+    PO[Purchase Order]
+    GR[Goods Receipt]
+    PI[Purchase Invoice]
+    DP[Disbursement Payment]
     GL[GLEntry]
 
-    PLAN --> PR --> PO --> POL --> GR --> GRL --> PI --> PIL --> DP
+    PLAN --> PR --> PO --> GR -->  PI -->  DP
     GR -. Posts Inventory and GRNI .-> GL
     PI -. Clears GRNI and records AP .-> GL
     DP -. Clears AP and Cash .-> GL
@@ -82,10 +79,10 @@ The normal replenishment path starts before purchasing talks to a supplier. Week
 
 ```mermaid
 flowchart LR
-    DF[DemandForecast]
-    IP[InventoryPolicy]
-    SPR[SupplyPlanRecommendation]
-    PR[PurchaseRequisition]
+    DF[Demand Forecast]
+    IP[Inventory Policy]
+    SPR[Supply Plan Recommendation]
+    PR[Purchase Requisition]
 
     DF --> SPR
     IP --> SPR --> PR
@@ -114,13 +111,11 @@ This subsection teaches the operational supplier path. Students should use it to
 
 ```mermaid
 flowchart LR
-    PR[PurchaseRequisition]
-    PO[PurchaseOrder]
-    POL[PurchaseOrderLine]
+    PR[Purchase Requisition]
+    PO[Purchase Order]
     GR[GoodsReceipt]
-    GRL[GoodsReceiptLine]
 
-    PR --> PO --> POL --> GR --> GRL
+    PR --> PO -->  GR
 ```
 
 **Tables involved**
@@ -149,12 +144,11 @@ This is the three-way-match teaching path. Students should use it to see how a s
 
 ```mermaid
 flowchart LR
-    GRL[GoodsReceiptLine]
-    PI[PurchaseInvoice]
-    PIL[PurchaseInvoiceLine]
+    GRL[Goods Receipt]
+    PI[Purchase Invoice]
     GL[GLEntry]
 
-    GRL --> PIL --> PI --> GL
+    GRL --> PI --> GL
 ```
 
 **Tables involved**
@@ -179,9 +173,9 @@ This is the settlement view of P2P. Supplier invoices create AP, but payment can
 
 ```mermaid
 flowchart LR
-    PI[PurchaseInvoice]
+    PI[Purchase Invoice]
     AP[Accounts Payable]
-    DP[DisbursementPayment]
+    DP[Disbursement Payment]
     GL[GLEntry]
 
     PI --> AP --> DP --> GL
@@ -209,10 +203,10 @@ This is a valid AP path, but it is not the same control path as receipt-matched 
 
 ```mermaid
 flowchart LR
-    AC[JournalEntry Accrual]
-    PIL[PurchaseInvoiceLine with AccrualJournalEntryID]
-    PI[PurchaseInvoice]
-    DP[DisbursementPayment]
+    AC[Journal Entry Accrual]
+    PIL[Purchase InvoiceLine with AccrualJournalEntryID]
+    PI[Purchase Invoice]
+    DP[Disbursement Payment]
     GL[GLEntry]
 
     AC --> PIL --> PI --> DP --> GL

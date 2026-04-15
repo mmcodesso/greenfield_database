@@ -19,13 +19,13 @@ Payroll also connects to manufacturing. Approved time can flow into `LaborTimeEn
 
 ```mermaid
 flowchart LR
-    PP[PayrollPeriod]
+    PP[Payroll Period]
     SHIFT[Shift and roster support]
-    TCE[Approved TimeClockEntry]
-    LTE[LaborTimeEntry]
-    PR[PayrollRegister]
-    PAY[PayrollPayment]
-    REM[PayrollLiabilityRemittance]
+    TCE[Approved Time Clock Entry]
+    LTE[Labor Time Entry]
+    PR[Payroll Register]
+    PAY[Payroll  Payment]
+    REM[Payroll Liability Remittance]
     JRN[Payroll and manufacturing reclass journals]
     GL[GLEntry]
 
@@ -90,13 +90,13 @@ This is the upstream support layer for hourly payroll. Students should read it a
 
 ```mermaid
 flowchart LR
-    SD[ShiftDefinition]
-    ESA[EmployeeShiftAssignment]
-    ESR[EmployeeShiftRoster]
-    ABS[EmployeeAbsence]
-    OTA[OvertimeApproval]
-    TCP[TimeClockPunch]
-    TCE[TimeClockEntry]
+    SD[Shift Definition]
+    ESA[Employee Shift Assignment]
+    ESR[Employee Shift Roster]
+    ABS[Employee Absence]
+    OTA[Overtime Approval]
+    TCP[Time Clock Punch]
+    TCE[Time Clock Entry]
 
     SD --> ESA --> ESR
     ESR --> ABS
@@ -132,16 +132,15 @@ Once daily time is approved, payroll turns that support into gross pay. Hourly e
 
 ```mermaid
 flowchart LR
-    TCE[TimeClockEntry]
-    LTE[LaborTimeEntry]
-    PP[PayrollPeriod]
-    PR[PayrollRegister]
-    PRL[PayrollRegisterLine]
+    TCE[Time Clock Entry]
+    LTE[Labor Time Entry]
+    PP[Payroll Period]
+    PR[Payroll Register]
+
 
     TCE --> PR
-    TCE --> LTE --> PRL
+    TCE --> LTE --> PR
     PP --> PR
-    PR --> PRL
 ```
 
 **Tables involved**
@@ -172,11 +171,11 @@ This is the core payroll accounting path. The payroll register creates gross pay
 
 ```mermaid
 flowchart LR
-    PR[PayrollRegister]
+    PR[Payroll Register]
     NET[Accrued Payroll]
     TAX[Payroll Liabilities]
-    PAY[PayrollPayment]
-    REM[PayrollLiabilityRemittance]
+    PAY[Payroll Payment]
+    REM[Payroll Liability Remittance]
     GL[GLEntry]
 
     PR --> NET --> PAY
@@ -209,11 +208,11 @@ Payroll also feeds manufacturing. When approved time and labor support are tied 
 
 ```mermaid
 flowchart LR
-    TCE[TimeClockEntry]
-    LTE[LaborTimeEntry]
-    WOO[WorkOrderOperation]
-    PR[PayrollRegister]
-    JE[JournalEntry Reclass]
+    TCE[Time Clock Entry]
+    LTE[Labor Time Entry]
+    WOO[Work Order Operation]
+    PR[Payroll Register]
+    JE[Journal Entry Reclass]
     GL[GLEntry]
 
     TCE --> LTE --> WOO
@@ -249,11 +248,11 @@ Attendance control work sits beside the normal payroll flow. Students should use
 
 ```mermaid
 flowchart LR
-    ESR[EmployeeShiftRoster]
-    TCP[TimeClockPunch]
-    TCE[TimeClockEntry]
-    AE[AttendanceException]
-    PR[PayrollRegister]
+    ESR[Employee Shift Roster]
+    TCP[Time Clock Punch]
+    TCE[Time Clock Entry]
+    AE[Attendance Exception]
+    PR[Payroll Register]
 
     ESR --> TCP --> TCE --> PR
     ESR --> AE

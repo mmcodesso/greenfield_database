@@ -20,11 +20,11 @@ That distinction matters. A recurring journal is not an operational source docum
 ```mermaid
 flowchart LR
     RC[Recurring journal categories]
-    JE[JournalEntry]
+    JE[Journal Entry]
     GL[GLEntry]
-    AC[Accrual JournalEntry]
-    PI[PurchaseInvoice]
-    DP[DisbursementPayment]
+    AC[Accrual Journal Entry]
+    PI[Purchase Invoice]
+    DP[Disbursement Payment]
 
     RC --> JE --> GL
     AC --> JE
@@ -146,9 +146,9 @@ This is the most important subprocess on the page. Students should learn that ac
 ```mermaid
 flowchart LR
     AC[Accrual JournalEntry]
-    PIL[PurchaseInvoiceLine.AccrualJournalEntryID]
-    PI[PurchaseInvoice]
-    DP[DisbursementPayment]
+    PIL[Purchase Invoice AccrualJournalEntryID]
+    PI[Purchase Invoice]
+    DP[Disbursement Payment]
     AJ[Accrual Adjustment]
     GL[GLEntry]
 
