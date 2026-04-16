@@ -26,9 +26,6 @@ The accounting team has operational evidence for sales, purchasing, payroll, man
 - `PurchaseInvoice`
 - `WorkOrderClose`
 - `PayrollRegister`
-- <FileName type="support" />:
-  - `ValidationStages`
-  - `ValidationChecks`
 
 ## Recommended Query Sequence
 

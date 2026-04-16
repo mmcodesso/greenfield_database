@@ -23,7 +23,7 @@ The current implementation has six layers:
 | Operational data layer | O2C, P2P, manufacturing, payroll, time, and master-data tables |
 | Accounting layer | `JournalEntry`, `GLEntry`, and the chart of accounts |
 | Control layer | Validations, anomaly injection, validation reporting, and generation logging |
-| Delivery layer | SQLite, Excel, support-workbook, CSV zip, and text-log exports |
+| Delivery layer | SQLite, Excel, CSV zip, and text-log exports |
 | Configuration layer | settings, runtime context, fiscal calendar, and validation scopes |
 
 The implemented schema is defined in `src/generator_dataset/schema.py` through `TABLE_COLUMNS`.
@@ -54,7 +54,7 @@ flowchart LR
     Y[Generate Year-End Close Journals]
     V[Run Validations]
     A[Inject Anomalies]
-    X[Export SQLite, Excel, Support Workbook, CSV Zip, and Log]
+    X[Export SQLite, Excel, CSV Zip, and Log]
 
     S --> C --> E --> M --> B --> O --> J --> P --> Y --> V --> A --> X
 ```
@@ -86,7 +86,7 @@ In plain language, the build:
 | `validations.py` | Run document, accounting, payroll, manufacturing, and roll-forward checks |
 | `anomalies.py` | Inject configured anomalies and record them in the anomaly log |
 | `state_cache.py` | Provide shared cache helpers used by generation and validation |
-| `exporters.py` | Write SQLite, dataset Excel, support workbook, and CSV zip outputs |
+| `exporters.py` | Write SQLite, dataset Excel, and CSV zip outputs |
 | `utils.py` | Support numbering, rounding, and shared helper logic |
 | `main.py` | Orchestrate the full run and write the generation log |
 
@@ -134,7 +134,6 @@ The current generator exports:
 
 - SQLite database
 - Excel workbook with dataset table sheets only
-- support workbook for anomaly and validation content
 - CSV zip package with one CSV per dataset table
 - text generation log
 

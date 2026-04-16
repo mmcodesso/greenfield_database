@@ -26,10 +26,6 @@ Internal audit has been asked to review whether scheduled work, raw punches, app
 - `OvertimeApproval`
 - `AttendanceException`
 - `Employee`
-- <FileName type="support" />
-  - `AnomalyLog`
-  - `ValidationChecks`
-  - `ValidationExceptions`
 
 ## Recommended Query Sequence
 
@@ -37,9 +33,9 @@ Internal audit has been asked to review whether scheduled work, raw punches, app
 
 ## Suggested Excel Sequence
 
-1. Filter `AnomalyLog` to the workforce-related anomaly families.
+1. Filter the query results to one workforce exception pattern at a time.
 2. Trace the affected employee/date combinations into `EmployeeShiftRoster`, `TimeClockPunch`, and `TimeClockEntry`.
-3. Use `ValidationExceptions` to compare planted anomalies with the control failures identified by the validation workflow.
+3. Compare the source-table evidence to the control failure identified by the query.
 
 ## What Students Should Notice
 
@@ -51,6 +47,6 @@ Internal audit has been asked to review whether scheduled work, raw punches, app
 ## Follow-Up Questions
 
 - Which anomaly type is easiest to detect with a simple query, and which requires a multi-table review?
-- When should auditors start from the support workbook and when should they move directly to the raw attendance tables?
+- When should auditors move from a summary exception query into the raw attendance tables?
 - Which attendance exception would create the greatest payroll overstatement risk?
 - Which attendance exception is operationally serious even if the payroll impact is small?

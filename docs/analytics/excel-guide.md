@@ -10,14 +10,6 @@ sidebar_label: Excel Guide
 
 The dataset workbook contains one worksheet for each dataset table. Each worksheet is already exported as a formatted Excel Table with filters and a frozen header row.
 
-The companion support workbook contains:
-
-- `Overview`
-- `AnomalyLog`
-- `ValidationStages`
-- `ValidationChecks`
-- `ValidationExceptions`
-
 ## Recommended Excel Setup
 
 The recommended workflow is to treat the published workbook as a source file, not as the place where you build every exercise.
@@ -30,8 +22,6 @@ For each new exercise:
 4. import only the tables required for that exercise through Power Query
 5. load those tables into the current workbook
 6. build pivots, formulas, charts, or summary tabs from the imported tables
-
-If the exercise is anomaly-focused, repeat the same process with <FileName type="support" /> and import only the support sheets you need.
 
 This approach keeps each exercise cleaner, reduces workbook clutter, and makes it easier to control row counts, joins, and refresh steps.
 
@@ -63,7 +53,7 @@ Typical examples:
 
 - financial exercise: `GLEntry`, `Account`, `SalesInvoice`, `CashReceiptApplication`
 - managerial exercise: `Item`, `SalesInvoiceLine`, `Employee`, `CostCenter`
-- audit exercise: `Employee`, `PurchaseOrder`, `JournalEntry`, plus selected support sheets when needed
+- audit exercise: `Employee`, `PurchaseOrder`, `JournalEntry`, `TimeClockEntry`
 
 ## Financial Workflows
 
@@ -231,7 +221,6 @@ Use:
 - `LaborTimeEntry`
 - `PurchaseOrder`
 - `JournalEntry`
-- the support workbook
 
 Suggested outputs:
 
@@ -256,36 +245,11 @@ Suggested outputs:
 - customer-specific price-list bypass review
 - override approval completeness review
 
-### Support-workbook-assisted review
-
-Use:
-
-- `AnomalyLog`
-- `ValidationStages`
-- `ValidationChecks`
-- `ValidationExceptions`
-
-Suggested workflow:
-
-1. group `AnomalyLog` by anomaly type
-2. choose one anomaly family
-3. trace it to the matching source worksheet
-4. compare the Excel trace to the SQL starter query
-
-Best paired cases:
-
-- [Audit Review Pack Case](cases/audit-review-pack-case.md)
-- [Attendance Control Audit Case](cases/attendance-control-audit-case.md)
-- [Replenishment Support Audit Case](cases/replenishment-support-audit-case.md)
-- [Pricing Governance Audit Case](cases/pricing-governance-audit-case.md)
-- [Audit Exception Lab](cases/audit-exception-lab.md)
-
-## Using the Workbook and Support Workbook
+## Using the Workbook
 
 - <FileName type="excel" /> is the main source workbook for dataset tables.
-- <FileName type="support" /> provides anomaly and validation context for exception-oriented review.
 - For most new exercises, create a fresh working sheet and import only the required tables with Power Query.
-- Open the published workbooks when you need to inspect source sheets directly, but do the exercise work in your imported tables and analysis sheets.
+- Open the published workbook when you need to inspect source sheets directly, but do the exercise work in your imported tables and analysis sheets.
 
 ## Where to Go Next
 

@@ -226,7 +226,6 @@ Start with:
 - manufacturing chain tables
 - payroll and time chain tables
 - GLEntry
-- the companion support workbook
 - the transaction chains in [Process Flows](../learn-the-business/process-flows.md)
 
 ## Practical Starting Tips

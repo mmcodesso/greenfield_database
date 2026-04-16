@@ -1,6 +1,6 @@
 ---
 title: Audit Review Pack Case
-description: Guided walkthrough for an audit review pack that uses the support workbook and the expanded workforce, approval, and master-data audit queries.
+description: Guided walkthrough for an audit review pack that uses the expanded workforce, approval, and master-data audit queries.
 sidebar_label: Audit Review Pack
 ---
 
@@ -11,19 +11,14 @@ import { caseQuerySequences } from "@site/src/generated/queryDocCollections";
 
 ## Audience and Purpose
 
-Use this case when students need a structured audit lab that combines the support workbook with source-table SQL review.
+Use this case when students need a structured audit lab that combines source-table SQL review with follow-up tracing.
 
 ## Business Scenario
 
-The internal-audit team receives the normal five-year package and needs to triage control issues quickly. The job is not to prove every issue from scratch. The job is to use the support workbook and the audit starter queries together so the team can explain what happened, where it happened, and why it matters.
+The internal-audit team receives the normal five-year package and needs to triage control issues quickly. The job is not to prove every issue from scratch. The job is to use the audit starter queries and the source tables together so the team can explain what happened, where it happened, and why it matters.
 
-## Main Tables and Worksheets
+## Main Tables
 
-- <FileName type="support" />
-- `AnomalyLog`
-- `ValidationStages`
-- `ValidationChecks`
-- `ValidationExceptions`
 - `Employee`
 - `Item`
 - `PurchaseInvoice`
@@ -33,20 +28,17 @@ The internal-audit team receives the normal five-year package and needs to triag
 
 ## Recommended Query Sequence
 
-1. Open <FileName type="support" /> and summarize `AnomalyLog` by `anomaly_type`.
-2. Then work through the SQL sequence below.
+Work through the SQL sequence below, then trace the flagged rows back into the source tables.
 
 <QuerySequence items={caseQuerySequences["audit-review-pack-case"]} />
 
 ## Suggested Excel Sequence
 
-1. Start with the support workbook to see which anomaly families were planted.
-2. Trace one workforce anomaly, one item-master anomaly, and one approval anomaly back into the dataset workbook or SQLite query results.
-3. Write a short plain-language explanation of the control failure and the business risk.
+1. Trace one workforce anomaly, one item-master anomaly, and one approval anomaly back into the dataset workbook or SQLite query results.
+2. Write a short plain-language explanation of the control failure and the business risk.
 
 ## What Students Should Notice
 
-- The support workbook is a guide, not a substitute for source-document review.
 - Several audit queries now focus on master data and org structure as well as document timing.
 - The audit pack now also separates roster issues, punch issues, absence issues, and overtime-approval issues.
 - Current-state assignment issues and approval-limit exceptions can be reviewed separately from broader role-family questions.

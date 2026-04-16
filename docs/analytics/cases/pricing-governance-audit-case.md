@@ -25,10 +25,9 @@ The dataset maintains formal price lists, seasonal promotions, and explicit over
 
 ## Suggested Excel Sequence
 
-1. open `PriceList`, `PriceListLine`, `PromotionProgram`, `PriceOverrideApproval`, `SalesOrderLine`, and `AnomalyLog`
-2. filter `AnomalyLog` to the pricing-related anomaly families
-3. trace one flagged line from the order line into its linked price-list line and override record
-4. compare effective dates and scope fields directly in the workbook
+1. open `PriceList`, `PriceListLine`, `PromotionProgram`, `PriceOverrideApproval`, and `SalesOrderLine`
+2. trace one flagged line from the order line into its linked price-list line and override record
+3. compare effective dates and scope fields directly in the workbook
 
 ## What Students Should Notice
 

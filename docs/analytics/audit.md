@@ -21,7 +21,7 @@ import {
 | Manufacturing controls | `Item`, `BillOfMaterial`, `Routing`, `WorkCenter`, `WorkOrder`, `WorkOrderOperation`, `WorkOrderOperationSchedule`, `MaterialIssueLine`, `ProductionCompletionLine`, `WorkOrderClose` |
 | Payroll and time controls | `ShiftDefinition`, `EmployeeShiftAssignment`, `EmployeeShiftRoster`, `EmployeeAbsence`, `OvertimeApproval`, `TimeClockPunch`, `TimeClockEntry`, `AttendanceException`, `LaborTimeEntry`, `PayrollRegister`, `PayrollRegisterLine`, `PayrollPayment`, `PayrollLiabilityRemittance`, `Employee` |
 | Master-data controls | `Employee`, `Item`, `PriceList`, `PriceListLine`, `PromotionProgram`, `PriceOverrideApproval`, plus operational tables that reuse those masters |
-| Support-workbook-assisted review | support workbook sheets `AnomalyLog`, `ValidationStages`, `ValidationChecks`, and `ValidationExceptions` |
+| Cross-process control review | Combine query output with source-table tracing across the affected process tables |
 
 ## Starter SQL Map
 
@@ -64,28 +64,14 @@ Use these when you want students to review the exception patterns present in the
 - customer-specific price-list bypass review
 - override approval completeness review
 
-## Support-Workbook-Assisted Review
-
-Use the support workbook when you want a quicker triage path:
-
-- `AnomalyLog` for planted anomaly families and source keys
-- `ValidationStages` for stage-level exception counts
-- `ValidationChecks` for section-level control counts
-- `ValidationExceptions` for flattened exception detail
-
-The published default build also includes a small intentional `manufacturing_audit_seeds` set in the validation companion data. Use that set when you want a short manufacturing-control lab that is visible in source tables and in the support workbook without expanding the broader anomaly pack.
-
-Pair those sheets with [Audit Review Pack Case](cases/audit-review-pack-case.md) or [Audit Exception Lab](cases/audit-exception-lab.md).
-
 ## Interpretation Notes
 
 - Exception-oriented queries are designed to return reviewable control patterns from the published dataset.
-- The GL remains balanced even when the support workbook and audit queries identify exceptions.
+- The GL remains balanced even when audit queries identify exceptions.
 - Employee-master review should distinguish current-state `IsActive` from historical validity driven by `HireDate` and `TerminationDate`.
 - Item-master review should distinguish current-state lifecycle and launch-date logic from operational usage timing.
 - Pricing-control review should distinguish price-list master-data failures from transaction-level override and promotion-use failures.
-- Manufacturing audit-seed review should distinguish intentional teaching seeds in `ValidationChecks` and `ValidationExceptions` from anomaly-log-driven exception families.
-- Support-workbook review should accelerate tracing, not replace source-document review.
+- Source-table tracing should remain the final step in explaining each exception pattern.
 
 ## Anomaly Coverage Queries
 

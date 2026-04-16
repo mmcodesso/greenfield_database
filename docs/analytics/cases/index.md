@@ -39,10 +39,10 @@ Use this page as the main entry point for the case library. The sidebar now grou
 |---|---|---|
 | [Workforce Audit Case](master-data-and-workforce-audit-case.md) | exception review | audit + managerial |
 | [Workforce Cost and Org-Control Case](workforce-cost-and-org-control-case.md) | exception review | managerial + audit + financial |
-| [Audit Review Pack Case](audit-review-pack-case.md) | exception review | audit + support workbook |
-| [Attendance Control Audit Case](attendance-control-audit-case.md) | exception review | audit + support workbook |
-| [Replenishment Support Audit Case](replenishment-support-audit-case.md) | exception review | audit + support workbook |
-| [Pricing Governance Audit Case](pricing-governance-audit-case.md) | exception review | audit + support workbook |
+| [Audit Review Pack Case](audit-review-pack-case.md) | exception review | audit + source-table review |
+| [Attendance Control Audit Case](attendance-control-audit-case.md) | exception review | audit + source-table review |
+| [Replenishment Support Audit Case](replenishment-support-audit-case.md) | exception review | audit + source-table review |
+| [Pricing Governance Audit Case](pricing-governance-audit-case.md) | exception review | audit + source-table review |
 | [Audit Exception Lab](audit-exception-lab.md) | exception review | audit |
 
 ## Suggested Case Sequence

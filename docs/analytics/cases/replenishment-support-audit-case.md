@@ -25,9 +25,8 @@ The dataset expects weekly planning support behind normal replenishment activity
 
 ## Suggested Excel Sequence
 
-1. open the support workbook and filter `AnomalyLog` to planning anomaly families
-2. trace the primary keys into `DemandForecast`, `InventoryPolicy`, `SupplyPlanRecommendation`, `PurchaseRequisition`, and `WorkOrder`
-3. compare the audit SQL results to the support workbook detail
+1. trace the primary keys from the query results into `DemandForecast`, `InventoryPolicy`, `SupplyPlanRecommendation`, `PurchaseRequisition`, and `WorkOrder`
+2. compare the audit SQL results to the source-table detail
 
 ## What Students Should Notice
 

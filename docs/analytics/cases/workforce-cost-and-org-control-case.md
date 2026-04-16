@@ -27,9 +27,6 @@ Leadership wants to understand where people cost sits, how workforce structure v
 - `PurchaseRequisition`
 - `PurchaseOrder`
 - `JournalEntry`
-- <FileName type="support" />:
-  - `AnomalyLog`
-  - `ValidationChecks`
 
 ## Recommended Query Sequence
 

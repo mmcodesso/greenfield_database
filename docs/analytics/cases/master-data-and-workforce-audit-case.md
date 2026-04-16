@@ -29,10 +29,6 @@ This case asks students to test whether operational activity, approvals, and pay
 - `OvertimeApproval`
 - `PurchaseOrder`
 - `JournalEntry`
-- <FileName type="support" /> sheets:
-  - `AnomalyLog`
-  - `ValidationChecks`
-  - `ValidationExceptions`
 
 ## Recommended Query Sequence
 
@@ -43,7 +39,7 @@ This case asks students to test whether operational activity, approvals, and pay
 1. Use `Employee` to build a pivot by `CostCenterID`, `JobFamily`, `JobLevel`, and `EmploymentStatus`.
 2. Filter terminated employees and compare `TerminationDate` to any linked payroll, time-clock, or approval evidence.
 3. Review current-state manager and sales-rep assignments to see whether ownership still points to active employees.
-4. Use the support workbook to identify which anomalies were intentionally planted and which control expectation each one tests.
+4. Use the query results to identify which control expectation each exception pattern tests.
 
 ## What Students Should Notice
 

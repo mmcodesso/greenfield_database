@@ -43,11 +43,11 @@ Use this page for current-versus-future scope. The rest of the documentation des
 - starter SQL coverage across financial, managerial, audit, and cost-accounting topics
 - guided walkthrough cases that connect business context, queries, and interpretation
 - company, process, dataset, schema, and posting documentation that supports classroom adoption
-- Excel and support-workbook guidance for workbook-based analysis and exception review
+- Excel guidance for workbook-based analysis and exception review
 
 ### Technical delivery and validation
 
-- SQLite, Excel, support workbook, CSV zip, and generation log outputs
+- SQLite, Excel, CSV zip, and generation log outputs
 - validation scopes for `core`, `operational`, and `full` checks
 - anomaly logging and validation exception reporting
 - local generation settings for full release, fast validation, and performance profiling

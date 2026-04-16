@@ -14,7 +14,7 @@ Use this page when you are opening the SQLite dataset for the first time. It sho
 
 For SQL work, start with <FileName type="sqlite" />.
 
-This file contains the dataset tables you need for joins, filters, summaries, and document tracing. Most students do not need to open the support workbook before they begin SQL work. If your instructor is preparing a custom local version, use [Customize](../technical/dataset-delivery.md).
+This file contains the dataset tables you need for joins, filters, summaries, and document tracing.
 
 ## Recommended Tool: DB Browser for SQLite
 
@@ -118,4 +118,3 @@ sqlite3 downloaded_dataset.sqlite < queries/financial/19_working_capital_bridge_
 - Use [Financial Analytics](financial.md), [Managerial Analytics](managerial.md), or [Audit Analytics](audit.md) to choose your next topic.
 - Use [Analytics Cases](cases/index.md) when you want a guided business question after the first query.
 - Use [Excel Guide](excel-guide.md) when you want to recreate a SQL result in the workbook.
-- Use [Customize](../technical/dataset-delivery.md) only if you are preparing a local instructor version.

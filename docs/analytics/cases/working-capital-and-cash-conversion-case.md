@@ -28,8 +28,6 @@ The finance team wants to explain why working capital moves from month to month.
 - `GoodsReceipt`
 - `PayrollRegister`
 - `PayrollLiabilityRemittance`
-- <FileName type="support" />:
-  - `ValidationChecks`
 
 ## Recommended Query Sequence
 
