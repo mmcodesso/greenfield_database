@@ -34,6 +34,7 @@ If you need the big-picture business story first, start with [Dataset Guide](../
 ## How to Read the ER Diagrams
 
 - Each diagram shows the **main local relationships** inside one table group, not every possible key in the database.
+- These ERs are **schema-direct** diagrams. An edge appears only when a stored key supports it, or when a polymorphic source-document trace is called out explicitly in prose.
 - The diagrams are intentionally simplified. The compact tables below each diagram carry the highest-value fields students usually need first.
 - Cross-group bridges such as `ItemID`, `SupplyPlanRecommendationID`, and `AccrualJournalEntryID` are summarized separately so the group diagrams stay readable.
 - Use the process pages when you need business flow. Use this page when you need table structure and join logic.
@@ -61,7 +62,6 @@ Use this group when you need the posting anchor for any process. `JournalEntry` 
 ```mermaid
 erDiagram
     Account ||--o{ GLEntry : classifies
-    JournalEntry ||--o{ GLEntry : posts
 ```
 
 | Table | Use it for | Highest-value keys or fields |
@@ -73,7 +73,8 @@ erDiagram
 ### Join and Traceability Cues
 
 - `GLEntry.AccountID -> Account.AccountID`
-- `GLEntry.JournalEntryID -> JournalEntry.JournalEntryID`
+- When `GLEntry.SourceDocumentType = 'JournalEntry'`, `GLEntry.SourceDocumentID -> JournalEntry.JournalEntryID`
+- For journal-origin rows, `GLEntry.VoucherNumber` typically matches `JournalEntry.EntryNumber`
 - `GLEntry.SourceDocumentType`, `SourceDocumentID`, and `SourceLineID` are the main operational trace fields
 
 ## Order-to-Cash
@@ -91,7 +92,7 @@ erDiagram
     SalesOrder ||--|{ SalesOrderLine : contains
     PriceListLine o|--o{ SalesOrderLine : prices
     PromotionProgram o|--o{ SalesOrderLine : discounts
-    PriceOverrideApproval o|--o{ SalesOrderLine : approves
+    PriceOverrideApproval o|--o| SalesOrderLine : approves
     SalesOrder ||--o{ Shipment : fulfills
     SalesOrderLine ||--o{ ShipmentLine : ships
     Shipment ||--|{ ShipmentLine : contains
@@ -134,6 +135,7 @@ erDiagram
 - `SalesOrderLine.PriceListLineID -> PriceListLine.PriceListLineID`
 - `SalesOrderLine.PromotionID -> PromotionProgram.PromotionID`
 - `SalesOrderLine.PriceOverrideApprovalID -> PriceOverrideApproval.PriceOverrideApprovalID`
+- `PriceOverrideApproval.SalesOrderLineID -> SalesOrderLine.SalesOrderLineID`
 - `ShipmentLine.SalesOrderLineID -> SalesOrderLine.SalesOrderLineID`
 - `SalesInvoiceLine.ShipmentLineID -> ShipmentLine.ShipmentLineID`
 - `CashReceiptApplication.SalesInvoiceID -> SalesInvoice.SalesInvoiceID`
@@ -164,18 +166,18 @@ erDiagram
 | Table | Use it for | Highest-value keys or fields |
 |---|---|---|
 | `Supplier` | Supplier master and payment context | `SupplierID`, `SupplierName`, `PaymentTerms`, `SupplierCategory`, `SupplierRiskRating` |
-| `PurchaseRequisition` | Internal purchase demand | `PurchaseRequisitionID`, `RequisitionNumber`, `RequestDate`, `ItemID`, `CostCenterID`, `SupplyPlanRecommendationID`, `Status` |
+| `PurchaseRequisition` | Internal purchase demand | `RequisitionID`, `RequisitionNumber`, `RequestDate`, `ItemID`, `CostCenterID`, `SupplyPlanRecommendationID`, `Status` |
 | `PurchaseOrder` | PO header | `PurchaseOrderID`, `PONumber`, `SupplierID`, `OrderDate`, `ExpectedDeliveryDate`, `Status` |
 | `PurchaseOrderLine` | Ordered line | `POLineID`, `PurchaseOrderID`, `RequisitionID`, `ItemID`, `Quantity`, `UnitCost` |
 | `GoodsReceipt` | Receipt header | `GoodsReceiptID`, `ReceiptNumber`, `PurchaseOrderID`, `ReceiptDate`, `WarehouseID` |
 | `GoodsReceiptLine` | Received line | `GoodsReceiptLineID`, `GoodsReceiptID`, `POLineID`, `ItemID`, `QuantityReceived`, `ExtendedStandardCost` |
 | `PurchaseInvoice` | Supplier invoice header | `PurchaseInvoiceID`, `InvoiceNumber`, `SupplierID`, `PurchaseOrderID`, `InvoiceDate`, `Status` |
-| `PurchaseInvoiceLine` | Supplier invoice line | `PurchaseInvoiceLineID`, `PurchaseInvoiceID`, `POLineID`, `GoodsReceiptLineID`, `AccrualJournalEntryID`, `ItemID` |
-| `DisbursementPayment` | Supplier payment | `DisbursementPaymentID`, `PurchaseInvoiceID`, `SupplierID`, `PaymentDate`, `Amount` |
+| `PurchaseInvoiceLine` | Supplier invoice line | `PILineID`, `PurchaseInvoiceID`, `POLineID`, `GoodsReceiptLineID`, `AccrualJournalEntryID`, `ItemID` |
+| `DisbursementPayment` | Supplier payment | `DisbursementID`, `PurchaseInvoiceID`, `SupplierID`, `PaymentDate`, `Amount` |
 
 ### Join and Traceability Cues
 
-- `PurchaseOrderLine.RequisitionID -> PurchaseRequisition.PurchaseRequisitionID`
+- `PurchaseOrderLine.RequisitionID -> PurchaseRequisition.RequisitionID`
 - `GoodsReceipt.PurchaseOrderID -> PurchaseOrder.PurchaseOrderID`
 - `GoodsReceiptLine.POLineID -> PurchaseOrderLine.POLineID`
 - `PurchaseInvoiceLine.GoodsReceiptLineID -> GoodsReceiptLine.GoodsReceiptLineID`
@@ -347,8 +349,6 @@ Use this group when you need the planning layer that sits ahead of later purchas
 
 ```mermaid
 erDiagram
-    DemandForecast ||--o{ SupplyPlanRecommendation : informs
-    InventoryPolicy ||--o{ SupplyPlanRecommendation : drives
     SupplyPlanRecommendation ||--o{ MaterialRequirementPlan : explodes_to
     SupplyPlanRecommendation ||--o{ RoughCutCapacityPlan : loads
 ```
@@ -363,6 +363,7 @@ erDiagram
 
 ### Join and Traceability Cues
 
+- `DemandForecast` and `InventoryPolicy` inform recommendations through shared `ItemID`, `WarehouseID`, planning buckets, and recommendation `DriverType`; there is no direct stored forecast or policy ID on `SupplyPlanRecommendation`
 - `PurchaseRequisition.SupplyPlanRecommendationID -> SupplyPlanRecommendation.SupplyPlanRecommendationID`
 - `WorkOrder.SupplyPlanRecommendationID -> SupplyPlanRecommendation.SupplyPlanRecommendationID`
 - `MaterialRequirementPlan.SupplyPlanRecommendationID -> SupplyPlanRecommendation.SupplyPlanRecommendationID`

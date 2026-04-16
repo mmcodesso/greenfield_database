@@ -267,12 +267,12 @@ def test_phase23_docs_and_sidebar_entries_exist() -> None:
     dataset_guide = Path("docs/start-here/dataset-overview.md").read_text(encoding="utf-8")
 
     assert "Use [Pricing and Margin Governance Case]" in financial_guide
-    assert "price realization versus list price" in sql_guide
+    assert "pricing review" in sql_guide
     assert "Use [Pricing and Margin Governance Case]" in managerial_guide
     assert "commercial policy, promotion effect, override concentration" in managerial_guide
     assert "sales below floor without approval" in audit_guide
     assert "override approval completeness review" in audit_guide
-    assert "Pricing and Margin Governance Case" in sql_guide
+    assert "[Analytics Cases](cases/index.md)" in sql_guide
     assert "## Recommended teaching sequence" in instructor_guide
     assert "PriceList" in o2c_guide
     assert "CreditMemoLine` preserves the original pricing lineage" in o2c_guide
@@ -285,4 +285,12 @@ def test_phase23_docs_and_sidebar_entries_exist() -> None:
     assert "RoughCutCapacityPlan" in schema_guide
     assert "TimeClockEntry" in schema_guide
     assert "WorkOrderClose" in schema_guide
+    assert "schema-direct" in schema_guide
+    assert "GLEntry.JournalEntryID" not in schema_guide
+    assert "DemandForecast ||--o{ SupplyPlanRecommendation" not in schema_guide
+    assert "InventoryPolicy ||--o{ SupplyPlanRecommendation" not in schema_guide
+    assert "PurchaseOrderLine.RequisitionID -> PurchaseRequisition.RequisitionID" in schema_guide
+    assert "`RequisitionID`, `RequisitionNumber`" in schema_guide
+    assert "`PILineID`, `PurchaseInvoiceID`" in schema_guide
+    assert "`DisbursementID`, `PurchaseInvoiceID`" in schema_guide
     assert "**68 tables**" in dataset_guide
