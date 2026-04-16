@@ -25,12 +25,19 @@
 }
 
 .reference {
+  margin-bottom: 1rem;
   overflow: hidden;
   border: 1px solid rgba(31, 107, 82, 0.14);
   border-radius: 24px;
   background:
     linear-gradient(180deg, rgba(255, 253, 248, 0.98), rgba(246, 242, 232, 0.96));
   box-shadow: 0 0.8rem 1.6rem rgba(23, 58, 47, 0.06);
+}
+
+.catalogList .reference,
+.sequenceItem .reference,
+.matrixQueryCell .reference {
+  margin-bottom: 0;
 }
 
 .catalog,
