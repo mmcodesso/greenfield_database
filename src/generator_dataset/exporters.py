@@ -441,6 +441,18 @@ def _write_report_excel(path: Path, report: ReportDefinition, frame: pd.DataFram
     _write_excel_workbook(path, {sheet_name: frame})
 
 
+def _query_to_frame(connection: sqlite3.Connection, query_text: str) -> pd.DataFrame:
+    cursor = connection.cursor()
+    try:
+        cursor.execute(query_text)
+        rows = cursor.fetchall()
+        columns = [str(column[0]) for column in (cursor.description or [])]
+    finally:
+        cursor.close()
+
+    return pd.DataFrame.from_records(rows, columns=columns)
+
+
 def export_reports(context: GenerationContext) -> None:
     catalog = load_report_catalog()
     generated_at = pd.Timestamp.now(tz="UTC").isoformat()
@@ -451,7 +463,7 @@ def export_reports(context: GenerationContext) -> None:
 
     with sqlite3.connect(sqlite_path) as connection:
         for report in catalog:
-            frame = pd.read_sql_query(report.query_file.read_text(encoding="utf-8"), connection)
+            frame = _query_to_frame(connection, report.query_file.read_text(encoding="utf-8"))
             asset_dir = _report_asset_dir(context, report)
             asset_dir.mkdir(parents=True, exist_ok=True)
 
