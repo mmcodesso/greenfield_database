@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import sqlite3
 from io import StringIO
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
@@ -17,6 +16,11 @@ from pandas.api.types import (
     is_integer_dtype,
     is_numeric_dtype,
 )
+
+try:
+    import sqlite3
+except ModuleNotFoundError:  # pragma: no cover - Linux CI fallback when stdlib sqlite is unavailable
+    from pysqlite3 import dbapi2 as sqlite3
 
 from generator_dataset.settings import GenerationContext
 from generator_dataset.reports import ReportDefinition, load_report_catalog

@@ -5,3 +5,4 @@ pyyaml
 openpyxl
 xlsxwriter
 pytest
+pysqlite3-binary; platform_system == "Linux"

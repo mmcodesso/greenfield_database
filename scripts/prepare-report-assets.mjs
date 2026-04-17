@@ -106,26 +106,52 @@ function resolvePythonCommand() {
     process.env.REPORTS_PYTHON,
     path.join(repoRoot, ".venv", "Scripts", "python.exe"),
     path.join(repoRoot, ".venv", "bin", "python"),
+    "python3",
     "python",
   ].filter(Boolean);
 
   for (const candidate of candidates) {
-    if (candidate === "python") {
-      return candidate;
+    if (candidate !== "python" && candidate !== "python3") {
+      try {
+        accessSync(candidate);
+      } catch {
+        continue;
+      }
     }
-    try {
-      accessSync(candidate);
+
+    const probe = spawnSync(
+      candidate,
+      [
+        "-c",
+        [
+          "import pandas, openpyxl, yaml, xlsxwriter",
+          "try:",
+          "    import sqlite3",
+          "except ModuleNotFoundError:",
+          "    from pysqlite3 import dbapi2 as sqlite3",
+          "print('ok')",
+        ].join("\n"),
+      ],
+      {
+        cwd: repoRoot,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+      }
+    );
+
+    if (probe.status === 0) {
       return candidate;
-    } catch {
-      continue;
     }
   }
 
-  return "python";
+  throw new Error(
+    "Unable to find a Python interpreter with the report-generation dependencies and SQLite support."
+  );
 }
 
 function generateReports(sqlitePath) {
   const pythonCommand = resolvePythonCommand();
+  console.log(`Using Python interpreter: ${pythonCommand}`);
   const scriptPath = path.join(repoRoot, "scripts", "generate-site-reports.py");
   const result = spawnSync(
     pythonCommand,
