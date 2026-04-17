@@ -436,10 +436,10 @@ packs:
           label: Audit Review Pack Case
           href: /docs/analytics/cases/audit-review-pack-case
   - slug: payroll-perspective
-    title: Payroll Perspective
+    title: Payroll and Workforce
     summary: Use this perspective to connect people cost, payroll calculation, cash movement, time support, and payroll-control risk into one guided storyline.
     opening_paragraphs:
-      - Payroll Perspective treats payroll as more than a routine back-office process. It is one of the clearest places where workforce structure, operating time, accounting, cash movement, and control discipline all meet in the same monthly cycle.
+      - Payroll and Workforce treats payroll as more than a routine back-office process. It is one of the clearest places where workforce structure, operating time, accounting, cash movement, and control discipline all meet in the same monthly cycle.
       - This perspective matters because payroll can look stable on the surface while still hiding meaningful issues underneath. Students need to see where people cost sits, how gross pay turns into net pay, how liabilities clear through payments and remittances, and whether approved time actually supports what was paid.
       - The goal is to help readers move from payroll as an expense line to payroll as a business process. By the end of this sequence, the reader should understand whether payroll looks operationally supported, financially well explained, and controlled strongly enough to trust.
     approach_guidance:

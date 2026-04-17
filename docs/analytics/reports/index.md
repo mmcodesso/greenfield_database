@@ -25,7 +25,7 @@ This section supports that progression in two complementary ways. `Business Pers
 |---|---|---|
 | Executive Overview | Performance, position, cash, and working capital in one management storyline | [Business Perspectives Hub](lens-packs.md) |
 | Commercial and Working Capital | Revenue quality, pricing, receivables, payables, and settlement timing | [Commercial and Working Capital](commercial-and-working-capital.md) |
-| Payroll Perspective | People cost, gross-to-net pay, payroll cash, time support, and payroll-control interpretation | [Payroll Perspective](payroll-perspective.md) |
+| Payroll and Workforce | People cost, gross-to-net pay, payroll cash, time support, and payroll-control interpretation | [Payroll and Workforce](payroll-perspective.md) |
 | Operations and Risk | Capacity, supply reliability, planning pressure, workforce context, and controls | [Operations and Risk](operations-and-risk.md) |
 
 ## Report Library

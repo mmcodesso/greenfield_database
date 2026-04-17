@@ -23,7 +23,7 @@ Each perspective is meant to teach a way of reading the company. The sequence of
 |---|---|---|
 | Executive Overview | Broad company-level review of performance, position, cash, and working capital | [Executive Overview](executive-overview.md) |
 | Commercial and Working Capital | Revenue quality, customer behavior, pricing, receivables, payables, and settlement timing | [Commercial and Working Capital](commercial-and-working-capital.md) |
-| Payroll Perspective | People cost, gross-to-net payroll, payroll cash, time support, and payroll-control risk | [Payroll Perspective](payroll-perspective.md) |
+| Payroll and Workforce | People cost, gross-to-net payroll, payroll cash, time support, and payroll-control risk | [Payroll and Workforce](payroll-perspective.md) |
 | Operations and Risk | Capacity, supply reliability, planning pressure, workforce context, and controls | [Operations and Risk](operations-and-risk.md) |
 
 ## How This Connects to the Rest of the Reports Section
