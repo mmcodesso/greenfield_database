@@ -59,7 +59,7 @@ Use this page to separate the operational chain from the accounting chain. Start
 | Event | Business meaning | Accounting effect |
 |---|---|---|
 | Goods receipt | Goods physically arrive and inventory is recognized before the supplier bill is posted | Debit inventory and credit `2020` GRNI |
-| Purchase invoice | AP records the supplier bill | For receipt-matched inventory lines: clear GRNI, record any purchase variance, and credit AP. For accrued-service lines: clear `2040` up to the estimate, book any excess to expense, and credit AP |
+| Purchase invoice | AP records the supplier bill | For receipt-matched inventory lines: clear GRNI, record any purchase variance, and credit AP. For accrued-service lines: clear `2040` up to the estimate, book any excess to expense, and let any shortfall be reversed later through a linked accrual adjustment |
 | Disbursement payment | Treasury or AP settles the supplier liability | Debit AP and credit cash |
 
 ## Key Traceability and Data Notes

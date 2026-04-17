@@ -65,6 +65,31 @@ invoice_header_posting AS (
     WHERE gl.SourceDocumentType = 'PurchaseInvoice'
     GROUP BY gl.SourceDocumentID
 ),
+adjustment_posting AS (
+    SELECT
+        je.ReversesJournalEntryID AS JournalEntryID,
+        GROUP_CONCAT(DISTINCT je.EntryNumber) AS AdjustmentEntryNumbers,
+        MIN(date(je.PostingDate)) AS FirstAdjustmentDate,
+        ROUND(SUM(CASE
+            WHEN a.AccountNumber = '2040' THEN gl.Debit
+            ELSE 0
+        END), 2) AS AdjustmentAmount,
+        GROUP_CONCAT(DISTINCT CASE
+            WHEN gl.Debit > 0 THEN a.AccountNumber || ' ' || a.AccountName
+        END) AS AdjustmentDebitAccounts,
+        GROUP_CONCAT(DISTINCT CASE
+            WHEN gl.Credit > 0 THEN a.AccountNumber || ' ' || a.AccountName
+        END) AS AdjustmentCreditAccounts
+    FROM JournalEntry AS je
+    JOIN GLEntry AS gl
+        ON gl.SourceDocumentType = 'JournalEntry'
+       AND gl.SourceDocumentID = je.JournalEntryID
+    JOIN Account AS a
+        ON a.AccountID = gl.AccountID
+    WHERE je.EntryType = 'Accrual Adjustment'
+      AND je.ReversesJournalEntryID IS NOT NULL
+    GROUP BY je.ReversesJournalEntryID
+),
 payment_summary AS (
     SELECT
         dp.PurchaseInvoiceID,
@@ -108,8 +133,13 @@ SELECT
     COALESCE(ilp.InvoiceClears2040Amount, 0) AS InvoiceClears2040Amount,
     COALESCE(ilp.InvoiceAdditionalExpenseAmount, 0) AS InvoiceAdditionalExpenseAmount,
     COALESCE(ihp.InvoiceHeaderAPAmount, 0) AS InvoiceHeaderAPAmount,
+    adj.AdjustmentEntryNumbers,
+    adj.FirstAdjustmentDate,
+    COALESCE(adj.AdjustmentAmount, 0) AS AdjustmentAmount,
     ilp.InvoiceDebitAccounts,
     ihp.InvoiceCreditAccounts,
+    adj.AdjustmentDebitAccounts,
+    adj.AdjustmentCreditAccounts,
     CAST(julianday(pi.InvoiceDate) - julianday(aa.AccrualDate) AS INTEGER) AS DaysToInvoice,
     ps.FirstPaymentDate,
     CASE
@@ -133,6 +163,8 @@ LEFT JOIN invoice_line_posting AS ilp
    AND ilp.PILineID = pil.PILineID
 LEFT JOIN invoice_header_posting AS ihp
     ON ihp.PurchaseInvoiceID = pi.PurchaseInvoiceID
+LEFT JOIN adjustment_posting AS adj
+    ON adj.JournalEntryID = aa.JournalEntryID
 LEFT JOIN payment_summary AS ps
     ON ps.PurchaseInvoiceID = pi.PurchaseInvoiceID
 LEFT JOIN payment_posting AS pp

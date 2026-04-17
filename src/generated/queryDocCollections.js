@@ -103,6 +103,30 @@ export const starterQueryMaps = {
     {
       "label": "Gross-margin impact of promotions versus non-promotion sales",
       "queryKey": "financial/26_gross_margin_impact_of_promotions_vs_nonpromotion_sales.sql"
+    },
+    {
+      "label": "Monthly income statement",
+      "queryKey": "financial/27_income_statement_monthly.sql"
+    },
+    {
+      "label": "Quarterly income statement",
+      "queryKey": "financial/28_income_statement_quarterly.sql"
+    },
+    {
+      "label": "Annual income statement",
+      "queryKey": "financial/29_income_statement_annual.sql"
+    },
+    {
+      "label": "Monthly balance sheet",
+      "queryKey": "financial/30_balance_sheet_monthly.sql"
+    },
+    {
+      "label": "Quarterly balance sheet",
+      "queryKey": "financial/31_balance_sheet_quarterly.sql"
+    },
+    {
+      "label": "Annual balance sheet",
+      "queryKey": "financial/32_balance_sheet_annual.sql"
     }
   ],
   "managerial": [

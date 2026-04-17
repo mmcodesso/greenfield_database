@@ -137,6 +137,13 @@ def first_business_day(year: int, month: int) -> pd.Timestamp:
     return day
 
 
+def first_business_day_on_or_after(timestamp: pd.Timestamp | str) -> pd.Timestamp:
+    day = pd.Timestamp(timestamp)
+    while day.day_name() in {"Saturday", "Sunday"}:
+        day = day + pd.Timedelta(days=1)
+    return day
+
+
 def last_business_day(year: int, month: int) -> pd.Timestamp:
     day = pd.Timestamp(year=year, month=month, day=1) + pd.offsets.MonthEnd(1)
     while day.day_name() in {"Saturday", "Sunday"}:
@@ -859,41 +866,63 @@ def generate_accrual_adjustment_journals(context: GenerationContext) -> None:
         return
 
     invoice_headers = purchase_invoices.set_index("PurchaseInvoiceID")[["ApprovedDate", "InvoiceDate"]].to_dict("index")
+    linked_invoice_lines = purchase_invoice_lines[purchase_invoice_lines["AccrualJournalEntryID"].notna()].copy()
     settled_by_accrual: dict[int, float] = {}
-    for line in purchase_invoice_lines[purchase_invoice_lines["AccrualJournalEntryID"].notna()].itertuples(index=False):
-        settled_by_accrual[int(line.AccrualJournalEntryID)] = money(
-            float(settled_by_accrual.get(int(line.AccrualJournalEntryID), 0.0)) + float(line.LineTotal)
-        )
+    invoice_ids_by_accrual: dict[int, set[int]] = {}
+    for line in linked_invoice_lines.itertuples(index=False):
+        accrual_id = int(line.AccrualJournalEntryID)
+        settled_by_accrual[accrual_id] = money(float(settled_by_accrual.get(accrual_id, 0.0)) + float(line.LineTotal))
+        invoice_ids_by_accrual.setdefault(accrual_id, set()).add(int(line.PurchaseInvoiceID))
 
     creator_id = accounting_journal_creator_id(context)
     approver_id = accounting_journal_approver_id(context)
     fiscal_end = pd.Timestamp(context.settings.fiscal_year_end)
+    invoice_linked_adjustments: list[dict[str, Any]] = []
     eligible_adjustments_by_year: dict[int, list[dict[str, Any]]] = {}
     for accrual in accrual_journal_details(context):
         accrual_id = int(accrual["JournalEntryID"])
         accrual_amount = float(accrual["Amount"])
         settled_amount = float(settled_by_accrual.get(accrual_id, 0.0))
         residual_amount = money(accrual_amount - min(accrual_amount, settled_amount))
+        account_number = str(accrual["ExpenseAccountNumber"])
+        metadata = ACCRUAL_ACCOUNT_METADATA[account_number]
+        linked_invoice_ids = sorted(invoice_ids_by_accrual.get(accrual_id, set()))
+        if linked_invoice_ids:
+            if residual_amount <= 0:
+                continue
+
+            invoice_approval_dates = []
+            for invoice_id in linked_invoice_ids:
+                invoice_header = invoice_headers.get(invoice_id)
+                if invoice_header is None:
+                    continue
+                approval_value = invoice_header.get("ApprovedDate")
+                if pd.isna(approval_value):
+                    approval_value = invoice_header.get("InvoiceDate")
+                if pd.isna(approval_value):
+                    continue
+                invoice_approval_dates.append(pd.Timestamp(approval_value))
+            if not invoice_approval_dates:
+                continue
+
+            posting_timestamp = first_business_day_on_or_after(max(invoice_approval_dates))
+            if not date_in_range(context, posting_timestamp):
+                continue
+            invoice_linked_adjustments.append({
+                "JournalEntryID": accrual_id,
+                "PostingDate": posting_timestamp.strftime("%Y-%m-%d"),
+                "ExpenseAccountNumber": account_number,
+                "Amount": residual_amount,
+                "Description": metadata["description"],
+                "AccrualPostingDate": accrual["PostingDate"],
+            })
+            continue
+
         if residual_amount < ACCRUAL_ADJUSTMENT_MIN_AMOUNT:
             continue
 
         accrual_date = pd.Timestamp(accrual["PostingDate"])
         earliest_adjustment_date = accrual_date + pd.Timedelta(days=ACCRUAL_ADJUSTMENT_MIN_AGE_DAYS)
-        if earliest_adjustment_date > fiscal_end:
-            continue
-
-        linked_invoice_lines = purchase_invoice_lines[purchase_invoice_lines["AccrualJournalEntryID"].notna()].copy()
-        if not linked_invoice_lines.empty:
-            linked_invoice_lines = linked_invoice_lines[
-                linked_invoice_lines["AccrualJournalEntryID"].astype(int).eq(accrual_id)
-            ]
-        invoice_dates = [
-            pd.Timestamp(invoice_headers[int(line.PurchaseInvoiceID)]["ApprovedDate"])
-            for line in linked_invoice_lines.itertuples(index=False)
-            if int(line.PurchaseInvoiceID) in invoice_headers
-        ]
-        if invoice_dates:
-            earliest_adjustment_date = max(earliest_adjustment_date, max(invoice_dates) + pd.Timedelta(days=10))
         if earliest_adjustment_date > fiscal_end:
             continue
 
@@ -909,8 +938,6 @@ def generate_accrual_adjustment_journals(context: GenerationContext) -> None:
         if adjustment_amount <= 0 or adjustment_amount >= residual_amount:
             continue
 
-        account_number = str(accrual["ExpenseAccountNumber"])
-        metadata = ACCRUAL_ACCOUNT_METADATA[account_number]
         adjustment_year = int(posting_timestamp.year)
         eligible_adjustments_by_year.setdefault(adjustment_year, []).append({
             "JournalEntryID": accrual_id,
@@ -921,6 +948,36 @@ def generate_accrual_adjustment_journals(context: GenerationContext) -> None:
             "Description": metadata["description"],
             "AccrualPostingDate": accrual["PostingDate"],
         })
+
+    for candidate in sorted(
+        invoice_linked_adjustments,
+        key=lambda candidate: (candidate["PostingDate"], candidate["JournalEntryID"]),
+    ):
+        create_journal(
+            context,
+            candidate["PostingDate"],
+            "Accrual Adjustment",
+            f"Settle residual {candidate['Description'].lower()} after linked supplier invoice",
+            [
+                {
+                    "AccountNumber": "2040",
+                    "Debit": float(candidate["Amount"]),
+                    "Credit": 0.0,
+                    "Description": "Clear residual accrued expenses after invoice settlement",
+                    "CostCenterID": None,
+                },
+                {
+                    "AccountNumber": str(candidate["ExpenseAccountNumber"]),
+                    "Debit": 0.0,
+                    "Credit": float(candidate["Amount"]),
+                    "Description": f"Reverse residual {candidate['Description'].lower()} estimate",
+                    "CostCenterID": None,
+                },
+            ],
+            creator_id,
+            approver_id,
+            int(candidate["JournalEntryID"]),
+        )
 
     for year, candidates in eligible_adjustments_by_year.items():
         candidates = sorted(

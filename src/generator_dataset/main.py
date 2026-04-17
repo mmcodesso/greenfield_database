@@ -1133,7 +1133,7 @@ def build_full_dataset(
             "accrued expense settlements",
         )
 
-    with logged_step("Generate rare accrual adjustment journals"):
+    with logged_step("Generate accrual adjustment journals"):
         generate_accrual_adjustment_journals(context)
         log_table_counts(context, ("JournalEntry", "GLEntry"), "accrual adjustments")
 

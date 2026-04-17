@@ -205,6 +205,7 @@ def test_phase17_docs_include_cases_matrix_and_subprocess_diagrams() -> None:
         Path("docs/analytics/cases/o2c-trace-case.md"),
         Path("docs/analytics/cases/p2p-accrual-settlement-case.md"),
         Path("docs/analytics/cases/manufacturing-labor-cost-case.md"),
+        Path("docs/analytics/cases/product-portfolio-and-lifecycle-case.md"),
         Path("docs/analytics/cases/audit-exception-lab.md"),
     ]:
         assert path.exists(), f"Missing Phase 17 case doc: {path}"
@@ -247,6 +248,33 @@ def test_phase17_docs_include_cases_matrix_and_subprocess_diagrams() -> None:
     assert "financial/13_accrued_vs_invoiced_vs_paid_timing.sql" in p2p_case_text
     assert "audit/23_accrued_service_settlement_exception_review.sql" in p2p_case_text
     assert "## Recommended Query Sequence" not in p2p_case_text
+
+    manufacturing_case_text = Path("docs/analytics/cases/manufacturing-labor-cost-case.md").read_text(encoding="utf-8")
+    assert "## The Problem to Solve" in manufacturing_case_text
+    assert "## What You Need to Develop" in manufacturing_case_text
+    assert "## Step-by-Step Walkthrough" in manufacturing_case_text
+    assert "## Optional Excel Follow-Through" in manufacturing_case_text
+    assert "## Wrap-Up Questions" in manufacturing_case_text
+    assert "cases/05_manufacturing_work_order_operation_trace.sql" in manufacturing_case_text
+    assert "cases/06_manufacturing_work_order_close_gl_trace.sql" in manufacturing_case_text
+    assert "managerial/24_approved_clock_hours_vs_labor_allocation.sql" in manufacturing_case_text
+    assert "managerial/12_direct_labor_by_work_order_and_employee_class.sql" in manufacturing_case_text
+    assert "financial/17_manufacturing_cost_component_bridge.sql" in manufacturing_case_text
+    assert "audit/20_labor_outside_scheduled_operation_window_review.sql" in manufacturing_case_text
+    assert "## Recommended Query Sequence" not in manufacturing_case_text
+
+    product_portfolio_case_text = Path("docs/analytics/cases/product-portfolio-and-lifecycle-case.md").read_text(encoding="utf-8")
+    assert "## The Problem to Solve" in product_portfolio_case_text
+    assert "## What You Need to Develop" in product_portfolio_case_text
+    assert "## Step-by-Step Walkthrough" in product_portfolio_case_text
+    assert "## Optional Excel Follow-Through" in product_portfolio_case_text
+    assert "## Wrap-Up Questions" in product_portfolio_case_text
+    assert "managerial/31_product_portfolio_mix_by_collection_style_lifecycle_supply_mode.sql" in product_portfolio_case_text
+    assert "audit/30_item_master_completeness_review.sql" in product_portfolio_case_text
+    assert "audit/36_item_status_alignment_review.sql" in product_portfolio_case_text
+    assert "managerial/30_sales_margin_by_collection_style_material.sql" in product_portfolio_case_text
+    assert "audit/31_discontinued_or_prelaunch_item_activity_review.sql" in product_portfolio_case_text
+    assert "## Recommended Query Sequence" not in product_portfolio_case_text
 
     o2c_text = Path("docs/processes/o2c.md").read_text(encoding="utf-8")
     assert "## Analytical Subsections" in o2c_text

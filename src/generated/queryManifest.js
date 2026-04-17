@@ -279,6 +279,16 @@ const queryManifest = {
     "filename": "04_p2p_accrual_journal_invoice_payment_gl_trace.sql",
     "publicPath": "/cases/04_p2p_accrual_journal_invoice_payment_gl_trace.sql"
   },
+  "cases/05_manufacturing_work_order_operation_trace.sql": {
+    "category": "cases",
+    "filename": "05_manufacturing_work_order_operation_trace.sql",
+    "publicPath": "/cases/05_manufacturing_work_order_operation_trace.sql"
+  },
+  "cases/06_manufacturing_work_order_close_gl_trace.sql": {
+    "category": "cases",
+    "filename": "06_manufacturing_work_order_close_gl_trace.sql",
+    "publicPath": "/cases/06_manufacturing_work_order_close_gl_trace.sql"
+  },
   "financial/01_monthly_revenue_and_gross_margin.sql": {
     "category": "financial",
     "filename": "01_monthly_revenue_and_gross_margin.sql",
@@ -408,6 +418,36 @@ const queryManifest = {
     "category": "financial",
     "filename": "26_gross_margin_impact_of_promotions_vs_nonpromotion_sales.sql",
     "publicPath": "/financial/26_gross_margin_impact_of_promotions_vs_nonpromotion_sales.sql"
+  },
+  "financial/27_income_statement_monthly.sql": {
+    "category": "financial",
+    "filename": "27_income_statement_monthly.sql",
+    "publicPath": "/financial/27_income_statement_monthly.sql"
+  },
+  "financial/28_income_statement_quarterly.sql": {
+    "category": "financial",
+    "filename": "28_income_statement_quarterly.sql",
+    "publicPath": "/financial/28_income_statement_quarterly.sql"
+  },
+  "financial/29_income_statement_annual.sql": {
+    "category": "financial",
+    "filename": "29_income_statement_annual.sql",
+    "publicPath": "/financial/29_income_statement_annual.sql"
+  },
+  "financial/30_balance_sheet_monthly.sql": {
+    "category": "financial",
+    "filename": "30_balance_sheet_monthly.sql",
+    "publicPath": "/financial/30_balance_sheet_monthly.sql"
+  },
+  "financial/31_balance_sheet_quarterly.sql": {
+    "category": "financial",
+    "filename": "31_balance_sheet_quarterly.sql",
+    "publicPath": "/financial/31_balance_sheet_quarterly.sql"
+  },
+  "financial/32_balance_sheet_annual.sql": {
+    "category": "financial",
+    "filename": "32_balance_sheet_annual.sql",
+    "publicPath": "/financial/32_balance_sheet_annual.sql"
   },
   "managerial/01_budget_vs_actual_by_cost_center.sql": {
     "category": "managerial",

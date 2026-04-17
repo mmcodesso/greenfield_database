@@ -1270,6 +1270,13 @@ def accrued_service_clear_amounts_by_journal(context: GenerationContext) -> dict
     return cleared
 
 
+def accrual_journal_ids_with_linked_invoices(context: GenerationContext) -> set[int]:
+    invoice_lines = context.tables["PurchaseInvoiceLine"]
+    if invoice_lines.empty or "AccrualJournalEntryID" not in invoice_lines.columns:
+        return set()
+    return set(invoice_lines.loc[invoice_lines["AccrualJournalEntryID"].notna(), "AccrualJournalEntryID"].astype(int).tolist())
+
+
 def accrued_adjustment_amounts_by_journal(context: GenerationContext) -> dict[int, float]:
     journal_entries = context.tables["JournalEntry"]
     gl = context.tables["GLEntry"]
@@ -1335,6 +1342,7 @@ def validate_journal_controls(context: GenerationContext) -> dict[str, Any]:
         for entry in accrual_journal_details(context)
     }
     cleared_by_accrual = accrued_service_clear_amounts_by_journal(context)
+    invoice_linked_accrual_ids = accrual_journal_ids_with_linked_invoices(context)
     adjustment_totals = accrued_adjustment_amounts_by_journal(context)
     accrued_expenses_account_id = account_id_by_number(context, "2040")
     adjustments = journal_entries[journal_entries["EntryType"].eq("Accrual Adjustment")]
@@ -1391,11 +1399,24 @@ def validate_journal_controls(context: GenerationContext) -> dict[str, Any]:
                 "journal_entry_id": int(adjustment.JournalEntryID),
                 "message": "Accrual adjustment does not debit accrued expenses.",
             })
-        elif current_adjustment_amount >= remaining_before_adjustment:
+        elif current_adjustment_amount > remaining_before_adjustment:
             exceptions.append({
                 "type": "full_or_excess_adjustment",
                 "journal_entry_id": int(adjustment.JournalEntryID),
-                "message": "Accrual adjustment is not partial or exceeds remaining accrued balance.",
+                "message": "Accrual adjustment exceeds remaining accrued balance.",
+            })
+
+    for accrual_id in sorted(invoice_linked_accrual_ids):
+        original_amount = round(float(accrual_amounts.get(accrual_id, 0.0)), 2)
+        resolved_amount = round(
+            float(cleared_by_accrual.get(accrual_id, 0.0)) + float(adjustment_totals.get(accrual_id, 0.0)),
+            2,
+        )
+        if resolved_amount < original_amount:
+            exceptions.append({
+                "type": "unresolved_linked_accrual",
+                "journal_entry_id": int(accrual_id),
+                "message": "Invoice-linked accrual is not fully resolved after invoice clearing and accrual adjustments.",
             })
 
     fiscal_years = range(

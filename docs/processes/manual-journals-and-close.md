@@ -9,7 +9,7 @@
 
 ## Business Storyline
 
-The dataset includes both operational activity and finance-controlled journal activity. Finance records the recurring and period-end entries that students expect in a real accounting system: rent, utilities, depreciation, month-end accruals, rare accrual adjustments, factory-overhead journals, manufacturing labor and overhead reclasses, and year-end close.
+The dataset includes both operational activity and finance-controlled journal activity. Finance records the recurring and period-end entries that students expect in a real accounting system: rent, utilities, depreciation, month-end accruals, accrual adjustments, factory-overhead journals, manufacturing labor and overhead reclasses, and year-end close.
 
 This page matters because it shows what happens outside the normal document chains. Students can compare operational postings from shipments, receipts, payroll, and purchasing with finance-controlled entries that start directly in the journal process. The most important cross-process bridge is accrued-expense settlement, where a finance estimate is later cleared operationally through AP.
 
@@ -56,7 +56,7 @@ Use this page in three passes: first recurring journals, then the accrual-settle
 |---|---|---|
 | Recurring operating journal | Finance records a monthly expense or estimate directly in the journal cycle | Debit expense or clearing accounts and credit cash, accrued expenses, or other offset accounts depending on entry type |
 | Manufacturing-support journal | Finance records factory overhead or reclass support for manufacturing costing | Debit manufacturing clearing or expense accounts and credit the supporting expense pools or cash |
-| Accrual adjustment | Finance reduces or cleans up a stale or overstated prior estimate | Debit `2040` Accrued Expenses and credit the original accrued expense account |
+| Accrual adjustment | Finance reverses the residual from an accrual after a linked supplier invoice or partially cleans up a stale uninvoiced estimate | Debit `2040` Accrued Expenses and credit the original accrued expense account |
 | Direct service supplier invoice | AP clears a prior accrual through a later service invoice | Debit `2040` up to the estimate, expense any excess above estimate, and credit AP |
 | Disbursement payment | Treasury clears the AP created by the service invoice | Debit AP and credit cash |
 | Opening balance journal | Finance establishes the starting financial position | Seeds the beginning asset, liability, equity, and retained-earnings balances |
@@ -68,7 +68,7 @@ Use this page in three passes: first recurring journals, then the accrual-settle
 - `GLEntry` is the posted detail layer and the main bridge into financial reporting and control-account analysis.
 - `PurchaseInvoiceLine.AccrualJournalEntryID` is the authoritative link from a direct service invoice line back to the original accrual.
 - `PurchaseInvoiceLine.GoodsReceiptLineID` belongs to receipt-matched inventory or material invoicing and should not be confused with accrued-service settlement.
-- `ReversesJournalEntryID` is used on rare `Accrual Adjustment` cleanup activity that points back to the original accrual.
+- `ReversesJournalEntryID` is used on `Accrual Adjustment` cleanup activity that points back to the original accrual.
 - Payroll is operationally modeled through payroll tables, so payroll accrual and settlement journals are not part of this recurring-journal set.
 - For raw multi-year income-statement analysis, filter out the year-end close entry types.
 
@@ -141,7 +141,7 @@ flowchart LR
 
 ### Accrual Estimate to AP Settlement
 
-This is the most important subprocess on the page. Students should learn that accrued expenses are usually cleared later through AP rather than blanket-reversed at month end. Finance records the estimate first, AP later clears it through a direct service invoice, treasury pays it later, and only rare residual balances are cleaned up through `Accrual Adjustment`.
+This is the most important subprocess on the page. Students should learn that accrued expenses are usually cleared later through AP rather than blanket-reversed at month end. Finance records the estimate first, AP later clears it through a direct service invoice, treasury pays it later, and any under-accrual residual is reversed through a linked `Accrual Adjustment`. Only stale uninvoiced accruals keep the rare partial-cleanup pattern.
 
 ```mermaid
 flowchart LR
@@ -179,10 +179,10 @@ Use `PurchaseInvoiceLine.AccrualJournalEntryID` for accrued-service settlement. 
 - `PurchaseInvoiceLine.AccrualJournalEntryID -> JournalEntry.JournalEntryID`
 - `PurchaseInvoiceLine.PurchaseInvoiceID -> PurchaseInvoice.PurchaseInvoiceID`
 - `DisbursementPayment.PurchaseInvoiceID -> PurchaseInvoice.PurchaseInvoiceID`
-- `JournalEntry.ReversesJournalEntryID` for rare `Accrual Adjustment` cleanup review
+- `JournalEntry.ReversesJournalEntryID` for linked `Accrual Adjustment` cleanup review
 
 ```sql
--- Teaching objective: Trace an accrued expense from the original estimate into later AP settlement and rare cleanup activity.
+-- Teaching objective: Trace an accrued expense from the original estimate into later AP settlement and linked cleanup activity.
 -- Main join path: JournalEntry -> PurchaseInvoiceLine -> PurchaseInvoice -> DisbursementPayment.
 -- Suggested analysis: Compare accrual date, invoice approval date, payment date, and any later accrual adjustment.
 ```

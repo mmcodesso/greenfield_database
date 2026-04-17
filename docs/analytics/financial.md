@@ -13,6 +13,8 @@ import { starterQueryMaps } from "@site/src/generated/queryDocCollections";
 
 | Topic | Main tables |
 |---|---|
+| Balance sheet reporting | `GLEntry`, `Account`, `JournalEntry` |
+| Income statement reporting | `GLEntry`, `Account`, `JournalEntry` |
 | Revenue and gross margin | `SalesInvoice`, `SalesInvoiceLine`, `ShipmentLine`, `CreditMemoLine`, `Item`, `PriceList`, `PriceListLine`, `PromotionProgram`, `GLEntry`, `Account` |
 | AR and customer cash | `SalesInvoice`, `CashReceipt`, `CashReceiptApplication`, `CreditMemo`, `CustomerRefund`, `Customer` |
 | AP and supplier cash | `PurchaseInvoice`, `PurchaseInvoiceLine`, `DisbursementPayment`, `Supplier`, `GoodsReceipt` |
@@ -47,3 +49,6 @@ import { starterQueryMaps } from "@site/src/generated/queryDocCollections";
 - Customer deposits and unapplied cash analysis should start from `CashReceipt` and `CashReceiptApplication`, alongside AR.
 - Accrued-expense analysis should focus on `2040`, `PurchaseInvoiceLine.AccrualJournalEntryID`, and the service-item lines that settle those estimates.
 - Year-end close entries are real posted journals and should be filtered when you want raw multi-year P&L activity.
+- The income-statement starter queries use pre-close P&L activity, so they exclude the year-end close journals that zero out revenue and expense accounts.
+- The balance-sheet starter queries are point-in-time ending-balance statements, not monthly activity reports.
+- The balance-sheet starter queries derive `Current Year Earnings` for interim periods so assets continue to tie to liabilities plus equity before the annual close moves earnings into retained earnings.

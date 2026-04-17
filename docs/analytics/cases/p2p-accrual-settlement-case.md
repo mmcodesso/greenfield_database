@@ -115,7 +115,7 @@ Connect the original accrual estimate to the later supplier invoice and the rela
 
 **Why this matters**
 
-This is the core accounting distinction in the case. Receipt-based invoicing clears `2020` GRNI. Accrual-linked service invoicing clears `2040` accrued expenses up to the estimate and books any excess to expense.
+This is the core accounting distinction in the case. Receipt-based invoicing clears `2020` GRNI. Accrual-linked service invoicing clears `2040` accrued expenses up to the estimate, books any excess to expense, and leaves any shortfall to be reversed through a linked accrual adjustment.
 
 **Suggested query**
 
@@ -142,6 +142,7 @@ The roll-forward query groups `JournalEntry` and `GLEntry` activity at the month
 - accrual journals that debit expense and credit `2040`
 - supplier invoices that debit `2040` up to the estimate
 - invoice amounts above the estimate that push additional expense
+- invoice amounts below the estimate that lead to a later linked accrual adjustment
 - AP created at invoice approval and cleared later by disbursement
 
 ### Step 4. Measure invoice and payment timing, then identify what remains open

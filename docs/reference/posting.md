@@ -47,7 +47,7 @@ These documents are generated for process analysis but do **not** create `GLEntr
 | Manufacturing overhead reclass | `JournalEntry` plus seeded GL rows | Last business day of month | `1090` Manufacturing Cost Clearing | `6270` Factory Overhead Expense |
 | Depreciation | `JournalEntry` plus seeded GL rows | Last calendar day of month | `6130` Depreciation Expense | accumulated depreciation accounts |
 | Month-end accrual | `JournalEntry` plus seeded GL rows | Last business day of month | selected operating expenses | `2040` Accrued Expenses |
-| Accrual adjustment | `JournalEntry` plus seeded GL rows | Rare cleanup date after the source accrual | `2040` Accrued Expenses | original accrued expense account |
+| Accrual adjustment | `JournalEntry` plus seeded GL rows | First business day on or after the linked invoice approval date for invoice-linked residuals, or a rare later cleanup date for stale uninvoiced accruals | `2040` Accrued Expenses | original accrued expense account |
 | Shipment | `Shipment`, `ShipmentLine` | `ShipmentDate` | Item COGS account | Item inventory account |
 | Sales invoice | `SalesInvoice`, `SalesInvoiceLine` | `InvoiceDate` | Accounts receivable | Item revenue account and sales tax payable |
 | Cash receipt | `CashReceipt` | `ReceiptDate` | Cash | `2060` Customer Deposits and Unapplied Cash |
@@ -62,7 +62,7 @@ These documents are generated for process analysis but do **not** create `GLEntr
 | Payroll register | `PayrollRegister`, `PayrollRegisterLine` | `ApprovedDate` | Salary and wage expense by cost center, `6060` nonmanufacturing payroll burden, `6270` manufacturing-indirect burden | `2030` Accrued Payroll, `2031` Payroll Tax Withholdings Payable, `2032` Employer Payroll Taxes Payable, `2033` Employee Benefits and Other Deductions Payable |
 | Payroll payment | `PayrollPayment` | `PaymentDate` | `2030` Accrued Payroll | Cash |
 | Payroll liability remittance | `PayrollLiabilityRemittance` | `RemittanceDate` | `2031`, `2032`, or `2033` | Cash |
-| Purchase invoice | `PurchaseInvoice`, `PurchaseInvoiceLine` | `ApprovedDate` | For receipt-matched inventory lines: GRNI cleared at matched receipt-line basis, purchase variance when needed, and nonrecoverable tax to variance. For accrued-service lines: `2040` up to the linked accrued amount and expense for any excess above the estimate. | Accounts payable and purchase variance when needed |
+| Purchase invoice | `PurchaseInvoice`, `PurchaseInvoiceLine` | `ApprovedDate` | For receipt-matched inventory lines: GRNI cleared at matched receipt-line basis, purchase variance when needed, and nonrecoverable tax to variance. For accrued-service lines: `2040` up to the linked accrued amount and expense for any excess above the estimate; any invoice shortfall is reversed later through a linked accrual adjustment. | Accounts payable and purchase variance when needed |
 | Disbursement | `DisbursementPayment` | `PaymentDate` | Accounts payable | Cash |
 | Year-end close: P&L to income summary | `JournalEntry` plus seeded GL rows | `YYYY-12-31` | Revenue or expense balances needed to close annual P&L accounts | `8010` Income Summary |
 | Year-end close: income summary to retained earnings | `JournalEntry` plus seeded GL rows | `YYYY-12-31` | `8010` Income Summary or `3030` Retained Earnings depending on sign | offset retained earnings or income summary |

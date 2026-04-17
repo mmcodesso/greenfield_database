@@ -17,8 +17,8 @@ profiles:
     related_party_address_matches_per_year: 2
     missing_payroll_payments_per_year: 1
     payroll_payment_before_approval_per_year: 1
-    missing_reversal_links_per_year: 1
-    late_reversals_per_year: 1
+    missing_reversal_links_per_year: 0
+    late_reversals_per_year: 0
     round_dollar_manual_journals_per_year: 2
     missing_work_order_operations_per_year: 1
     invalid_direct_labor_operation_links_per_year: 1
