@@ -34,13 +34,13 @@ This sequence keeps the business logic in front of the data. By the time student
 
 ## The Published Teaching Files
 
-The downloaded files are different views of the same business system:
+The downloaded files contain the same dataset in different formats. Students can use them with different tools and for different kinds of work, but the underlying business activity and accounting are the same:
 
 - <FileName type="sqlite" /> is the best file for source-to-ledger SQL analysis.
 - <FileName type="excel" /> is the best file for workbook-based review, pivots, charts, and filters.
 - <FileName type="csv" /> is the best file when you want one table per file for external tools or import workflows.
 
-Students should read the files as evidence packages produced by the same company story, not as separate learning paths.
+Students should read the files as the same data package delivered in different formats, not as separate datasets or separate learning paths.
 
 ## Next Steps
 
