@@ -63,6 +63,7 @@ class Settings:
     export_reports: bool = False
     report_output_dir: str = "outputs/reports"
     report_preview_row_count: int = 25
+    published_sqlite_url: str | None = None
     validation_report_path: str | None = None
     generation_log_path: str = "outputs/generation.log"
 
@@ -130,6 +131,7 @@ def load_settings(config_path: str | Path) -> Settings:
         "support_excel_path",
         "csv_zip_path",
         "report_output_dir",
+        "published_sqlite_url",
         "generation_log_path",
         "validation_report_path",
     ]:

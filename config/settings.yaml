@@ -22,4 +22,5 @@ support_excel_path: "outputs/{short_name}_support.xlsx"
 csv_zip_path: "outputs/{short_name}_csv.zip"
 report_output_dir: "outputs/reports"
 report_preview_row_count: 25
+published_sqlite_url: "https://github.com/mmcodesso/CharlesRiver_Database/releases/latest/download/{short_name}.sqlite"
 generation_log_path: "outputs/generation.log"

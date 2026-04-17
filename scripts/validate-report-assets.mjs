@@ -55,7 +55,7 @@ async function main() {
       console.error(`- ${missingFile}`);
     }
     console.error(
-      "Generate the curated report files into static/reports locally before building the site, or let the GitHub Pages workflow generate them during deploy. These assets do not need to be committed."
+      "Generate the curated report files into static/reports locally, configure published_sqlite_url or REPORTS_SQLITE_URL so the build can download them automatically, or let the GitHub Pages workflow generate them during deploy. These assets do not need to be committed."
     );
     process.exitCode = 1;
     return;
