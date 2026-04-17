@@ -134,7 +134,7 @@ The generator writes:
 - <FileName type="excel" prefix="outputs/" />
 - <FileName type="support" prefix="outputs/" />
 - <FileName type="csv" prefix="outputs/" />
-- `outputs/site/reports/`
+- `outputs/reports/`
 - `outputs/generation.log`
 
 The main SQLite database and main Excel workbook are the core student-facing dataset files. Share the support workbook when the course uses exception review or validation context. Share the CSV zip when flat-file delivery is useful.
@@ -143,7 +143,7 @@ The main SQLite database and main Excel workbook are the core student-facing dat
 
 - Share the SQLite database for SQL work.
 - Share the Excel workbook for pivot and chart-based analysis.
-- Share curated report downloads through the report pages in the documentation site when you want a student-first Excel and CSV layer.
+- Local full runs write the report files to `outputs/reports/`; the GitHub Pages workflow generates the website copy in `static/reports/` during deploy.
 - Share the support workbook when classes need anomaly and validation companion material.
 - Share the CSV zip when students or analysts need one CSV per table.
 - Publish the student files through GitHub Releases or your course LMS.

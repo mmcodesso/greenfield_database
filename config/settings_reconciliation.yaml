@@ -20,6 +20,6 @@ sqlite_path: "outputs/{short_name}_clean.sqlite"
 excel_path: "outputs/{short_name}.xlsx"
 support_excel_path: "outputs/{short_name}_support.xlsx"
 csv_zip_path: "outputs/{short_name}_csv.zip"
-report_output_dir: "outputs/site/reports"
+report_output_dir: "outputs/reports"
 report_preview_row_count: 25
 generation_log_path: "outputs/{short_name}_clean_generation.log"

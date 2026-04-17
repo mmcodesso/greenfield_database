@@ -509,6 +509,26 @@ const queryManifest = {
     "filename": "44_invoice_revenue_cutoff_exception_trace.sql",
     "publicPath": "/financial/44_invoice_revenue_cutoff_exception_trace.sql"
   },
+  "financial/45_monthly_ar_aging_detail.sql": {
+    "category": "financial",
+    "filename": "45_monthly_ar_aging_detail.sql",
+    "publicPath": "/financial/45_monthly_ar_aging_detail.sql"
+  },
+  "financial/46_monthly_ar_aging_summary.sql": {
+    "category": "financial",
+    "filename": "46_monthly_ar_aging_summary.sql",
+    "publicPath": "/financial/46_monthly_ar_aging_summary.sql"
+  },
+  "financial/47_monthly_ap_aging_detail.sql": {
+    "category": "financial",
+    "filename": "47_monthly_ap_aging_detail.sql",
+    "publicPath": "/financial/47_monthly_ap_aging_detail.sql"
+  },
+  "financial/48_monthly_ap_aging_summary.sql": {
+    "category": "financial",
+    "filename": "48_monthly_ap_aging_summary.sql",
+    "publicPath": "/financial/48_monthly_ap_aging_summary.sql"
+  },
   "managerial/01_budget_vs_actual_by_cost_center.sql": {
     "category": "managerial",
     "filename": "01_budget_vs_actual_by_cost_center.sql",

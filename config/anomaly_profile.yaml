@@ -5,7 +5,7 @@ profiles:
     description: "No planted anomalies."
   standard:
     enabled: true
-    description: "Moderate anomaly set for teaching analytics."
+    description: "Moderate anomaly set for teaching analytics that preserves financial-statement tie-out."
     weekend_journal_entries_per_year: 2
     same_creator_approver_per_year: 3
     same_creator_approver_journals_per_year: 2
@@ -19,7 +19,7 @@ profiles:
     payroll_payment_before_approval_per_year: 1
     missing_reversal_links_per_year: 0
     late_reversals_per_year: 0
-    round_dollar_manual_journals_per_year: 2
+    round_dollar_manual_journals_per_year: 0
     missing_work_order_operations_per_year: 1
     invalid_direct_labor_operation_links_per_year: 1
     overlapping_operation_sequence_per_year: 1

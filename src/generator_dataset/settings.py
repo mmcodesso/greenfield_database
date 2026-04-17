@@ -61,7 +61,7 @@ class Settings:
     export_csv_zip: bool = False
     csv_zip_path: str = "outputs/{short_name}_csv.zip"
     export_reports: bool = False
-    report_output_dir: str = "outputs/site/reports"
+    report_output_dir: str = "outputs/reports"
     report_preview_row_count: int = 25
     validation_report_path: str | None = None
     generation_log_path: str = "outputs/generation.log"
@@ -119,7 +119,7 @@ def load_settings(config_path: str | Path) -> Settings:
         normalized["export_reports"] = False
 
     if "report_output_dir" not in normalized:
-        normalized["report_output_dir"] = "outputs/site/reports"
+        normalized["report_output_dir"] = "outputs/reports"
 
     if "report_preview_row_count" not in normalized:
         normalized["report_preview_row_count"] = 25

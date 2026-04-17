@@ -40,9 +40,27 @@ const sidebars = {
           link: { type: "doc", id: "analytics/reports/index" },
           collapsed: true,
           items: [
-            "analytics/reports/financial",
-            "analytics/reports/managerial",
-            "analytics/reports/audit",
+            {
+              type: "category",
+              label: "Lens Packs",
+              link: { type: "doc", id: "analytics/reports/lens-packs" },
+              collapsed: true,
+              items: [
+                "analytics/reports/executive-overview",
+                "analytics/reports/commercial-and-working-capital",
+                "analytics/reports/operations-and-risk",
+              ],
+            },
+            {
+              type: "category",
+              label: "Report Library",
+              collapsed: true,
+              items: [
+                "analytics/reports/financial",
+                "analytics/reports/managerial",
+                "analytics/reports/audit",
+              ],
+            },
           ],
         },
         {

@@ -14,7 +14,7 @@ const config = {
   projectName: "greenfield_database",
   trailingSlash: false,
   onBrokenLinks: "throw",
-  staticDirectories: ["static", "queries", "outputs/site"],
+  staticDirectories: ["static", "queries"],
   i18n: {
     defaultLocale: "en",
     locales: ["en"],
@@ -149,7 +149,7 @@ const config = {
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} ${branding.datasetName}.`,
+      copyright: `Copyright &copy; ${new Date().getFullYear()} <a href="https://AccountingAnalyticsHub.com" target="_blank" rel="noopener noreferrer">Accounting Analytics Hub</a>.`,
     },
     prism: {
       theme: themes.github,

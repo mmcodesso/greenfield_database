@@ -1,4 +1,4 @@
--- Teaching objective: Review customer deposits and unapplied cash that remain open after receipt.
+-- Teaching objective: Review customer deposits, unapplied cash, and receipt-application timing after receipt.
 -- Main tables: CashReceipt, CashReceiptApplication, Customer.
 -- Expected output shape: One row per cash receipt with application timing and open unapplied balance.
 -- Recommended build mode: Either; standard anomaly builds add more exception-style timing patterns.
@@ -39,6 +39,4 @@ JOIN Customer AS c
 CROSS JOIN snapshot AS s
 LEFT JOIN receipt_applications AS ra
     ON ra.CashReceiptID = cr.CashReceiptID
-WHERE ROUND(cr.Amount - COALESCE(ra.AppliedAmount, 0), 2) > 0
-   OR COALESCE(ra.AppliedAmount, 0) = 0
 ORDER BY OpenUnappliedAmount DESC, AgeDaysAtSnapshot DESC, cr.ReceiptNumber;

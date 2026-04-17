@@ -115,6 +115,7 @@ def report_validation_dataset_artifacts(tmp_path_factory: pytest.TempPathFactory
         "export_support_excel": False,
         "export_csv_zip": False,
         "export_reports": True,
+        "anomaly_mode": "standard",
         "sqlite_path": str(workdir / "CharlesRiver_reports.sqlite"),
         "excel_path": str(workdir / "CharlesRiver_reports.xlsx"),
         "support_excel_path": str(workdir / "CharlesRiver_reports_support.xlsx"),

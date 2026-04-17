@@ -19,13 +19,217 @@ EXPECTED_REPORT_SLUGS = [
     "monthly-revenue-and-gross-margin",
     "ar-aging",
     "ap-aging",
+    "monthly-ar-aging-detail",
+    "monthly-ar-aging-summary",
+    "monthly-ap-aging-detail",
+    "monthly-ap-aging-summary",
+    "working-capital-bridge-by-month",
+    "customer-credit-and-refunds",
+    "customer-deposits-and-unapplied-cash-aging",
+    "cash-conversion-timing-review",
+    "price-realization-vs-list-by-customer-and-portfolio",
     "budget-vs-actual-by-cost-center",
     "sales-and-margin-by-collection-and-style",
     "monthly-work-center-utilization",
     "headcount-by-cost-center-and-job-family",
+    "customer-sales-mix-by-region-and-item-group",
+    "supplier-purchasing-activity-by-category",
+    "supplier-lead-time-and-receipt-reliability",
+    "inventory-coverage-and-projected-stockout-risk",
+    "rough-cut-capacity-load-vs-available-hours",
+    "forecast-error-and-bias-by-collection-and-style-family",
     "approval-and-sod-review",
     "potential-anomaly-review",
 ]
+
+EXPECTED_REPORT_COLUMNS = {
+    "monthly-ar-aging-detail": [
+        "MonthEndDate",
+        "InvoiceMonth",
+        "InvoiceNumber",
+        "CustomerName",
+        "Region",
+        "CustomerSegment",
+        "InvoiceDate",
+        "DueDate",
+        "DaysFromDueAtMonthEnd",
+        "AgingBucket",
+        "InvoiceAmount",
+        "CashAppliedAsOfMonthEnd",
+        "CreditMemoAppliedAsOfMonthEnd",
+        "OpenAmountAsOfMonthEnd",
+    ],
+    "monthly-ar-aging-summary": [
+        "MonthEndDate",
+        "CustomerName",
+        "Region",
+        "CustomerSegment",
+        "OpenInvoiceCount",
+        "TotalOpenAmount",
+        "CurrentAmount",
+        "Days1To30Amount",
+        "Days31To60Amount",
+        "Days61To90Amount",
+        "Days90PlusAmount",
+        "PastDueAmount",
+        "OldestDaysPastDue",
+    ],
+    "monthly-ap-aging-detail": [
+        "MonthEndDate",
+        "InvoiceMonth",
+        "InvoiceNumber",
+        "SupplierName",
+        "SupplierCategory",
+        "SupplierRiskRating",
+        "InvoiceDate",
+        "DueDate",
+        "DaysFromDueAtMonthEnd",
+        "AgingBucket",
+        "InvoiceAmount",
+        "CashPaidAsOfMonthEnd",
+        "OpenAmountAsOfMonthEnd",
+    ],
+    "monthly-ap-aging-summary": [
+        "MonthEndDate",
+        "SupplierName",
+        "SupplierCategory",
+        "SupplierRiskRating",
+        "OpenInvoiceCount",
+        "TotalOpenAmount",
+        "CurrentAmount",
+        "Days1To30Amount",
+        "Days31To60Amount",
+        "Days61To90Amount",
+        "Days90PlusAmount",
+        "PastDueAmount",
+        "OldestDaysPastDue",
+    ],
+    "working-capital-bridge-by-month": [
+        "FiscalYear",
+        "FiscalPeriod",
+        "AccountsReceivableEndingBalance",
+        "InventoryAndWIPEndingBalance",
+        "AccountsPayableEndingBalance",
+        "GRNIEndingBalance",
+        "CustomerDepositsEndingBalance",
+        "AccruedExpensesEndingBalance",
+        "PayrollLiabilitiesEndingBalance",
+        "NetWorkingCapital",
+    ],
+    "customer-credit-and-refunds": [
+        "CreditMemoNumber",
+        "CreditMemoDate",
+        "CustomerName",
+        "OriginalInvoiceNumber",
+        "CreditMemoAmount",
+        "RemainingARBeforeMemo",
+        "CustomerCreditCreated",
+        "RefundedAmount",
+        "OpenCustomerCredit",
+    ],
+    "customer-deposits-and-unapplied-cash-aging": [
+        "ReceiptNumber",
+        "ReceiptDate",
+        "CustomerName",
+        "ReceiptAmount",
+        "AppliedAmount",
+        "OpenUnappliedAmount",
+        "AppliedInvoiceCount",
+        "FirstApplicationDate",
+        "LastApplicationDate",
+        "AgeDaysAtSnapshot",
+        "DaysToFirstApplication",
+    ],
+    "cash-conversion-timing-review": [
+        "MetricFamily",
+        "FiscalYear",
+        "FiscalPeriod",
+        "DocumentCount",
+        "SettledDocumentCount",
+        "OpenDocumentCount",
+        "AvgDaysToFirstSettlement",
+        "MaxDaysToFirstSettlement",
+    ],
+    "price-realization-vs-list-by-customer-and-portfolio": [
+        "InvoiceMonth",
+        "Region",
+        "CustomerSegment",
+        "CustomerName",
+        "CollectionName",
+        "StyleFamily",
+        "InvoicedQuantity",
+        "BaseListRevenue",
+        "NetRevenue",
+        "AveragePromotionDiscountPct",
+        "PriceRealizationPct",
+    ],
+    "customer-sales-mix-by-region-and-item-group": [
+        "InvoiceMonth",
+        "Region",
+        "CustomerSegment",
+        "ItemGroup",
+        "ItemCode",
+        "ItemName",
+        "BilledQuantity",
+        "RevenueAmount",
+        "AverageUnitPrice",
+    ],
+    "supplier-purchasing-activity-by-category": [
+        "OrderMonth",
+        "SupplierCategory",
+        "SupplierRiskRating",
+        "SupplierName",
+        "ItemGroup",
+        "PurchaseOrderCount",
+        "PurchaseOrderLineCount",
+        "OrderedQuantity",
+        "OrderedValue",
+    ],
+    "supplier-lead-time-and-receipt-reliability": [
+        "OrderMonth",
+        "SupplierName",
+        "SupplierCategory",
+        "PurchaseOrderCount",
+        "AvgDaysToFirstReceipt",
+        "AvgDaysToFullReceipt",
+        "FullyReceivedPOCount",
+        "PartiallyReceivedPOCount",
+        "NoReceiptPOCount",
+        "FirstReceiptOver14DaysCount",
+    ],
+    "inventory-coverage-and-projected-stockout-risk": [
+        "ItemCode",
+        "ItemName",
+        "ItemGroup",
+        "CollectionName",
+        "StyleFamily",
+        "WarehouseName",
+        "AvgWeeklyForecastQuantity",
+        "ProjectedAvailableQuantity",
+        "NetRequirementQuantity",
+        "RecommendedOrderQuantity",
+        "WeeksOfCoverage",
+        "StockoutRisk",
+    ],
+    "rough-cut-capacity-load-vs-available-hours": [
+        "BucketWeekStartDate",
+        "BucketWeekEndDate",
+        "WorkCenterCode",
+        "WorkCenterName",
+        "PlannedLoadHours",
+        "AvailableHours",
+        "UtilizationPct",
+        "CapacityStatus",
+    ],
+    "forecast-error-and-bias-by-collection-and-style-family": [
+        "CollectionName",
+        "StyleFamily",
+        "ForecastQuantity",
+        "ActualOrderQuantity",
+        "BiasQuantity",
+        "AbsoluteErrorQuantity",
+    ],
+}
 
 
 def _header_row(path: Path) -> list[str]:
@@ -37,7 +241,7 @@ def _header_row(path: Path) -> list[str]:
         workbook.close()
 
 
-def test_report_catalog_contains_curated_v1_pack() -> None:
+def test_report_catalog_contains_curated_report_library() -> None:
     catalog = load_report_catalog()
     assert [report.slug for report in catalog] == EXPECTED_REPORT_SLUGS
 
@@ -109,12 +313,18 @@ def test_report_manifest_and_docs_include_curated_paths() -> None:
     assert '"analytics/reports/financial"' in sidebar_text
     assert '"analytics/reports/managerial"' in sidebar_text
     assert '"analytics/reports/audit"' in sidebar_text
-    assert '"outputs/site"' in docusaurus_config
+    assert 'staticDirectories: ["static", "queries"]' in docusaurus_config
     assert "Reports Hub" in analytics_hub
-    assert "Download Excel" in reports_hub
+    assert "Lens Packs" in reports_hub
+    assert "Report Library" in reports_hub
     assert "reportAreaCollections.financial" in financial_reports
     assert "reportAreaCollections.managerial" in managerial_reports
     assert "reportAreaCollections.audit" in audit_reports
+    assert "receivables-and-payables-aging" in collections_text
+    assert "customer-and-supplier-analysis" in collections_text
+    assert "working-capital-and-cash-conversion" in collections_text
+    assert "customer-pricing-and-settlement" in collections_text
+    assert "planning-and-supply-risk" in collections_text
 
     for report in load_report_catalog():
         asset_base_path = f"/reports/{report.area}/{report.process_group}/{report.slug}"
@@ -152,7 +362,7 @@ def test_report_settings_require_sqlite_export(tmp_path: Path) -> None:
                 "excel_path": "outputs/{short_name}_validation.xlsx",
                 "support_excel_path": "outputs/{short_name}_validation_support.xlsx",
                 "csv_zip_path": "outputs/{short_name}_validation_csv.zip",
-                "report_output_dir": "outputs/site/reports",
+                "report_output_dir": "outputs/reports",
                 "report_preview_row_count": 25,
                 "generation_log_path": "outputs/generation_validation.log",
             },
@@ -163,3 +373,19 @@ def test_report_settings_require_sqlite_export(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="export_reports requires export_sqlite"):
         load_settings(config_path)
+
+
+def test_curated_reports_export_expected_columns(
+    report_validation_dataset_artifacts: dict[str, object],
+) -> None:
+    report_root = Path(report_validation_dataset_artifacts["report_output_dir"])
+
+    for report in load_report_catalog():
+        expected_columns = EXPECTED_REPORT_COLUMNS.get(report.slug)
+        if expected_columns is None:
+            continue
+
+        csv_frame = pd.read_csv(
+            report_root / report.area / report.process_group / report.slug / f"{report.slug}.csv"
+        )
+        assert csv_frame.columns.tolist() == expected_columns

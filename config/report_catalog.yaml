@@ -42,7 +42,7 @@ reports:
   - slug: ar-aging
     title: AR Aging
     area: financial
-    process_group: revenue-and-working-capital
+    process_group: receivables-and-payables-aging
     cadence: Current snapshot
     description: Review open customer invoices by aging bucket and identify collection pressure.
     query_path: queries/financial/02_ar_aging_open_invoices.sql
@@ -52,10 +52,100 @@ reports:
   - slug: ap-aging
     title: AP Aging
     area: financial
-    process_group: revenue-and-working-capital
+    process_group: receivables-and-payables-aging
     cadence: Current snapshot
     description: Review open supplier invoices by aging bucket and identify upcoming cash commitments.
     query_path: queries/financial/03_ap_aging_open_invoices.sql
+    preview_row_limit: 25
+    excel_enabled: true
+    csv_enabled: true
+  - slug: monthly-ar-aging-detail
+    title: Monthly AR Aging Detail
+    area: financial
+    process_group: receivables-and-payables-aging
+    cadence: Monthly month-end
+    description: Track open customer invoices at each month-end with due-day aging based on the last day of the month.
+    query_path: queries/financial/45_monthly_ar_aging_detail.sql
+    preview_row_limit: 25
+    excel_enabled: true
+    csv_enabled: true
+  - slug: monthly-ar-aging-summary
+    title: Monthly AR Aging Summary
+    area: financial
+    process_group: receivables-and-payables-aging
+    cadence: Monthly month-end
+    description: Summarize month-end receivables exposure by customer, region, and segment.
+    query_path: queries/financial/46_monthly_ar_aging_summary.sql
+    preview_row_limit: 25
+    excel_enabled: true
+    csv_enabled: true
+  - slug: monthly-ap-aging-detail
+    title: Monthly AP Aging Detail
+    area: financial
+    process_group: receivables-and-payables-aging
+    cadence: Monthly month-end
+    description: Track open supplier invoices at each month-end with due-day aging based on the last day of the month.
+    query_path: queries/financial/47_monthly_ap_aging_detail.sql
+    preview_row_limit: 25
+    excel_enabled: true
+    csv_enabled: true
+  - slug: monthly-ap-aging-summary
+    title: Monthly AP Aging Summary
+    area: financial
+    process_group: receivables-and-payables-aging
+    cadence: Monthly month-end
+    description: Summarize month-end payables exposure by supplier, category, and risk rating.
+    query_path: queries/financial/48_monthly_ap_aging_summary.sql
+    preview_row_limit: 25
+    excel_enabled: true
+    csv_enabled: true
+  - slug: working-capital-bridge-by-month
+    title: Working Capital Bridge by Month
+    area: financial
+    process_group: working-capital-and-cash-conversion
+    cadence: Monthly
+    description: Compare the month-end balances of the main working-capital buckets and track net working capital over time.
+    query_path: queries/financial/19_working_capital_bridge_by_month.sql
+    preview_row_limit: 25
+    excel_enabled: true
+    csv_enabled: true
+  - slug: customer-credit-and-refunds
+    title: Customer Credit and Refunds
+    area: financial
+    process_group: customer-pricing-and-settlement
+    cadence: Current snapshot
+    description: Review customer credits created by credit memos and whether those balances have been refunded or remain open.
+    query_path: queries/financial/07_customer_credit_and_refunds.sql
+    preview_row_limit: 25
+    excel_enabled: true
+    csv_enabled: true
+  - slug: customer-deposits-and-unapplied-cash-aging
+    title: Customer Deposits and Unapplied Cash Aging
+    area: financial
+    process_group: working-capital-and-cash-conversion
+    cadence: Current snapshot
+    description: Review customer receipts, open unapplied balances, and how long cash remained unapplied before first use.
+    query_path: queries/financial/15_customer_deposits_and_unapplied_cash_aging.sql
+    preview_row_limit: 25
+    excel_enabled: true
+    csv_enabled: true
+  - slug: cash-conversion-timing-review
+    title: Cash Conversion Timing Review
+    area: financial
+    process_group: working-capital-and-cash-conversion
+    cadence: Monthly
+    description: Compare invoice-to-settlement and receipt-to-payment timing across sales, purchasing, and goods receipts.
+    query_path: queries/financial/20_cash_conversion_timing_review.sql
+    preview_row_limit: 25
+    excel_enabled: true
+    csv_enabled: true
+  - slug: price-realization-vs-list-by-customer-and-portfolio
+    title: Price Realization vs List by Customer and Portfolio
+    area: financial
+    process_group: customer-pricing-and-settlement
+    cadence: Monthly
+    description: Compare realized billed pricing to base list price by customer, segment, region, collection, and style family.
+    query_path: queries/financial/25_price_realization_vs_list_by_segment_customer_region_collection_style.sql
     preview_row_limit: 25
     excel_enabled: true
     csv_enabled: true
@@ -96,6 +186,66 @@ reports:
     cadence: Current snapshot
     description: Review workforce structure by cost center, job family, and employment status.
     query_path: queries/managerial/29_headcount_by_cost_center_job_family_status.sql
+    preview_row_limit: 25
+    excel_enabled: true
+    csv_enabled: true
+  - slug: customer-sales-mix-by-region-and-item-group
+    title: Customer Sales Mix by Region and Item Group
+    area: managerial
+    process_group: customer-and-supplier-analysis
+    cadence: Monthly
+    description: Review billed sales mix by customer geography, segment, and item group.
+    query_path: queries/managerial/02_sales_mix_by_customer_region_item_group.sql
+    preview_row_limit: 25
+    excel_enabled: true
+    csv_enabled: true
+  - slug: supplier-purchasing-activity-by-category
+    title: Supplier Purchasing Activity by Category
+    area: managerial
+    process_group: customer-and-supplier-analysis
+    cadence: Monthly
+    description: Review purchasing commitments by supplier, category, risk rating, and item group.
+    query_path: queries/managerial/04_purchasing_activity_by_supplier_category.sql
+    preview_row_limit: 25
+    excel_enabled: true
+    csv_enabled: true
+  - slug: supplier-lead-time-and-receipt-reliability
+    title: Supplier Lead Time and Receipt Reliability
+    area: managerial
+    process_group: planning-and-supply-risk
+    cadence: Monthly
+    description: Review how quickly suppliers begin and complete receipts after purchase orders are issued.
+    query_path: queries/managerial/27_supplier_lead_time_and_receipt_reliability.sql
+    preview_row_limit: 25
+    excel_enabled: true
+    csv_enabled: true
+  - slug: inventory-coverage-and-projected-stockout-risk
+    title: Inventory Coverage and Projected Stockout Risk
+    area: managerial
+    process_group: planning-and-supply-risk
+    cadence: Current planning snapshot
+    description: Review the latest projected inventory coverage, net requirements, and stockout-risk signals by item and warehouse.
+    query_path: queries/managerial/42_inventory_coverage_and_projected_stockout_risk.sql
+    preview_row_limit: 25
+    excel_enabled: true
+    csv_enabled: true
+  - slug: rough-cut-capacity-load-vs-available-hours
+    title: Rough-Cut Capacity Load vs Available Hours
+    area: managerial
+    process_group: planning-and-supply-risk
+    cadence: Weekly planning bucket
+    description: Compare planned rough-cut load to available hours by work center and week.
+    query_path: queries/managerial/43_rough_cut_capacity_load_vs_available_hours.sql
+    preview_row_limit: 25
+    excel_enabled: true
+    csv_enabled: true
+  - slug: forecast-error-and-bias-by-collection-and-style-family
+    title: Forecast Error and Bias by Collection and Style Family
+    area: managerial
+    process_group: planning-and-supply-risk
+    cadence: Current cumulative view
+    description: Review where forecast quantities systematically overstate or understate actual order demand by portfolio group.
+    query_path: queries/managerial/45_forecast_error_and_bias_by_collection_style_family.sql
     preview_row_limit: 25
     excel_enabled: true
     csv_enabled: true

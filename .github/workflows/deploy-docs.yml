@@ -22,11 +22,47 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v5
 
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: npm
+
+      - name: Install Python dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Resolve published SQLite asset name
+        id: dataset
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          import yaml
+
+          raw = yaml.safe_load(Path("config/settings.yaml").read_text(encoding="utf-8")) or {}
+          short_name = str(raw.get("short_name") or "dataset")
+          sqlite_asset = f"{short_name}.sqlite"
+
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as handle:
+              handle.write(f"sqlite_asset={sqlite_asset}\n")
+          PY
+
+      - name: Download published SQLite asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p outputs
+          gh release download --repo "$GITHUB_REPOSITORY" --pattern "${{ steps.dataset.outputs.sqlite_asset }}" --dir outputs
+
+      - name: Generate report assets from published SQLite
+        run: |
+          python scripts/generate-site-reports.py --config config/settings.yaml --sqlite-path "outputs/${{ steps.dataset.outputs.sqlite_asset }}" --report-output-dir static/reports
 
       - name: Install dependencies
         run: npm ci

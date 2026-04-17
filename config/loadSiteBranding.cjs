@@ -54,7 +54,10 @@ function loadSiteBranding(configPath = path.join(__dirname, "settings.yaml")) {
     datasetName: `${displayName} Accounting Dataset`,
     whyTitle: `Why ${displayName}`,
     instructorLabel: `Teach With ${displayName}`,
-    releaseBaseUrl: "https://github.com/mmcodesso/greenfield_database/releases/latest/download",
+    // GitHub resolves this to the latest published full release asset.
+    // This works as long as each release uploads the same asset filenames.
+    releaseBaseUrl:
+      "https://github.com/mmcodesso/CharlesRiver_Database/releases/latest/download",
     repositoryUrl: "https://github.com/mmcodesso/greenfield_database",
   };
 }

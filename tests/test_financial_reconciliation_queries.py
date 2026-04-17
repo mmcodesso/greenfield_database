@@ -10,7 +10,6 @@ import yaml
 RETAINED_EARNINGS_IMPACT_QUERY_PATH = Path("queries/financial/16_retained_earnings_and_close_entry_impact.sql")
 ANNUAL_BRIDGE_QUERY_PATH = Path("queries/financial/39_annual_income_to_equity_bridge.sql")
 POST_CLOSE_LEAKAGE_QUERY_PATH = Path("queries/financial/40_post_close_profit_and_loss_leakage_review.sql")
-ROUND_DOLLAR_REVIEW_QUERY_PATH = Path("queries/financial/41_round_dollar_manual_journal_close_sensitivity_review.sql")
 ANNUAL_NET_REVENUE_BRIDGE_QUERY_PATH = Path("queries/financial/42_annual_net_revenue_bridge.sql")
 INVOICE_REVENUE_CUTOFF_SUMMARY_QUERY_PATH = Path("queries/financial/43_invoice_revenue_cutoff_exception_summary.sql")
 INVOICE_REVENUE_CUTOFF_TRACE_QUERY_PATH = Path("queries/financial/44_invoice_revenue_cutoff_exception_trace.sql")
@@ -103,19 +102,20 @@ def test_annual_income_to_equity_bridge_ties_on_clean_full_build(
     _assert_close_to_zero(non_first_years["RetainedEarningsMovementLessRetainedEarningsCloseVariance"])
 
 
-def test_annual_income_to_equity_bridge_explains_known_anomaly_year(
+def test_annual_income_to_equity_bridge_still_ties_on_default_anomaly_build(
     default_anomaly_dataset_artifacts: dict[str, object],
 ) -> None:
     sqlite_path = Path(default_anomaly_dataset_artifacts["sqlite_path"])
-    frame = _read_sql_result(sqlite_path, ANNUAL_BRIDGE_QUERY_PATH)
-    year_2026 = frame[frame["FiscalYear"].astype(int).eq(2026)].iloc[0]
+    frame = _read_sql_result(sqlite_path, ANNUAL_BRIDGE_QUERY_PATH).sort_values("FiscalYear").reset_index(drop=True)
 
-    assert round(float(year_2026["IncomeStatementNetIncome"]), 2) == 283267.32
-    assert round(float(year_2026["PreCloseGlNetIncome"]), 2) == 283267.32
-    assert round(float(year_2026["RetainedEarningsCloseAmount"]), 2) == 283267.20
-    assert round(float(year_2026["BalanceSheetCurrentYearEarningsResidual"]), 2) == 0.12
-    assert round(float(year_2026["StatementNetIncomeLessRetainedEarningsCloseVariance"]), 2) == 0.12
-    assert round(float(year_2026["PreCloseGlNetIncomeLessRetainedEarningsCloseVariance"]), 2) == 0.12
+    for column in [
+        "StatementNetIncomeLessPreCloseGlVariance",
+        "StatementNetIncomeLessRetainedEarningsCloseVariance",
+        "PreCloseGlNetIncomeLessRetainedEarningsCloseVariance",
+        "BalanceSheetCurrentYearEarningsResidual",
+        "BalanceSheetOutOfBalance",
+    ]:
+        _assert_close_to_zero(frame[column])
 
 
 def test_post_close_leakage_review_is_empty_on_clean_full_build(
@@ -127,19 +127,13 @@ def test_post_close_leakage_review_is_empty_on_clean_full_build(
     assert frame.empty
 
 
-def test_post_close_leakage_review_surfaces_known_anomaly_accounts(
+def test_post_close_leakage_review_is_empty_on_default_anomaly_build(
     default_anomaly_dataset_artifacts: dict[str, object],
 ) -> None:
     sqlite_path = Path(default_anomaly_dataset_artifacts["sqlite_path"])
     frame = _read_sql_result(sqlite_path, POST_CLOSE_LEAKAGE_QUERY_PATH)
-    year_2026 = frame[frame["FiscalYear"].astype(int).eq(2026)].copy()
-    year_2026["AccountNumber"] = year_2026["AccountNumber"].astype(str)
-    year_2026 = year_2026.set_index("AccountNumber")
 
-    assert "6260" in year_2026.index
-    assert "6270" in year_2026.index
-    assert round(float(year_2026.loc["6260", "EndingNetDebitLessCredit"]), 2) == 0.20
-    assert round(float(year_2026.loc["6270", "EndingNetDebitLessCredit"]), 2) == -0.32
+    assert frame.empty
 
 
 def test_annual_net_revenue_bridge_ties_on_clean_full_build(
@@ -230,26 +224,10 @@ def test_invoice_revenue_cutoff_trace_ties_exception_invoices_to_revenue_gl_year
     ).all()
 
 
-def test_round_dollar_manual_journal_review_surfaces_close_sensitive_candidates(
-    default_anomaly_dataset_artifacts: dict[str, object],
-) -> None:
-    sqlite_path = Path(default_anomaly_dataset_artifacts["sqlite_path"])
-    frame = _read_sql_result(sqlite_path, ROUND_DOLLAR_REVIEW_QUERY_PATH)
+def test_standard_anomaly_profile_disables_round_dollar_manual_journal_seed() -> None:
+    anomaly_profile = yaml.safe_load(Path("config/anomaly_profile.yaml").read_text(encoding="utf-8"))
 
-    flagged = frame[frame["WholeDollarTwoLineFlag"].astype(int).eq(1)].copy()
-    assert not flagged.empty
-
-    year_2026 = flagged[flagged["FiscalYear"].astype(int).eq(2026)].copy()
-    assert not year_2026.empty
-    assert year_2026["EntryType"].isin([
-        "Factory Overhead",
-        "Direct Labor Reclass",
-        "Manufacturing Overhead Reclass",
-        "Year-End Close - P&L to Income Summary",
-        "Year-End Close - Income Summary to Retained Earnings",
-    ]).all()
-    assert year_2026["WholeDollarJournalFlag"].astype(int).eq(1).all()
-    assert year_2026["TwoLineJournalFlag"].astype(int).eq(1).all()
+    assert anomaly_profile["profiles"]["standard"]["round_dollar_manual_journals_per_year"] == 0
 
 
 def test_reconciliation_queries_are_in_catalog_and_docs() -> None:
@@ -281,3 +259,4 @@ def test_reconciliation_queries_are_in_catalog_and_docs() -> None:
     assert "financial/43_invoice_revenue_cutoff_exception_summary.sql" in financial_guide
     assert "financial/44_invoice_revenue_cutoff_exception_trace.sql" in financial_guide
     assert "separate clean SQLite and generation-log outputs" in financial_guide
+    assert "default `standard` anomaly profile no longer uses this anomaly" in financial_guide
