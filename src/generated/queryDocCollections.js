@@ -127,6 +127,30 @@ export const starterQueryMaps = {
     {
       "label": "Annual balance sheet",
       "queryKey": "financial/32_balance_sheet_annual.sql"
+    },
+    {
+      "label": "Monthly indirect cash flow statement",
+      "queryKey": "financial/33_cash_flow_statement_indirect_monthly.sql"
+    },
+    {
+      "label": "Quarterly indirect cash flow statement",
+      "queryKey": "financial/34_cash_flow_statement_indirect_quarterly.sql"
+    },
+    {
+      "label": "Annual indirect cash flow statement",
+      "queryKey": "financial/35_cash_flow_statement_indirect_annual.sql"
+    },
+    {
+      "label": "Monthly direct cash flow statement",
+      "queryKey": "financial/36_cash_flow_statement_direct_monthly.sql"
+    },
+    {
+      "label": "Quarterly direct cash flow statement",
+      "queryKey": "financial/37_cash_flow_statement_direct_quarterly.sql"
+    },
+    {
+      "label": "Annual direct cash flow statement",
+      "queryKey": "financial/38_cash_flow_statement_direct_annual.sql"
     }
   ],
   "managerial": [

@@ -449,6 +449,36 @@ const queryManifest = {
     "filename": "32_balance_sheet_annual.sql",
     "publicPath": "/financial/32_balance_sheet_annual.sql"
   },
+  "financial/33_cash_flow_statement_indirect_monthly.sql": {
+    "category": "financial",
+    "filename": "33_cash_flow_statement_indirect_monthly.sql",
+    "publicPath": "/financial/33_cash_flow_statement_indirect_monthly.sql"
+  },
+  "financial/34_cash_flow_statement_indirect_quarterly.sql": {
+    "category": "financial",
+    "filename": "34_cash_flow_statement_indirect_quarterly.sql",
+    "publicPath": "/financial/34_cash_flow_statement_indirect_quarterly.sql"
+  },
+  "financial/35_cash_flow_statement_indirect_annual.sql": {
+    "category": "financial",
+    "filename": "35_cash_flow_statement_indirect_annual.sql",
+    "publicPath": "/financial/35_cash_flow_statement_indirect_annual.sql"
+  },
+  "financial/36_cash_flow_statement_direct_monthly.sql": {
+    "category": "financial",
+    "filename": "36_cash_flow_statement_direct_monthly.sql",
+    "publicPath": "/financial/36_cash_flow_statement_direct_monthly.sql"
+  },
+  "financial/37_cash_flow_statement_direct_quarterly.sql": {
+    "category": "financial",
+    "filename": "37_cash_flow_statement_direct_quarterly.sql",
+    "publicPath": "/financial/37_cash_flow_statement_direct_quarterly.sql"
+  },
+  "financial/38_cash_flow_statement_direct_annual.sql": {
+    "category": "financial",
+    "filename": "38_cash_flow_statement_direct_annual.sql",
+    "publicPath": "/financial/38_cash_flow_statement_direct_annual.sql"
+  },
   "managerial/01_budget_vs_actual_by_cost_center.sql": {
     "category": "managerial",
     "filename": "01_budget_vs_actual_by_cost_center.sql",

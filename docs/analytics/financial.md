@@ -14,6 +14,7 @@ import { starterQueryMaps } from "@site/src/generated/queryDocCollections";
 | Topic | Main tables |
 |---|---|
 | Balance sheet reporting | `GLEntry`, `Account`, `JournalEntry` |
+| Cash flow reporting | `GLEntry`, `Account`, `JournalEntry` |
 | Income statement reporting | `GLEntry`, `Account`, `JournalEntry` |
 | Revenue and gross margin | `SalesInvoice`, `SalesInvoiceLine`, `ShipmentLine`, `CreditMemoLine`, `Item`, `PriceList`, `PriceListLine`, `PromotionProgram`, `GLEntry`, `Account` |
 | AR and customer cash | `SalesInvoice`, `CashReceipt`, `CashReceiptApplication`, `CreditMemo`, `CustomerRefund`, `Customer` |
@@ -52,3 +53,6 @@ import { starterQueryMaps } from "@site/src/generated/queryDocCollections";
 - The income-statement starter queries use pre-close P&L activity, so they exclude the year-end close journals that zero out revenue and expense accounts.
 - The balance-sheet starter queries are point-in-time ending-balance statements, not monthly activity reports.
 - The balance-sheet starter queries derive `Current Year Earnings` for interim periods so assets continue to tie to liabilities plus equity before the annual close moves earnings into retained earnings.
+- The indirect-method cash flow starter queries reconcile from pre-close net income into operating cash, then combine that with investing and financing cash movements.
+- The direct-method cash flow starter queries classify cash-ledger activity into teaching buckets such as customer receipts, supplier payments, payroll, and other operating cash.
+- The cash flow starter queries treat opening journals as the `Beginning Cash` seed for the first reporting period instead of showing them as operating, investing, or financing flows.
