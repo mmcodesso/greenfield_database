@@ -3,8 +3,17 @@ const reportPackManifest = {
     "slug": "executive-overview",
     "title": "Executive Overview",
     "summary": "Start here when you want a broad company-level view that ties performance, financial position, cash, and working capital into one storyline.",
-    "audience": "Use this pack when students or instructors need a management-style overview before diving into a narrower topic.",
-    "businessLens": "This lens asks whether the company is growing profitably, converting that performance into cash, and carrying a healthy working-capital profile.",
+    "openingParagraphs": [
+      "Executive Overview is the management-level entry point into the dataset. It frames the company as a system where profit, liquidity, operating discipline, and working-capital decisions all interact rather than appearing as isolated report lines.",
+      "This perspective matters because a strong income statement does not automatically mean the company is financially healthy. Students need to see how revenue, margins, receivables, payables, inventory, and cost control combine to shape the real operating position month by month.",
+      "The goal is to build a first-pass narrative before diving into detail. By the end of this perspective, the reader should understand where the business looks stable, where pressure is building, and which area deserves the next focused investigation."
+    ],
+    "approachGuidance": [
+      "Start with performance, then move to position and cash, so the storyline develops from profit to liquidity.",
+      "Compare trends across reports instead of reading each report in isolation.",
+      "Treat working capital as an explanatory bridge between operating results and cash movement.",
+      "Use the sequence to identify the next drill-down rather than trying to solve every question from the overview alone."
+    ],
     "coreQuestions": [
       "Which months show the strongest and weakest operating performance?",
       "How closely do revenue growth, net income, and cash generation move together?",
@@ -181,8 +190,17 @@ const reportPackManifest = {
     "slug": "commercial-and-working-capital",
     "title": "Commercial and Working Capital",
     "summary": "Use this pack to connect revenue quality, customer behavior, pricing, and settlement timing to working-capital outcomes.",
-    "audience": "Use this pack when students need a commercial-analysis storyline that goes beyond top-line revenue into pricing, customer credit, and cash-conversion effects.",
-    "businessLens": "This lens asks whether sales quality, customer mix, pricing behavior, and settlement timing are strengthening or weakening the company's working-capital position.",
+    "openingParagraphs": [
+      "Commercial and Working Capital focuses on the quality of revenue rather than revenue volume alone. It asks whether customer mix, pricing discipline, credits, collections, and supplier obligations are helping the business convert sales activity into healthy cash outcomes.",
+      "This perspective matters because commercial decisions shape more than the top line. Discounting, refunds, delayed collections, unapplied cash, and uneven supplier-payment timing can all weaken the company even when reported sales look strong.",
+      "The reader should approach this perspective as a bridge between sales behavior and liquidity. The sequence is designed to show how customer-level and supplier-level patterns move through pricing, settlement, receivables, payables, and ultimately cash conversion."
+    ],
+    "approachGuidance": [
+      "Start by understanding revenue quality before jumping into receivables and payables aging.",
+      "Compare customer-side and supplier-side timing to see how working-capital pressure builds on both sides of the business.",
+      "Treat pricing, credits, and unapplied cash as indicators of process quality, not just isolated exceptions.",
+      "Use summary reports first, then move into detail only where balances or timing patterns remain unclear."
+    ],
     "coreQuestions": [
       "Which customers, regions, or segments appear most commercially important?",
       "Where do pricing pressure, returns, credits, or unapplied cash change the quality of reported revenue?",
@@ -408,8 +426,17 @@ const reportPackManifest = {
     "slug": "operations-and-risk",
     "title": "Operations and Risk",
     "summary": "Use this pack to connect planning, supply reliability, capacity, workforce structure, and control signals into one operational-risk storyline.",
-    "audience": "Use this pack when students need a broader operational and risk perspective instead of a purely financial or commercial one.",
-    "businessLens": "This lens asks whether the company can execute its plan reliably, whether supply and capacity are aligned, and whether control signals point to deeper operational risk.",
+    "openingParagraphs": [
+      "Operations and Risk frames the company as an execution system. It asks whether demand, supply, capacity, workforce structure, and controls are aligned well enough for the business to deliver reliably without creating hidden operational or financial stress.",
+      "This perspective matters because operational problems often surface before they appear clearly in financial statements. Supplier delays, weak inventory coverage, overcommitted work centers, unstable forecasts, and control exceptions can all signal future pressure on service, margin, and risk.",
+      "The purpose of this perspective is to help readers connect operational indicators with governance signals. Rather than treating planning, staffing, and controls as separate topics, the report sequence shows how they reinforce one another inside the same operating environment."
+    ],
+    "approachGuidance": [
+      "Read the sequence as an operating narrative that moves from capacity pressure into supply reliability, planning quality, and control signals.",
+      "Compare operational strain indicators across reports instead of treating each one as a separate exception list.",
+      "Use forecast, inventory, and capacity reports together to understand whether pressure is structural or temporary.",
+      "Treat control findings as part of operational risk, not as a standalone audit topic."
+    ],
     "coreQuestions": [
       "Which operational constraints appear most likely to disrupt service or margin?",
       "Where do supplier reliability, inventory coverage, and capacity pressure reinforce one another?",

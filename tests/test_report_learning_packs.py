@@ -49,8 +49,10 @@ def test_report_pack_catalog_references_valid_reports_and_docs() -> None:
     for pack in packs:
         assert pack["title"]
         assert pack["summary"]
-        assert pack["audience"]
-        assert pack["business_lens"]
+        assert pack["opening_paragraphs"]
+        assert len(pack["opening_paragraphs"]) >= 2
+        assert pack["approach_guidance"]
+        assert len(pack["approach_guidance"]) >= 3
         assert pack["core_questions"]
         assert pack["where_to_go_next"]
         assert pack["reports"]
@@ -84,20 +86,20 @@ def test_report_pack_catalog_references_valid_reports_and_docs() -> None:
 def test_report_learning_pages_and_sidebar_are_wired() -> None:
     sidebar_text = Path("sidebars.js").read_text(encoding="utf-8")
     reports_hub = Path("docs/analytics/reports/index.md").read_text(encoding="utf-8")
-    lens_hub = Path("docs/analytics/reports/lens-packs.md").read_text(encoding="utf-8")
+    perspectives_hub = Path("docs/analytics/reports/lens-packs.md").read_text(encoding="utf-8")
 
     for path in EXPECTED_PACK_PAGES:
         assert path.exists(), f"Missing learning pack page: {path}"
 
-    assert 'label: "Lens Packs"' in sidebar_text
+    assert 'label: "Business Perspectives"' in sidebar_text
     assert 'label: "Report Library"' in sidebar_text
     assert '"analytics/reports/lens-packs"' in sidebar_text
     assert '"analytics/reports/executive-overview"' in sidebar_text
     assert '"analytics/reports/commercial-and-working-capital"' in sidebar_text
     assert '"analytics/reports/operations-and-risk"' in sidebar_text
-    assert "Lens Packs" in reports_hub
+    assert "Business Perspectives" in reports_hub
     assert "Report Library" in reports_hub
-    assert "guided learning path" in lens_hub
+    assert "Business Perspectives Hub" in perspectives_hub
 
 
 def test_report_pack_manifest_and_component_render_expected_sections() -> None:
@@ -107,18 +109,19 @@ def test_report_pack_manifest_and_component_render_expected_sections() -> None:
     for pack_slug in EXPECTED_PACK_SLUGS:
         assert pack_slug in manifest_text
 
-    for heading in [
-        "Audience and Purpose",
-        "Business Lens",
-        "Core Questions",
-        "Recommended Report Sequence",
-        "Report Blocks",
-        "Where to Go Next",
-    ]:
-        assert heading in component_text
+    assert "How to Approach This Perspective" in component_text
+    assert "Core Questions" in component_text
+    assert "Recommended Report Sequence" in component_text
+    assert "Report Blocks" in component_text
+    assert "Where to Go Next" in component_text
+    assert "Audience and Purpose" not in component_text
+    assert "Business Lens" not in component_text
+    assert "Why This Report Belongs in the Perspective" in component_text
+    assert "Why This Report Belongs in the Lens" not in component_text
 
     for path in EXPECTED_PACK_PAGES[1:]:
         page_text = path.read_text(encoding="utf-8")
         assert 'import { ReportLearningPack } from "@site/src/components/ReportLearningPack";' in page_text
         assert 'import reportPackManifest from "@site/src/generated/reportPackManifest";' in page_text
         assert "<ReportLearningPack" in page_text
+        assert "Use this pack when" not in page_text

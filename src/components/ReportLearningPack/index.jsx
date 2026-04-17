@@ -5,7 +5,6 @@ import useBaseUrl from "@docusaurus/useBaseUrl";
 
 import reportManifest from "@site/src/generated/reportManifest";
 import reportPackManifest from "@site/src/generated/reportPackManifest";
-import queryManifest from "@site/src/generated/queryManifest";
 import styles from "./styles.module.css";
 
 function getPack(packOrKey) {
@@ -27,18 +26,9 @@ function getReportEntry(reportSlug) {
   return entry;
 }
 
-function getQueryEntry(reportEntry) {
-  const queryKey = String(reportEntry.queryPath).replace(/^queries\//, "");
-  const queryEntry = queryManifest[queryKey];
-  if (!queryEntry) {
-    throw new Error(`Unknown query key for report ${reportEntry.slug}: ${queryKey}`);
-  }
-  return queryEntry;
-}
-
 function formatPreviewValue(value) {
   if (value === null || value === undefined || value === "") {
-    return "—";
+    return "-";
   }
   return String(value);
 }
@@ -77,11 +67,9 @@ function PreviewTable({ preview }) {
 
 function ReportLearningCard({ item, index }) {
   const reportEntry = getReportEntry(item.reportSlug);
-  const queryEntry = getQueryEntry(reportEntry);
   const previewUrl = useBaseUrl(reportEntry.previewPath);
   const excelUrl = useBaseUrl(reportEntry.excelPath);
   const csvUrl = useBaseUrl(reportEntry.csvPath);
-  const queryUrl = useBaseUrl(queryEntry.publicPath);
   const [expanded, setExpanded] = useState(false);
   const [preview, setPreview] = useState(null);
   const [status, setStatus] = useState("idle");
@@ -149,18 +137,10 @@ function ReportLearningCard({ item, index }) {
                   Download CSV
                 </a>
               ) : null}
-              <a className={styles.secondaryAction} href={queryUrl}>
-                Open SQL
-              </a>
-              {item.relatedLink ? (
-                <Link className={styles.secondaryAction} to={item.relatedLink.href}>
-                  {item.relatedLink.label}
-                </Link>
-              ) : null}
             </div>
           </div>
           <div className={styles.reasonBlock}>
-            <h4 className={styles.subheading}>Why This Report Belongs in the Lens</h4>
+            <h4 className={styles.subheading}>Why This Report Belongs in the Perspective</h4>
             <p className={styles.reasonText}>{item.whyItMatters}</p>
           </div>
           <div className={styles.learningGrid}>
@@ -204,12 +184,19 @@ export function ReportLearningPack({ pack }) {
   return (
     <div className={styles.pack}>
       <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Audience and Purpose</h2>
-        <p className={styles.sectionText}>{resolvedPack.audience}</p>
+        {resolvedPack.openingParagraphs.map((paragraph) => (
+          <p key={paragraph} className={styles.sectionText}>
+            {paragraph}
+          </p>
+        ))}
       </section>
       <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Business Lens</h2>
-        <p className={styles.sectionText}>{resolvedPack.businessLens}</p>
+        <h2 className={styles.sectionTitle}>How to Approach This Perspective</h2>
+        <ul className={styles.list}>
+          {resolvedPack.approachGuidance.map((guidance) => (
+            <li key={guidance}>{guidance}</li>
+          ))}
+        </ul>
       </section>
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Core Questions</h2>

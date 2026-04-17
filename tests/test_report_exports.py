@@ -315,7 +315,7 @@ def test_report_manifest_and_docs_include_curated_paths() -> None:
     assert '"analytics/reports/audit"' in sidebar_text
     assert 'staticDirectories: ["static", "queries"]' in docusaurus_config
     assert "Reports Hub" in analytics_hub
-    assert "Lens Packs" in reports_hub
+    assert "Business Perspectives" in reports_hub
     assert "Report Library" in reports_hub
     assert "reportAreaCollections.financial" in financial_reports
     assert "reportAreaCollections.managerial" in managerial_reports

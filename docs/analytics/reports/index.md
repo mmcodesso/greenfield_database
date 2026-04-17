@@ -6,34 +6,24 @@ sidebar_label: Reports Hub
 
 # Reports Hub
 
-Use this section when you want a curated teaching pack of ready-to-use reports instead of starting from raw SQL files.
+The reports section is the most direct way to turn the dataset into a business conversation. It brings the transactional model forward as recurring management-style artifacts so students can start with performance, liquidity, working capital, operations, and control signals before they need to read SQL.
 
-There are now two layers inside the reports section:
+That matters from a learning perspective because strong analysis usually begins with a storyline, not with isolated tables. A reader should be able to look at a statement pack, an aging summary, or an operational review and understand what seems healthy, where pressure is building, and which question deserves the next drill-down.
 
-- `Lens Packs` for guided interpretation, discussion prompts, and suggested analysis
-- `Report Library` for the full area-based report inventory
+This section supports that progression in two complementary ways. `Business Perspectives` groups reports into guided narratives with discussion prompts and suggested analysis. `Report Library` keeps the full area-based inventory available when the goal is broader exploration or direct report access.
 
-Each report page in the library follows the same pattern:
+## How to Use This Section
 
-- a short explanation of what the report is for
-- an HTML preview of sample rows directly in the site
-- `Download Excel` for the student-facing workbook version
-- `Download CSV` for raw reuse or import into other tools
+- Start with `Business Perspectives` when you want a structured business storyline and a recommended reading sequence.
+- Move to `Report Library` when you want the broader report inventory by financial, managerial, or audit area.
+- Use the preview to read the report in the site, then download `Excel` or `CSV` when you want to work with the full output.
+- Move into SQL guides or case pages when the next step is explaining how the reported result was produced.
 
-## How This Layer Fits the Analytics Section
+## Business Perspectives
 
-The reports layer sits above the existing SQL starter package:
-
-1. open a report page when you want a fast monthly or control-review artifact
-2. preview the output directly in the site
-3. download the Excel or CSV version
-4. move into the SQL guides when you want to inspect or adapt the underlying logic
-
-## Lens Packs
-
-| Lens pack | Best use | Go to |
+| Perspective | Best use | Go to |
 |---|---|---|
-| Executive Overview | Performance, position, cash, and working capital in one management storyline | [Reports Lens Hub](lens-packs.md) |
+| Executive Overview | Performance, position, cash, and working capital in one management storyline | [Business Perspectives Hub](lens-packs.md) |
 | Commercial and Working Capital | Revenue quality, pricing, receivables, payables, and settlement timing | [Commercial and Working Capital](commercial-and-working-capital.md) |
 | Operations and Risk | Capacity, supply reliability, planning pressure, workforce context, and controls | [Operations and Risk](operations-and-risk.md) |
 
@@ -45,9 +35,8 @@ The reports layer sits above the existing SQL starter package:
 | Managerial | Budget, margin, capacity, workforce, and supply-risk review | [Managerial Reports](managerial.md) |
 | Audit | Approval, segregation-of-duties, and anomaly review | [Audit Reports](audit.md) |
 
-## Recommended Teaching Sequence
+## Suggested Learning Flow
 
-- Start with a lens pack when students need a business storyline and guided interpretation.
+- Start with a business perspective when students need context, interpretation guidance, and a clear storyline before moving into report detail.
 - Move to the report library when they need the broader inventory in that area.
-- Open the paired SQL query when students need to inspect the logic behind the report.
-- Use the case pages when you want a broader analytical storyline around the same data.
+- Use the case pages when you want a longer analytical narrative around the same data and reports.

@@ -42,7 +42,7 @@ const sidebars = {
           items: [
             {
               type: "category",
-              label: "Lens Packs",
+              label: "Business Perspectives",
               link: { type: "doc", id: "analytics/reports/lens-packs" },
               collapsed: true,
               items: [
