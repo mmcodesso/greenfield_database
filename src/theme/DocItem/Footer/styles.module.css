@@ -1,11 +1,14 @@
 .feedbackRow {
   display: flex;
   align-items: baseline;
+  justify-content: flex-end;
   gap: 0.45rem;
+  width: 100%;
   margin-top: 1rem;
   color: rgba(53, 82, 68, 0.78);
   font-size: 0.92rem;
   line-height: 1.5;
+  text-align: right;
 }
 
 .label {
