@@ -1,6 +1,10 @@
 # Contributing
 
-Contributions are welcome after a public license is selected for the repository.
+Use GitHub Issues for concrete errors and GitHub Discussions for broader recommendations.
+
+- Report typos, broken links, incorrect query references, factual errors, and other concrete mistakes in GitHub Issues: <https://github.com/mmcodesso/CharlesRiver_Database/issues/new/choose>
+- Start improvement ideas, teaching recommendations, and broader enhancements in GitHub Discussions: <https://github.com/mmcodesso/CharlesRiver_Database/discussions/new?category=recommendations>
+- The full site-facing workflow lives in [docs/technical/contributing.md](docs/technical/contributing.md)
 
 ## Development Setup
 
@@ -38,7 +42,7 @@ Run:
 ```powershell
 pytest -q
 python -B -m compileall -q src tests
-python generate_dataset.py
+npm run build
 ```
 
-Then check `outputs/validation_report.json` for final validation exceptions.
+If your change affects dataset generation, settings, or report exports, also run the smallest relevant dataset build before opening the pull request.

@@ -1,0 +1,61 @@
+title: "[Recommendation] "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for improvements that would benefit from discussion before maintainers turn them into tracked work.
+  - type: input
+    id: page_url
+    attributes:
+      label: Page or chapter URL
+      description: Link to the current page or resource if your idea starts from a specific place.
+      placeholder: https://...
+  - type: input
+    id: current_topic
+    attributes:
+      label: Current section or topic
+      description: Name the topic or section you want to improve.
+      placeholder: Process Flows or Analytics Cases
+    validations:
+      required: true
+  - type: dropdown
+    id: recommendation_type
+    attributes:
+      label: Recommendation type
+      options:
+        - Clarity
+        - Example
+        - Exercise
+        - Accessibility
+        - Organization
+        - New topic
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: suggested_change
+    attributes:
+      label: Suggested change
+      description: Describe the improvement you want to see.
+      placeholder: Add a shorter walkthrough before the full SQL sequence.
+    validations:
+      required: true
+  - type: textarea
+    id: why_help
+    attributes:
+      label: Why would this help readers?
+      description: Explain the teaching or usability problem this would solve.
+      placeholder: Students would see the business logic before the longer query chain.
+    validations:
+      required: true
+  - type: checkboxes
+    id: audience
+    attributes:
+      label: Who would benefit?
+      options:
+        - label: Students
+        - label: Instructors
+        - label: Self learners
+        - label: Maintainers

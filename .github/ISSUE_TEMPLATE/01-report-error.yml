@@ -1,0 +1,78 @@
+name: Report an error
+description: Report a typo, broken link, code error, factual error, or other concrete mistake
+title: "[Error] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for flagging a concrete problem in the site or teaching package.
+  - type: input
+    id: page_url
+    attributes:
+      label: Page or URL
+      description: Link to the page where you found the problem.
+      placeholder: https://...
+    validations:
+      required: true
+  - type: input
+    id: page_title
+    attributes:
+      label: Page title or name
+      description: Name the page so maintainers can confirm the context quickly.
+      placeholder: Start Here
+    validations:
+      required: true
+  - type: input
+    id: source_file
+    attributes:
+      label: Source file
+      description: If you know the source file, keep or update the prefilled value.
+      placeholder: "@site/docs/technical/contributing.md"
+  - type: input
+    id: section_context
+    attributes:
+      label: Section heading or figure number
+      description: Add the heading, figure number, or table name if it helps narrow the problem.
+      placeholder: How we use feedback
+  - type: dropdown
+    id: error_type
+    attributes:
+      label: Type of error
+      options:
+        - Typo
+        - Broken link
+        - Code error
+        - Factual error
+        - Figure or table problem
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What is wrong?
+      description: Describe the mistake and what you expected to see instead.
+      placeholder: The report card points to a missing preview file.
+    validations:
+      required: true
+  - type: textarea
+    id: proposed_correction
+    attributes:
+      label: Proposed correction
+      description: Share the correction if you already know what should change.
+      placeholder: The page should link to the report preview JSON in static/reports.
+  - type: textarea
+    id: supporting_material
+    attributes:
+      label: Screenshots or supporting material
+      description: Paste screenshots, copied text, or any extra context that helps reproduce the issue.
+      placeholder: Drag screenshots here or paste supporting details.
+  - type: checkboxes
+    id: searched_existing
+    attributes:
+      label: Confirmation
+      options:
+        - label: I searched existing issues and did not find the same report.
+          required: true

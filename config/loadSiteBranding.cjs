@@ -58,7 +58,13 @@ function loadSiteBranding(configPath = path.join(__dirname, "settings.yaml")) {
     // This works as long as each release uploads the same asset filenames.
     releaseBaseUrl:
       "https://github.com/mmcodesso/CharlesRiver_Database/releases/latest/download",
-    repositoryUrl: "https://github.com/mmcodesso/greenfield_database",
+    repositoryUrl: "https://github.com/mmcodesso/CharlesRiver_Database",
+    issuesChooseUrl:
+      "https://github.com/mmcodesso/CharlesRiver_Database/issues/new/choose",
+    errorIssueUrl:
+      "https://github.com/mmcodesso/CharlesRiver_Database/issues/new?template=01-report-error.yml",
+    recommendationsDiscussionUrl:
+      "https://github.com/mmcodesso/CharlesRiver_Database/discussions/new?category=recommendations",
   };
 }
 

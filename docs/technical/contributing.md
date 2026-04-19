@@ -1,54 +1,38 @@
 ---
 title: Contributing
-description: Development workflow and contribution guidelines for the dataset repository.
+description: Ways to report errors and suggest improvements for the dataset site and teaching package.
 sidebar_label: Contributing
 slug: /technical/contributing
 ---
 
+import FeedbackLinkCard from "@site/src/components/FeedbackLinkCard";
+
 # Contributing
 
-This page covers the development workflow for contributors working on code, documentation, or tests in the dataset project.
+<DisplayName /> improves when students, instructors, and maintainers flag concrete problems and share ideas that make the teaching flow clearer. Use the paths below so maintainers can separate corrections that should be tracked now from broader improvements that benefit from discussion first.
 
-## Development Setup
+## Report an error
 
-From the repository root:
+Open an error report for typos, broken links, incorrect query references, factual mistakes, figure or table problems, report preview problems, or similar concrete issues in the site or teaching package.
 
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
+<FeedbackLinkCard
+  kind="error"
+  title="Send an error report"
+  description="GitHub Issues is the right path for a specific mistake in the docs, SQL packs, report assets, or other published teaching material."
+  ctaLabel="Report an Error in GitHub Issues"
+/>
 
-## Core Working Rules
+## Suggest an improvement
 
-- Keep generated outputs out of Git.
-- Keep `src/generator_dataset/schema.py` as the canonical schema registry.
-- Add or update tests when generation rules change.
-- Preserve voucher-level `GLEntry` balance.
-- Preserve deterministic output for a fixed `random_seed`.
-- Document any new anomaly type in `config/anomaly_profile.yaml` and the relevant documentation.
+Start a discussion when you want a clearer explanation, a stronger example, a better exercise, a broader recommendation for instructors, or another idea that may need conversation before it turns into scheduled implementation work.
 
-## Tests and Validation
+<FeedbackLinkCard
+  kind="recommendation"
+  title="Start an improvement discussion"
+  description="GitHub Discussions is the right place for recommendations, teaching ideas, and future enhancements that need community feedback before maintainers scope the work."
+  ctaLabel="Suggest an Improvement in GitHub Discussions"
+/>
 
-Run these checks before opening a pull request:
+## How we use feedback
 
-```bash
-pytest -q
-python -B -m compileall -q src tests
-python generate_dataset.py
-```
-
-After generation, review `outputs/validation_report.json` for any remaining validation exceptions.
-
-## Documentation Contributions
-
-- Keep the published documentation aligned with the current dataset and current workflow.
-- Use direct instructional prose and keep routes stable unless a route change is required.
-- Add or update internal links when pages move or titles change.
-
-## Pull Request Expectations
-
-- describe the teaching or technical goal clearly
-- keep changes scoped to a coherent improvement
-- include test coverage or explain why tests were not needed
-- note any changes that affect generated outputs, validations, or documentation paths
+Errors are tracked in GitHub Issues. Recommendations begin in GitHub Discussions. When a recommendation becomes specific and ready to implement, maintainers may turn it into an issue and track the work there.
