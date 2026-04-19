@@ -64,4 +64,4 @@ That combination makes the dataset useful across AIS, accounting analytics, audi
 
 1. Read [Process Flows](process-flows.md) to see how the company story becomes the main business cycles.
 2. Open one process page such as [O2C](../processes/o2c.md), [P2P](../processes/p2p.md), [Manufacturing](../processes/manufacturing.md), or [Payroll](../processes/payroll.md).
-3. Then move into [Analytics Hub](../analytics/index.md) or [Reports Hub](../analytics/reports/index.md) when you are ready to interpret the business results.
+3. Then move into [Analytics Guides](../analytics/index.md) or [Reports Hub](../analytics/reports/index.md) when you are ready to interpret the business results.

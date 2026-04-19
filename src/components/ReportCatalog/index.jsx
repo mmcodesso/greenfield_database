@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import clsx from "clsx";
 import useBaseUrl from "@docusaurus/useBaseUrl";
 
+import { ReportPreviewOverlay } from "@site/src/components/ReportPreviewOverlay";
 import reportManifest from "@site/src/generated/reportManifest";
 import styles from "./styles.module.css";
 
@@ -13,88 +13,12 @@ function getReportEntry(reportKey) {
   return entry;
 }
 
-function formatPreviewValue(value) {
-  if (value === null || value === undefined || value === "") {
-    return "—";
-  }
-
-  return String(value);
-}
-
-function PreviewTable({ preview }) {
-  return (
-    <div className={styles.previewBody}>
-      <div className={styles.previewMeta}>
-        <span>{preview.rowCount} rows total</span>
-        <span>Showing {preview.previewRowCount}</span>
-        <span>Generated {preview.generatedAt}</span>
-      </div>
-      <div className={styles.tableWrapper}>
-        <table className={styles.previewTable}>
-          <thead>
-            <tr>
-              {preview.columns.map((column) => (
-                <th key={column}>{column}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {preview.rows.map((row, index) => (
-              <tr key={`${preview.slug}-${index}`}>
-                {preview.columns.map((column) => (
-                  <td key={`${preview.slug}-${index}-${column}`}>{formatPreviewValue(row[column])}</td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
 function ReportCard({ reportKey }) {
   const entry = getReportEntry(reportKey);
   const previewUrl = useBaseUrl(entry.previewPath);
   const excelUrl = useBaseUrl(entry.excelPath);
   const csvUrl = useBaseUrl(entry.csvPath);
-  const [expanded, setExpanded] = useState(false);
-  const [preview, setPreview] = useState(null);
-  const [status, setStatus] = useState("idle");
-  const [error, setError] = useState("");
-
-  async function loadPreview() {
-    if (status !== "idle" || preview) {
-      return;
-    }
-
-    setStatus("loading");
-    setError("");
-
-    try {
-      const response = await fetch(previewUrl);
-      if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}`);
-      }
-
-      const payload = await response.json();
-      setPreview(payload);
-      setStatus("ready");
-    } catch (fetchError) {
-      setStatus("error");
-      setError(fetchError instanceof Error ? fetchError.message : "Unknown error");
-    }
-  }
-
-  function handleToggle() {
-    if (expanded) {
-      setExpanded(false);
-      return;
-    }
-
-    setExpanded(true);
-    void loadPreview();
-  }
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   return (
     <article className={styles.card}>
@@ -108,8 +32,13 @@ function ReportCard({ reportKey }) {
           </div>
         </div>
         <div className={styles.actionRow}>
-          <button className={styles.primaryAction} type="button" onClick={handleToggle} aria-expanded={expanded}>
-            {expanded ? "Hide Preview" : "Preview"}
+          <button
+            className={styles.primaryAction}
+            type="button"
+            onClick={() => setIsPreviewOpen(true)}
+            aria-haspopup="dialog"
+          >
+            Preview
           </button>
           {entry.excelEnabled ? (
             <a className={styles.secondaryAction} href={excelUrl}>
@@ -123,17 +52,12 @@ function ReportCard({ reportKey }) {
           ) : null}
         </div>
       </div>
-      {expanded ? (
-        <div className={styles.previewPanel}>
-          {status === "loading" ? <p className={styles.message}>Loading preview...</p> : null}
-          {status === "error" ? (
-            <p className={clsx(styles.message, styles.error)}>
-              Could not load this preview. {error}
-            </p>
-          ) : null}
-          {status === "ready" && preview ? <PreviewTable preview={preview} /> : null}
-        </div>
-      ) : null}
+      <ReportPreviewOverlay
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        previewUrl={previewUrl}
+        title={entry.title}
+      />
     </article>
   );
 }

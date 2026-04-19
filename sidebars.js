@@ -66,17 +66,6 @@ const sidebars = {
         },
         {
           type: "category",
-          label: "Analytics Hub",
-          link: { type: "doc", id: "analytics/index" },
-          collapsed: true,
-          items: [
-            "analytics/financial",
-            "analytics/managerial",
-            "analytics/audit",
-          ],
-        },
-        {
-          type: "category",
           label: "Analytics Cases",
           link: { type: "doc", id: "analytics/cases/index" },
           collapsed: true,
@@ -126,6 +115,17 @@ const sidebars = {
                 "analytics/cases/audit-exception-lab",
               ],
             },
+          ],
+        },
+        {
+          type: "category",
+          label: "Analytics Guides",
+          link: { type: "doc", id: "analytics/index" },
+          collapsed: true,
+          items: [
+            "analytics/financial",
+            "analytics/managerial",
+            "analytics/audit",
           ],
         },
       ],

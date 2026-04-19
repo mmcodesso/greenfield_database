@@ -4,7 +4,7 @@ description: Starter financial-accounting analysis paths using the published dat
 sidebar_label: Financial Analytics
 ---
 
-import { QueryCatalog } from "@site/src/components/QueryReference";
+import { QueryCatalog, QuerySequence } from "@site/src/components/QueryReference";
 import { starterQueryMaps } from "@site/src/generated/queryDocCollections";
 
 # Financial Analytics Starter Guide
@@ -31,16 +31,40 @@ import { starterQueryMaps } from "@site/src/generated/queryDocCollections";
 
 ## Financial Statement Reconciliation Path
 
-- Start from `config/settings_reconciliation.yaml` when the goal is financial-integrity investigation. It keeps the full-size build, disables anomaly injection, turns off non-SQLite exports, and writes separate clean SQLite and generation-log outputs so the clean investigation run does not overwrite anomaly evidence.
-- Treat the default `config/settings.yaml` build as the anomaly-enriched comparison set when `anomaly_mode` remains `standard`.
-- Run `financial/39_annual_income_to_equity_bridge.sql` first to compare annual income-statement net income, the retained-earnings close to `3030`, year-end retained earnings, and the annual balance-sheet residual.
-- Run `financial/40_post_close_profit_and_loss_leakage_review.sql` next to find any revenue, expense, or `8010` balances that remain open after the close.
-- Run `financial/41_round_dollar_manual_journal_close_sensitivity_review.sql` only when you are using a custom close-breaking anomaly profile or a manually altered dataset that leaves unexplained residuals after close. The default `standard` anomaly profile no longer uses this anomaly because it preserves financial-statement tie-out.
-- Start the account-by-account workflow with `financial/42_annual_net_revenue_bridge.sql`.
-- When annual net revenue does not tie from source documents into the GL, run `financial/43_invoice_revenue_cutoff_exception_summary.sql` to isolate the invoice headers whose invoice year differs from the revenue GL fiscal year or whose revenue posting is incomplete.
-- Run `financial/44_invoice_revenue_cutoff_exception_trace.sql` next to inspect the affected invoice lines, linked shipment lines, and operating-revenue GL rows.
-- Keep `audit/04_cutoff_and_timing_analysis.sql` and `audit/06_potential_anomaly_review.sql` as supporting context. They provide the broader timing scan; the new financial queries narrow the population to the invoices that actually affect annual net-revenue reconciliation.
-- If the clean build returns rows in `financial/43_invoice_revenue_cutoff_exception_summary.sql`, treat that as a real process defect. If the clean build stays empty and the anomaly build shows `InvoiceBeforeShipmentFlag = 1` with `InvoiceYearVsGlYearFlag = 1`, classify the result as seeded anomaly behavior rather than a statement-query defect.
+This sequence follows the statement tie from annual net income into retained earnings, then narrows into revenue reconciliation when the statement view and the operational view stop matching. Work through the queries in order so the bridge stays connected from statement to ledger to source document.
+
+<QuerySequence
+  items={[
+    {
+      queryKey: "financial/39_annual_income_to_equity_bridge.sql",
+      lead: "Start with the annual statement tie between net income, retained earnings, and the balance-sheet residual.",
+    },
+    {
+      queryKey: "financial/40_post_close_profit_and_loss_leakage_review.sql",
+      lead: "Then confirm that no revenue, expense, or `8010` balances remain open after the close.",
+    },
+    {
+      queryKey: "financial/41_round_dollar_manual_journal_close_sensitivity_review.sql",
+      lead: "Use this sensitivity review only when a custom anomaly profile or manual edit leaves unexplained residuals after close.",
+    },
+    {
+      queryKey: "financial/42_annual_net_revenue_bridge.sql",
+      lead: "Then move account by account into annual net revenue.",
+    },
+    {
+      queryKey: "financial/43_invoice_revenue_cutoff_exception_summary.sql",
+      lead: "Open the cutoff summary when annual net revenue does not tie from source documents into the GL.",
+    },
+    {
+      queryKey: "financial/44_invoice_revenue_cutoff_exception_trace.sql",
+      lead: "Then inspect the affected invoice lines, shipment lines, and revenue GL rows in detail.",
+    },
+  ]}
+  helperText="Open each query from the guide and work through the sequence from statement tie-out into revenue cutoff detail."
+/>
+
+- Keep the broader timing scan in view through [Audit Analytics](audit.md), especially `Cutoff and timing analysis` and `Potential anomaly review`. Those queries show the wider timing population, while the reconciliation sequence narrows the investigation to the invoices that actually affect annual net-revenue tie-out.
+- If the cutoff summary shows invoices with `InvoiceBeforeShipmentFlag = 1` and `InvoiceYearVsGlYearFlag = 1`, treat that pattern as seeded anomaly behavior inside the published teaching dataset rather than a defect in the statement logic.
 - After net revenue, repeat the same source-to-GL-to-statement-to-close pattern for COGS, manufacturing variance, labor, overhead, operating expenses, other income and expense, and retained earnings.
 
 ## Recommended Case Pairings

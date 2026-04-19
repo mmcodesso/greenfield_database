@@ -77,7 +77,7 @@ Those fields make the ledger a usable teaching asset. An instructor can ask stud
 - [GLEntry Posting Reference](../reference/posting.md): explains what posts, what does not post, and which accounts move
 - [SQL Guide](../analytics/sql-guide.md): gives a structured path into query-based work
 - [Excel Guide](../analytics/excel-guide.md): gives a parallel path for workbook-based analysis
-- [Analytics Hub](../analytics/index.md): organizes the main financial, managerial, and audit topics
+- [Analytics Guides](../analytics/index.md): organizes the main financial, managerial, and audit topics
 - [Analytics Cases](../analytics/cases/index.md): provides guided walkthroughs that connect business context, starter SQL, and interpretation
 - [Instructor Adoption Guide](../teach-with-data/instructor-guide.md): helps instructors sequence the material and choose assignment paths
 

@@ -37,4 +37,4 @@ The files become much easier to read after the business logic is clear:
 1. Read [Start Here](index.md).
 2. Read [Company Story](../learn-the-business/company-story.md).
 3. Read [Process Flows](../learn-the-business/process-flows.md).
-4. Then open [Analytics Hub](../analytics/index.md) or [Reports Hub](../analytics/reports/index.md).
+4. Then open [Analytics Guides](../analytics/index.md) or [Reports Hub](../analytics/reports/index.md).

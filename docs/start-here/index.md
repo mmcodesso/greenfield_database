@@ -47,4 +47,4 @@ Students should read the files as the same data package delivered in different f
 1. Read [Company Story](../learn-the-business/company-story.md).
 2. Read [Process Flows](../learn-the-business/process-flows.md).
 3. Open the process page that matches the business question you want to follow first.
-4. Then move into [Analytics Hub](../analytics/index.md), [Reports Hub](../analytics/reports/index.md), or [Analytics Cases](../analytics/cases/index.md).
+4. Then move into [Analytics Guides](../analytics/index.md), [Reports Hub](../analytics/reports/index.md), or [Analytics Cases](../analytics/cases/index.md).

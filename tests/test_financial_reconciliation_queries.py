@@ -252,11 +252,13 @@ def test_reconciliation_queries_are_in_catalog_and_docs() -> None:
     assert "Annual net revenue bridge" in query_doc_collections
     assert "Invoice revenue cutoff exception summary" in query_doc_collections
     assert "Invoice revenue cutoff exception trace" in query_doc_collections
-    assert "config/settings_reconciliation.yaml" in financial_guide
-    assert "anomaly-enriched comparison set" in financial_guide
+    assert 'import { QueryCatalog, QuerySequence } from "@site/src/components/QueryReference";' in financial_guide
+    assert "<QuerySequence" in financial_guide
+    assert "items={[" in financial_guide
     assert "financial/39_annual_income_to_equity_bridge.sql" in financial_guide
     assert "financial/42_annual_net_revenue_bridge.sql" in financial_guide
     assert "financial/43_invoice_revenue_cutoff_exception_summary.sql" in financial_guide
     assert "financial/44_invoice_revenue_cutoff_exception_trace.sql" in financial_guide
-    assert "separate clean SQLite and generation-log outputs" in financial_guide
-    assert "default `standard` anomaly profile no longer uses this anomaly" in financial_guide
+    assert "Work through the queries in order" in financial_guide
+    assert "seeded anomaly behavior inside the published teaching dataset" in financial_guide
+    assert "config/settings_reconciliation.yaml" not in financial_guide

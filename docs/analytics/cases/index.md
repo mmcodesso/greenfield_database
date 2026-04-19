@@ -78,6 +78,6 @@ When the class is ready for pricing and margin governance, extend the sequence w
 
 ## Next Steps
 
-1. Start from [Analytics Hub](../index.md) or [Reports Hub](../reports/index.md) when you need the broader business context first.
+1. Start from [Analytics Guides](../index.md) or [Reports Hub](../reports/index.md) when you need the broader business context first.
 2. Pick the case that matches the process you want to investigate.
 3. Use [SQL Guide](../sql-guide.md) for query-running workflow and [Excel Guide](../excel-guide.md) for workbook-side reconstruction.

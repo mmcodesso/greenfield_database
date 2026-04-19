@@ -151,6 +151,19 @@ def test_start_here_and_process_flows_point_into_the_same_learning_sequence() ->
         assert snippet in process_flows
 
 
+def test_analytics_sidebar_uses_guides_label_and_keeps_cases_above_it() -> None:
+    sidebar_text = _read(Path("sidebars.js"))
+    analytics_page = _read(Path("docs/analytics/index.md"))
+
+    assert 'label: "Analytics Guides"' in sidebar_text
+    assert 'title: Analytics Guides' in analytics_page
+    assert 'sidebar_label: Analytics Guides' in analytics_page
+
+    cases_position = sidebar_text.index('label: "Analytics Cases"')
+    guides_position = sidebar_text.index('label: "Analytics Guides"')
+    assert cases_position < guides_position
+
+
 def test_public_docs_and_generated_manifest_drop_template_style_phrasing() -> None:
     doc_paths = Path("docs").rglob("*.md")
 

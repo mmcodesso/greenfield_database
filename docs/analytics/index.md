@@ -1,11 +1,11 @@
 ---
-title: Analytics Hub
+title: Analytics Guides
 description: Starter map for financial, managerial, and audit analytics using the published dataset.
 slug: /analytics
-sidebar_label: Analytics Hub
+sidebar_label: Analytics Guides
 ---
 
-# Analytics Starter Layer
+# Analytics Guides
 
 Once the company story and the business cycles are clear, the analytics layer becomes the place where students interpret what those cycles mean. The goal is not to leave the process behind. The goal is to follow the process forward into reporting, statements, working capital, payroll, planning, controls, and business judgment.
 
@@ -26,7 +26,7 @@ The analytics layer is the bridge from process understanding into analytical int
 - topic guides for financial, managerial, and audit analytics
 - student-first report pages with preview and download artifacts
 - business perspectives that interpret the company from a management viewpoint
-- a SQLite-first starter SQL package in `queries/`
+- guided SQL paths for tracing the same business logic directly in SQLite
 - Excel workflow guidance using the published dataset workbook
 - guided walkthrough cases that pair business process, query work, and interpretation
 

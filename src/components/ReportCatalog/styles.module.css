@@ -129,55 +129,6 @@
   color: #154a38;
 }
 
-.previewPanel {
-  padding: 0 1.2rem 1.2rem;
-  border-top: 1px solid rgba(31, 107, 82, 0.12);
-}
-
-.previewBody {
-  margin-top: 1rem;
-}
-
-.previewMeta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.65rem 1rem;
-  margin-bottom: 0.8rem;
-  color: var(--ifm-color-emphasis-700);
-  font-size: 0.86rem;
-}
-
-.tableWrapper {
-  overflow-x: auto;
-  border: 1px solid rgba(31, 107, 82, 0.12);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.84);
-}
-
-.previewTable {
-  width: 100%;
-  min-width: 32rem;
-  margin-bottom: 0;
-}
-
-.previewTable th {
-  white-space: nowrap;
-}
-
-.previewTable th,
-.previewTable td {
-  font-size: 0.9rem;
-}
-
-.message {
-  margin: 1rem 0 0;
-  color: var(--ifm-color-emphasis-700);
-}
-
-.error {
-  color: var(--ifm-color-danger-dark);
-}
-
 :global(html[data-theme="dark"]) .card {
   border-color: rgba(132, 201, 168, 0.18);
   background:
@@ -185,8 +136,7 @@
   box-shadow: none;
 }
 
-:global(html[data-theme="dark"]) .cardDescription,
-:global(html[data-theme="dark"]) .previewMeta {
+:global(html[data-theme="dark"]) .cardDescription {
   color: rgba(236, 244, 239, 0.8);
 }
 
@@ -215,15 +165,6 @@
   background: rgba(24, 43, 35, 0.96);
 }
 
-:global(html[data-theme="dark"]) .previewPanel {
-  border-top-color: rgba(132, 201, 168, 0.16);
-}
-
-:global(html[data-theme="dark"]) .tableWrapper {
-  border-color: rgba(132, 201, 168, 0.16);
-  background: rgba(16, 32, 25, 0.92);
-}
-
 @media (max-width: 996px) {
   .cardHeader {
     flex-direction: column;
@@ -233,9 +174,5 @@
   .actionRow {
     width: 100%;
     min-width: 0;
-  }
-
-  .previewPanel {
-    padding: 0 1rem 1rem;
   }
 }

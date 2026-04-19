@@ -90,6 +90,6 @@ The most important teaching bridge in the site is this one: business process fir
 ## Next Steps
 
 1. Read the process page that matches the business cycle you want to follow first.
-2. Then move into [Analytics Hub](../analytics/index.md) to see how that process becomes reports, SQL, and cases.
+2. Then move into [Analytics Guides](../analytics/index.md) to see how that process becomes reports, SQL, and cases.
 3. Use [Reports Hub](../analytics/reports/index.md) when you want a management-style view of the same business cycle.
 4. Use [Analytics Cases](../analytics/cases/index.md) when you want a guided walkthrough that turns the process into interpretation.
