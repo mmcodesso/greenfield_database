@@ -1,4 +1,3 @@
-import clsx from "clsx";
 import Link from "@docusaurus/Link";
 import { useLocation } from "@docusaurus/router";
 import { useDoc } from "@docusaurus/plugin-content-docs/client";
@@ -55,25 +54,16 @@ export default function Footer() {
   return (
     <>
       <DocItemFooter />
-      <div className={clsx("docusaurus-mt-lg", styles.callout)}>
-        <div className={styles.content}>
-          <div>
-            <p className={styles.eyebrow}>Feedback</p>
-            <h3 className={styles.title}>Report an error on this page</h3>
-            <p className={styles.text}>
-              Open the GitHub error form with this page already filled in so
-              maintainers can triage the issue faster.
-            </p>
-          </div>
-          <Link
-            className="button button--primary button--sm"
-            href={prefilledIssueUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Report This Page
-          </Link>
-        </div>
+      <div className={styles.feedbackRow}>
+        <span className={styles.label}>Notice a mistake?</span>
+        <Link
+          className={styles.link}
+          href={prefilledIssueUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Report an error on this page
+        </Link>
       </div>
     </>
   );
