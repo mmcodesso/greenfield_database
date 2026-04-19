@@ -12,13 +12,14 @@ def test_contributing_doc_exposes_feedback_workflow() -> None:
     text = _read(Path("docs/technical/contributing.md"))
 
     for snippet in (
-        "## Report an error",
-        "## Suggest an improvement",
-        "## How we use feedback",
-        'kind="error"',
+        "## Ways You Can Contribute",
+        "## Start a Discussion",
+        "## New to GitHub?",
+        "## Report a Concrete Error",
+        "## What Happens Next",
         'kind="recommendation"',
+        "Open GitHub Discussions",
         "Report an Error in GitHub Issues",
-        "Suggest an Improvement in GitHub Discussions",
     ):
         assert snippet in text, f"Missing expected contribution workflow copy: {snippet}"
 
@@ -39,9 +40,18 @@ def test_feedback_branding_urls_are_canonical() -> None:
         "https://github.com/mmcodesso/CharlesRiver_Database",
         "issues/new/choose",
         "issues/new?template=01-report-error.yml",
-        "discussions/new?category=recommendations",
+        'recommendationsDiscussionUrl:\n      "https://github.com/mmcodesso/CharlesRiver_Database/discussions/new"',
     ):
         assert snippet in text, f"Missing branding URL: {snippet}"
+
+
+def test_issue_chooser_points_to_discussion_category_selection() -> None:
+    text = _read(Path(".github/ISSUE_TEMPLATE/config.yml"))
+
+    assert (
+        "https://github.com/mmcodesso/CharlesRiver_Database/discussions/new"
+        in text
+    )
 
 
 def test_doc_footer_override_prefills_issue_context() -> None:

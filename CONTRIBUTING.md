@@ -3,7 +3,7 @@
 Use GitHub Issues for concrete errors and GitHub Discussions for broader recommendations.
 
 - Report typos, broken links, incorrect query references, factual errors, and other concrete mistakes in GitHub Issues: <https://github.com/mmcodesso/CharlesRiver_Database/issues/new/choose>
-- Start improvement ideas, teaching recommendations, and broader enhancements in GitHub Discussions: <https://github.com/mmcodesso/CharlesRiver_Database/discussions/new?category=recommendations>
+- Start improvement ideas, teaching recommendations, broader enhancements, or questions in GitHub Discussions: <https://github.com/mmcodesso/CharlesRiver_Database/discussions/new>
 - The full site-facing workflow lives in [docs/technical/contributing.md](docs/technical/contributing.md)
 
 ## Development Setup

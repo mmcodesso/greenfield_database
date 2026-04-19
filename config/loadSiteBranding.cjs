@@ -64,7 +64,7 @@ function loadSiteBranding(configPath = path.join(__dirname, "settings.yaml")) {
     errorIssueUrl:
       "https://github.com/mmcodesso/CharlesRiver_Database/issues/new?template=01-report-error.yml",
     recommendationsDiscussionUrl:
-      "https://github.com/mmcodesso/CharlesRiver_Database/discussions/new?category=recommendations",
+      "https://github.com/mmcodesso/CharlesRiver_Database/discussions/new",
   };
 }
 
