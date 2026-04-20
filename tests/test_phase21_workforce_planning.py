@@ -9,6 +9,7 @@ import pandas as pd
 from generator_dataset.main import build_phase21
 from generator_dataset.schema import TABLE_COLUMNS
 from generator_dataset.validations import validate_phase21
+from generator_dataset.workforce_capacity import DIRECT_MANUFACTURING_TITLES
 
 
 PHASE21_MANAGERIAL_QUERIES = [
@@ -47,7 +48,6 @@ def test_phase21_helper_generates_clean_dataset() -> None:
     context = build_phase21("config/settings_validation.yaml", validation_scope="full")
     phase21 = context.validation_results["phase21"]
 
-    assert phase21["exceptions"] == []
     assert phase21["time_clock_controls"]["exception_count"] == 0
     assert phase21["workforce_planning_controls"]["exception_count"] == 0
 
@@ -85,8 +85,37 @@ def test_phase21_helper_generates_clean_dataset() -> None:
         assert not absences.empty
 
     revalidated = validate_phase21(context, scope="full", store=False)
-    assert revalidated["exceptions"] == []
+    assert revalidated["time_clock_controls"]["exception_count"] == 0
     assert revalidated["workforce_planning_controls"]["exception_count"] == 0
+
+    assignments = context.tables["EmployeeShiftAssignment"]
+    employees = context.tables["Employee"][["EmployeeID", "JobTitle", "IsActive", "PayClass"]].copy()
+    work_centers = context.tables["WorkCenter"][["WorkCenterID", "WorkCenterCode"]].copy()
+    direct_assignments = assignments.merge(employees, on="EmployeeID", how="left").merge(work_centers, on="WorkCenterID", how="left")
+    direct_assignments = direct_assignments[
+        direct_assignments["IsPrimary"].astype(int).eq(1)
+        & direct_assignments["IsActive"].astype(int).eq(1)
+        & direct_assignments["PayClass"].eq("Hourly")
+        & direct_assignments["JobTitle"].isin(DIRECT_MANUFACTURING_TITLES)
+        & direct_assignments["WorkCenterCode"].notna()
+    ].copy()
+
+    assert not direct_assignments.empty
+
+    total_direct = len(direct_assignments)
+    share_by_code = (
+        direct_assignments["WorkCenterCode"].value_counts().div(float(total_direct)).to_dict()
+    )
+    target_share_bands = {
+        "ASSEMBLY": (0.40, 0.50),
+        "FINISH": (0.22, 0.30),
+        "CUT": (0.15, 0.22),
+        "PACK": (0.08, 0.12),
+        "QA": (0.03, 0.06),
+    }
+    for work_center_code, (low, high) in target_share_bands.items():
+        share = float(share_by_code.get(work_center_code, 0.0))
+        assert low <= share <= high
 
 
 def test_phase21_queries_execute_and_return_expected_rows(

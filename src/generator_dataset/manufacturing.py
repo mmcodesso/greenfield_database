@@ -35,6 +35,16 @@ from generator_dataset.payroll import (
 from generator_dataset.schema import TABLE_COLUMNS
 from generator_dataset.settings import GenerationContext
 from generator_dataset.utils import format_doc_number, money, next_id, qty
+from generator_dataset.workforce_capacity import (
+    DIRECT_MANUFACTURING_TITLES,
+    DIRECT_WORK_CENTER_CODES,
+    STANDARD_MANUFACTURING_SHIFT_HOURS,
+    allocate_hours_by_work_center,
+    blended_capacity_shares,
+    direct_work_center_assignments,
+    work_center_counts_from_codes,
+    work_center_shares_from_counts,
+)
 
 
 LOGGER = logging.getLogger(__name__)
@@ -115,16 +125,13 @@ WORK_CENTER_DEFINITIONS = (
     },
 )
 
-WORK_CENTER_NOMINAL_HOURS = {
+WORK_CENTER_FALLBACK_NOMINAL_HOURS = {
     "CUT": 24.0,
     "ASSEMBLY": 48.0,
     "FINISH": 28.0,
     "PACK": 12.0,
     "QA": 8.0,
 }
-WORKFORCE_SCALED_WORK_CENTER_CODES = {"CUT", "ASSEMBLY", "FINISH", "PACK", "QA"}
-WORKFORCE_CAPACITY_BASELINE_DIRECT_HEADCOUNT = 6
-WORKFORCE_CAPACITY_DIRECT_TITLES = {"Assembler", "Machine Operator", "Quality Technician"}
 
 REDUCED_CAPACITY_FACTOR_RANGE = {
     "CUT": (0.78, 0.90),
@@ -602,6 +609,106 @@ def manager_for_titles(context: GenerationContext, titles: tuple[str, ...]) -> i
     return int(context.tables["Employee"].sort_values("EmployeeID").iloc[0]["EmployeeID"])
 
 
+def active_direct_worker_rows(context: GenerationContext) -> pd.DataFrame:
+    employees = context.tables["Employee"]
+    if employees.empty:
+        return employees.head(0).copy()
+    return employees[
+        employees["IsActive"].astype(int).eq(1)
+        & employees["PayClass"].eq("Hourly")
+        & employees["JobTitle"].isin(DIRECT_MANUFACTURING_TITLES)
+    ].copy().sort_values("EmployeeID").reset_index(drop=True)
+
+
+def provisional_direct_assignment_counts(context: GenerationContext) -> dict[str, int]:
+    active_direct_workers = active_direct_worker_rows(context)
+    if active_direct_workers.empty:
+        return {work_center_code: 0 for work_center_code in DIRECT_WORK_CENTER_CODES}
+    assignments = direct_work_center_assignments([
+        (int(row.EmployeeID), str(row.JobTitle))
+        for row in active_direct_workers.itertuples(index=False)
+    ])
+    return work_center_counts_from_codes(list(assignments.values()))
+
+
+def active_primary_direct_assignment_counts(context: GenerationContext) -> dict[str, int]:
+    assignments = context.tables["EmployeeShiftAssignment"]
+    work_centers = context.tables["WorkCenter"]
+    active_direct_workers = active_direct_worker_rows(context)
+    if assignments.empty or work_centers.empty or active_direct_workers.empty:
+        return provisional_direct_assignment_counts(context)
+
+    work_center_code_by_id = {
+        int(row.WorkCenterID): str(row.WorkCenterCode)
+        for row in work_centers.itertuples(index=False)
+    }
+    assignment_rows = assignments[
+        assignments["IsPrimary"].astype(int).eq(1)
+        & assignments["EmployeeID"].astype(int).isin(active_direct_workers["EmployeeID"].astype(int))
+        & assignments["WorkCenterID"].notna()
+    ].copy()
+    if assignment_rows.empty:
+        return provisional_direct_assignment_counts(context)
+
+    assignment_rows = assignment_rows.sort_values(["EmployeeID", "EmployeeShiftAssignmentID"])
+    assignment_rows = assignment_rows.drop_duplicates("EmployeeID", keep="first")
+    assigned_codes = {
+        int(row.EmployeeID): work_center_code_by_id.get(int(row.WorkCenterID))
+        for row in assignment_rows.itertuples(index=False)
+        if int(row.WorkCenterID) in work_center_code_by_id
+    }
+
+    provisional_assignments = direct_work_center_assignments([
+        (int(row.EmployeeID), str(row.JobTitle))
+        for row in active_direct_workers.itertuples(index=False)
+    ])
+    for row in active_direct_workers.itertuples(index=False):
+        employee_id = int(row.EmployeeID)
+        assigned_codes.setdefault(employee_id, provisional_assignments.get(employee_id))
+
+    return work_center_counts_from_codes([
+        work_center_code
+        for work_center_code in assigned_codes.values()
+        if work_center_code is not None
+    ])
+
+
+def work_center_nominal_capacity_hours_by_code(context: GenerationContext) -> dict[str, float]:
+    assignment_counts = active_primary_direct_assignment_counts(context)
+    total_direct_workers = sum(assignment_counts.values())
+    if total_direct_workers <= 0:
+        return {
+            work_center_code: float(WORK_CENTER_FALLBACK_NOMINAL_HOURS.get(work_center_code, 0.0))
+            for work_center_code in DIRECT_WORK_CENTER_CODES
+        }
+
+    total_daily_capacity = float(total_direct_workers) * STANDARD_MANUFACTURING_SHIFT_HOURS
+    capacity_shares = blended_capacity_shares(assignment_counts)
+    return allocate_hours_by_work_center(total_daily_capacity, capacity_shares)
+
+
+def sync_work_center_capacity_from_assignments(
+    context: GenerationContext,
+    *,
+    regenerate_calendar: bool = False,
+) -> None:
+    work_centers = context.tables["WorkCenter"]
+    if work_centers.empty:
+        return
+
+    nominal_hours_by_code = work_center_nominal_capacity_hours_by_code(context)
+    updated = work_centers.copy()
+    for work_center_code, nominal_hours in nominal_hours_by_code.items():
+        mask = updated["WorkCenterCode"].eq(str(work_center_code))
+        updated.loc[mask, "NominalDailyCapacityHours"] = money(float(nominal_hours))
+    context.tables["WorkCenter"] = updated[TABLE_COLUMNS["WorkCenter"]]
+
+    if regenerate_calendar:
+        context.tables["WorkCenterCalendar"] = context.tables["WorkCenterCalendar"].head(0).copy()
+        reset_capacity_caches(context)
+        generate_work_center_calendars(context)
+
+
 def routing_pattern_for_item(context: GenerationContext, item_group: str, item_id: int) -> list[tuple[str, str]]:
     pattern = list(ROUTING_PATTERN_BY_GROUP.get(str(item_group), ROUTING_PATTERN_BY_GROUP["Accessories"]))
     if str(item_group) == "Lighting" and (context.settings.random_seed + int(item_id)) % 4 == 0:
@@ -744,25 +851,9 @@ def generate_work_centers_and_routings(context: GenerationContext) -> None:
         return
 
     warehouses = warehouse_ids(context)
-    employees = context.tables["Employee"]
-    workforce_capacity_multiplier = 1.0
-    if not employees.empty:
-        active_direct_workers = employees[
-            employees["IsActive"].astype(int).eq(1)
-            & employees["PayClass"].eq("Hourly")
-            & employees["JobTitle"].isin(WORKFORCE_CAPACITY_DIRECT_TITLES)
-        ].copy()
-        if not active_direct_workers.empty:
-            workforce_capacity_multiplier = max(
-                float(len(active_direct_workers)) / float(WORKFORCE_CAPACITY_BASELINE_DIRECT_HEADCOUNT),
-                1.0,
-            )
     work_center_rows: list[dict[str, Any]] = []
     for index, definition in enumerate(WORK_CENTER_DEFINITIONS):
         work_center_code = str(definition["WorkCenterCode"])
-        nominal_daily_capacity = float(WORK_CENTER_NOMINAL_HOURS[work_center_code])
-        if work_center_code in WORKFORCE_SCALED_WORK_CENTER_CODES:
-            nominal_daily_capacity = money(nominal_daily_capacity * workforce_capacity_multiplier)
         work_center_rows.append({
             "WorkCenterID": next_id(context, "WorkCenter"),
             "WorkCenterCode": work_center_code,
@@ -770,7 +861,9 @@ def generate_work_centers_and_routings(context: GenerationContext) -> None:
             "Department": definition["Department"],
             "WarehouseID": int(warehouses[index % len(warehouses)]),
             "ManagerEmployeeID": manager_for_titles(context, definition["ManagerTitles"]),
-            "NominalDailyCapacityHours": nominal_daily_capacity,
+            "NominalDailyCapacityHours": money(
+                float(WORK_CENTER_FALLBACK_NOMINAL_HOURS.get(work_center_code, 0.0))
+            ),
             "IsActive": 1,
         })
     append_rows(context, "WorkCenter", work_center_rows)
@@ -1379,6 +1472,86 @@ def manufacturing_work_center_available_hours_by_code(
             2,
         )
     return state
+
+
+def manufacturing_work_center_nominal_daily_hours_by_code(
+    context: GenerationContext,
+    work_center_codes: tuple[str, ...] = ("ASSEMBLY", "CUT", "FINISH", "PACK", "QA"),
+) -> dict[str, float]:
+    work_centers = context.tables["WorkCenter"]
+    if work_centers.empty:
+        return {code: 0.0 for code in work_center_codes}
+
+    nominal_by_code = {
+        str(row.WorkCenterCode): round(float(row.NominalDailyCapacityHours), 2)
+        for row in work_centers.itertuples(index=False)
+    }
+    return {
+        str(work_center_code): float(nominal_by_code.get(str(work_center_code), 0.0))
+        for work_center_code in work_center_codes
+    }
+
+
+def manufacturing_capacity_diagnostics_by_code(
+    context: GenerationContext,
+    year: int,
+    month: int,
+    work_center_codes: tuple[str, ...] = ("ASSEMBLY", "CUT", "FINISH", "PACK", "QA"),
+) -> dict[str, dict[str, float]]:
+    month_start, month_end = month_bounds(year, month)
+    work_centers = context.tables["WorkCenter"]
+    rosters = context.tables["EmployeeShiftRoster"]
+    schedules = context.tables["WorkOrderOperationSchedule"]
+    work_center_id_by_code = {
+        str(row.WorkCenterCode): int(row.WorkCenterID)
+        for row in work_centers.itertuples(index=False)
+    } if not work_centers.empty else {}
+
+    assignment_counts = active_primary_direct_assignment_counts(context)
+    assignment_shares = work_center_shares_from_counts(assignment_counts)
+    nominal_hours = manufacturing_work_center_nominal_daily_hours_by_code(context, work_center_codes=work_center_codes)
+    total_nominal_hours = sum(nominal_hours.values()) or 1.0
+    available_hours = manufacturing_work_center_available_hours_by_code(context, year, month, work_center_codes=work_center_codes)
+    utilization = manufacturing_work_center_utilization_by_code(context, year, month, work_center_codes=work_center_codes)
+
+    rostered_hours_by_center: dict[int, float] = {}
+    if not rosters.empty:
+        month_rosters = rosters[
+            pd.to_datetime(rosters["RosterDate"], errors="coerce").between(month_start, month_end)
+            & rosters["WorkCenterID"].notna()
+            & rosters["RosterStatus"].isin(["Scheduled", "Reassigned", "Absent"])
+        ].copy()
+        if not month_rosters.empty:
+            rostered_hours_by_center = {
+                int(work_center_id): round(float(hours), 2)
+                for work_center_id, hours in month_rosters.groupby("WorkCenterID")["ScheduledHours"].sum().items()
+            }
+
+    scheduled_hours_by_center: dict[int, float] = {}
+    if not schedules.empty:
+        month_schedules = schedules[
+            pd.to_datetime(schedules["ScheduleDate"], errors="coerce").between(month_start, month_end)
+        ].copy()
+        if not month_schedules.empty:
+            scheduled_hours_by_center = {
+                int(work_center_id): round(float(hours), 2)
+                for work_center_id, hours in month_schedules.groupby("WorkCenterID")["ScheduledHours"].sum().items()
+            }
+
+    diagnostics: dict[str, dict[str, float]] = {}
+    for work_center_code in work_center_codes:
+        work_center_id = work_center_id_by_code.get(str(work_center_code))
+        diagnostics[str(work_center_code)] = {
+            "assigned_direct_worker_count": float(assignment_counts.get(str(work_center_code), 0)),
+            "assigned_direct_worker_share": round(float(assignment_shares.get(str(work_center_code), 0.0)), 4),
+            "nominal_daily_capacity_hours": round(float(nominal_hours.get(str(work_center_code), 0.0)), 2),
+            "nominal_daily_capacity_share": round(float(nominal_hours.get(str(work_center_code), 0.0)) / total_nominal_hours, 4),
+            "rostered_hours": round(float(rostered_hours_by_center.get(int(work_center_id), 0.0)), 2) if work_center_id is not None else 0.0,
+            "scheduled_hours": round(float(scheduled_hours_by_center.get(int(work_center_id), 0.0)), 2) if work_center_id is not None else 0.0,
+            "monthly_available_hours": round(float(available_hours.get(str(work_center_code), 0.0)), 2),
+            "monthly_utilization_pct": round(float(utilization.get(str(work_center_code), 0.0)) * 100, 2),
+        }
+    return diagnostics
 
 
 def manufacture_recommendation_load_by_work_center(

@@ -11,13 +11,11 @@ from generator_dataset.schema import TABLE_COLUMNS
 from generator_dataset.state_cache import drop_context_attributes, get_or_build_cache
 from generator_dataset.settings import GenerationContext
 from generator_dataset.utils import format_doc_number, money, next_id, qty
+from generator_dataset.workforce_capacity import (
+    DIRECT_MANUFACTURING_TITLES,
+    direct_work_center_assignments,
+)
 
-
-DIRECT_MANUFACTURING_TITLES = {
-    "Assembler",
-    "Machine Operator",
-    "Quality Technician",
-}
 
 INDIRECT_MANUFACTURING_TITLES = {
     "Production Manager",
@@ -354,6 +352,12 @@ def generate_employee_shift_assignments(context: GenerationContext) -> None:
         return
 
     shift_by_code = shift_definition_by_code(context)
+    direct_assignment_codes = direct_work_center_assignments([
+        (int(row.EmployeeID), str(row.JobTitle))
+        for row in employees.sort_values("EmployeeID").itertuples(index=False)
+        if str(row.PayClass) == "Hourly" and str(row.JobTitle) in DIRECT_MANUFACTURING_TITLES
+    ])
+    work_center_ids = work_center_ids_by_code(context)
     assignment_rows: list[dict[str, Any]] = []
     for employee in employees.sort_values("EmployeeID").itertuples(index=False):
         if str(employee.PayClass) != "Hourly":
@@ -374,13 +378,20 @@ def generate_employee_shift_assignments(context: GenerationContext) -> None:
             assignment_end = termination_date
         if assignment_end < assignment_start:
             continue
+        work_center_id = None
+        if str(employee.JobTitle) in DIRECT_MANUFACTURING_TITLES:
+            assigned_work_center_code = direct_assignment_codes.get(int(employee.EmployeeID))
+            if assigned_work_center_code is not None:
+                work_center_id = work_center_ids.get(str(assigned_work_center_code))
+        if work_center_id is None:
+            work_center_id = primary_work_center_id_for_title(context, str(employee.JobTitle))
         assignment_rows.append({
             "EmployeeShiftAssignmentID": next_id(context, "EmployeeShiftAssignment"),
             "EmployeeID": int(employee.EmployeeID),
             "ShiftDefinitionID": int(shift_definition["ShiftDefinitionID"]),
             "EffectiveStartDate": assignment_start.strftime("%Y-%m-%d"),
             "EffectiveEndDate": assignment_end.strftime("%Y-%m-%d"),
-            "WorkCenterID": primary_work_center_id_for_title(context, str(employee.JobTitle)),
+            "WorkCenterID": work_center_id,
             "IsPrimary": 1,
         })
 

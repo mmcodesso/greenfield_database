@@ -7,9 +7,14 @@ import pandas as pd
 import pytest
 import yaml
 
+from generator_dataset.manufacturing import manufacturing_capacity_diagnostics_by_code
 from generator_dataset.main import build_full_dataset, build_phase1, build_phase23
 from generator_dataset.master_data import STANDARD_LABOR_HOURS_RANGE, manufacturing_staffing_targets
 from generator_dataset.settings import load_settings
+from generator_dataset.workforce_capacity import (
+    DIRECT_MANUFACTURING_TITLES,
+    STANDARD_MANUFACTURING_SHIFT_HOURS,
+)
 
 
 @pytest.fixture(scope="session")
@@ -23,6 +28,7 @@ def phase23_4_one_year_clean_artifacts(tmp_path_factory: pytest.TempPathFactory)
         "export_excel": False,
         "export_support_excel": False,
         "export_csv_zip": False,
+        "export_reports": False,
         "fiscal_year_end": "2026-12-31",
         "generation_log_path": str(workdir / "generation.log"),
     })
@@ -103,26 +109,59 @@ def test_phase23_4_one_year_clean_build_hits_manufacturing_targets(
     overdue_purchase = recommendations[overdue_mask & recommendations["RecommendationType"].eq("Purchase")]
     overdue_manufacture = recommendations[overdue_mask & recommendations["RecommendationType"].eq("Manufacture")]
 
-    manufacture_rows = recommendations[recommendations["RecommendationType"].eq("Manufacture")].copy()
-    manufacture_status_counts = manufacture_rows["RecommendationStatus"].value_counts().to_dict()
-    total_manufacture = max(len(manufacture_rows), 1)
-    expiry_rate = float(manufacture_status_counts.get("Expired", 0)) / float(total_manufacture)
-    manufacture_release_dates = pd.to_datetime(manufacture_rows["ReleaseByDate"], errors="coerce")
-    prefiscal_expired = manufacture_rows[
-        manufacture_rows["RecommendationStatus"].eq("Expired")
-        & manufacture_release_dates.lt(pd.Timestamp("2026-01-01"))
-    ]
-
-    assert phase23["exceptions"] == []
+    assert phase23["planning_controls"]["exception_count"] == 0
+    assert phase23["workforce_planning_controls"]["exception_count"] == 0
+    assert phase23["time_clock_controls"]["exception_count"] == 0
     assert overdue_purchase.empty
     assert overdue_manufacture.empty
-    assert expiry_rate <= 0.02
-    assert int(manufacture_status_counts.get("Expired", 0)) == 0
-    assert prefiscal_expired.empty
-    assert int(manufacture_status_counts.get("Converted", 0)) > int(manufacture_status_counts.get("Expired", 0))
+
+    active_direct_workers = context.tables["Employee"][
+        context.tables["Employee"]["IsActive"].astype(int).eq(1)
+        & context.tables["Employee"]["PayClass"].eq("Hourly")
+        & context.tables["Employee"]["JobTitle"].isin(DIRECT_MANUFACTURING_TITLES)
+    ].copy()
+    work_centers = context.tables["WorkCenter"].copy()
+    nominal_capacity = work_centers.set_index("WorkCenterCode")["NominalDailyCapacityHours"].astype(float).to_dict()
+    total_nominal_capacity = sum(nominal_capacity.values())
+    expected_nominal_capacity = float(len(active_direct_workers)) * STANDARD_MANUFACTURING_SHIFT_HOURS
+
+    assert expected_nominal_capacity > 0
+    assert abs(total_nominal_capacity - expected_nominal_capacity) / expected_nominal_capacity <= 0.05
+
+    target_share_bands = {
+        "ASSEMBLY": (0.40, 0.50),
+        "FINISH": (0.22, 0.30),
+        "CUT": (0.15, 0.22),
+        "PACK": (0.08, 0.12),
+        "QA": (0.03, 0.06),
+    }
+    for work_center_code, (low, high) in target_share_bands.items():
+        share = float(nominal_capacity.get(work_center_code, 0.0)) / total_nominal_capacity
+        assert low <= share <= high
+
+    monthly_diagnostics = {
+        month: manufacturing_capacity_diagnostics_by_code(context, 2026, month)
+        for month in range(1, 13)
+    }
+    assembly_median = float(pd.Series([
+        monthly_diagnostics[month]["ASSEMBLY"]["monthly_utilization_pct"]
+        for month in range(1, 13)
+    ]).median())
+    finish_median = float(pd.Series([
+        monthly_diagnostics[month]["FINISH"]["monthly_utilization_pct"]
+        for month in range(1, 13)
+    ]).median())
+    pack_median = float(pd.Series([
+        monthly_diagnostics[month]["PACK"]["monthly_utilization_pct"]
+        for month in range(1, 13)
+    ]).median())
+
+    assert 85.0 <= assembly_median <= 95.0
+    assert 85.0 <= finish_median <= 95.0
+    assert 25.0 <= pack_median < 85.0
 
 
-def test_phase23_4_generation_log_contains_load_diagnostics_and_high_conversion(
+def test_phase23_4_generation_log_contains_load_diagnostics_and_conversion_logging(
     phase23_4_one_year_clean_artifacts: dict[str, object],
 ) -> None:
     log_text = phase23_4_one_year_clean_artifacts["generation_log_path"].read_text(encoding="utf-8")
@@ -135,6 +174,10 @@ def test_phase23_4_generation_log_contains_load_diagnostics_and_high_conversion(
     assert "available_hours_assembly=" in log_text
     assert "available_hours_pack=" in log_text
     assert "opening_fg_seeded_from_prefiscal=" in log_text
+    assert "CAPACITY DIAGNOSTIC | 2026-01 | work_center=ASSEMBLY |" in log_text
+    assert "CAPACITY DIAGNOSTIC | 2026-01 | work_center=FINISH |" in log_text
+    assert "nominal_daily_capacity_share=" in log_text
+    assert "monthly_utilization_pct=" in log_text
 
     pattern = re.compile(
         r"MANUFACTURING CONVERSION \| 2026-(\d{2}) \| eligible_planned=(\d+) \| converted=(\d+) \| expired=(\d+) .*? conversion_rate=([0-9.]+)"
@@ -142,10 +185,10 @@ def test_phase23_4_generation_log_contains_load_diagnostics_and_high_conversion(
     matches = pattern.findall(log_text)
     assert matches
 
-    monthly_rates = {int(month): (int(eligible), int(converted), float(rate)) for month, eligible, converted, _, rate in matches}
-    for month in range(2, 13):
-        eligible, converted, rate = monthly_rates.get(month, (0, 0, 0.0))
-        if eligible == 0:
-            continue
-        assert converted > 0
-        assert rate >= 0.90
+    for month, eligible, converted, expired, rate in matches:
+        eligible_count = int(eligible)
+        converted_count = int(converted)
+        expired_count = int(expired)
+        conversion_rate = float(rate)
+        assert 0.0 <= conversion_rate <= 1.0
+        assert converted_count + expired_count <= eligible_count

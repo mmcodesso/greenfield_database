@@ -33,9 +33,11 @@ from generator_dataset.manufacturing import (
     generate_work_center_calendars,
     generate_work_centers_and_routings,
     manufacturing_capacity_state,
+    manufacturing_capacity_diagnostics_by_code,
     manufacturing_work_center_utilization_by_code,
     manufacturing_open_state,
     seed_opening_manufacturing_pipeline,
+    sync_work_center_capacity_from_assignments,
 )
 from generator_dataset.master_data import (
     backfill_cost_center_managers,
@@ -231,7 +233,6 @@ def _generate_phase2_master_data_and_planning(
         ("Generate phase 2 item master", generate_items),
         ("Generate phase 2 BOMs", generate_boms),
         ("Generate phase 2 routings and work centers", generate_work_centers_and_routings),
-        ("Generate phase 2 work-center calendars", generate_work_center_calendars),
         ("Generate phase 2 customers", generate_customers),
         ("Generate phase 2 price lists", generate_price_lists),
         ("Generate phase 2 promotions", generate_promotions),
@@ -240,11 +241,16 @@ def _generate_phase2_master_data_and_planning(
         ("Generate phase 2 budgets", generate_budgets),
         ("Generate phase 2 payroll periods", generate_payroll_periods),
         ("Generate phase 2 shift definitions and assignments", generate_shift_definitions_and_assignments),
+        ("Synchronize phase 2 work-center capacity and calendars", synchronize_work_center_capacity_and_calendars),
         ("Generate phase 2 inventory policies", generate_inventory_policies),
         ("Generate phase 2 demand forecasts", generate_demand_forecasts),
     ]
     for step_name, generator in phase2_generators:
         _run_generation_step(context, step_name, generator, log_substeps=log_substeps)
+
+
+def synchronize_work_center_capacity_and_calendars(context: GenerationContext) -> None:
+    sync_work_center_capacity_from_assignments(context, regenerate_calendar=True)
 
 
 def _run_month_step(
@@ -701,6 +707,7 @@ def build_phase22(
     context = build_phase2(config_path)
     generate_payroll_periods(context)
     generate_shift_definitions_and_assignments(context)
+    synchronize_work_center_capacity_and_calendars(context)
     generate_inventory_policies(context)
     generate_demand_forecasts(context)
     generate_all_months(context)
@@ -723,6 +730,7 @@ def build_phase23(
     generate_promotions(context)
     generate_payroll_periods(context)
     generate_shift_definitions_and_assignments(context)
+    synchronize_work_center_capacity_and_calendars(context)
     generate_inventory_policies(context)
     generate_demand_forecasts(context)
     generate_all_months(context)
@@ -968,6 +976,7 @@ def build_full_dataset(
             manufacturing_state = manufacturing_open_state(context)
             capacity_state = manufacturing_capacity_state(context, year, month)
             bottleneck_state = manufacturing_work_center_utilization_by_code(context, year, month)
+            capacity_diagnostics = manufacturing_capacity_diagnostics_by_code(context, year, month)
             new_cash_receipts = context.tables["CashReceipt"][
                 pd.to_datetime(context.tables["CashReceipt"]["ReceiptDate"]).dt.year.eq(year)
                 & pd.to_datetime(context.tables["CashReceipt"]["ReceiptDate"]).dt.month.eq(month)
@@ -1055,6 +1064,22 @@ def build_full_dataset(
                 int(capacity_state["late_work_orders"]),
                 capacity_state["open_backlog_hours"],
             )
+            for work_center_code in ["ASSEMBLY", "FINISH", "CUT", "PACK", "QA"]:
+                diagnostic = capacity_diagnostics.get(work_center_code, {})
+                LOGGER.info(
+                    "CAPACITY DIAGNOSTIC | %s-%02d | work_center=%s | assigned_direct_worker_count=%s | assigned_direct_worker_share=%s | nominal_daily_capacity_hours=%s | nominal_daily_capacity_share=%s | rostered_hours=%s | scheduled_hours=%s | monthly_available_hours=%s | monthly_utilization_pct=%s",
+                    year,
+                    month,
+                    work_center_code,
+                    round(float(diagnostic.get("assigned_direct_worker_count", 0.0)), 2),
+                    diagnostic.get("assigned_direct_worker_share", 0.0),
+                    diagnostic.get("nominal_daily_capacity_hours", 0.0),
+                    diagnostic.get("nominal_daily_capacity_share", 0.0),
+                    diagnostic.get("rostered_hours", 0.0),
+                    diagnostic.get("scheduled_hours", 0.0),
+                    diagnostic.get("monthly_available_hours", 0.0),
+                    diagnostic.get("monthly_utilization_pct", 0.0),
+                )
             LOGGER.info(
                 "PAYROLL CHECKPOINT | %s-%02d | periods_processed=%s | shift_rosters_created=%s | absences_created=%s | overtime_approvals_created=%s | time_clock_entries_created=%s | punch_rows_created=%s | labor_entries_created=%s | payroll_registers_created=%s | payroll_payments_created=%s | liability_remittances_created=%s | fallback_direct_allocations=%s | direct_labor_reclass_amount=%s | manufacturing_overhead_reclass_amount=%s",
                 year,

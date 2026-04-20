@@ -70,6 +70,8 @@ MANUFACTURED_POLICY_MAX_LEAD_DAYS = 42
 WORKING_DAY_TO_CALENDAR_DAY_FACTOR = 7.0 / 5.0
 DEMAND_FORECAST_PROGRESS_INTERVAL = 25
 MANUFACTURED_COMPONENT_NEED_OFFSET_DAYS = 14
+MANUFACTURED_FORECAST_LOAD_MULTIPLIER = 3.5
+FINISHED_GOODS_OPENING_STOCK_FACTOR = 0.65
 
 
 def append_rows(context: GenerationContext, table_name: str, rows: list[dict[str, Any]]) -> None:
@@ -144,6 +146,11 @@ def opening_inventory_map(context: GenerationContext) -> dict[tuple[int, int], f
         stock_rng = np.random.default_rng(context.settings.random_seed + int(item.ItemID) * 37)
         low, high = OPENING_STOCK_RANGES.get(str(item.ItemGroup), (80, 160))
         total_qty = int(stock_rng.integers(low, high + 1))
+        if (
+            pd.notna(item.RevenueAccountID)
+            and str(item.ItemGroup) not in {"Packaging", "Raw Materials", "Services"}
+        ):
+            total_qty = max(1, int(round(float(total_qty) * FINISHED_GOODS_OPENING_STOCK_FACTOR)))
         if len(warehouse_list) == 1:
             inventory[(int(item.ItemID), warehouse_list[0])] = float(total_qty)
             continue
@@ -711,6 +718,9 @@ def generate_demand_forecasts(context: GenerationContext) -> None:
     for item in items.sort_values("ItemID").itertuples(index=False):
         item_id = int(item.ItemID)
         item_launch = pd.Timestamp(item.LaunchDate)
+        forecast_load_multiplier = 1.0
+        if str(item.SupplyMode) == "Manufactured":
+            forecast_load_multiplier = MANUFACTURED_FORECAST_LOAD_MULTIPLIER
         prepared_items.append({
             "item": item,
             "item_id": item_id,
@@ -719,6 +729,7 @@ def generate_demand_forecasts(context: GenerationContext) -> None:
             "first_week": first_forecast_week_start(item_launch),
             "lifecycle_multiplier": LIFECYCLE_DEMAND_MULTIPLIER.get(str(item.LifecycleStatus), 1.0),
             "base_demand": ITEM_GROUP_WEEKLY_BASE.get(str(item.ItemGroup), 10.0),
+            "forecast_load_multiplier": forecast_load_multiplier,
             "warehouse_rank": primary_warehouse_rank(context, item_id),
             "style_multiplier": 1.0 + ((item_id % 5) - 2) * 0.035,
         })
@@ -741,6 +752,7 @@ def generate_demand_forecasts(context: GenerationContext) -> None:
         first_week = prepared_item["first_week"]
         lifecycle_multiplier = float(prepared_item["lifecycle_multiplier"])
         base_demand = float(prepared_item["base_demand"])
+        forecast_load_multiplier = float(prepared_item["forecast_load_multiplier"])
         warehouse_rank = list(prepared_item["warehouse_rank"])
         supply_mode = str(prepared_item["supply_mode"])
         lifecycle_status = str(prepared_item["lifecycle_status"])
@@ -762,6 +774,7 @@ def generate_demand_forecasts(context: GenerationContext) -> None:
                     * month_multiplier
                     * style_multiplier
                     * launch_ramp
+                    * forecast_load_multiplier
                     * rng.uniform(0.92, 1.08)
                 ),
             )
