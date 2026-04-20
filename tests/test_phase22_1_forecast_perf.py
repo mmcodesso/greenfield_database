@@ -36,7 +36,9 @@ from generator_dataset.planning import (
     forecast_planner_id,
     generate_demand_forecasts,
     generate_inventory_policies,
+    planning_horizon_week_starts,
     week_starts_in_fiscal_range,
+    week_starts_in_planning_range,
 )
 from generator_dataset.schema import create_empty_tables
 from generator_dataset.settings import initialize_context, load_settings
@@ -132,6 +134,24 @@ def test_phase22_1_forecasts_are_deterministic() -> None:
         context_two.tables["DemandForecast"].reset_index(drop=True),
         check_dtype=False,
     )
+
+
+def test_phase22_1_forecasts_extend_past_fiscal_year_end_for_continuing_operations() -> None:
+    context = _prepare_forecast_context("config/settings_validation.yaml")
+
+    generate_demand_forecasts(context)
+
+    forecasts = context.tables["DemandForecast"].copy()
+    fiscal_end = pd.Timestamp(context.settings.fiscal_year_end).normalize()
+    expected_final_week_start = planning_horizon_week_starts(fiscal_end.replace(day=1))[-1]
+    planning_weeks = week_starts_in_planning_range(context)
+    forecast_week_starts = pd.to_datetime(forecasts["ForecastWeekStartDate"], errors="coerce")
+    future_rows = forecasts[forecast_week_starts.gt(fiscal_end)].copy()
+
+    assert planning_weeks[-1] == expected_final_week_start
+    assert forecast_week_starts.max() >= expected_final_week_start
+    assert not future_rows.empty
+    assert pd.to_datetime(future_rows["ApprovedDate"], errors="coerce").le(fiscal_end).all()
 
 
 def test_phase22_1_cached_role_resolution_matches_existing_rules() -> None:

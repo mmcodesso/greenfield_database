@@ -1,5 +1,6 @@
 from dataclasses import replace
 
+from generator_dataset.fixed_assets import fixed_asset_opening_profiles
 from generator_dataset.anomalies import inject_anomalies
 from generator_dataset.journals import (
     first_business_day_on_or_after,
@@ -149,6 +150,39 @@ def test_generate_year_end_close_journals_clean_phase12_validation() -> None:
         account_rows = gl[gl["AccountID"].astype(int).eq(account_id)]
         assert round(float(account_rows["Debit"].sum()), 2) > 0
         assert round(float(account_rows["Credit"].sum()), 2) > 0
+
+
+def test_fixed_assets_and_accumulated_depreciation_remain_realistic_over_five_years() -> None:
+    context = build_phase5()
+    context.settings = replace(context.settings, anomaly_mode="none")
+
+    generate_recurring_manual_journals(context)
+    generate_accrued_service_settlements(context)
+    generate_accrual_adjustment_journals(context)
+    post_all_transactions(context)
+    generate_year_end_close_journals(context)
+
+    accounts = (
+        context.tables["Account"]
+        .assign(AccountNumber=context.tables["Account"]["AccountNumber"].astype(str))
+        .set_index("AccountNumber")["AccountID"]
+        .astype(int)
+        .to_dict()
+    )
+    gl = context.tables["GLEntry"]
+
+    for profile in fixed_asset_opening_profiles().values():
+        gross_account_id = accounts[profile.asset_account_number]
+        gross_rows = gl[gl["AccountID"].astype(int).eq(gross_account_id)]
+        gross_balance = round(float(gross_rows["Debit"].astype(float).sum()) - float(gross_rows["Credit"].astype(float).sum()), 2)
+        assert gross_balance == round(float(profile.gross_opening_balance), 2)
+        if not profile.accumulated_depreciation_account_number:
+            continue
+        accumulated_account_id = accounts[profile.accumulated_depreciation_account_number]
+        accumulated_rows = gl[gl["AccountID"].astype(int).eq(accumulated_account_id)]
+        accumulated_balance = round(float(accumulated_rows["Credit"].astype(float).sum()) - float(accumulated_rows["Debit"].astype(float).sum()), 2)
+        assert accumulated_balance <= gross_balance + 0.01
+        assert round(gross_balance - accumulated_balance, 2) >= -0.01
 
 
 def test_accrued_expense_settlement_uses_purchase_invoice_path() -> None:

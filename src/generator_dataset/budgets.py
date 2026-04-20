@@ -4,6 +4,7 @@ import logging
 
 import pandas as pd
 
+from generator_dataset.fixed_assets import fixed_asset_opening_balance_amounts
 from generator_dataset.master_data import approver_employee_id, current_role_employee_id
 from generator_dataset.planning import opening_inventory_diagnostics, projected_monthly_procurement_cost
 from generator_dataset.schema import TABLE_COLUMNS
@@ -23,12 +24,6 @@ OPENING_BALANCE_AMOUNTS = {
     "1040": ("Finished goods inventory opening balance", 720000.00, 0.00),
     "1045": ("Materials and packaging inventory opening balance", 115000.00, 0.00),
     "1050": ("Prepaid expenses opening balance", 60000.00, 0.00),
-    "1110": ("Furniture and fixtures opening balance", 260000.00, 0.00),
-    "1120": ("Warehouse equipment opening balance", 850000.00, 0.00),
-    "1130": ("Office equipment opening balance", 180000.00, 0.00),
-    "1150": ("Accumulated depreciation furniture opening balance", 0.00, 90000.00),
-    "1160": ("Accumulated depreciation warehouse equipment opening balance", 0.00, 230000.00),
-    "1170": ("Accumulated depreciation office equipment opening balance", 0.00, 75000.00),
     "2010": ("Accounts payable opening balance", 0.00, 410000.00),
     "2030": ("Accrued payroll opening balance", 0.00, 95000.00),
     "2040": ("Accrued expenses opening balance", 0.00, 85000.00),
@@ -139,6 +134,7 @@ def _opening_balance_seed_amounts(
         account_number: (description, float(debit), float(credit))
         for account_number, (description, debit, credit) in OPENING_BALANCE_AMOUNTS.items()
     }
+    amounts.update(fixed_asset_opening_balance_amounts())
     diagnostics = opening_inventory_diagnostics(context)
     projected_procurement_cost = money(projected_monthly_procurement_cost(context))
     value_by_account_number = diagnostics.get("value_by_account_number", {})

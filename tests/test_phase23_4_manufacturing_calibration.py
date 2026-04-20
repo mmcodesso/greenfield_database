@@ -7,9 +7,11 @@ import pandas as pd
 import pytest
 import yaml
 
+from generator_dataset.main import manufactured_fg_flow_diagnostics
 from generator_dataset.manufacturing import manufacturing_capacity_diagnostics_by_code
 from generator_dataset.main import build_full_dataset, build_phase1, build_phase23
 from generator_dataset.master_data import STANDARD_LABOR_HOURS_RANGE, manufacturing_staffing_targets
+from generator_dataset.planning import manufactured_planning_diagnostics
 from generator_dataset.settings import load_settings
 from generator_dataset.workforce_capacity import (
     DIRECT_MANUFACTURING_TITLES,
@@ -95,6 +97,7 @@ def test_phase23_4_one_year_clean_build_hits_manufacturing_targets(
 ) -> None:
     context = phase23_4_one_year_clean_artifacts["context"]
     phase23 = context.validation_results["phase23"]
+    fg_flow = pd.DataFrame(manufactured_fg_flow_diagnostics(context))
     recommendations = context.tables["SupplyPlanRecommendation"].copy()
     fiscal_year_end = pd.Timestamp("2026-12-31")
     release_dates = pd.to_datetime(recommendations["ReleaseByDate"], errors="coerce")
@@ -155,10 +158,95 @@ def test_phase23_4_one_year_clean_build_hits_manufacturing_targets(
         monthly_diagnostics[month]["PACK"]["monthly_utilization_pct"]
         for month in range(1, 13)
     ]).median())
+    assembly_peak_loaded_months = sum(
+        1
+        for month in range(1, 13)
+        if float(monthly_diagnostics[month]["ASSEMBLY"]["monthly_utilization_pct"]) >= 85.0
+    )
+    finish_peak_loaded_months = sum(
+        1
+        for month in range(1, 13)
+        if float(monthly_diagnostics[month]["FINISH"]["monthly_utilization_pct"]) >= 85.0
+    )
 
-    assert 85.0 <= assembly_median <= 95.0
-    assert 85.0 <= finish_median <= 95.0
-    assert 25.0 <= pack_median < 85.0
+    assert 70.0 <= assembly_median <= 85.0
+    assert 70.0 <= finish_median <= 85.0
+    assert 45.0 <= pack_median < 85.0
+    assert assembly_peak_loaded_months >= 5
+    assert finish_peak_loaded_months >= 5
+
+    assert not fg_flow.empty
+    completion_to_shipment_ratio = round(
+        float(fg_flow["CompletionCost"].sum()) / float(fg_flow["ShipmentCost"].sum()),
+        2,
+    )
+    year_end_group_gaps = fg_flow.loc[fg_flow["Period"].eq("2026-12")].set_index("ItemGroup")["CostGap"].to_dict()
+
+    assert 0.95 <= completion_to_shipment_ratio <= 1.35
+    assert float(year_end_group_gaps.get("Furniture", 0.0)) <= 750000.0
+    assert float(year_end_group_gaps.get("Lighting", 0.0)) <= 350000.0
+
+
+def test_phase23_4_manufactured_planning_uses_lot_for_lot_and_non_stacked_backlog(
+    phase23_4_one_year_clean_artifacts: dict[str, object],
+) -> None:
+    context = phase23_4_one_year_clean_artifacts["context"]
+    planning_rows = pd.DataFrame(manufactured_planning_diagnostics(context))
+    policies = context.tables["InventoryPolicy"].copy()
+    items = context.tables["Item"][["ItemID", "SupplyMode", "RevenueAccountID", "LifecycleStatus", "ItemGroup"]].copy()
+    manufactured_sellable_items = items[
+        items["SupplyMode"].eq("Manufactured")
+        & items["RevenueAccountID"].notna()
+    ].copy()
+
+    assert not planning_rows.empty
+    assert planning_rows["PolicyType"].eq("Lot-for-Lot").all()
+    assert planning_rows["GrossRequirementQuantity"].round(2).equals(
+        planning_rows[["ForecastQuantity", "BacklogQuantity"]].max(axis=1).round(2)
+    )
+    assert float(planning_rows["LotSizeUpliftQuantity"].abs().max()) <= 0.01
+    assert float((planning_rows["RecommendedOrderQuantity"] - planning_rows["NetRequirementQuantity"]).abs().max()) <= 0.01
+
+    policy_rows = policies.merge(manufactured_sellable_items, on="ItemID", how="inner")
+    assert not policy_rows.empty
+    assert policy_rows["PolicyType"].eq("Lot-for-Lot").all()
+
+    core_rows = policy_rows[policy_rows["LifecycleStatus"].astype(str).eq("Core")]
+    seasonal_rows = policy_rows[policy_rows["LifecycleStatus"].astype(str).eq("Seasonal")]
+    if not core_rows.empty:
+        assert core_rows["TargetDaysSupply"].astype(int).eq(14).all()
+        assert core_rows["SafetyStockQuantity"].astype(float).eq(10.0).all()
+    if not seasonal_rows.empty:
+        assert seasonal_rows["TargetDaysSupply"].astype(int).eq(18).all()
+        assert seasonal_rows["SafetyStockQuantity"].astype(float).eq(14.0).all()
+
+
+def test_phase23_4_year_end_planning_keeps_a_forward_operating_horizon(
+    phase23_4_one_year_clean_artifacts: dict[str, object],
+) -> None:
+    context = phase23_4_one_year_clean_artifacts["context"]
+    recommendations = context.tables["SupplyPlanRecommendation"].copy()
+    fiscal_end = pd.Timestamp(context.settings.fiscal_year_end).normalize()
+    final_month_label = fiscal_end.strftime("%Y-%m")
+    recommendation_dates = pd.to_datetime(recommendations["RecommendationDate"], errors="coerce")
+    need_by_dates = pd.to_datetime(recommendations["NeedByDate"], errors="coerce")
+    recommended_quantities = pd.to_numeric(
+        recommendations["RecommendedOrderQuantity"],
+        errors="coerce",
+    ).fillna(0.0)
+
+    final_month_rows = recommendations[
+        recommendation_dates.dt.strftime("%Y-%m").eq(final_month_label)
+        & recommended_quantities.gt(0)
+    ].copy()
+    forward_horizon_rows = final_month_rows[
+        need_by_dates.loc[final_month_rows.index].gt(fiscal_end)
+    ].copy()
+
+    assert not final_month_rows.empty
+    assert not forward_horizon_rows.empty
+    assert forward_horizon_rows["RecommendationStatus"].isin(["Planned", "Converted"]).all()
+    assert pd.to_datetime(forward_horizon_rows["BucketWeekStartDate"], errors="coerce").max() > fiscal_end
 
 
 def test_phase23_4_one_year_clean_build_smooths_opening_state_purchasing(
@@ -264,6 +352,10 @@ def test_phase23_4_generation_log_contains_load_diagnostics_and_conversion_loggi
     assert "OPENING STATE SHOCK | metric=purchase_order_total | first_period=2026-01 |" in log_text
     assert "OPENING STATE SHOCK | metric=purchase_invoice_total | first_period=2026-01 |" in log_text
     assert "OPENING STATE DRIVER MIX | window=2025-12_to_2026-02 | driver_type=Component Demand | recommendation_type=Purchase |" in log_text
+    assert "MANUFACTURED PLANNING DIAGNOSTIC | recommendation_month=2026-01 |" in log_text
+    assert "policy_type=Lot-for-Lot" in log_text
+    assert "MANUFACTURED FG FLOW | period=2026-12 | item_group=Furniture |" in log_text
+    assert "production_to_shipment_ratio=" in log_text
 
     pattern = re.compile(
         r"MANUFACTURING CONVERSION \| 2026-(\d{2}) \| eligible_planned=(\d+) \| converted=(\d+) \| expired=(\d+) .*? conversion_rate=([0-9.]+)"

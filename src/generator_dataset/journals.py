@@ -6,6 +6,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from generator_dataset.fixed_assets import depreciable_fixed_asset_profiles, fixed_asset_profile
 from generator_dataset.master_data import approver_employee_id, current_role_employee_id, valid_employees
 from generator_dataset.payroll import (
     monthly_direct_labor_reclass_amount,
@@ -80,25 +81,6 @@ ACCRUAL_ACCOUNT_METADATA = {
 ACCRUAL_ADJUSTMENTS_PER_YEAR = 1
 ACCRUAL_ADJUSTMENT_MIN_AGE_DAYS = 90
 ACCRUAL_ADJUSTMENT_MIN_AMOUNT = 250.0
-
-OPENING_FIXED_ASSET_BALANCES = {
-    "1110": 260000.0,
-    "1120": 850000.0,
-    "1130": 180000.0,
-}
-
-ACCUMULATED_DEPRECIATION_ACCOUNTS = {
-    "1110": "1150",
-    "1120": "1160",
-    "1130": "1170",
-}
-
-USEFUL_LIFE_MONTHS = {
-    "1110": 84,
-    "1120": 120,
-    "1130": 60,
-}
-
 
 def account_id_by_number(context: GenerationContext, account_number: str) -> int:
     accounts = context.tables["Account"]
@@ -441,7 +423,31 @@ def monthly_accrual_amount(context: GenerationContext, year: int, month: int, ac
 
 
 def monthly_depreciation_amount(asset_account_number: str) -> float:
-    return money(OPENING_FIXED_ASSET_BALANCES[asset_account_number] / USEFUL_LIFE_MONTHS[asset_account_number])
+    profile = fixed_asset_profile(asset_account_number)
+    if profile.useful_life_months <= 0:
+        return 0.0
+    return money(float(profile.gross_opening_balance) / float(profile.useful_life_months))
+
+
+def accumulated_depreciation_balance(context: GenerationContext, asset_account_number: str) -> float:
+    profile = fixed_asset_profile(asset_account_number)
+    accumulated_account_number = profile.accumulated_depreciation_account_number
+    if not accumulated_account_number:
+        return 0.0
+    gl = context.tables["GLEntry"]
+    if gl.empty:
+        return 0.0
+    account_rows = gl[gl["AccountID"].astype(int).eq(account_id_by_number(context, accumulated_account_number))]
+    if account_rows.empty:
+        return 0.0
+    return money(float(account_rows["Credit"].astype(float).sum()) - float(account_rows["Debit"].astype(float).sum()))
+
+
+def remaining_depreciable_base(context: GenerationContext, asset_account_number: str) -> float:
+    profile = fixed_asset_profile(asset_account_number)
+    return money(
+        max(float(profile.gross_opening_balance) - float(accumulated_depreciation_balance(context, asset_account_number)), 0.0)
+    )
 
 
 def generate_payroll_accruals(context: GenerationContext, year: int, month: int) -> None:
@@ -745,14 +751,11 @@ def generate_depreciation_journals(context: GenerationContext, year: int, month:
     posting_date = last_calendar_day(year, month).strftime("%Y-%m-%d")
     creator_id = close_journal_creator_id(context)
     approver_id = close_journal_approver_id(context)
-    descriptions = {
-        "1110": "Furniture and fixtures depreciation",
-        "1120": "Warehouse equipment depreciation",
-        "1130": "Office equipment depreciation",
-    }
-
-    for asset_account_number, asset_description in descriptions.items():
-        amount = monthly_depreciation_amount(asset_account_number)
+    for asset_account_number, profile in depreciable_fixed_asset_profiles().items():
+        asset_description = f"{profile.description} depreciation"
+        amount = money(min(monthly_depreciation_amount(asset_account_number), remaining_depreciable_base(context, asset_account_number)))
+        if amount <= 0:
+            continue
         create_journal(
             context,
             posting_date,
@@ -767,7 +770,7 @@ def generate_depreciation_journals(context: GenerationContext, year: int, month:
                     "CostCenterID": None,
                 },
                 {
-                    "AccountNumber": ACCUMULATED_DEPRECIATION_ACCOUNTS[asset_account_number],
+                    "AccountNumber": str(profile.accumulated_depreciation_account_number),
                     "Debit": 0.0,
                     "Credit": amount,
                     "Description": f"Accumulated depreciation for {asset_description.lower()}",

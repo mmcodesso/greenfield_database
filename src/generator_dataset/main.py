@@ -80,6 +80,8 @@ from generator_dataset.planning import (
     generate_demand_forecasts,
     generate_inventory_policies,
     generate_month_planning,
+    inventory_position_as_of,
+    manufactured_planning_diagnostics,
 )
 from generator_dataset.posting_engine import post_all_transactions
 from generator_dataset.schema import create_empty_tables
@@ -445,6 +447,164 @@ def log_opening_state_shock_diagnostics(context: GenerationContext) -> None:
                     supply_mode,
                     round(float(quantity), 2),
                 )
+
+
+def manufactured_fg_flow_diagnostics(context: GenerationContext) -> list[dict[str, Any]]:
+    items = context.tables["Item"][["ItemID", "ItemGroup", "SupplyMode", "RevenueAccountID", "StandardCost"]].copy()
+    items = items[
+        items["SupplyMode"].eq("Manufactured")
+        & items["RevenueAccountID"].notna()
+    ].copy()
+    if items.empty:
+        return []
+
+    items["ItemID"] = items["ItemID"].astype(int)
+    item_lookup = items.set_index("ItemID").to_dict("index")
+    completion_grouped: dict[tuple[str, str], dict[str, float]] = {}
+    shipment_grouped: dict[tuple[str, str], dict[str, float]] = {}
+
+    completions = context.tables["ProductionCompletion"]
+    completion_lines = context.tables["ProductionCompletionLine"]
+    if not completions.empty and not completion_lines.empty:
+        completion_rows = completion_lines.merge(
+            completions[["ProductionCompletionID", "CompletionDate"]],
+            on="ProductionCompletionID",
+            how="left",
+        )
+        completion_rows["Period"] = completion_rows["CompletionDate"].astype(str).str.slice(0, 7)
+        completion_rows = completion_rows[completion_rows["ItemID"].astype(int).isin(item_lookup)].copy()
+        if not completion_rows.empty:
+            completion_rows["ItemGroup"] = completion_rows["ItemID"].astype(int).map(
+                lambda item_id: str(item_lookup[int(item_id)]["ItemGroup"])
+            )
+            grouped = completion_rows.groupby(["Period", "ItemGroup"]).agg(
+                CompletionQuantity=("QuantityCompleted", lambda values: round(float(pd.to_numeric(values, errors="coerce").fillna(0.0).sum()), 2)),
+                CompletionCost=("ExtendedStandardTotalCost", lambda values: round(float(pd.to_numeric(values, errors="coerce").fillna(0.0).sum()), 2)),
+            )
+            completion_grouped = {
+                (str(period), str(item_group)): {
+                    "completion_quantity": float(row["CompletionQuantity"]),
+                    "completion_cost": float(row["CompletionCost"]),
+                }
+                for (period, item_group), row in grouped.iterrows()
+            }
+
+    shipments = context.tables["Shipment"]
+    shipment_lines = context.tables["ShipmentLine"]
+    if not shipments.empty and not shipment_lines.empty:
+        shipment_rows = shipment_lines.merge(
+            shipments[["ShipmentID", "ShipmentDate"]],
+            on="ShipmentID",
+            how="left",
+        )
+        shipment_rows["Period"] = shipment_rows["ShipmentDate"].astype(str).str.slice(0, 7)
+        shipment_rows = shipment_rows[shipment_rows["ItemID"].astype(int).isin(item_lookup)].copy()
+        if not shipment_rows.empty:
+            shipment_rows["ItemGroup"] = shipment_rows["ItemID"].astype(int).map(
+                lambda item_id: str(item_lookup[int(item_id)]["ItemGroup"])
+            )
+            grouped = shipment_rows.groupby(["Period", "ItemGroup"]).agg(
+                ShipmentQuantity=("QuantityShipped", lambda values: round(float(pd.to_numeric(values, errors="coerce").fillna(0.0).sum()), 2)),
+                ShipmentCost=("ExtendedStandardCost", lambda values: round(float(pd.to_numeric(values, errors="coerce").fillna(0.0).sum()), 2)),
+            )
+            shipment_grouped = {
+                (str(period), str(item_group)): {
+                    "shipment_quantity": float(row["ShipmentQuantity"]),
+                    "shipment_cost": float(row["ShipmentCost"]),
+                }
+                for (period, item_group), row in grouped.iterrows()
+            }
+
+    results: list[dict[str, Any]] = []
+    fiscal_start = pd.Timestamp(context.settings.fiscal_year_start).normalize()
+    fiscal_end = pd.Timestamp(context.settings.fiscal_year_end).normalize()
+    for month_start in pd.date_range(fiscal_start.replace(day=1), fiscal_end.replace(day=1), freq="MS"):
+        month_end = month_start + pd.offsets.MonthEnd(1)
+        opening_position = inventory_position_as_of(context, month_start - pd.Timedelta(days=1))
+        ending_position = inventory_position_as_of(context, month_end)
+        period_label = month_start.strftime("%Y-%m")
+        for item_group in sorted(items["ItemGroup"].astype(str).unique()):
+            item_ids = items.loc[items["ItemGroup"].astype(str).eq(item_group), "ItemID"].astype(int).tolist()
+            opening_quantity = 0.0
+            opening_value = 0.0
+            ending_quantity = 0.0
+            ending_value = 0.0
+            for item_id in item_ids:
+                standard_cost = float(item_lookup[int(item_id)]["StandardCost"] or 0.0)
+                for (position_item_id, _warehouse_id), quantity in opening_position.items():
+                    if int(position_item_id) != int(item_id):
+                        continue
+                    opening_quantity += float(quantity)
+                    opening_value += float(quantity) * standard_cost
+                for (position_item_id, _warehouse_id), quantity in ending_position.items():
+                    if int(position_item_id) != int(item_id):
+                        continue
+                    ending_quantity += float(quantity)
+                    ending_value += float(quantity) * standard_cost
+            completion_metrics = completion_grouped.get((period_label, item_group), {})
+            shipment_metrics = shipment_grouped.get((period_label, item_group), {})
+            completion_quantity = round(float(completion_metrics.get("completion_quantity", 0.0)), 2)
+            completion_cost = round(float(completion_metrics.get("completion_cost", 0.0)), 2)
+            shipment_quantity = round(float(shipment_metrics.get("shipment_quantity", 0.0)), 2)
+            shipment_cost = round(float(shipment_metrics.get("shipment_cost", 0.0)), 2)
+            results.append({
+                "Period": period_label,
+                "ItemGroup": item_group,
+                "OpeningFGQuantity": round(opening_quantity, 2),
+                "OpeningFGValue": round(opening_value, 2),
+                "CompletionQuantity": completion_quantity,
+                "CompletionCost": completion_cost,
+                "ShipmentQuantity": shipment_quantity,
+                "ShipmentCost": shipment_cost,
+                "EndingFGQuantity": round(ending_quantity, 2),
+                "EndingFGValue": round(ending_value, 2),
+                "ProductionToShipmentRatio": round(completion_cost / shipment_cost, 2) if shipment_cost > 0 else 0.0,
+                "QuantityGap": round(completion_quantity - shipment_quantity, 2),
+                "CostGap": round(completion_cost - shipment_cost, 2),
+            })
+    return results
+
+
+def log_manufactured_planning_diagnostics(context: GenerationContext) -> None:
+    for row in manufactured_planning_diagnostics(context):
+        LOGGER.info(
+            "MANUFACTURED PLANNING DIAGNOSTIC | recommendation_month=%s | bucket_week_start=%s | item_id=%s | warehouse_id=%s | item_group=%s | lifecycle_status=%s | forecast_quantity=%s | backlog_quantity=%s | gross_requirement_quantity=%s | projected_available_before_replenishment=%s | safety_stock_target_quantity=%s | net_requirement_quantity=%s | recommended_order_quantity=%s | lot_size_uplift_quantity=%s | policy_type=%s",
+            row["RecommendationMonth"],
+            row["BucketWeekStartDate"],
+            row["ItemID"],
+            row["WarehouseID"],
+            row["ItemGroup"],
+            row["LifecycleStatus"],
+            row["ForecastQuantity"],
+            row["BacklogQuantity"],
+            row["GrossRequirementQuantity"],
+            row["ProjectedAvailableBeforeReplenishment"],
+            row["SafetyStockTargetQuantity"],
+            row["NetRequirementQuantity"],
+            row["RecommendedOrderQuantity"],
+            row["LotSizeUpliftQuantity"],
+            row["PolicyType"],
+        )
+
+
+def log_manufactured_flow_diagnostics(context: GenerationContext) -> None:
+    for row in manufactured_fg_flow_diagnostics(context):
+        LOGGER.info(
+            "MANUFACTURED FG FLOW | period=%s | item_group=%s | opening_fg_quantity=%s | opening_fg_value=%s | completions_quantity=%s | completions_cost=%s | shipments_quantity=%s | shipments_cost=%s | ending_fg_quantity=%s | ending_fg_value=%s | production_to_shipment_ratio=%s | quantity_gap=%s | cost_gap=%s",
+            row["Period"],
+            row["ItemGroup"],
+            row["OpeningFGQuantity"],
+            row["OpeningFGValue"],
+            row["CompletionQuantity"],
+            row["CompletionCost"],
+            row["ShipmentQuantity"],
+            row["ShipmentCost"],
+            row["EndingFGQuantity"],
+            row["EndingFGValue"],
+            row["ProductionToShipmentRatio"],
+            row["QuantityGap"],
+            row["CostGap"],
+        )
 
 
 def _run_month_step(
@@ -1388,6 +1548,8 @@ def build_full_dataset(
 
     with logged_step("Log opening-state diagnostics"):
         log_opening_state_shock_diagnostics(context)
+        log_manufactured_planning_diagnostics(context)
+        log_manufactured_flow_diagnostics(context)
 
     with logged_step("Validate clean final dataset"):
         log_validation_results("phase23", validate_phase23(context, scope=validation_scope))

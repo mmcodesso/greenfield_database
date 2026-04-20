@@ -8,6 +8,7 @@ import pandas as pd
 import pytest
 import yaml
 
+from generator_dataset.fixed_assets import fixed_asset_opening_profiles
 from generator_dataset.main import build_full_dataset
 from generator_dataset.main import build_phase2, build_phase22
 from generator_dataset.planning import opening_inventory_diagnostics, projected_monthly_procurement_cost
@@ -151,6 +152,20 @@ def test_phase22_phase2_opening_balances_align_with_seeded_inventory() -> None:
     opening_ap = float(opening_gl.loc[opening_gl["AccountNumber"].astype(str).eq("2010"), "Credit"].sum())
     assert round(opening_cash, 2) >= round(projected_procurement, 2)
     assert round(opening_ap, 2) >= round(projected_procurement, 2)
+
+    for profile in fixed_asset_opening_profiles().values():
+        gross_debit = float(
+            opening_gl.loc[opening_gl["AccountNumber"].astype(str).eq(profile.asset_account_number), "Debit"].sum()
+        )
+        assert round(gross_debit, 2) == round(float(profile.gross_opening_balance), 2)
+        if profile.accumulated_depreciation_account_number:
+            accumulated_credit = float(
+                opening_gl.loc[
+                    opening_gl["AccountNumber"].astype(str).eq(profile.accumulated_depreciation_account_number),
+                    "Credit",
+                ].sum()
+            )
+            assert round(accumulated_credit, 2) == round(float(profile.opening_accumulated_depreciation), 2)
 
 
 def test_phase22_queries_execute_and_return_expected_rows(

@@ -64,13 +64,14 @@ PURCHASED_POLICY_LEAD_DAYS = {
     "Raw Materials": 28,
 }
 MANUFACTURED_TARGET_UTILIZATION = 0.85
-MANUFACTURED_POLICY_BUFFER_DAYS = 7
-MANUFACTURED_POLICY_MIN_LEAD_DAYS = 21
-MANUFACTURED_POLICY_MAX_LEAD_DAYS = 42
+MANUFACTURED_POLICY_BUFFER_DAYS = 4
+MANUFACTURED_POLICY_MIN_LEAD_DAYS = 14
+MANUFACTURED_POLICY_MAX_LEAD_DAYS = 28
 WORKING_DAY_TO_CALENDAR_DAY_FACTOR = 7.0 / 5.0
 DEMAND_FORECAST_PROGRESS_INTERVAL = 25
+PLANNING_HORIZON_WEEKS = 12
 MANUFACTURED_COMPONENT_NEED_OFFSET_DAYS = 14
-MANUFACTURED_FORECAST_LOAD_MULTIPLIER = 3.5
+MANUFACTURED_FORECAST_LOAD_MULTIPLIER = 2.75
 FINISHED_GOODS_OPENING_STOCK_FACTOR = 0.65
 OPENING_SELLABLE_COVERAGE_WEEKS_BY_SUPPLY_MODE = {
     "Manufactured": 4.0,
@@ -81,6 +82,15 @@ OPENING_COMPONENT_COVERAGE_WEEKS_BY_GROUP = {
     "Packaging": 8.0,
 }
 OPENING_PROCUREMENT_RUN_RATE_WEEKS = 8.0
+OPENING_STATE_MANUFACTURED_FORECAST_MULTIPLIER = 3.5
+MANUFACTURED_TARGET_DAYS_BY_LIFECYCLE = {
+    "Core": 14,
+    "Seasonal": 18,
+}
+MANUFACTURED_SAFETY_STOCK_BY_LIFECYCLE = {
+    "Core": 10.0,
+    "Seasonal": 14.0,
+}
 
 
 def append_rows(context: GenerationContext, table_name: str, rows: list[dict[str, Any]]) -> None:
@@ -175,6 +185,17 @@ def _base_opening_inventory_total_quantity(context: GenerationContext, item: Any
     return int(total_qty)
 
 
+def _opening_state_forecast_quantity(row: pd.Series) -> float:
+    quantity = float(row.get("ForecastQuantity", 0.0) or 0.0)
+    supply_mode = str(row.get("SupplyMode", ""))
+    if supply_mode != "Manufactured":
+        return quantity
+    if MANUFACTURED_FORECAST_LOAD_MULTIPLIER <= 0:
+        return quantity
+    opening_multiplier_ratio = OPENING_STATE_MANUFACTURED_FORECAST_MULTIPLIER / MANUFACTURED_FORECAST_LOAD_MULTIPLIER
+    return round(quantity * opening_multiplier_ratio, 2)
+
+
 def opening_sellable_demand_by_item_warehouse(
     context: GenerationContext,
     coverage_weeks_by_supply_mode: dict[str, float] | None = None,
@@ -206,7 +227,8 @@ def opening_sellable_demand_by_item_warehouse(
     if rows.empty:
         return {}
 
-    grouped = rows.groupby(["ItemID", "WarehouseID"])["ForecastQuantity"].sum().round(2)
+    rows["OpeningCoverageForecastQuantity"] = rows.apply(_opening_state_forecast_quantity, axis=1)
+    grouped = rows.groupby(["ItemID", "WarehouseID"])["OpeningCoverageForecastQuantity"].sum().round(2)
     return {
         (int(item_id), int(warehouse_id)): float(quantity)
         for (item_id, warehouse_id), quantity in grouped.items()
@@ -272,8 +294,9 @@ def opening_component_demand_by_item_warehouse(
     if rows.empty:
         return {}
 
+    rows["OpeningCoverageForecastQuantity"] = rows.apply(_opening_state_forecast_quantity, axis=1)
     rows["ProjectedComponentQuantity"] = (
-        rows["ForecastQuantity"].astype(float)
+        rows["OpeningCoverageForecastQuantity"].astype(float)
         * rows["QuantityPerUnit"].astype(float)
         * (1.0 + rows["ScrapFactorPct"].astype(float) / 100.0)
     )
@@ -394,6 +417,50 @@ def projected_monthly_procurement_cost(context: GenerationContext) -> float:
     monthly_cost = money((purchased_sellable_cost + component_cost) / max(OPENING_PROCUREMENT_RUN_RATE_WEEKS / 4.0, 1.0))
     setattr(context, "_planning_projected_monthly_procurement_cost_cache", float(monthly_cost))
     return float(monthly_cost)
+
+
+def _manufactured_planning_trace_store(
+    context: GenerationContext,
+) -> dict[tuple[str, int, int], dict[str, Any]]:
+    store = getattr(context, "manufactured_planning_recommendation_trace", None)
+    if store is None:
+        store = {}
+        setattr(context, "manufactured_planning_recommendation_trace", store)
+    return store
+
+
+def record_manufactured_planning_diagnostic(
+    context: GenerationContext,
+    *,
+    bucket_week_start_date: pd.Timestamp,
+    item_id: int,
+    warehouse_id: int,
+    row: dict[str, Any] | None,
+) -> None:
+    trace_store = _manufactured_planning_trace_store(context)
+    trace_key = (bucket_week_start_date.strftime("%Y-%m-%d"), int(item_id), int(warehouse_id))
+    if row is None:
+        trace_store.pop(trace_key, None)
+        return
+    trace_store[trace_key] = dict(row)
+
+
+def manufactured_planning_diagnostics(context: GenerationContext) -> list[dict[str, Any]]:
+    trace_store = getattr(context, "manufactured_planning_recommendation_trace", None)
+    if not trace_store:
+        return []
+    return [
+        dict(row)
+        for _key, row in sorted(
+            trace_store.items(),
+            key=lambda item: (
+                str(item[1]["RecommendationMonth"]),
+                str(item[1]["BucketWeekStartDate"]),
+                int(item[1]["ItemID"]),
+                int(item[1]["WarehouseID"]),
+            ),
+        )
+    ]
 
 
 def opening_inventory_map(context: GenerationContext) -> dict[tuple[int, int], float]:
@@ -589,6 +656,30 @@ def week_starts_in_fiscal_range(context: GenerationContext) -> list[pd.Timestamp
         current = current + pd.Timedelta(days=7)
 
     setattr(context, "_planning_week_starts_cache", list(week_starts))
+    return week_starts
+
+
+def planning_horizon_week_starts(month_start: pd.Timestamp | str) -> list[pd.Timestamp]:
+    current_week_start = week_start(pd.Timestamp(month_start).normalize())
+    return [current_week_start + pd.Timedelta(days=7 * offset) for offset in range(PLANNING_HORIZON_WEEKS)]
+
+
+def week_starts_in_planning_range(context: GenerationContext) -> list[pd.Timestamp]:
+    cached = getattr(context, "_planning_extended_week_starts_cache", None)
+    if cached is not None:
+        return list(cached)
+
+    fiscal_start, fiscal_end = fiscal_bounds(context)
+    fiscal_end_month_start = fiscal_end.replace(day=1)
+    horizon_starts = planning_horizon_week_starts(fiscal_end_month_start)
+    planning_end = horizon_starts[-1] if horizon_starts else week_start(fiscal_end)
+    current = week_start(fiscal_start)
+    week_starts: list[pd.Timestamp] = []
+    while current <= planning_end:
+        week_starts.append(current)
+        current = current + pd.Timedelta(days=7)
+
+    setattr(context, "_planning_extended_week_starts_cache", list(week_starts))
     return week_starts
 
 
@@ -909,6 +1000,11 @@ def generate_inventory_policies(context: GenerationContext) -> None:
             safety_stock = 20.0
             reorder_quantity = 40.0
             lifecycle_status = str(getattr(item, "LifecycleStatus", "Core"))
+            is_manufactured_sellable = (
+                str(item.SupplyMode) == "Manufactured"
+                and pd.notna(getattr(item, "RevenueAccountID", None))
+                and str(item.ItemGroup) not in {"Packaging", "Raw Materials", "Services"}
+            )
             if str(item.ItemGroup) in {"Raw Materials", "Packaging"}:
                 parent_usage_count = int(component_parent_usage_counts.get(int(item.ItemID), 0))
                 usage_factor = min(3.0, 1.0 + parent_usage_count * 0.22)
@@ -929,13 +1025,15 @@ def generate_inventory_policies(context: GenerationContext) -> None:
                 safety_stock = 18.0
                 reorder_quantity = 36.0
 
-            if str(item.SupplyMode) == "Manufactured":
-                policy_type = "Min-Max"
-                reorder_quantity = max(float(reorder_quantity), 48.0 if lifecycle_status == "Core" else 60.0)
+            if is_manufactured_sellable:
+                target_days = int(MANUFACTURED_TARGET_DAYS_BY_LIFECYCLE.get(lifecycle_status, 14))
+                safety_stock = float(MANUFACTURED_SAFETY_STOCK_BY_LIFECYCLE.get(lifecycle_status, 10.0))
+                reorder_quantity = max(float(safety_stock), 1.0)
+                policy_type = "Lot-for-Lot"
                 typical_manufacturing_lot = max(
-                    float(reorder_quantity),
-                    float(safety_stock) * 4.0,
-                    float(target_days) * 6.0,
+                    float(safety_stock) * 3.0,
+                    float(target_days) * 4.0,
+                    24.0,
                 )
                 planning_lead_time_days = _manufactured_planning_lead_time_days(
                     int(item.ItemID),
@@ -986,8 +1084,8 @@ def generate_demand_forecasts(context: GenerationContext) -> None:
         return
 
     rows: list[dict[str, Any]] = []
-    weeks = week_starts_in_fiscal_range(context)
-    fiscal_start, _ = fiscal_bounds(context)
+    weeks = week_starts_in_planning_range(context)
+    fiscal_start, fiscal_end = fiscal_bounds(context)
     week_metadata = [
         (
             int(week_index),
@@ -1078,7 +1176,7 @@ def generate_demand_forecasts(context: GenerationContext) -> None:
                     forecast_method = "Lifecycle Adjusted"
                 else:
                     forecast_method = "Seasonal Trend"
-                approved_date = max(fiscal_start, bucket_start - pd.Timedelta(days=10))
+                approved_date = min(fiscal_end, max(fiscal_start, bucket_start - pd.Timedelta(days=10)))
                 rows.append({
                     "DemandForecastID": next_id(context, "DemandForecast"),
                     "ForecastWeekStartDate": bucket_start.strftime("%Y-%m-%d"),
@@ -1263,8 +1361,7 @@ def generate_month_planning(context: GenerationContext, year: int, month: int) -
         generate_demand_forecasts(context)
 
     month_start, month_end = month_bounds(year, month)
-    current_week_start = week_start(month_start)
-    horizon_starts = [current_week_start + pd.Timedelta(days=7 * offset) for offset in range(12)]
+    horizon_starts = planning_horizon_week_starts(month_start)
     if not horizon_starts:
         return
 
@@ -1378,7 +1475,10 @@ def generate_month_planning(context: GenerationContext, year: int, month: int) -
                 backlog_qty = 0.0
                 if int(warehouse_id) == int(ranked_warehouses[0]):
                     backlog_qty = float(backlog.get((bucket_start.strftime("%Y-%m-%d"), int(item.ItemID)), 0.0))
-                gross_requirement = round(forecast_qty + backlog_qty, 2)
+                if str(item.SupplyMode) == "Manufactured" and int(warehouse_id) == int(ranked_warehouses[0]):
+                    gross_requirement = round(max(forecast_qty, backlog_qty), 2)
+                else:
+                    gross_requirement = round(forecast_qty + backlog_qty, 2)
                 recommendation_key = (bucket_start.strftime("%Y-%m-%d"), int(item.ItemID), int(warehouse_id))
                 existing_planned_manufacture_qty = existing_planned_manufacture_quantities.get(recommendation_key, 0.0)
                 scheduled_supply = round(
@@ -1395,6 +1495,31 @@ def generate_month_planning(context: GenerationContext, year: int, month: int) -
                 projected_after_demand = round(projected_available + scheduled_supply - gross_requirement, 2)
                 net_requirement = max(0.0, round(safety_stock - projected_after_demand, 2))
                 recommended_order_quantity = _adjust_recommendation_quantity(policy_type, reorder_qty, net_requirement)
+                if str(item.SupplyMode) == "Manufactured":
+                    record_manufactured_planning_diagnostic(
+                        context,
+                        bucket_week_start_date=bucket_start,
+                        item_id=int(item.ItemID),
+                        warehouse_id=int(warehouse_id),
+                        row={
+                            "RecommendationMonth": month_start.strftime("%Y-%m"),
+                            "BucketWeekStartDate": bucket_start.strftime("%Y-%m-%d"),
+                            "BucketWeekEndDate": bucket_end.strftime("%Y-%m-%d"),
+                            "ItemID": int(item.ItemID),
+                            "WarehouseID": int(warehouse_id),
+                            "ItemGroup": str(item.ItemGroup),
+                            "LifecycleStatus": str(item.LifecycleStatus),
+                            "ForecastQuantity": qty(forecast_qty),
+                            "BacklogQuantity": qty(backlog_qty),
+                            "GrossRequirementQuantity": qty(gross_requirement),
+                            "ProjectedAvailableBeforeReplenishment": qty(projected_after_demand),
+                            "SafetyStockTargetQuantity": qty(safety_stock),
+                            "NetRequirementQuantity": qty(net_requirement),
+                            "RecommendedOrderQuantity": qty(recommended_order_quantity),
+                            "LotSizeUpliftQuantity": qty(max(0.0, round(recommended_order_quantity - net_requirement, 2))),
+                            "PolicyType": policy_type,
+                        } if recommended_order_quantity > 0 else None,
+                    )
                 projected_available = round(projected_after_demand + recommended_order_quantity, 2)
                 if recommended_order_quantity <= 0:
                     continue
