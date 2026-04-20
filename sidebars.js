@@ -13,6 +13,8 @@ const sidebars = {
         "start-here/why-this-dataset",
         "start-here/downloads",
         "start-here/dataset-overview",
+        "start-here/accounting-analytics-dataset",
+        "start-here/accounting-sql-practice-database",
       ],
     },
     {

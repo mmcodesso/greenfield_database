@@ -1,3 +1,7 @@
+---
+description: Learn the manufacturing process in the synthetic accounting analytics dataset, from planning and work orders to material issue, production completion, close, and GLEntry.
+---
+
 # Manufacturing Process
 
 ## What Students Should Learn

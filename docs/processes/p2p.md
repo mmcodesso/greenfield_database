@@ -1,3 +1,7 @@
+---
+description: Learn the procure-to-pay process in the synthetic accounting analytics dataset, from requisitions and receipts to supplier invoices, disbursements, and GLEntry.
+---
+
 # Procure-to-Pay Process
 
 ## What Students Should Learn

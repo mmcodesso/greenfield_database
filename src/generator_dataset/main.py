@@ -237,13 +237,13 @@ def _generate_phase2_master_data_and_planning(
         ("Generate phase 2 price lists", generate_price_lists),
         ("Generate phase 2 promotions", generate_promotions),
         ("Generate phase 2 suppliers", generate_suppliers),
-        ("Generate phase 2 opening balances", generate_opening_balances),
-        ("Generate phase 2 budgets", generate_budgets),
         ("Generate phase 2 payroll periods", generate_payroll_periods),
         ("Generate phase 2 shift definitions and assignments", generate_shift_definitions_and_assignments),
         ("Synchronize phase 2 work-center capacity and calendars", synchronize_work_center_capacity_and_calendars),
         ("Generate phase 2 inventory policies", generate_inventory_policies),
         ("Generate phase 2 demand forecasts", generate_demand_forecasts),
+        ("Generate phase 2 opening balances", generate_opening_balances),
+        ("Generate phase 2 budgets", generate_budgets),
     ]
     for step_name, generator in phase2_generators:
         _run_generation_step(context, step_name, generator, log_substeps=log_substeps)
@@ -251,6 +251,200 @@ def _generate_phase2_master_data_and_planning(
 
 def synchronize_work_center_capacity_and_calendars(context: GenerationContext) -> None:
     sync_work_center_capacity_from_assignments(context, regenerate_calendar=True)
+
+
+def log_opening_state_shock_diagnostics(context: GenerationContext) -> None:
+    fiscal_start = pd.Timestamp(context.settings.fiscal_year_start).normalize()
+    first_period_label = fiscal_start.strftime("%Y-%m")
+    comparison_periods = [
+        (fiscal_start + pd.DateOffset(months=offset)).strftime("%Y-%m")
+        for offset in range(1, 6)
+    ]
+
+    def steady_state_median(values: dict[str, float]) -> float:
+        series = [float(values.get(period, 0.0)) for period in comparison_periods if float(values.get(period, 0.0)) > 0]
+        if not series:
+            return 0.0
+        return round(float(pd.Series(series).median()), 2)
+
+    purchase_orders = context.tables["PurchaseOrder"]
+    po_monthly = {}
+    if not purchase_orders.empty:
+        po_monthly = {
+            str(period): round(float(amount), 2)
+            for period, amount in purchase_orders.groupby(
+                purchase_orders["OrderDate"].astype(str).str.slice(0, 7)
+            )["OrderTotal"].sum().items()
+        }
+
+    goods_receipts = context.tables["GoodsReceipt"]
+    goods_receipt_lines = context.tables["GoodsReceiptLine"]
+    gr_monthly = {}
+    if not goods_receipts.empty and not goods_receipt_lines.empty:
+        gr = goods_receipt_lines.merge(
+            goods_receipts[["GoodsReceiptID", "ReceiptDate"]],
+            on="GoodsReceiptID",
+            how="left",
+        )
+        gr_monthly = {
+            str(period): round(float(amount), 2)
+            for period, amount in gr.groupby(gr["ReceiptDate"].astype(str).str.slice(0, 7))["ExtendedStandardCost"].sum().items()
+        }
+
+    purchase_invoices = context.tables["PurchaseInvoice"]
+    pi_monthly = {}
+    if not purchase_invoices.empty:
+        pi_monthly = {
+            str(period): round(float(amount), 2)
+            for period, amount in purchase_invoices.groupby(
+                purchase_invoices["InvoiceDate"].astype(str).str.slice(0, 7)
+            )["GrandTotal"].sum().items()
+        }
+
+    disbursements = context.tables["DisbursementPayment"]
+    disbursement_monthly = {}
+    if not disbursements.empty:
+        disbursement_monthly = {
+            str(period): round(float(amount), 2)
+            for period, amount in disbursements.groupby(
+                disbursements["PaymentDate"].astype(str).str.slice(0, 7)
+            )["Amount"].sum().items()
+        }
+
+    gl = context.tables["GLEntry"]
+    accounts = context.tables["Account"][["AccountID", "AccountNumber"]].copy()
+    gl_accounts = gl.merge(accounts, on="AccountID", how="left") if not gl.empty else gl.head(0).copy()
+    journal_entries = context.tables["JournalEntry"][["JournalEntryID", "EntryType"]].copy()
+    if not gl_accounts.empty and not journal_entries.empty:
+        gl_accounts = gl_accounts.merge(
+            journal_entries.rename(columns={"JournalEntryID": "SourceDocumentID", "EntryType": "JournalEntryType"}),
+            on="SourceDocumentID",
+            how="left",
+        )
+    if not gl_accounts.empty:
+        gl_accounts = gl_accounts[
+            ~(
+                gl_accounts["SourceDocumentType"].eq("JournalEntry")
+                & gl_accounts.get("JournalEntryType", pd.Series(index=gl_accounts.index, dtype=object)).eq("Opening")
+            )
+        ].copy()
+
+    supplier_cash_monthly = {}
+    ap_activity_monthly = {}
+    fg_activity_monthly = {}
+    materials_activity_monthly = {}
+    if not gl_accounts.empty:
+        supplier_cash_rows = gl_accounts[
+            gl_accounts["AccountNumber"].astype(str).eq("1010")
+            & gl_accounts["SourceDocumentType"].eq("DisbursementPayment")
+        ].copy()
+        supplier_cash_monthly = {
+            str(period): round(float(-amount), 2)
+            for period, amount in supplier_cash_rows.groupby(
+                supplier_cash_rows["PostingDate"].astype(str).str.slice(0, 7)
+            ).apply(lambda rows: (rows["Debit"].astype(float) - rows["Credit"].astype(float)).sum()).items()
+        }
+
+        for account_number, target in [("2010", ap_activity_monthly), ("1040", fg_activity_monthly), ("1045", materials_activity_monthly)]:
+            target_rows = gl_accounts[gl_accounts["AccountNumber"].astype(str).eq(account_number)].copy()
+            if target_rows.empty:
+                continue
+            if account_number == "2010":
+                grouped = target_rows.groupby(target_rows["PostingDate"].astype(str).str.slice(0, 7)).apply(
+                    lambda rows: (rows["Credit"].astype(float) - rows["Debit"].astype(float)).sum()
+                )
+            else:
+                grouped = target_rows.groupby(target_rows["PostingDate"].astype(str).str.slice(0, 7)).apply(
+                    lambda rows: (rows["Debit"].astype(float) - rows["Credit"].astype(float)).sum()
+                )
+            target.update({str(period): round(float(amount), 2) for period, amount in grouped.items()})
+
+    metric_map = {
+        "purchase_order_total": po_monthly,
+        "goods_receipt_cost": gr_monthly,
+        "purchase_invoice_total": pi_monthly,
+        "disbursement_total": disbursement_monthly,
+        "supplier_cash_gl": supplier_cash_monthly,
+        "ap_gl_activity": ap_activity_monthly,
+        "fg_inventory_gl_activity": fg_activity_monthly,
+        "materials_inventory_gl_activity": materials_activity_monthly,
+    }
+    for metric_name, values in metric_map.items():
+        first_value = round(float(values.get(first_period_label, 0.0)), 2)
+        median_value = steady_state_median(values)
+        ratio = round(first_value / median_value, 2) if median_value > 0 else 0.0
+        LOGGER.info(
+            "OPENING STATE SHOCK | metric=%s | first_period=%s | first_value=%s | steady_state_median=%s | ratio=%s",
+            metric_name,
+            first_period_label,
+            first_value,
+            median_value,
+            ratio,
+        )
+
+    items = context.tables["Item"][["ItemID", "ItemGroup", "SupplyMode"]].copy()
+    if not items.empty and not goods_receipts.empty and not goods_receipt_lines.empty and not purchase_orders.empty:
+        first_period_purchase_lines = context.tables["PurchaseOrderLine"].merge(
+            purchase_orders[["PurchaseOrderID", "OrderDate"]],
+            on="PurchaseOrderID",
+            how="left",
+        ).merge(items, on="ItemID", how="left")
+        first_period_purchase_lines = first_period_purchase_lines[
+            first_period_purchase_lines["OrderDate"].astype(str).str.slice(0, 7).eq(first_period_label)
+        ].copy()
+        purchase_mix = first_period_purchase_lines.groupby(["ItemGroup", "SupplyMode"])["LineTotal"].sum().sort_values(ascending=False)
+        for (item_group, supply_mode), amount in purchase_mix.head(8).items():
+            LOGGER.info(
+                "OPENING STATE MIX | period=%s | activity=purchase_order | item_group=%s | supply_mode=%s | amount=%s",
+                first_period_label,
+                item_group,
+                supply_mode,
+                round(float(amount), 2),
+            )
+
+        first_period_receipts = goods_receipt_lines.merge(
+            goods_receipts[["GoodsReceiptID", "ReceiptDate"]],
+            on="GoodsReceiptID",
+            how="left",
+        ).merge(items, on="ItemID", how="left")
+        first_period_receipts = first_period_receipts[
+            first_period_receipts["ReceiptDate"].astype(str).str.slice(0, 7).eq(first_period_label)
+        ].copy()
+        receipt_mix = first_period_receipts.groupby(["ItemGroup", "SupplyMode"])["ExtendedStandardCost"].sum().sort_values(ascending=False)
+        for (item_group, supply_mode), amount in receipt_mix.head(8).items():
+            LOGGER.info(
+                "OPENING STATE MIX | period=%s | activity=goods_receipt | item_group=%s | supply_mode=%s | amount=%s",
+                first_period_label,
+                item_group,
+                supply_mode,
+                round(float(amount), 2),
+            )
+
+    recommendations = context.tables["SupplyPlanRecommendation"]
+    if not recommendations.empty and not items.empty:
+        driver_window_start = (fiscal_start - pd.DateOffset(months=1)).replace(day=1)
+        driver_window_end = (fiscal_start + pd.offsets.MonthEnd(2)).normalize()
+        driver_rows = recommendations.merge(items[["ItemID", "ItemGroup"]], on="ItemID", how="left")
+        driver_rows["ReleaseByDateTS"] = pd.to_datetime(driver_rows["ReleaseByDate"], errors="coerce")
+        driver_rows = driver_rows[
+            driver_rows["ReleaseByDateTS"].notna()
+            & driver_rows["ReleaseByDateTS"].between(driver_window_start, driver_window_end)
+        ].copy()
+        if not driver_rows.empty:
+            driver_mix = driver_rows.groupby(
+                ["DriverType", "RecommendationType", "ItemGroup", "SupplyMode"]
+            )["RecommendedOrderQuantity"].sum().sort_values(ascending=False)
+            for (driver_type, recommendation_type, item_group, supply_mode), quantity in driver_mix.head(12).items():
+                LOGGER.info(
+                    "OPENING STATE DRIVER MIX | window=%s_to_%s | driver_type=%s | recommendation_type=%s | item_group=%s | supply_mode=%s | quantity=%s",
+                    driver_window_start.strftime("%Y-%m"),
+                    driver_window_end.strftime("%Y-%m"),
+                    driver_type,
+                    recommendation_type,
+                    item_group,
+                    supply_mode,
+                    round(float(quantity), 2),
+                )
 
 
 def _run_month_step(
@@ -297,6 +491,8 @@ def build_phase2(config_path: str | Path = "config/settings.yaml") -> Generation
     generate_work_center_calendars(context)
     generate_customers(context)
     generate_suppliers(context)
+    generate_inventory_policies(context)
+    generate_demand_forecasts(context)
     generate_opening_balances(context)
     generate_budgets(context)
     validate_phase2(context)
@@ -1189,6 +1385,9 @@ def build_full_dataset(
     with logged_step("Generate year-end close journals"):
         generate_year_end_close_journals(context)
         log_table_counts(context, ("JournalEntry", "GLEntry"), "year-end close")
+
+    with logged_step("Log opening-state diagnostics"):
+        log_opening_state_shock_diagnostics(context)
 
     with logged_step("Validate clean final dataset"):
         log_validation_results("phase23", validate_phase23(context, scope=validation_scope))

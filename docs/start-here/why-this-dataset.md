@@ -1,6 +1,6 @@
 ---
-title: Why This Dataset
-description: Why this integrated teaching model matters for accounting analytics courses.
+title: Why Use This Accounting Analytics Dataset
+description: Why this synthetic accounting analytics dataset works for SQL, Excel, audit, financial, managerial, and business-process teaching paths.
 slug: /why-this-dataset
 sidebar_label: Why This Dataset
 ---

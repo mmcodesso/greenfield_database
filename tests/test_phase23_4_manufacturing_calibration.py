@@ -161,6 +161,87 @@ def test_phase23_4_one_year_clean_build_hits_manufacturing_targets(
     assert 25.0 <= pack_median < 85.0
 
 
+def test_phase23_4_one_year_clean_build_smooths_opening_state_purchasing(
+    phase23_4_one_year_clean_artifacts: dict[str, object],
+) -> None:
+    context = phase23_4_one_year_clean_artifacts["context"]
+    fiscal_start = pd.Timestamp(context.settings.fiscal_year_start).normalize()
+    first_period_label = fiscal_start.strftime("%Y-%m")
+    steady_state_periods = [
+        (fiscal_start + pd.DateOffset(months=offset)).strftime("%Y-%m")
+        for offset in range(1, 6)
+    ]
+
+    def _median_ratio(values: dict[str, float]) -> tuple[float, float, float]:
+        first_value = round(float(values.get(first_period_label, 0.0)), 2)
+        steady_values = [float(values.get(period, 0.0)) for period in steady_state_periods if float(values.get(period, 0.0)) > 0]
+        steady_state_median = round(float(pd.Series(steady_values).median()), 2) if steady_values else 0.0
+        ratio = round(first_value / steady_state_median, 2) if steady_state_median > 0 else 0.0
+        return first_value, steady_state_median, ratio
+
+    purchase_orders = context.tables["PurchaseOrder"]
+    po_monthly = {
+        str(period): round(float(amount), 2)
+        for period, amount in purchase_orders.groupby(
+            purchase_orders["OrderDate"].astype(str).str.slice(0, 7)
+        )["OrderTotal"].sum().items()
+    }
+
+    goods_receipts = context.tables["GoodsReceipt"]
+    goods_receipt_lines = context.tables["GoodsReceiptLine"]
+    goods_receipt_monthly: dict[str, float] = {}
+    if not goods_receipts.empty and not goods_receipt_lines.empty:
+        goods_receipt_activity = goods_receipt_lines.merge(
+            goods_receipts[["GoodsReceiptID", "ReceiptDate"]],
+            on="GoodsReceiptID",
+            how="left",
+        )
+        goods_receipt_monthly = {
+            str(period): round(float(amount), 2)
+            for period, amount in goods_receipt_activity.groupby(
+                goods_receipt_activity["ReceiptDate"].astype(str).str.slice(0, 7)
+            )["ExtendedStandardCost"].sum().items()
+        }
+
+    purchase_invoices = context.tables["PurchaseInvoice"]
+    purchase_invoice_monthly = {
+        str(period): round(float(amount), 2)
+        for period, amount in purchase_invoices.groupby(
+            purchase_invoices["InvoiceDate"].astype(str).str.slice(0, 7)
+        )["GrandTotal"].sum().items()
+    }
+
+    gl = context.tables["GLEntry"]
+    accounts = context.tables["Account"][["AccountID", "AccountNumber"]].copy()
+    journal_entries = context.tables["JournalEntry"][["JournalEntryID", "EntryType"]].copy()
+    gl_accounts = gl.merge(accounts, on="AccountID", how="left").merge(
+        journal_entries.rename(columns={"JournalEntryID": "SourceDocumentID", "EntryType": "JournalEntryType"}),
+        on="SourceDocumentID",
+        how="left",
+    )
+    gl_accounts = gl_accounts[
+        ~(
+            gl_accounts["SourceDocumentType"].eq("JournalEntry")
+            & gl_accounts["JournalEntryType"].eq("Opening")
+        )
+    ].copy()
+    ap_monthly = {
+        str(period): round(float(amount), 2)
+        for period, amount in gl_accounts[
+            gl_accounts["AccountNumber"].astype(str).eq("2010")
+        ].groupby(
+            gl_accounts.loc[
+                gl_accounts["AccountNumber"].astype(str).eq("2010"), "PostingDate"
+            ].astype(str).str.slice(0, 7)
+        ).apply(lambda rows: (rows["Credit"].astype(float) - rows["Debit"].astype(float)).sum()).items()
+    }
+
+    assert _median_ratio(po_monthly)[2] <= 1.5
+    assert _median_ratio(goods_receipt_monthly)[2] <= 1.5
+    assert _median_ratio(purchase_invoice_monthly)[2] <= 1.5
+    assert _median_ratio(ap_monthly)[2] <= 1.5
+
+
 def test_phase23_4_generation_log_contains_load_diagnostics_and_conversion_logging(
     phase23_4_one_year_clean_artifacts: dict[str, object],
 ) -> None:
@@ -178,6 +259,11 @@ def test_phase23_4_generation_log_contains_load_diagnostics_and_conversion_loggi
     assert "CAPACITY DIAGNOSTIC | 2026-01 | work_center=FINISH |" in log_text
     assert "nominal_daily_capacity_share=" in log_text
     assert "monthly_utilization_pct=" in log_text
+    assert "OPENING BALANCE CALIBRATION | fiscal_start=2026-01-01 |" in log_text
+    assert "OPENING INVENTORY DIAGNOSTIC | item_group=Raw Materials | supply_mode=Purchased |" in log_text
+    assert "OPENING STATE SHOCK | metric=purchase_order_total | first_period=2026-01 |" in log_text
+    assert "OPENING STATE SHOCK | metric=purchase_invoice_total | first_period=2026-01 |" in log_text
+    assert "OPENING STATE DRIVER MIX | window=2025-12_to_2026-02 | driver_type=Component Demand | recommendation_type=Purchase |" in log_text
 
     pattern = re.compile(
         r"MANUFACTURING CONVERSION \| 2026-(\d{2}) \| eligible_planned=(\d+) \| converted=(\d+) \| expired=(\d+) .*? conversion_rate=([0-9.]+)"

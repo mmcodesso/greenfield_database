@@ -9,7 +9,8 @@ import pytest
 import yaml
 
 from generator_dataset.main import build_full_dataset
-from generator_dataset.main import build_phase22
+from generator_dataset.main import build_phase2, build_phase22
+from generator_dataset.planning import opening_inventory_diagnostics, projected_monthly_procurement_cost
 from generator_dataset.settings import load_settings
 from generator_dataset.schema import TABLE_COLUMNS
 from generator_dataset.validations import validate_phase22
@@ -128,6 +129,28 @@ def test_phase22_helper_generates_clean_dataset() -> None:
     revalidated = validate_phase22(context, scope="full", store=False)
     assert revalidated["exceptions"] == []
     assert revalidated["planning_controls"]["exception_count"] == 0
+
+
+def test_phase22_phase2_opening_balances_align_with_seeded_inventory() -> None:
+    context = build_phase2("config/settings_validation.yaml")
+    fiscal_start = pd.Timestamp(context.settings.fiscal_year_start).normalize()
+    voucher_number = f"JE-{fiscal_start.year}-000001"
+    diagnostics = opening_inventory_diagnostics(context)
+    opening_value_by_account = diagnostics["value_by_account_number"]
+    accounts = context.tables["Account"][["AccountID", "AccountNumber"]].copy()
+    opening_gl = context.tables["GLEntry"].merge(accounts, on="AccountID", how="left")
+    opening_gl = opening_gl[opening_gl["VoucherNumber"].astype(str).eq(voucher_number)].copy()
+    for account_number in ["1040", "1045"]:
+        debit_amount = float(
+            opening_gl.loc[opening_gl["AccountNumber"].astype(str).eq(account_number), "Debit"].sum()
+        )
+        assert round(debit_amount, 2) == round(float(opening_value_by_account.get(account_number, 0.0)), 2)
+
+    projected_procurement = projected_monthly_procurement_cost(context)
+    opening_cash = float(opening_gl.loc[opening_gl["AccountNumber"].astype(str).eq("1010"), "Debit"].sum())
+    opening_ap = float(opening_gl.loc[opening_gl["AccountNumber"].astype(str).eq("2010"), "Credit"].sum())
+    assert round(opening_cash, 2) >= round(projected_procurement, 2)
+    assert round(opening_ap, 2) >= round(projected_procurement, 2)
 
 
 def test_phase22_queries_execute_and_return_expected_rows(

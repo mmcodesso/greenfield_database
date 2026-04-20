@@ -2041,6 +2041,7 @@ def seed_opening_manufacturing_pipeline(context: GenerationContext) -> dict[str,
         context._opening_inventory_adjustments = opening_inventory_adjustments
         for attribute_name in [
             "_planning_opening_inventory_cache",
+            "_planning_opening_inventory_diagnostics_cache",
             "_planning_inventory_position_cache",
             "_o2c_shadow_inventory",
         ]:

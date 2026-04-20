@@ -1,3 +1,7 @@
+---
+description: Learn the manual journals and close cycle in the synthetic accounting analytics dataset, from recurring journal entries and accrual settlement to year-end close and GLEntry.
+---
+
 # Manual Journals and Close Cycle
 
 ## What Students Should Learn

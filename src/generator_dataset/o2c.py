@@ -12,7 +12,7 @@ from generator_dataset.master_data import (
     employee_ids_for_cost_center_as_of,
     eligible_item_mask,
 )
-from generator_dataset.planning import monthly_forecast_targets
+from generator_dataset.planning import monthly_forecast_targets, opening_inventory_map as planning_opening_inventory_map
 from generator_dataset.schema import TABLE_COLUMNS
 from generator_dataset.settings import GenerationContext
 from generator_dataset.utils import format_doc_number, money, next_id, qty, random_date_in_month
@@ -1055,27 +1055,7 @@ def select_sales_item(context: GenerationContext, sellable_items: pd.DataFrame, 
 
 
 def opening_inventory_map(context: GenerationContext) -> dict[tuple[int, int], float]:
-    warehouse_list = warehouse_ids(context)
-    items = context.tables["Item"][context.tables["Item"]["InventoryAccountID"].notna()].copy()
-    inventory: dict[tuple[int, int], float] = {}
-    for item in items.itertuples(index=False):
-        stock_rng = np.random.default_rng(context.settings.random_seed + int(item.ItemID) * 37)
-        low, high = OPENING_STOCK_RANGES.get(str(item.ItemGroup), (80, 160))
-        total_qty = int(stock_rng.integers(low, high + 1))
-        if len(warehouse_list) == 1:
-            inventory[(int(item.ItemID), warehouse_list[0])] = float(total_qty)
-            continue
-        primary_index = int(stock_rng.integers(0, len(warehouse_list)))
-        primary_warehouse = warehouse_list[primary_index]
-        secondary = [warehouse_id for warehouse_id in warehouse_list if warehouse_id != primary_warehouse]
-        primary_qty = int(round(total_qty * 0.70))
-        inventory[(int(item.ItemID), primary_warehouse)] = float(primary_qty)
-        for warehouse_id in secondary:
-            inventory[(int(item.ItemID), warehouse_id)] = float((total_qty - primary_qty) / len(secondary))
-    adjustments = getattr(context, "_opening_inventory_adjustments", None) or {}
-    for key, quantity in adjustments.items():
-        inventory[(int(key[0]), int(key[1]))] = round(float(inventory.get((int(key[0]), int(key[1])), 0.0)) + float(quantity), 2)
-    return inventory
+    return planning_opening_inventory_map(context)
 
 
 def shadow_inventory_state(context: GenerationContext) -> dict[tuple[int, int], float]:

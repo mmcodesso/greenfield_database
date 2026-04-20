@@ -1,11 +1,20 @@
 from __future__ import annotations
 
+import logging
+
 import pandas as pd
 
 from generator_dataset.master_data import approver_employee_id, current_role_employee_id
+from generator_dataset.planning import opening_inventory_diagnostics, projected_monthly_procurement_cost
 from generator_dataset.schema import TABLE_COLUMNS
 from generator_dataset.settings import GenerationContext
 from generator_dataset.utils import money, next_id
+
+
+LOGGER = logging.getLogger("generator_dataset")
+
+OPENING_BALANCE_AP_MONTHS = 1.0
+OPENING_BALANCE_CASH_MONTHS = 1.0
 
 
 OPENING_BALANCE_AMOUNTS = {
@@ -94,6 +103,8 @@ def build_gl_row(
     context: GenerationContext,
     journal_entry_id: int,
     posting_date: str,
+    voucher_number: str,
+    created_date: str,
     account_number: str,
     debit: float,
     credit: float,
@@ -108,17 +119,53 @@ def build_gl_row(
         "Debit": money(debit),
         "Credit": money(credit),
         "VoucherType": "JournalEntry",
-        "VoucherNumber": "JE-2026-000001",
+        "VoucherNumber": voucher_number,
         "SourceDocumentType": "JournalEntry",
         "SourceDocumentID": journal_entry_id,
         "SourceLineID": None,
         "CostCenterID": None,
         "Description": description,
         "CreatedByEmployeeID": created_by_employee_id,
-        "CreatedDate": "2026-01-01 08:00:00",
+        "CreatedDate": created_date,
         "FiscalYear": int(ts.year),
         "FiscalPeriod": int(ts.month),
     }
+
+
+def _opening_balance_seed_amounts(
+    context: GenerationContext,
+) -> tuple[dict[str, tuple[str, float, float]], dict[str, object], float]:
+    amounts = {
+        account_number: (description, float(debit), float(credit))
+        for account_number, (description, debit, credit) in OPENING_BALANCE_AMOUNTS.items()
+    }
+    diagnostics = opening_inventory_diagnostics(context)
+    projected_procurement_cost = money(projected_monthly_procurement_cost(context))
+    value_by_account_number = diagnostics.get("value_by_account_number", {})
+
+    fg_value = money(float(value_by_account_number.get("1040", 0.0)))
+    component_value = money(float(value_by_account_number.get("1045", 0.0)))
+    if fg_value > 0:
+        description, debit, credit = amounts["1040"]
+        amounts["1040"] = (description, max(float(debit), fg_value), float(credit))
+    if component_value > 0:
+        description, debit, credit = amounts["1045"]
+        amounts["1045"] = (description, max(float(debit), component_value), float(credit))
+    if projected_procurement_cost > 0:
+        description, debit, credit = amounts["2010"]
+        amounts["2010"] = (
+            description,
+            float(debit),
+            max(float(credit), money(projected_procurement_cost * OPENING_BALANCE_AP_MONTHS)),
+        )
+        description, debit, credit = amounts["1010"]
+        amounts["1010"] = (
+            description,
+            max(float(debit), money(projected_procurement_cost * OPENING_BALANCE_CASH_MONTHS)),
+            float(credit),
+        )
+
+    return amounts, diagnostics, projected_procurement_cost
 
 
 def generate_opening_balances(context: GenerationContext) -> None:
@@ -128,34 +175,42 @@ def generate_opening_balances(context: GenerationContext) -> None:
         raise ValueError("Opening balances should be generated before other journal or GL rows.")
 
     approver_id = opening_balance_approver_id(context)
-    posting_date = "2026-01-01"
+    opening_amounts, opening_diagnostics, projected_procurement_cost = _opening_balance_seed_amounts(context)
+    fiscal_start = pd.Timestamp(context.settings.fiscal_year_start).normalize()
+    posting_date = fiscal_start.strftime("%Y-%m-%d")
+    opening_date_label = fiscal_start.strftime("%B %d, %Y").replace(" 0", " ")
+    voucher_number = f"JE-{fiscal_start.year}-000001"
+    created_date = f"{posting_date} 08:00:00"
+    approved_date = f"{posting_date} 09:00:00"
     journal_entry_id = next_id(context, "JournalEntry")
-    debit_total = sum(amount[1] for amount in OPENING_BALANCE_AMOUNTS.values())
-    credit_total = sum(amount[2] for amount in OPENING_BALANCE_AMOUNTS.values())
+    debit_total = sum(amount[1] for amount in opening_amounts.values())
+    credit_total = sum(amount[2] for amount in opening_amounts.values())
     retained_earnings_credit = money(debit_total - credit_total)
     if retained_earnings_credit <= 0:
         raise ValueError("Opening balance retained earnings plug must be a credit.")
 
     journal_record = {
         "JournalEntryID": journal_entry_id,
-        "EntryNumber": "JE-2026-000001",
+        "EntryNumber": voucher_number,
         "PostingDate": posting_date,
         "EntryType": "Opening",
-        "Description": "Opening balance entry for January 1, 2026",
+        "Description": f"Opening balance entry for {opening_date_label}",
         "TotalAmount": money(debit_total),
         "CreatedByEmployeeID": approver_id,
-        "CreatedDate": "2026-01-01 08:00:00",
+        "CreatedDate": created_date,
         "ApprovedByEmployeeID": approver_id,
-        "ApprovedDate": "2026-01-01 09:00:00",
+        "ApprovedDate": approved_date,
         "ReversesJournalEntryID": None,
     }
 
     gl_rows = []
-    for account_number, (description, debit, credit) in OPENING_BALANCE_AMOUNTS.items():
+    for account_number, (description, debit, credit) in opening_amounts.items():
         gl_rows.append(build_gl_row(
             context,
             journal_entry_id,
             posting_date,
+            voucher_number,
+            created_date,
             account_number,
             debit,
             credit,
@@ -167,6 +222,8 @@ def generate_opening_balances(context: GenerationContext) -> None:
         context,
         journal_entry_id,
         posting_date,
+        voucher_number,
+        created_date,
         "3030",
         0.00,
         retained_earnings_credit,
@@ -181,6 +238,24 @@ def generate_opening_balances(context: GenerationContext) -> None:
 
     context.tables["JournalEntry"] = pd.DataFrame([journal_record], columns=TABLE_COLUMNS["JournalEntry"])
     context.tables["GLEntry"] = pd.DataFrame(gl_rows, columns=TABLE_COLUMNS["GLEntry"])
+    LOGGER.info(
+        "OPENING BALANCE CALIBRATION | fiscal_start=%s | opening_fg_value=%s | opening_materials_value=%s | projected_monthly_procurement_cost=%s | opening_cash=%s | opening_ap=%s",
+        posting_date,
+        money(float(opening_diagnostics.get("value_by_account_number", {}).get("1040", 0.0))),
+        money(float(opening_diagnostics.get("value_by_account_number", {}).get("1045", 0.0))),
+        projected_procurement_cost,
+        next(float(debit) for account_number, (_, debit, _) in opening_amounts.items() if account_number == "1010"),
+        next(float(credit) for account_number, (_, _, credit) in opening_amounts.items() if account_number == "2010"),
+    )
+    for row in opening_diagnostics.get("group_supply_mode", []):
+        LOGGER.info(
+            "OPENING INVENTORY DIAGNOSTIC | item_group=%s | supply_mode=%s | opening_quantity=%s | coverage_target_quantity=%s | opening_value=%s",
+            row["ItemGroup"],
+            row["SupplyMode"],
+            row["OpeningQuantity"],
+            row["CoverageTargetQuantity"],
+            row["OpeningValue"],
+        )
 
 
 def budget_approver_id(context: GenerationContext) -> int:

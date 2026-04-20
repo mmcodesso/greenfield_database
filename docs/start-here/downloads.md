@@ -1,11 +1,17 @@
 ---
-title: Downloads
-description: Download the ready-to-use SQLite database and Excel workbook from GitHub Releases.
+title: Download the Accounting Dataset
+description: Download the synthetic accounting analytics dataset as a SQLite database, Excel workbook, or CSV package for teaching, SQL practice, and accounting analysis.
 slug: /downloads
 sidebar_label: Downloads
 ---
 
 # Downloads
+
+<DatasetStructuredData
+  pagePath="/docs/downloads"
+  sameAsPath="/"
+  description="Download the synthetic accounting analytics dataset as a SQLite database, Excel workbook, or CSV package for teaching, SQL practice, and accounting analysis."
+/>
 
 The published teaching files contain the same dataset in different formats. They are not separate products. The SQLite file, Excel workbook, and CSV package all reflect the same company, the same business cycles, and the same posted accounting.
 

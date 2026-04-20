@@ -1,6 +1,6 @@
 ---
-title: Analytics Guides
-description: Starter map for financial, managerial, and audit analytics using the published dataset.
+title: Accounting Analytics Guides
+description: Financial, managerial, and audit analytics guides built on the synthetic SQLite accounting dataset and linked teaching materials.
 slug: /analytics
 sidebar_label: Analytics Guides
 ---

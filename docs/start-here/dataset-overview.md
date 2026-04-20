@@ -1,11 +1,17 @@
 ---
-title: Dataset Guide
-description: Student-friendly guide to what the dataset contains and how to navigate it.
+title: Accounting Dataset Guide
+description: Guide to the synthetic accounting database, table families, key joins, and source-to-ledger paths in the published SQLite dataset.
 slug: /dataset-overview
 sidebar_label: Dataset Guide
 ---
 
 # Dataset Guide
+
+<DatasetStructuredData
+  pagePath="/docs/dataset-overview"
+  sameAsPath="/"
+  description="Guide to the synthetic accounting database, table families, key joins, and source-to-ledger paths in the published SQLite dataset."
+/>
 
 This page provides the mental model for the dataset: what is in it, how the table families fit together, which paths matter most, and how operational activity reaches `GLEntry`.
 

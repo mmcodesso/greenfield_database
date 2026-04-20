@@ -1,6 +1,7 @@
 import Link from "@docusaurus/Link";
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import Layout from "@theme/Layout";
+import { DatasetStructuredData } from "@site/src/components/SiteBranding";
 
 import styles from "./index.module.css";
 
@@ -44,6 +45,48 @@ const adoptionPoints = [
   "Students can start with business context and then move into analysis without switching models or file structures.",
 ];
 
+const includedAssets = [
+  {
+    title: "SQLite accounting database",
+    text: "Download a ready-to-query SQLite database with 68 tables for SQL practice, source-to-ledger tracing, and accounting analytics labs.",
+  },
+  {
+    title: "Excel workbook and CSV export",
+    text: "Work from the same synthetic accounting dataset in an Excel workbook or a CSV package when the class needs pivots, charts, or external tooling.",
+  },
+  {
+    title: "Financial, managerial, and audit paths",
+    text: "Use one dataset across financial reporting, managerial analysis, audit procedures, working-capital review, payroll, and manufacturing cases.",
+  },
+  {
+    title: "Teaching materials with the data",
+    text: "Pair downloads with process flows, schema guidance, SQL walkthroughs, analytics pages, and instructor adoption support instead of starting from bare tables.",
+  },
+];
+
+const faqItems = [
+  {
+    question: "Is this a synthetic accounting analytics dataset?",
+    answer:
+      "Yes. Charles River is a synthetic accounting analytics dataset built for teaching, open reuse, and broad classroom distribution without exposing real company transactions.",
+  },
+  {
+    question: "What files are included?",
+    answer:
+      "The published package includes a SQLite database, an Excel workbook, and a CSV export so users can move between SQL practice, workbook analysis, and table-by-table tooling without switching datasets.",
+  },
+  {
+    question: "Can students use it for SQL practice and audit work?",
+    answer:
+      "Yes. The dataset is designed for SQL practice, source-to-ledger tracing, audit exception review, financial analysis, managerial accounting, and business-process teaching in one connected model.",
+  },
+  {
+    question: "Who is it for?",
+    answer:
+      "It is built for AIS, accounting analytics, audit, financial, managerial, and business-process courses where students need a realistic accounting database plus guided teaching materials.",
+  },
+];
+
 const nextSteps = [
   {
     title: "Start Here",
@@ -67,17 +110,19 @@ export default function Home() {
   const branding = siteConfig.customFields?.branding ?? {};
   const displayName = branding.displayName ?? "Dataset";
   const datasetName = branding.datasetName ?? "Accounting Dataset";
+  const homeDescription = `${datasetName} is a synthetic accounting analytics dataset and SQLite database for SQL practice, Excel analysis, audit review, financial reporting, managerial accounting, and classroom teaching.`;
 
   return (
     <Layout
-      title={branding.whyTitle ?? "Why This Dataset"}
-      description={`${displayName} is a synthetic ERP-style accounting analytics environment for teaching business process, source documents, and ledger traceability with SQL, Excel, and guided classroom materials.`}
+      title="Synthetic Accounting Analytics Dataset for SQL, Excel, Audit, and Teaching"
+      description={homeDescription}
     >
+      <DatasetStructuredData pagePath="/" description={homeDescription} />
       <main className={styles.page}>
         <section className={styles.hero}>
           <div className={styles.heroBackdrop} />
           <div className={styles.heroContent}>
-            <p className={styles.kicker}>Accounting analytics environment</p>
+            <p className={styles.kicker}>Synthetic accounting analytics dataset</p>
             <h1 className={styles.title}>Teach the business before the joins.</h1>
             <p className={styles.lede}>
               {displayName} is a synthetic ERP-style accounting analytics
@@ -116,6 +161,21 @@ export default function Home() {
             documents, process flows, and posted ledger activity in one
             integrated model.
           </p>
+        </section>
+
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <p className={styles.sectionLabel}>What's Included</p>
+            <h2>One accounting database, multiple classroom-ready formats.</h2>
+          </div>
+          <div className={styles.cardGrid}>
+            {includedAssets.map((asset) => (
+              <article key={asset.title} className={styles.card}>
+                <h3>{asset.title}</h3>
+                <p>{asset.text}</p>
+              </article>
+            ))}
+          </div>
         </section>
 
         <section className={styles.section}>
@@ -179,6 +239,21 @@ export default function Home() {
                 <strong>{step.title}</strong>
                 <span>{step.text}</span>
               </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <p className={styles.sectionLabel}>Common Questions</p>
+            <h2>What people usually want to know before they download the dataset.</h2>
+          </div>
+          <div className={styles.cardGrid}>
+            {faqItems.map((item) => (
+              <article key={item.question} className={styles.card}>
+                <h3>{item.question}</h3>
+                <p>{item.answer}</p>
+              </article>
             ))}
           </div>
         </section>

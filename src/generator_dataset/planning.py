@@ -72,6 +72,15 @@ DEMAND_FORECAST_PROGRESS_INTERVAL = 25
 MANUFACTURED_COMPONENT_NEED_OFFSET_DAYS = 14
 MANUFACTURED_FORECAST_LOAD_MULTIPLIER = 3.5
 FINISHED_GOODS_OPENING_STOCK_FACTOR = 0.65
+OPENING_SELLABLE_COVERAGE_WEEKS_BY_SUPPLY_MODE = {
+    "Manufactured": 4.0,
+    "Purchased": 10.0,
+}
+OPENING_COMPONENT_COVERAGE_WEEKS_BY_GROUP = {
+    "Raw Materials": 10.0,
+    "Packaging": 8.0,
+}
+OPENING_PROCUREMENT_RUN_RATE_WEEKS = 8.0
 
 
 def append_rows(context: GenerationContext, table_name: str, rows: list[dict[str, Any]]) -> None:
@@ -94,6 +103,9 @@ def invalidate_planning_caches(context: GenerationContext, table_name: str) -> N
         "DemandForecast": [
             "_planning_monthly_forecast_targets_cache",
             "_planning_weekly_forecast_map_cache",
+            "_planning_opening_inventory_cache",
+            "_planning_opening_inventory_diagnostics_cache",
+            "_planning_projected_monthly_procurement_cost_cache",
         ],
         "InventoryPolicy": ["_planning_active_policy_lookup_cache"],
         "SupplyPlanRecommendation": ["_planning_recommendation_lookup_cache"],
@@ -131,6 +143,259 @@ def warehouse_ids(context: GenerationContext) -> list[int]:
     return sorted(warehouses["WarehouseID"].astype(int).tolist())
 
 
+def _opening_horizon_end(context: GenerationContext, coverage_weeks: float) -> pd.Timestamp:
+    fiscal_start = pd.Timestamp(context.settings.fiscal_year_start).normalize()
+    total_days = max(int(round(float(coverage_weeks) * 7.0)), 1)
+    return fiscal_start + pd.Timedelta(days=total_days - 1)
+
+
+def _forecast_rows_in_horizon(context: GenerationContext, coverage_weeks: float) -> pd.DataFrame:
+    forecasts = context.tables["DemandForecast"]
+    if forecasts.empty:
+        return forecasts.head(0).copy()
+
+    horizon_end = _opening_horizon_end(context, coverage_weeks)
+    rows = forecasts.copy()
+    rows["ForecastWeekStartDateTS"] = pd.to_datetime(rows["ForecastWeekStartDate"], errors="coerce")
+    rows = rows[rows["ForecastWeekStartDateTS"].notna() & rows["ForecastWeekStartDateTS"].le(horizon_end)].copy()
+    if "IsCurrent" in rows.columns:
+        rows = rows[rows["IsCurrent"].astype(int).eq(1)].copy()
+    return rows
+
+
+def _base_opening_inventory_total_quantity(context: GenerationContext, item: Any) -> int:
+    stock_rng = np.random.default_rng(context.settings.random_seed + int(item.ItemID) * 37)
+    low, high = OPENING_STOCK_RANGES.get(str(item.ItemGroup), (80, 160))
+    total_qty = int(stock_rng.integers(low, high + 1))
+    if (
+        pd.notna(item.RevenueAccountID)
+        and str(item.ItemGroup) not in {"Packaging", "Raw Materials", "Services"}
+    ):
+        total_qty = max(1, int(round(float(total_qty) * FINISHED_GOODS_OPENING_STOCK_FACTOR)))
+    return int(total_qty)
+
+
+def opening_sellable_demand_by_item_warehouse(
+    context: GenerationContext,
+    coverage_weeks_by_supply_mode: dict[str, float] | None = None,
+) -> dict[tuple[int, int], float]:
+    if coverage_weeks_by_supply_mode is None:
+        coverage_weeks_by_supply_mode = OPENING_SELLABLE_COVERAGE_WEEKS_BY_SUPPLY_MODE
+
+    max_weeks = max([float(value) for value in coverage_weeks_by_supply_mode.values()], default=0.0)
+    rows = _forecast_rows_in_horizon(context, max_weeks)
+    if rows.empty:
+        return {}
+
+    items = context.tables["Item"][["ItemID", "SupplyMode", "RevenueAccountID", "ItemGroup"]].copy()
+    rows = rows.merge(items, on="ItemID", how="left")
+    rows = rows[
+        rows["RevenueAccountID"].notna()
+        & ~rows["ItemGroup"].isin(["Packaging", "Raw Materials", "Services"])
+    ].copy()
+    if rows.empty:
+        return {}
+
+    rows["CoverageWeeks"] = rows["SupplyMode"].map(coverage_weeks_by_supply_mode).astype(float)
+    rows = rows[rows["CoverageWeeks"].fillna(0.0).gt(0.0)].copy()
+    if rows.empty:
+        return {}
+
+    rows["CoverageHorizonEnd"] = rows["CoverageWeeks"].map(lambda weeks: _opening_horizon_end(context, float(weeks)))
+    rows = rows[rows["ForecastWeekStartDateTS"].le(rows["CoverageHorizonEnd"])].copy()
+    if rows.empty:
+        return {}
+
+    grouped = rows.groupby(["ItemID", "WarehouseID"])["ForecastQuantity"].sum().round(2)
+    return {
+        (int(item_id), int(warehouse_id)): float(quantity)
+        for (item_id, warehouse_id), quantity in grouped.items()
+        if float(quantity) > 0
+    }
+
+
+def opening_component_demand_by_item_warehouse(
+    context: GenerationContext,
+    coverage_weeks_by_group: dict[str, float] | None = None,
+) -> dict[tuple[int, int], float]:
+    if coverage_weeks_by_group is None:
+        coverage_weeks_by_group = OPENING_COMPONENT_COVERAGE_WEEKS_BY_GROUP
+
+    max_weeks = max([float(value) for value in coverage_weeks_by_group.values()], default=0.0)
+    rows = _forecast_rows_in_horizon(context, max_weeks)
+    if rows.empty:
+        return {}
+
+    items = context.tables["Item"][["ItemID", "SupplyMode", "RevenueAccountID"]].copy()
+    rows = rows.merge(items, on="ItemID", how="left")
+    rows = rows[
+        rows["SupplyMode"].eq("Manufactured")
+        & rows["RevenueAccountID"].notna()
+    ].copy()
+    if rows.empty:
+        return {}
+
+    boms = context.tables["BillOfMaterial"]
+    bom_lines = context.tables["BillOfMaterialLine"]
+    if boms.empty or bom_lines.empty:
+        return {}
+
+    active_boms = boms[boms["Status"].eq("Active")][["BOMID", "ParentItemID"]].copy()
+    if active_boms.empty:
+        return {}
+
+    component_rows = bom_lines.merge(active_boms, on="BOMID", how="inner")
+    if component_rows.empty:
+        return {}
+
+    component_items = context.tables["Item"][["ItemID", "ItemGroup"]].rename(
+        columns={"ItemID": "ComponentItemID", "ItemGroup": "ComponentItemGroup"}
+    )
+    component_rows = component_rows.merge(component_items, on="ComponentItemID", how="left")
+    component_rows = component_rows[
+        component_rows["ComponentItemGroup"].isin(set(coverage_weeks_by_group))
+    ].copy()
+    if component_rows.empty:
+        return {}
+
+    rows = rows.merge(component_rows, left_on="ItemID", right_on="ParentItemID", how="inner")
+    if rows.empty:
+        return {}
+
+    rows["CoverageWeeks"] = rows["ComponentItemGroup"].map(coverage_weeks_by_group).astype(float)
+    rows = rows[rows["CoverageWeeks"].fillna(0.0).gt(0.0)].copy()
+    if rows.empty:
+        return {}
+
+    rows["CoverageHorizonEnd"] = rows["CoverageWeeks"].map(lambda weeks: _opening_horizon_end(context, float(weeks)))
+    rows = rows[rows["ForecastWeekStartDateTS"].le(rows["CoverageHorizonEnd"])].copy()
+    if rows.empty:
+        return {}
+
+    rows["ProjectedComponentQuantity"] = (
+        rows["ForecastQuantity"].astype(float)
+        * rows["QuantityPerUnit"].astype(float)
+        * (1.0 + rows["ScrapFactorPct"].astype(float) / 100.0)
+    )
+    grouped = rows.groupby(["ComponentItemID", "WarehouseID"])["ProjectedComponentQuantity"].sum().round(2)
+    return {
+        (int(item_id), int(warehouse_id)): float(quantity)
+        for (item_id, warehouse_id), quantity in grouped.items()
+        if float(quantity) > 0
+    }
+
+
+def opening_inventory_diagnostics(context: GenerationContext) -> dict[str, Any]:
+    cached = getattr(context, "_planning_opening_inventory_diagnostics_cache", None)
+    if cached is not None:
+        return dict(cached)
+
+    opening_inventory = opening_inventory_map(context)
+    sellable_targets = opening_sellable_demand_by_item_warehouse(context)
+    component_targets = opening_component_demand_by_item_warehouse(context)
+    target_quantities = defaultdict(float)
+    for key, quantity in sellable_targets.items():
+        target_quantities[key] += float(quantity)
+    for key, quantity in component_targets.items():
+        target_quantities[key] += float(quantity)
+
+    items = context.tables["Item"][["ItemID", "ItemGroup", "SupplyMode", "StandardCost", "InventoryAccountID"]].copy()
+    items = items.set_index("ItemID")
+    accounts = context.tables["Account"][["AccountID", "AccountNumber"]].copy()
+    account_number_by_id = accounts.set_index("AccountID")["AccountNumber"].astype(str).to_dict() if not accounts.empty else {}
+
+    summary_by_group_supply_mode: dict[tuple[str, str], dict[str, float]] = defaultdict(lambda: {
+        "opening_quantity": 0.0,
+        "coverage_target_quantity": 0.0,
+        "opening_value": 0.0,
+    })
+    value_by_account_number: dict[str, float] = defaultdict(float)
+    for (item_id, _warehouse_id), quantity in opening_inventory.items():
+        if int(item_id) not in items.index:
+            continue
+        item = items.loc[int(item_id)]
+        key = (str(item["ItemGroup"]), str(item["SupplyMode"]))
+        summary_by_group_supply_mode[key]["opening_quantity"] += float(quantity)
+        summary_by_group_supply_mode[key]["opening_value"] += float(quantity) * float(item["StandardCost"] or 0.0)
+        account_number = account_number_by_id.get(int(item["InventoryAccountID"])) if pd.notna(item["InventoryAccountID"]) else None
+        if account_number is not None:
+            value_by_account_number[str(account_number)] += float(quantity) * float(item["StandardCost"] or 0.0)
+
+    for (item_id, _warehouse_id), quantity in target_quantities.items():
+        if int(item_id) not in items.index:
+            continue
+        item = items.loc[int(item_id)]
+        key = (str(item["ItemGroup"]), str(item["SupplyMode"]))
+        summary_by_group_supply_mode[key]["coverage_target_quantity"] += float(quantity)
+
+    summary_rows = [
+        {
+            "ItemGroup": item_group,
+            "SupplyMode": supply_mode,
+            "OpeningQuantity": round(float(values["opening_quantity"]), 2),
+            "CoverageTargetQuantity": round(float(values["coverage_target_quantity"]), 2),
+            "OpeningValue": round(float(values["opening_value"]), 2),
+        }
+        for (item_group, supply_mode), values in sorted(summary_by_group_supply_mode.items())
+    ]
+    diagnostics = {
+        "group_supply_mode": summary_rows,
+        "value_by_account_number": {
+            str(account_number): round(float(value), 2)
+            for account_number, value in value_by_account_number.items()
+        },
+    }
+    setattr(context, "_planning_opening_inventory_diagnostics_cache", dict(diagnostics))
+    return diagnostics
+
+
+def projected_monthly_procurement_cost(context: GenerationContext) -> float:
+    cached = getattr(context, "_planning_projected_monthly_procurement_cost_cache", None)
+    if cached is not None:
+        return float(cached)
+
+    rows = _forecast_rows_in_horizon(context, OPENING_PROCUREMENT_RUN_RATE_WEEKS)
+    if rows.empty:
+        return 0.0
+
+    item_lookup = context.tables["Item"][["ItemID", "SupplyMode", "RevenueAccountID", "StandardCost"]].copy()
+    item_lookup = item_lookup.set_index("ItemID")
+
+    purchased_sellable_cost = 0.0
+    sellable_rows = rows[
+        rows["ItemID"].astype(int).isin(item_lookup.index.astype(int))
+    ].copy()
+    if not sellable_rows.empty:
+        sellable_rows["StandardCost"] = sellable_rows["ItemID"].map(item_lookup["StandardCost"]).astype(float)
+        sellable_rows["SupplyMode"] = sellable_rows["ItemID"].map(item_lookup["SupplyMode"])
+        sellable_rows["RevenueAccountID"] = sellable_rows["ItemID"].map(item_lookup["RevenueAccountID"])
+        sellable_rows = sellable_rows[
+            sellable_rows["SupplyMode"].eq("Purchased")
+            & sellable_rows["RevenueAccountID"].notna()
+        ].copy()
+        if not sellable_rows.empty:
+            purchased_sellable_cost = float(
+                (sellable_rows["ForecastQuantity"].astype(float) * sellable_rows["StandardCost"]).sum()
+            )
+
+    component_demand = opening_component_demand_by_item_warehouse(
+        context,
+        coverage_weeks_by_group={
+            item_group: OPENING_PROCUREMENT_RUN_RATE_WEEKS
+            for item_group in OPENING_COMPONENT_COVERAGE_WEEKS_BY_GROUP
+        },
+    )
+    component_cost = 0.0
+    for (item_id, _warehouse_id), quantity in component_demand.items():
+        if int(item_id) not in item_lookup.index:
+            continue
+        component_cost += float(quantity) * float(item_lookup.loc[int(item_id), "StandardCost"] or 0.0)
+
+    monthly_cost = money((purchased_sellable_cost + component_cost) / max(OPENING_PROCUREMENT_RUN_RATE_WEEKS / 4.0, 1.0))
+    setattr(context, "_planning_projected_monthly_procurement_cost_cache", float(monthly_cost))
+    return float(monthly_cost)
+
+
 def opening_inventory_map(context: GenerationContext) -> dict[tuple[int, int], float]:
     cached = getattr(context, "_planning_opening_inventory_cache", None)
     if cached is not None:
@@ -142,17 +407,35 @@ def opening_inventory_map(context: GenerationContext) -> dict[tuple[int, int], f
 
     items = context.tables["Item"][context.tables["Item"]["InventoryAccountID"].notna()].copy()
     inventory: dict[tuple[int, int], float] = {}
+    sellable_targets = opening_sellable_demand_by_item_warehouse(context)
+    component_targets = opening_component_demand_by_item_warehouse(context)
     for item in items.itertuples(index=False):
         stock_rng = np.random.default_rng(context.settings.random_seed + int(item.ItemID) * 37)
-        low, high = OPENING_STOCK_RANGES.get(str(item.ItemGroup), (80, 160))
-        total_qty = int(stock_rng.integers(low, high + 1))
-        if (
-            pd.notna(item.RevenueAccountID)
-            and str(item.ItemGroup) not in {"Packaging", "Raw Materials", "Services"}
-        ):
-            total_qty = max(1, int(round(float(total_qty) * FINISHED_GOODS_OPENING_STOCK_FACTOR)))
+        total_qty = _base_opening_inventory_total_quantity(context, item)
+        target_by_warehouse = {
+            (int(item_id), int(warehouse_id)): float(quantity)
+            for (item_id, warehouse_id), quantity in {**component_targets, **sellable_targets}.items()
+            if int(item_id) == int(item.ItemID)
+        }
+        target_total_qty = round(sum(target_by_warehouse.values()), 2)
+        if target_total_qty > 0:
+            total_qty = max(total_qty, int(round(target_total_qty)))
         if len(warehouse_list) == 1:
             inventory[(int(item.ItemID), warehouse_list[0])] = float(total_qty)
+            continue
+        if target_total_qty > 0:
+            remaining_qty = float(total_qty)
+            demand_total = max(float(target_total_qty), 1.0)
+            sorted_targets = sorted(target_by_warehouse.items(), key=lambda entry: (entry[0][1], entry[0][0]))
+            for index, ((_, warehouse_id), quantity) in enumerate(sorted_targets):
+                if index == len(sorted_targets) - 1:
+                    allocated_qty = remaining_qty
+                else:
+                    allocated_qty = round(float(total_qty) * float(quantity) / demand_total, 2)
+                    remaining_qty = round(remaining_qty - allocated_qty, 2)
+                inventory[(int(item.ItemID), int(warehouse_id))] = float(max(allocated_qty, 0.0))
+            for warehouse_id in warehouse_list:
+                inventory.setdefault((int(item.ItemID), int(warehouse_id)), 0.0)
             continue
         primary_index = int(stock_rng.integers(0, len(warehouse_list)))
         primary_warehouse = warehouse_list[primary_index]

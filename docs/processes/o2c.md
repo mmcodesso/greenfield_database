@@ -1,3 +1,7 @@
+---
+description: Learn the order-to-cash process in the synthetic accounting analytics dataset, from sales orders and shipments to invoices, cash application, and GLEntry.
+---
+
 # Order-to-Cash Process
 
 ## What Students Should Learn

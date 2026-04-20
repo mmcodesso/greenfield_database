@@ -25,7 +25,23 @@ const config = {
       onBrokenMarkdownLinks: "throw",
     },
   },
-  themes: ["@docusaurus/theme-mermaid"],
+  themes: [
+    "@docusaurus/theme-mermaid",
+    [
+      require.resolve("@easyops-cn/docusaurus-search-local"),
+      {
+        indexDocs: true,
+        indexPages: true,
+        indexBlog: false,
+        docsRouteBasePath: "/docs",
+        language: ["en"],
+        hashed: true,
+        highlightSearchTermsOnTargetPage: true,
+        explicitSearchResultPath: true,
+        searchBarPosition: "right",
+      },
+    ],
+  ],
   presets: [
     [
       "classic",

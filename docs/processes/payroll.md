@@ -1,3 +1,7 @@
+---
+description: Learn the payroll process in the synthetic accounting analytics dataset, from approved time and payroll registers to payments, remittances, and GLEntry.
+---
+
 # Payroll Process
 
 ## What Students Should Learn
