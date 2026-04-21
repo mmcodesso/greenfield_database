@@ -28,13 +28,21 @@ You need to prove where planned load outpaces rostered coverage, where approved 
 - An attendance-drift interpretation by shift and department.
 - A short management-facing recommendation on where planners or supervisors should act first.
 
-## Before You Start
+## Key Data Sources
 
 - Main tables: `EmployeeShiftRoster`, `WorkOrderOperationSchedule`, `TimeClockEntry`, `EmployeeAbsence`, `OvertimeApproval`, `ShiftDefinition`, `WorkCenter`, `Employee`
 - Related guides: [Operations and Risk](../reports/operations-and-risk.md), [Payroll and Workforce](../reports/payroll-perspective.md)
 - Related process pages: [Payroll Process](../../processes/payroll.md), [Manufacturing Process](../../processes/manufacturing.md)
 - Supporting references: [Schema Reference](../../reference/schema.md), [Dataset Guide](../../start-here/dataset-overview.md)
 - This case stays at the staffing and attendance-management level. Use the audit case for punch and approval exceptions, and use the workforce-cost case for payroll-cost interpretation.
+
+## Recommended Query Sequence
+
+1. `managerial/36_staffing_coverage_vs_work_center_planned_load.sql`
+2. `managerial/37_rostered_vs_worked_hours_by_work_center_shift.sql`
+3. `managerial/38_absence_rate_by_work_location_job_family_month.sql`
+4. `managerial/39_overtime_approval_coverage_and_concentration.sql`
+5. `managerial/41_late_arrival_early_departure_by_shift_department.sql`
 
 ## Step-by-Step Walkthrough
 
@@ -214,7 +222,7 @@ The query compares scheduled start and end times from `EmployeeShiftRoster` to a
 - Which shift or department shows the strongest attendance drift?
 - Which management action should come first?
 
-## Where to Go Next
+## Next Steps
 
 - Use [Attendance Control Audit Case](attendance-control-audit-case.md) when you want to test punch, approval, and absence exceptions formally.
 - Use [Payroll Process](../../processes/payroll.md) when you want the broader support-to-payroll flow behind approved hours and overtime.

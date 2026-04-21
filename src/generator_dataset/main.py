@@ -846,17 +846,7 @@ def build_phase1(config_path: str | Path = "config/settings.yaml") -> Generation
 
 def build_phase2(config_path: str | Path = "config/settings.yaml") -> GenerationContext:
     context = build_phase1(config_path)
-
-    generate_items(context)
-    generate_boms(context)
-    generate_work_centers_and_routings(context)
-    generate_work_center_calendars(context)
-    generate_customers(context)
-    generate_suppliers(context)
-    generate_inventory_policies(context)
-    generate_demand_forecasts(context)
-    generate_opening_balances(context)
-    generate_budgets(context)
+    _generate_phase2_master_data_and_planning(context, log_substeps=False)
     validate_phase2(context)
     export_validation_report(context)
 
@@ -1418,6 +1408,7 @@ def build_full_dataset(
                 "JournalEntry",
                 "GLEntry",
                 "Budget",
+                "BudgetLine",
                 "PayrollPeriod",
                 "ShiftDefinition",
                 "EmployeeShiftAssignment",
@@ -1894,6 +1885,7 @@ def print_summary(context: GenerationContext) -> None:
     print(f"Suppliers: {row_counts['Supplier']}")
     print(f"Journal entries: {row_counts['JournalEntry']}")
     print(f"Budget rows: {row_counts['Budget']}")
+    print(f"Budget detail rows: {row_counts['BudgetLine']}")
     print(f"Sales orders: {row_counts['SalesOrder']}")
     print(f"Sales order lines: {row_counts['SalesOrderLine']}")
     print(f"Purchase requisitions: {row_counts['PurchaseRequisition']}")

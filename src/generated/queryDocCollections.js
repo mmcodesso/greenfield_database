@@ -175,6 +175,26 @@ export const starterQueryMaps = {
     {
       "label": "Invoice revenue cutoff exception trace",
       "queryKey": "financial/44_invoice_revenue_cutoff_exception_trace.sql"
+    },
+    {
+      "label": "Pro forma monthly income statement",
+      "queryKey": "financial/49_pro_forma_income_statement_monthly.sql"
+    },
+    {
+      "label": "Pro forma monthly balance sheet",
+      "queryKey": "financial/50_pro_forma_balance_sheet_monthly.sql"
+    },
+    {
+      "label": "Pro forma monthly indirect cash flow statement",
+      "queryKey": "financial/51_pro_forma_cash_flow_indirect_monthly.sql"
+    },
+    {
+      "label": "Budget vs actual statement bridge",
+      "queryKey": "financial/52_budget_vs_actual_statement_bridge_monthly.sql"
+    },
+    {
+      "label": "Budget vs actual working capital and cash bridge",
+      "queryKey": "financial/53_budget_vs_actual_working_capital_and_cash_bridge.sql"
     }
   ],
   "managerial": [
@@ -377,6 +397,10 @@ export const starterQueryMaps = {
     {
       "label": "Monthly price-floor pressure and override concentration",
       "queryKey": "managerial/50_monthly_price_floor_pressure_and_override_concentration.sql"
+    },
+    {
+      "label": "Budget vs actual revenue price-volume-cost bridge",
+      "queryKey": "managerial/51_budget_vs_actual_revenue_price_volume_cost_bridge.sql"
     }
   ],
   "audit": [
@@ -765,11 +789,27 @@ export const caseQuerySequences = {
       "lead": "Run",
       "queryKey": "financial/17_manufacturing_cost_component_bridge.sql"
     },
-    {
-      "lead": "Run",
-      "queryKey": "financial/19_working_capital_bridge_by_month.sql"
-    }
-  ],
+      {
+        "lead": "Run",
+        "queryKey": "financial/19_working_capital_bridge_by_month.sql"
+      },
+      {
+        "lead": "Then run",
+        "queryKey": "financial/49_pro_forma_income_statement_monthly.sql"
+      },
+      {
+        "lead": "Then run",
+        "queryKey": "financial/50_pro_forma_balance_sheet_monthly.sql"
+      },
+      {
+        "lead": "Then run",
+        "queryKey": "financial/51_pro_forma_cash_flow_indirect_monthly.sql"
+      },
+      {
+        "lead": "Bridge plan to actual with",
+        "queryKey": "financial/52_budget_vs_actual_statement_bridge_monthly.sql"
+      }
+    ],
   "manufacturing-labor-cost-case": [
     {
       "lead": "Run",
@@ -883,11 +923,15 @@ export const caseQuerySequences = {
       "lead": "Run",
       "queryKey": "managerial/49_customer_specific_pricing_concentration_and_dependency.sql"
     },
-    {
-      "lead": "Run",
-      "queryKey": "managerial/50_monthly_price_floor_pressure_and_override_concentration.sql"
-    }
-  ],
+      {
+        "lead": "Run",
+        "queryKey": "managerial/50_monthly_price_floor_pressure_and_override_concentration.sql"
+      },
+      {
+        "lead": "Then bridge budget to actual with",
+        "queryKey": "managerial/51_budget_vs_actual_revenue_price_volume_cost_bridge.sql"
+      }
+    ],
   "pricing-governance-audit-case": [
     {
       "lead": "Run",
@@ -1037,11 +1081,15 @@ export const caseQuerySequences = {
       "lead": "Run",
       "queryKey": "financial/12_accrued_expense_rollforward.sql"
     },
-    {
-      "lead": "Run",
-      "queryKey": "financial/15_customer_deposits_and_unapplied_cash_aging.sql"
-    }
-  ]
+      {
+        "lead": "Run",
+        "queryKey": "financial/15_customer_deposits_and_unapplied_cash_aging.sql"
+      },
+      {
+        "lead": "Then compare plan to actual with",
+        "queryKey": "financial/53_budget_vs_actual_working_capital_and_cash_bridge.sql"
+      }
+    ]
 };
 
 export const auditAnomalyCoverage = [

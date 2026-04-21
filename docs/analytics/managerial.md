@@ -13,7 +13,7 @@ import { starterQueryMaps } from "@site/src/generated/queryDocCollections";
 
 | Topic | Main tables |
 |---|---|
-| Budget vs actual | `Budget`, `CostCenter`, `Account`, `GLEntry`, `JournalEntry` |
+| Budget vs actual | `Budget`, `BudgetLine`, `CostCenter`, `Account`, `GLEntry`, `JournalEntry` |
 | Product portfolio and sales mix | `Item`, `SalesInvoiceLine`, `CreditMemoLine`, `ShipmentLine`, `SalesOrderLine`, `Customer`, `PriceList`, `PriceListLine`, `PromotionProgram`, `PriceOverrideApproval` |
 | Inventory and purchasing | `GoodsReceiptLine`, `ShipmentLine`, `SalesReturnLine`, `ProductionCompletionLine`, `PurchaseOrderLine`, `Supplier`, `Warehouse`, `Item` |
 | BOM, routing, and work-center planning | `BillOfMaterial`, `BillOfMaterialLine`, `Routing`, `RoutingOperation`, `WorkCenter`, `WorkCenterCalendar`, `Item` |
@@ -43,5 +43,6 @@ import { starterQueryMaps } from "@site/src/generated/queryDocCollections";
 - Workforce-planning analysis is stronger now that rostered hours, approved worked hours, absences, raw punches, and overtime approvals can be compared directly.
 - The dataset includes a weekly planning layer, so students can compare forecast, policy, recommendation, and rough-cut capacity pressure before execution starts.
 - The dataset includes commercial-pricing coverage, so students can compare list price, resolved price-list pricing, promotions, overrides, and net realized margin without introducing a separate quote system.
+- The budget model now starts from `BudgetLine`, so students can move from forecast, planned price, standard cost, payroll, and timing assumptions into the summary `Budget` table and the pro forma statements.
 - The current manufacturing model is still a foundation. It supports operations, labor, and contribution-margin analysis without switching inventory valuation to actual cost.
 - Demand-planning analysis is most useful when students connect `DemandForecast`, `InventoryPolicy`, `SupplyPlanRecommendation`, `MaterialRequirementPlan`, and `RoughCutCapacityPlan` in one analytical path.

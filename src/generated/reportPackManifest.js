@@ -93,6 +93,54 @@ const reportPackManifest = {
         }
       },
       {
+        "reportSlug": "pro-forma-monthly-income-statement",
+        "teachingRole": "drill-down",
+        "whyItMatters": "The pro forma income statement shows how the planning model translates forecast, pricing, cost, payroll, and recurring-expense drivers into a monthly performance budget.",
+        "discussionQuestions": [
+          "Which planned months rely most on volume versus cost discipline to protect margin?",
+          "Where does the pro forma expense run-rate diverge most from the posted income statement?",
+          "Which income-statement assumptions would management challenge first?"
+        ],
+        "suggestedAnalysis": [
+          "Compare the pro forma run-rate to the posted income statement by month.",
+          "Identify planned margin or expense inflection points before they occur in actuals.",
+          "Use the output to frame follow-up on pricing, mix, or cost assumptions."
+        ],
+        "relatedLink": null
+      },
+      {
+        "reportSlug": "pro-forma-monthly-balance-sheet",
+        "teachingRole": "drill-down",
+        "whyItMatters": "The pro forma balance sheet shows how forecast demand and timing assumptions flow into receivables, inventory, payables, accruals, and cash.",
+        "discussionQuestions": [
+          "Which projected balance-sheet accounts move most with the sales plan?",
+          "Does the model rely more on inventory, receivables, or payables to support growth?",
+          "Where would liquidity tighten first if assumptions slip?"
+        ],
+        "suggestedAnalysis": [
+          "Compare projected month-end balances to posted balance-sheet trends.",
+          "Focus on the working-capital accounts that move most sharply in the forecast horizon.",
+          "Use the output to connect planned growth to financial position."
+        ],
+        "relatedLink": null
+      },
+      {
+        "reportSlug": "pro-forma-monthly-indirect-cash-flow",
+        "teachingRole": "drill-down",
+        "whyItMatters": "The pro forma cash flow shows whether the budgeted operating model converts planned earnings into cash or ties liquidity up in working capital.",
+        "discussionQuestions": [
+          "Which planning assumptions drive the largest gap between pro forma net income and cash?",
+          "Do projected investing needs materially change the liquidity story?",
+          "Which periods show the most pressure on ending cash?"
+        ],
+        "suggestedAnalysis": [
+          "Compare pro forma operating cash to the posted cash flow statement.",
+          "Trace the months where working-capital movement overwhelms earnings.",
+          "Use the forecasted cash line to identify the next liquidity drill-down."
+        ],
+        "relatedLink": null
+      },
+      {
         "reportSlug": "monthly-revenue-and-gross-margin",
         "teachingRole": "anchor",
         "whyItMatters": "The monthly revenue bridge isolates the commercial engine before the reader layers on working-capital and statement interpretation.",
@@ -166,6 +214,22 @@ const reportPackManifest = {
         "relatedLink": null
       },
       {
+        "reportSlug": "budget-vs-actual-statement-bridge-monthly",
+        "teachingRole": "drill-down",
+        "whyItMatters": "The statement bridge compares the pro forma plan to posted results on the key statement lines management usually explains first.",
+        "discussionQuestions": [
+          "Which statement lines explain the biggest gaps between plan and actual?",
+          "Are the largest variances concentrated in performance, position, or cash?",
+          "Which bridge lines look like planning error versus execution drift?"
+        ],
+        "suggestedAnalysis": [
+          "Compare budget and actual on the key income statement, balance sheet, and cash lines.",
+          "Focus on months where multiple statement lines break in the same direction.",
+          "Use the bridge to decide whether the next drill-down is commercial, operational, or liquidity-focused."
+        ],
+        "relatedLink": null
+      },
+      {
         "reportSlug": "working-capital-bridge-by-month",
         "teachingRole": "drill-down",
         "whyItMatters": "The working-capital bridge identifies which balance-sheet buckets are driving liquidity changes instead of treating working capital as one unexplained total.",
@@ -183,6 +247,22 @@ const reportPackManifest = {
           "label": "Working Capital and Cash Conversion Case",
           "href": "/docs/analytics/cases/working-capital-and-cash-conversion-case"
         }
+      },
+      {
+        "reportSlug": "budget-vs-actual-working-capital-and-cash-bridge",
+        "teachingRole": "drill-down",
+        "whyItMatters": "This bridge makes the planning model accountable on the working-capital and cash balances that most directly affect liquidity.",
+        "discussionQuestions": [
+          "Which projected receivable, inventory, payable, or cash balances differ most from actual?",
+          "Do liquidity variances come from collections, inventory policy, payment timing, or accrual cadence?",
+          "Which balance should management monitor most closely next month?"
+        ],
+        "suggestedAnalysis": [
+          "Compare planned and actual ending balances for the main working-capital buckets and cash.",
+          "Highlight months where cash variance follows directly from receivable or inventory variance.",
+          "Use the bridge to set up deeper collection, replenishment, or payment-timing analysis."
+        ],
+        "relatedLink": null
       }
     ]
   },
@@ -244,6 +324,22 @@ const reportPackManifest = {
           "label": "Pricing and Margin Governance Case",
           "href": "/docs/analytics/cases/pricing-and-margin-governance-case"
         }
+      },
+      {
+        "reportSlug": "budget-vs-actual-revenue-price-volume-cost-bridge",
+        "teachingRole": "drill-down",
+        "whyItMatters": "The revenue price-volume-cost bridge shows whether plan variance comes from demand, realized selling price, or standard-cost consumption by portfolio slice.",
+        "discussionQuestions": [
+          "Which collections or style families miss plan because of volume versus price?",
+          "Where does cost variance offset or amplify the revenue variance?",
+          "Which portfolio groups deserve commercial or sourcing follow-up first?"
+        ],
+        "suggestedAnalysis": [
+          "Compare budget and actual quantity, revenue, and COGS by collection and style family.",
+          "Separate price variance from volume variance before jumping into customer detail.",
+          "Use the bridge to decide whether the next step is pricing, mix, or cost review."
+        ],
+        "relatedLink": null
       },
       {
         "reportSlug": "customer-sales-mix-by-region-and-item-group",

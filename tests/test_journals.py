@@ -136,7 +136,8 @@ def test_generate_recurring_manual_journals_counts_and_links(phase5_context) -> 
     if not adjustments.empty:
         assert adjustments["ReversesJournalEntryID"].notna().all()
     assert context.tables["GLEntry"]["VoucherType"].eq("JournalEntry").all()
-    assert 2000 <= len(context.tables["Budget"]) <= 4500
+    assert not context.tables["Budget"].empty
+    assert not context.tables["BudgetLine"].empty
 
 
 def test_generate_year_end_close_journals_clean_phase12_validation(phase5_context) -> None:

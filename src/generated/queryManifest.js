@@ -529,6 +529,31 @@ const queryManifest = {
     "filename": "48_monthly_ap_aging_summary.sql",
     "publicPath": "/financial/48_monthly_ap_aging_summary.sql"
   },
+  "financial/49_pro_forma_income_statement_monthly.sql": {
+    "category": "financial",
+    "filename": "49_pro_forma_income_statement_monthly.sql",
+    "publicPath": "/financial/49_pro_forma_income_statement_monthly.sql"
+  },
+  "financial/50_pro_forma_balance_sheet_monthly.sql": {
+    "category": "financial",
+    "filename": "50_pro_forma_balance_sheet_monthly.sql",
+    "publicPath": "/financial/50_pro_forma_balance_sheet_monthly.sql"
+  },
+  "financial/51_pro_forma_cash_flow_indirect_monthly.sql": {
+    "category": "financial",
+    "filename": "51_pro_forma_cash_flow_indirect_monthly.sql",
+    "publicPath": "/financial/51_pro_forma_cash_flow_indirect_monthly.sql"
+  },
+  "financial/52_budget_vs_actual_statement_bridge_monthly.sql": {
+    "category": "financial",
+    "filename": "52_budget_vs_actual_statement_bridge_monthly.sql",
+    "publicPath": "/financial/52_budget_vs_actual_statement_bridge_monthly.sql"
+  },
+  "financial/53_budget_vs_actual_working_capital_and_cash_bridge.sql": {
+    "category": "financial",
+    "filename": "53_budget_vs_actual_working_capital_and_cash_bridge.sql",
+    "publicPath": "/financial/53_budget_vs_actual_working_capital_and_cash_bridge.sql"
+  },
   "managerial/01_budget_vs_actual_by_cost_center.sql": {
     "category": "managerial",
     "filename": "01_budget_vs_actual_by_cost_center.sql",
@@ -778,6 +803,11 @@ const queryManifest = {
     "category": "managerial",
     "filename": "50_monthly_price_floor_pressure_and_override_concentration.sql",
     "publicPath": "/managerial/50_monthly_price_floor_pressure_and_override_concentration.sql"
+  },
+  "managerial/51_budget_vs_actual_revenue_price_volume_cost_bridge.sql": {
+    "category": "managerial",
+    "filename": "51_budget_vs_actual_revenue_price_volume_cost_bridge.sql",
+    "publicPath": "/managerial/51_budget_vs_actual_revenue_price_volume_cost_bridge.sql"
   }
 };
 

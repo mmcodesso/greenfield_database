@@ -9,7 +9,7 @@ import { reportAreaCollections } from "@site/src/generated/reportDocCollections"
 
 # Managerial Reports
 
-Use these reports when you want curated managerial outputs for budget review, sales and margin analysis, customer and supplier analysis, capacity monitoring, workforce structure, and payroll operations.
+Use these reports when you want curated managerial outputs for budget review, revenue and margin bridges, customer and supplier analysis, capacity monitoring, workforce structure, and payroll operations.
 
 <ReportCatalog
   groups={reportAreaCollections.managerial}

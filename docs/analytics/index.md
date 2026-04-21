@@ -1,5 +1,5 @@
 ---
-title: Accounting Analytics Guides
+title: Analytics Guides
 description: Financial, managerial, and audit analytics guides built on the synthetic SQLite accounting dataset and linked teaching materials.
 slug: /analytics
 sidebar_label: Analytics Guides

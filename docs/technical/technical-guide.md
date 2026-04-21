@@ -78,7 +78,7 @@ In plain language, the build:
 | `manufacturing.py` | Generate BOMs, work centers, capacity calendars, routings, work orders, schedules, issues, completions, and work-order close activity |
 | `planning.py` | Generate inventory policies, weekly demand forecasts, supply recommendations, component-demand plans, rough-cut capacity rows, and recommendation conversion helpers |
 | `payroll.py` | Generate shifts, assignments, daily rosters, absences, raw punches, approved time clocks, overtime approvals, payroll periods, labor time, payroll registers, payments, remittances, and manufacturing labor helpers |
-| `budgets.py` | Generate opening balances and budgets |
+| `budgets.py` | Generate opening balances, driver-based `BudgetLine` detail, summary `Budget` rows, and pro forma balance roll-forwards |
 | `o2c.py` | Generate price lists, promotions, pricing resolution, orders, shipments, invoices, receipts, applications, returns, credits, and refunds |
 | `p2p.py` | Generate requisitions, purchase orders, receipts, supplier invoices, and disbursements |
 | `journals.py` | Generate recurring journals, accrued-expense activity, reclasses, and year-end close journals |

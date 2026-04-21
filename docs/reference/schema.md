@@ -1,6 +1,6 @@
 ---
 title: Schema Reference
-description: Student-friendly reference for the 68 implemented tables, key columns, and ER relationships.
+description: Student-friendly reference for the 69 implemented tables, key columns, and ER relationships.
 sidebar_label: Schema Reference
 ---
 
@@ -33,9 +33,9 @@ If you need the big-picture business story first, start with [Dataset Guide](../
 | Manufacturing | BOMs, routings, work centers, work orders, issues, completions, and close | 14 |
 | Payroll and time | Shifts, rosters, absences, overtime approvals, punches, approved daily time, payroll, and remittances | 14 |
 | Master data | Item, warehouse, and employee records | 3 |
-| Organizational planning | Cost centers and budgets | 2 |
+| Organizational planning | Cost centers, budget summary, and budget detail | 3 |
 | Demand planning and MRP | Forecasting, inventory policy, recommendations, MRP, and rough-cut capacity | 5 |
-| Total |  | 68 |
+| Total |  | 69 |
 
 ## How to Read the ER Diagrams
 
@@ -332,22 +332,28 @@ erDiagram
 
 ## Organizational Planning
 
-This group is small, but it gives the model its reporting structure. `CostCenter` organizes responsibility, and `Budget` gives a planning benchmark by month and account.
+This group is small, but it gives the model its reporting structure. `CostCenter` organizes responsibility, `BudgetLine` stores the driver-based monthly planning detail, and `Budget` preserves the student-facing cost-center summary generated from that detail.
 
 ```mermaid
 erDiagram
-    CostCenter ||--o{ Budget : budgets
+    CostCenter ||--o{ Budget : summarizes
+    CostCenter ||--o{ BudgetLine : plans
 ```
 
 | Table | Use it for | Highest-value keys or fields |
 |---|---|---|
 | `CostCenter` | Organizational reporting structure | `CostCenterID`, `CostCenterName`, `ParentCostCenterID`, `ManagerID`, `IsActive` |
-| `Budget` | Monthly budget by cost center and account | `BudgetID`, `FiscalYear`, `Month`, `CostCenterID`, `AccountID`, `BudgetAmount` |
+| `Budget` | Student-facing monthly budget summary by cost center and account | `BudgetID`, `FiscalYear`, `Month`, `CostCenterID`, `AccountID`, `BudgetAmount` |
+| `BudgetLine` | Driver-based monthly budget detail for planning, bridges, and pro forma statements | `BudgetLineID`, `FiscalYear`, `Month`, `AccountID`, `CostCenterID`, `ItemID`, `WarehouseID`, `Quantity`, `UnitAmount`, `BudgetAmount`, `BudgetCategory`, `DriverType` |
 
 ### Join and Traceability Cues
 
 - `Budget.CostCenterID -> CostCenter.CostCenterID`
 - `Budget.AccountID -> Account.AccountID`
+- `BudgetLine.CostCenterID -> CostCenter.CostCenterID`
+- `BudgetLine.AccountID -> Account.AccountID`
+- `BudgetLine.ItemID -> Item.ItemID`
+- `BudgetLine.WarehouseID -> Warehouse.WarehouseID`
 
 ## Demand Planning and MRP
 

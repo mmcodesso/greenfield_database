@@ -28,13 +28,21 @@ You need to prove which collections and lifecycle groups generate the strongest 
 - A return and refund interpretation tied to lifecycle grouping.
 - A short management-facing recommendation on the most attractive and least attractive portfolio families.
 
-## Before You Start
+## Key Data Sources
 
 - Main tables: `Item`, `SalesInvoiceLine`, `CreditMemoLine`, `SalesReturnLine`, `ShipmentLine`, `SalesOrderLine`, `CustomerRefund`
 - Related guides: [Managerial Analytics](../managerial.md), [Financial Analytics](../financial.md), [Operations and Risk](../reports/operations-and-risk.md)
 - Related cases: [Product Portfolio and Lifecycle Case](product-portfolio-and-lifecycle-case.md), [Pricing and Margin Governance Case](pricing-and-margin-governance-case.md)
 - Supporting references: [Schema Reference](../../reference/schema.md), [Dataset Guide](../../start-here/dataset-overview.md)
 - This case stays at the portfolio-family level. Use the lighter portfolio case for catalog setup and the pricing case for commercial-policy interpretation.
+
+## Recommended Query Sequence
+
+1. `managerial/31_product_portfolio_mix_by_collection_style_lifecycle_supply_mode.sql`
+2. `financial/21_revenue_and_gross_margin_by_collection_style_lifecycle_supply_mode.sql`
+3. `managerial/32_contribution_margin_by_collection_material_lifecycle_supply_mode.sql`
+4. `managerial/33_customer_service_impact_by_collection_style.sql`
+5. `managerial/35_portfolio_return_refund_impact_by_collection_lifecycle.sql`
 
 ## Step-by-Step Walkthrough
 
@@ -46,7 +54,7 @@ Start by defining the portfolio population. You need a clear view of collections
 
 Establish the mix of collections, style families, lifecycle groups, and supply modes that management is evaluating.
 
-**Why this matters**
+**Why this step changes the diagnosis**
 
 Students need the portfolio population before they interpret profitability. A ranking means very little if the underlying mix is unclear.
 
@@ -80,7 +88,7 @@ Once the mix is clear, move to the first performance ranking. This step establis
 
 Identify which collections and lifecycle groups carry the most net sales and gross margin.
 
-**Why this matters**
+**Why this step changes the diagnosis**
 
 This is the first performance ranking, not the final answer. It shows where the portfolio looks strongest before contribution, service, and return pressure change the interpretation.
 
@@ -114,7 +122,7 @@ Now test the ranking under a different cost lens. Gross margin can overstate the
 
 Show whether the portfolio ranking changes once variable-cost logic is used.
 
-**Why this matters**
+**Why this step changes the diagnosis**
 
 Management decisions get stronger when students separate gross margin from contribution margin. Supply mode matters here because manufactured items exclude fixed overhead in this contribution view.
 
@@ -148,7 +156,7 @@ Financial performance still does not finish the portfolio story. Now test whethe
 
 Show where fill rate, shipment lag, and backorder pressure reinforce or weaken the profitability view.
 
-**Why this matters**
+**Why this step changes the diagnosis**
 
 A strong collection financially can still create operational strain. Management needs both the economic and service view before it makes a portfolio decision.
 
@@ -182,7 +190,7 @@ Finish the case by testing whether returns and refunds change the final portfoli
 
 Show how credit and refund pressure changes the final interpretation of portfolio attractiveness.
 
-**Why this matters**
+**Why this step changes the diagnosis**
 
 The case should end with a balanced management view. A single metric cannot rank the portfolio reliably if return and refund pressure changes the real outcome.
 
@@ -224,7 +232,7 @@ The query starts from `SalesInvoiceLine`, offsets the billed base with `CreditMe
 - How does lifecycle status change the interpretation of return and refund pressure?
 - Which portfolio family should management invest in, repair, or reconsider first?
 
-## Where to Go Next
+## Next Steps
 
 - Use [Product Portfolio and Lifecycle Case](product-portfolio-and-lifecycle-case.md) when you want the catalog and lifecycle setup behind this ranking view.
 - Use [Pricing and Margin Governance Case](pricing-and-margin-governance-case.md) when you want the commercial pricing explanation beneath realized revenue and margin.

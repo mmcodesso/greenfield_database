@@ -48,4 +48,6 @@ LEFT JOIN actual_expense AS ae
    AND ae.Month = b.Month
    AND ae.CostCenterID = b.CostCenterID
    AND ae.AccountID = b.AccountID
+WHERE a.AccountType = 'Expense'
+  AND a.AccountSubType = 'Operating Expense'
 ORDER BY b.FiscalYear, b.Month, cc.CostCenterName, a.AccountNumber;

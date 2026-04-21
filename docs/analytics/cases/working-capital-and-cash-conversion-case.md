@@ -27,13 +27,24 @@ You need to prove which working-capital buckets moved the most by month, which t
 - A distinction between the classic cash-conversion buckets and the additional liability buckets that still affect cash pressure.
 - A short management-facing conclusion on which working-capital driver deserves follow-up first.
 
-## Before You Start
+## Key Data Sources
 
 - Main tables: `GLEntry`, `Account`, `SalesInvoice`, `CashReceipt`, `CashReceiptApplication`, `PurchaseInvoice`, `PurchaseInvoiceLine`, `DisbursementPayment`, `GoodsReceipt`, `PayrollRegister`, `PayrollPayment`, `PayrollLiabilityRemittance`, `JournalEntry`
 - Related guides: [Financial Analytics](../financial.md), [Commercial and Working Capital](../reports/commercial-and-working-capital.md)
 - Related process pages: [Order-to-Cash Process](../../processes/o2c.md), [Procure-to-Pay Process](../../processes/p2p.md), [Payroll Process](../../processes/payroll.md), [Manual Journals and Close Cycle](../../processes/manual-journals-and-close.md)
 - Supporting references: [Schema Reference](../../reference/schema.md), [GLEntry Posting Reference](../../reference/posting.md), [Dataset Guide](../../start-here/dataset-overview.md)
 - This case focuses on balances plus timing. Use the statement bridge case when you need full statement presentation and close logic.
+
+## Recommended Query Sequence
+
+1. `financial/19_working_capital_bridge_by_month.sql`
+2. `financial/02_ar_aging_open_invoices.sql`
+3. `financial/15_customer_deposits_and_unapplied_cash_aging.sql`
+4. `financial/03_ap_aging_open_invoices.sql`
+5. `financial/20_cash_conversion_timing_review.sql`
+6. `financial/09_payroll_liability_rollforward.sql`
+7. `financial/11_payroll_cash_payments_and_remittances.sql`
+8. `financial/12_accrued_expense_rollforward.sql`
 
 ## Step-by-Step Walkthrough
 
@@ -45,7 +56,7 @@ Start from the monthly control-account view. You need to know which buckets actu
 
 Establish the month-by-month movement in AR, inventory and WIP, AP, GRNI, customer deposits, accrued expenses, and payroll liabilities.
 
-**Why this matters**
+**Why this step changes the diagnosis**
 
 This step sets the working-capital map. Without it, later timing analysis will be disconnected from the balances management is actually watching.
 
@@ -79,7 +90,7 @@ Once the bridge shows AR and deposit pressure, move to the customer-side timing 
 
 Distinguish open AR from customer cash that has already arrived but has not yet been fully applied.
 
-**Why this matters**
+**Why this step changes the diagnosis**
 
 Students often treat receivables and customer cash as one number. That shortcut hides a real working-capital issue when receipts exist but invoice settlement still lags.
 
@@ -118,7 +129,7 @@ Now move to the supplier side. Working-capital pressure changes when invoices re
 
 Connect open supplier invoices with invoice-to-payment timing and goods-receipt-to-payment timing.
 
-**Why this matters**
+**Why this step changes the diagnosis**
 
 AP timing is only part of the story. Physical receipt happens earlier in the purchasing cycle and often changes how management interprets cash-conversion pressure.
 
@@ -157,7 +168,7 @@ Working capital in this dataset includes payroll liabilities. That cash pressure
 
 Show how payroll liabilities accumulate before cash leaves through employee payments and statutory or benefit remittances.
 
-**Why this matters**
+**Why this step changes the diagnosis**
 
 A narrow AR-inventory-AP view misses a real part of current-liability pressure. Payroll liabilities can stay material even when commercial activity looks stable.
 
@@ -196,7 +207,7 @@ Finish with accrued expenses. Finance creates these liabilities before supplier 
 
 Show how accrued expenses increase current liabilities before later invoice settlement and connect that timing back to the broader cash-conversion story.
 
-**Why this matters**
+**Why this step changes the diagnosis**
 
 Classic CCC metrics do not explain the whole cash picture in this dataset. Accrued expenses add a liability layer that finance controls directly, and that layer changes how management interprets pressure on cash.
 
@@ -243,7 +254,7 @@ The accrual rollforward starts from `JournalEntry` rows tagged as accruals, join
 - Which liability bucket is easiest to miss if you only focus on AR, inventory, and AP?
 - Which bucket should management investigate first?
 
-## Where to Go Next
+## Next Steps
 
 - Use [Commercial and Working Capital](../reports/commercial-and-working-capital.md) when you want the report-level interpretation after the bridge is clear.
 - Use [Financial Analytics](../financial.md) for the broader financial query set behind this case.

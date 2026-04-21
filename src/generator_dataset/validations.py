@@ -6,6 +6,7 @@ from typing import Any
 import pandas as pd
 
 from generator_dataset.accrual_catalog import ACCRUAL_ACCOUNT_METADATA, ACCRUAL_SERVICE_ITEMS
+from generator_dataset.budgets import SUMMARY_BUDGET_CATEGORIES, budget_horizon_months
 from generator_dataset.journals import accrual_journal_details, planned_freight_settlements
 from generator_dataset.manufacturing import (
     CAPACITY_EXCEPTION_REASONS,
@@ -134,8 +135,64 @@ def validate_phase2(context: GenerationContext) -> dict[str, Any]:
             exceptions.append(f"Opening balance GL is not balanced: {difference}.")
 
     budget_count = len(context.tables["Budget"])
-    if not 2000 <= budget_count <= 4500:
-        exceptions.append(f"Budget row count {budget_count} is outside the 2,000 to 4,500 target.")
+    budget_line_count = len(context.tables["BudgetLine"])
+    if budget_line_count <= 0:
+        exceptions.append("BudgetLine detail rows were not generated.")
+    else:
+        expected_budget_months = set(budget_horizon_months(context))
+        actual_budget_line_months = {
+            (int(row.FiscalYear), int(row.Month))
+            for row in context.tables["BudgetLine"][["FiscalYear", "Month"]].drop_duplicates().itertuples(index=False)
+        }
+        missing_budget_months = sorted(expected_budget_months - actual_budget_line_months)
+        extra_budget_months = sorted(actual_budget_line_months - expected_budget_months)
+        if missing_budget_months:
+            exceptions.append(f"BudgetLine is missing budget months: {missing_budget_months[:6]}.")
+        if extra_budget_months:
+            exceptions.append(f"BudgetLine contains unexpected budget months: {extra_budget_months[:6]}.")
+
+        budget_line_summary = (
+            context.tables["BudgetLine"][
+                context.tables["BudgetLine"]["CostCenterID"].notna()
+                & context.tables["BudgetLine"]["BudgetCategory"].astype(str).isin(SUMMARY_BUDGET_CATEGORIES)
+            ][["FiscalYear", "Month", "CostCenterID", "AccountID", "BudgetAmount"]]
+            .copy()
+        )
+        if budget_line_summary.empty and budget_count > 0:
+            exceptions.append("Budget has rows, but BudgetLine has no summary-eligible detail rows.")
+        elif not budget_line_summary.empty:
+            budget_line_summary["BudgetAmount"] = budget_line_summary["BudgetAmount"].astype(float).round(2)
+            budget_line_summary = (
+                budget_line_summary.groupby(
+                    ["FiscalYear", "Month", "CostCenterID", "AccountID"],
+                    as_index=False,
+                    dropna=False,
+                )["BudgetAmount"]
+                .sum()
+                .sort_values(["FiscalYear", "Month", "CostCenterID", "AccountID"])
+                .reset_index(drop=True)
+            )
+            budget_summary = (
+                context.tables["Budget"][["FiscalYear", "Month", "CostCenterID", "AccountID", "BudgetAmount"]]
+                .copy()
+                .assign(BudgetAmount=lambda frame: frame["BudgetAmount"].astype(float).round(2))
+                .groupby(["FiscalYear", "Month", "CostCenterID", "AccountID"], as_index=False, dropna=False)["BudgetAmount"]
+                .sum()
+                .sort_values(["FiscalYear", "Month", "CostCenterID", "AccountID"])
+                .reset_index(drop=True)
+            )
+            budget_comparison = budget_line_summary.merge(
+                budget_summary,
+                on=["FiscalYear", "Month", "CostCenterID", "AccountID"],
+                how="outer",
+                suffixes=("_line", "_budget"),
+            ).fillna(0)
+            budget_comparison["Difference"] = (
+                budget_comparison["BudgetAmount_line"].astype(float)
+                - budget_comparison["BudgetAmount_budget"].astype(float)
+            ).round(2)
+            if budget_comparison["Difference"].ne(0).any():
+                exceptions.append("Budget summary does not match the aggregate of BudgetLine.")
 
     phase2_results: dict[str, Any] = {
         "row_counts": {table: int(len(df)) for table, df in context.tables.items()},
@@ -3837,6 +3894,7 @@ def validate_master_data_controls(context: GenerationContext) -> dict[str, Any]:
             ("JournalEntry", "CreatedDate", ["CreatedByEmployeeID"]),
             ("JournalEntry", "ApprovedDate", ["ApprovedByEmployeeID"]),
             ("Budget", "ApprovedDate", ["ApprovedByEmployeeID"]),
+            ("BudgetLine", "ApprovedDate", ["ApprovedByEmployeeID"]),
         ]
         for table_name, date_column, employee_columns in employee_date_specs:
             table = context.tables[table_name]

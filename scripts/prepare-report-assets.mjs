@@ -86,6 +86,19 @@ async function loadPublishedSqliteUrl() {
   );
 }
 
+async function loadConfiguredSqlitePath() {
+  if (process.env.REPORTS_SQLITE_PATH) {
+    return path.resolve(repoRoot, process.env.REPORTS_SQLITE_PATH);
+  }
+  const raw = yaml.load(await fs.readFile(configPath, "utf8")) ?? {};
+  const shortName = String(raw.short_name || deriveShortName(raw.company_name));
+  const configuredPath = interpolateTemplate(raw.sqlite_path, shortName);
+  if (!configuredPath) {
+    return null;
+  }
+  return path.resolve(repoRoot, configuredPath);
+}
+
 function resolveDownloadTarget(sqliteUrl) {
   const filename = path.basename(new URL(sqliteUrl).pathname) || "published.sqlite";
   return path.join(repoRoot, "outputs", "_site_build", filename);
@@ -172,6 +185,23 @@ async function main() {
   if (missingBefore.length === 0) {
     console.log(`Report assets already available in ${reportRoot}`);
     return;
+  }
+
+  const configuredSqlitePath = await loadConfiguredSqlitePath();
+  if (configuredSqlitePath && (await fileExists(configuredSqlitePath))) {
+    try {
+      console.log(`Using local SQLite from ${configuredSqlitePath}`);
+      generateReports(configuredSqlitePath);
+
+      const missingAfterLocal = await collectMissingFiles();
+      if (missingAfterLocal.length === 0) {
+        console.log(`Generated report assets in ${reportRoot}`);
+        return;
+      }
+    } catch (error) {
+      console.warn(`Local SQLite report generation failed: ${error instanceof Error ? error.message : error}`);
+      console.warn("Falling back to the published SQLite asset.");
+    }
   }
 
   const sqliteUrl = await loadPublishedSqliteUrl();

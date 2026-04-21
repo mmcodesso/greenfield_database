@@ -308,6 +308,11 @@ TABLE_COLUMNS = {
         "BudgetID", "FiscalYear", "CostCenterID", "AccountID", "Month", "BudgetAmount",
         "ApprovedByEmployeeID", "ApprovedDate",
     ],
+    "BudgetLine": [
+        "BudgetLineID", "FiscalYear", "Month", "AccountID", "CostCenterID", "ItemID",
+        "WarehouseID", "Quantity", "UnitAmount", "BudgetAmount", "BudgetCategory",
+        "DriverType", "ApprovedByEmployeeID", "ApprovedDate",
+    ],
     "DemandForecast": [
         "DemandForecastID", "ForecastWeekStartDate", "ForecastWeekEndDate", "ItemID", "WarehouseID",
         "BaselineForecastQuantity", "ForecastQuantity", "ForecastMethod", "ForecastVersion",

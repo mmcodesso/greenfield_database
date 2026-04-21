@@ -29,6 +29,46 @@ reports:
     preview_row_limit: 25
     excel_enabled: true
     csv_enabled: true
+  - slug: pro-forma-monthly-income-statement
+    title: Pro Forma Monthly Income Statement
+    area: financial
+    process_group: monthly-close-and-statements
+    cadence: Monthly budget horizon
+    description: Review the driver-based monthly income statement budget built from forecast volume, planned pricing, standard cost, payroll, and recurring expense drivers.
+    query_path: queries/financial/49_pro_forma_income_statement_monthly.sql
+    preview_row_limit: 25
+    excel_enabled: true
+    csv_enabled: true
+  - slug: pro-forma-monthly-balance-sheet
+    title: Pro Forma Monthly Balance Sheet
+    area: financial
+    process_group: monthly-close-and-statements
+    cadence: Monthly budget horizon
+    description: Review the driver-based monthly balance-sheet roll-forward for receivables, inventory, payables, accruals, fixed assets, equity, and cash.
+    query_path: queries/financial/50_pro_forma_balance_sheet_monthly.sql
+    preview_row_limit: 25
+    excel_enabled: true
+    csv_enabled: true
+  - slug: pro-forma-monthly-indirect-cash-flow
+    title: Pro Forma Monthly Indirect Cash Flow
+    area: financial
+    process_group: monthly-close-and-statements
+    cadence: Monthly budget horizon
+    description: Reconcile the pro forma budget from net income to operating, investing, financing, and ending-cash movement.
+    query_path: queries/financial/51_pro_forma_cash_flow_indirect_monthly.sql
+    preview_row_limit: 25
+    excel_enabled: true
+    csv_enabled: true
+  - slug: budget-vs-actual-statement-bridge-monthly
+    title: Budget vs Actual Statement Bridge by Month
+    area: financial
+    process_group: monthly-close-and-statements
+    cadence: Monthly
+    description: Compare key income statement, balance sheet, and cash lines between the pro forma budget and posted actual results.
+    query_path: queries/financial/52_budget_vs_actual_statement_bridge_monthly.sql
+    preview_row_limit: 25
+    excel_enabled: true
+    csv_enabled: true
   - slug: monthly-revenue-and-gross-margin
     title: Monthly Revenue and Gross Margin
     area: financial
@@ -106,6 +146,16 @@ reports:
     cadence: Monthly
     description: Compare the month-end balances of the main working-capital buckets and track net working capital over time.
     query_path: queries/financial/19_working_capital_bridge_by_month.sql
+    preview_row_limit: 25
+    excel_enabled: true
+    csv_enabled: true
+  - slug: budget-vs-actual-working-capital-and-cash-bridge
+    title: Budget vs Actual Working Capital and Cash Bridge
+    area: financial
+    process_group: working-capital-and-cash-conversion
+    cadence: Monthly
+    description: Compare budgeted and actual balances for the main working-capital buckets plus ending cash across the planning horizon.
+    query_path: queries/financial/53_budget_vs_actual_working_capital_and_cash_bridge.sql
     preview_row_limit: 25
     excel_enabled: true
     csv_enabled: true
@@ -216,6 +266,16 @@ reports:
     cadence: Monthly
     description: Compare budgeted and actual spend by cost center and account classification.
     query_path: queries/managerial/01_budget_vs_actual_by_cost_center.sql
+    preview_row_limit: 25
+    excel_enabled: true
+    csv_enabled: true
+  - slug: budget-vs-actual-revenue-price-volume-cost-bridge
+    title: Budget vs Actual Revenue Price Volume Cost Bridge
+    area: managerial
+    process_group: performance-and-planning
+    cadence: Monthly
+    description: Compare budgeted and actual quantity, net revenue, price realization, and standard-cost consumption by collection and style family.
+    query_path: queries/managerial/51_budget_vs_actual_revenue_price_volume_cost_bridge.sql
     preview_row_limit: 25
     excel_enabled: true
     csv_enabled: true

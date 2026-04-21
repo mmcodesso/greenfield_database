@@ -28,13 +28,23 @@ You need to prove where price realization falls below base list pricing, how muc
 - An override and price-floor pressure explanation tied to commercial concentration rather than audit exception testing.
 - A short management-facing conclusion on where pricing governance deserves follow-up first.
 
-## Before You Start
+## Key Data Sources
 
 - Main tables: `PriceList`, `PriceListLine`, `PromotionProgram`, `PriceOverrideApproval`, `SalesOrder`, `SalesOrderLine`, `SalesInvoice`, `SalesInvoiceLine`, `Customer`, `Item`
 - Related guides: [Financial Analytics](../financial.md), [Managerial Analytics](../managerial.md), [Commercial and Working Capital](../reports/commercial-and-working-capital.md)
 - Related process page: [Order-to-Cash Process](../../processes/o2c.md)
 - Supporting references: [Schema Reference](../../reference/schema.md), [GLEntry Posting Reference](../../reference/posting.md), [Dataset Guide](../../start-here/dataset-overview.md)
 - This case stays on commercial interpretation. Use the pricing audit case when you need full control-exception review.
+
+## Recommended Query Sequence
+
+1. `financial/25_price_realization_vs_list_by_segment_customer_region_collection_style.sql`
+2. `financial/26_gross_margin_impact_of_promotions_vs_nonpromotion_sales.sql`
+3. `managerial/48_collection_revenue_margin_before_after_promotions.sql`
+4. `managerial/49_customer_specific_pricing_concentration_and_dependency.sql`
+5. `managerial/47_sales_rep_override_rate_and_discount_dispersion.sql`
+6. `managerial/50_monthly_price_floor_pressure_and_override_concentration.sql`
+7. `audit/51_override_approval_completeness_review.sql`
 
 ## Step-by-Step Walkthrough
 
@@ -46,7 +56,7 @@ Start with realized pricing. You need to see where billed revenue diverges from 
 
 Establish where realized revenue differs from base list revenue across customers, segments, regions, collections, and style families.
 
-**Why this matters**
+**Why this step changes the diagnosis**
 
 This step gives you the commercial outcome first. It shows where pricing pressure exists before you decide whether promotions, customer-specific pricing, or override behavior explain it.
 
@@ -80,7 +90,7 @@ Once realized pricing is visible, separate the promotion effect from the broader
 
 Show how promotions reduce revenue and change gross margin by month and collection.
 
-**Why this matters**
+**Why this step changes the diagnosis**
 
 Promotion strategy is a deliberate commercial choice. Students need to show when lower realized pricing reflects planned promotional activity rather than uncontrolled discounting.
 
@@ -119,7 +129,7 @@ Promotions are only one policy path. Next, isolate customer-specific pricing and
 
 Identify which customers depend most on customer-specific pricing instead of standard segment pricing.
 
-**Why this matters**
+**Why this step changes the diagnosis**
 
 Customer-specific pricing can be commercially justified, but concentration changes negotiation complexity and makes realized pricing more dependent on a narrower set of accounts.
 
@@ -153,7 +163,7 @@ Now isolate override behavior. This is where commercial pressure becomes visible
 
 Show where override behavior and floor pressure concentrate by sales rep, customer segment, and month.
 
-**Why this matters**
+**Why this step changes the diagnosis**
 
 Override pressure reveals negotiation intensity and pricing discipline. This step stays on commercial concentration and pressure, not on formal exception testing.
 
@@ -192,7 +202,7 @@ Finish by taking one controlled step into governance risk. This is where commerc
 
 Identify where the pricing story moves from commercial interpretation into governance follow-up.
 
-**Why this matters**
+**Why this step changes the diagnosis**
 
 The case should end with a decision about where leadership needs stronger review. That does not turn this page into the audit case, but it should show where governance attention becomes necessary.
 
@@ -234,7 +244,7 @@ The query reads `PriceOverrideApproval`, `SalesOrderLine`, `SalesOrder`, `Custom
 - Which collection appears most dependent on promotions?
 - Which pricing pattern should move into the audit case next?
 
-## Where to Go Next
+## Next Steps
 
 - Use [Pricing Governance Audit Case](pricing-governance-audit-case.md) when you want the full control-focused follow-through.
 - Use [Commercial and Working Capital](../reports/commercial-and-working-capital.md) when you want the broader commercial perspective above the case.

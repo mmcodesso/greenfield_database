@@ -12,6 +12,18 @@ export const reportAreaCollections = {
         },
         {
           "reportKey": "monthly-indirect-cash-flow"
+        },
+        {
+          "reportKey": "pro-forma-monthly-income-statement"
+        },
+        {
+          "reportKey": "pro-forma-monthly-balance-sheet"
+        },
+        {
+          "reportKey": "pro-forma-monthly-indirect-cash-flow"
+        },
+        {
+          "reportKey": "budget-vs-actual-statement-bridge-monthly"
         }
       ]
     },
@@ -54,6 +66,9 @@ export const reportAreaCollections = {
       "items": [
         {
           "reportKey": "working-capital-bridge-by-month"
+        },
+        {
+          "reportKey": "budget-vs-actual-working-capital-and-cash-bridge"
         },
         {
           "reportKey": "customer-deposits-and-unapplied-cash-aging"
@@ -113,6 +128,9 @@ export const reportAreaCollections = {
       "items": [
         {
           "reportKey": "budget-vs-actual-by-cost-center"
+        },
+        {
+          "reportKey": "budget-vs-actual-revenue-price-volume-cost-bridge"
         },
         {
           "reportKey": "sales-and-margin-by-collection-and-style"

@@ -28,13 +28,25 @@ You need to prove how posted operational and finance-controlled activity builds 
 - An annual net-income to retained-earnings explanation.
 - One drill-down path from statement variance into revenue cutoff evidence.
 
-## Before You Start
+## Key Data Sources
 
 - Main tables: `GLEntry`, `Account`, `JournalEntry`, `SalesInvoice`, `SalesInvoiceLine`, `CreditMemo`, `CreditMemoLine`, `PurchaseInvoice`, `DisbursementPayment`, `GoodsReceiptLine`, `ShipmentLine`, `PayrollRegister`, `WorkOrderClose`
 - Related guides: [Financial Analytics](../financial.md), [Executive Overview](../reports/executive-overview.md)
 - Related process pages: [Manual Journals and Close Cycle](../../processes/manual-journals-and-close.md), [Order-to-Cash Process](../../processes/o2c.md), [Procure-to-Pay Process](../../processes/p2p.md), [Manufacturing Process](../../processes/manufacturing.md), [Payroll Process](../../processes/payroll.md)
 - Supporting references: [Schema Reference](../../reference/schema.md), [GLEntry Posting Reference](../../reference/posting.md), [Dataset Guide](../../start-here/dataset-overview.md)
 - This case focuses on statement tie, control accounts, and close. Use the working-capital case when you need settlement timing and current-liability pressure.
+
+## Recommended Query Sequence
+
+1. `financial/04_trial_balance_by_period.sql`
+2. `financial/06_control_account_reconciliation.sql`
+3. `financial/05_journal_and_close_cycle_review.sql`
+4. `financial/16_retained_earnings_and_close_entry_impact.sql`
+5. `financial/39_annual_income_to_equity_bridge.sql`
+6. `financial/40_post_close_profit_and_loss_leakage_review.sql`
+7. `financial/42_annual_net_revenue_bridge.sql`
+8. `financial/43_invoice_revenue_cutoff_exception_summary.sql`
+9. `financial/44_invoice_revenue_cutoff_exception_trace.sql`
 
 ## Step-by-Step Walkthrough
 
@@ -46,7 +58,7 @@ Start with the posted ledger structure. Before you reconcile anything, you need 
 
 Establish the posted trial-balance structure by fiscal period, account type, and account subtype.
 
-**Why this matters**
+**Why this step changes the diagnosis**
 
 This step gives you the statement frame. Without it, later reconciliation and close analysis will not have a stable ledger baseline.
 
@@ -80,7 +92,7 @@ Once the trial balance is clear, test whether the major control accounts can be 
 
 Prove that major control-account balances can be tied back to expected subledger and operational activity.
 
-**Why this matters**
+**Why this step changes the diagnosis**
 
 Statement trust starts with control-account trust. If a control account does not reconcile, the statement bridge is already under pressure before close logic enters the discussion.
 
@@ -114,7 +126,7 @@ Now move from control accounts to finance activity. The ledger carries both oper
 
 Show how finance-controlled journal activity differs from year-end close and how close entries affect retained earnings presentation.
 
-**Why this matters**
+**Why this step changes the diagnosis**
 
 Students often mix recurring journals with close entries. That makes it hard to explain why reported balances change while the underlying operating history stays the same.
 
@@ -153,7 +165,7 @@ This is the core statement-bridge step. You are now validating the annual close 
 
 Prove that annual net income, close entries, retained earnings, and the post-close statement state line up correctly.
 
-**Why this matters**
+**Why this step changes the diagnosis**
 
 This is the decisive statement test. If annual net income does not tie into retained earnings or if P&L accounts leak after close, the financial-statement bridge is incomplete.
 
@@ -192,7 +204,7 @@ Finish the case by taking one statement-level variance path into source-level ev
 
 Show how a statement-level variance can be narrowed from annual net-revenue mismatch into invoice-level cutoff evidence.
 
-**Why this matters**
+**Why this step changes the diagnosis**
 
 A statement bridge is only complete when it ends in source-level proof. Summary reconciliation alone does not show whether the problem sits in statement logic, posting logic, or source timing.
 
@@ -244,7 +256,7 @@ The annual bridge compares invoice-line and credit-memo totals with pre-close re
 - Why is retained earnings the decisive tie point for annual close validation?
 - When should you stop at the summary query and when should you open the line-level cutoff trace?
 
-## Where to Go Next
+## Next Steps
 
 - Use [Manual Journals and Close Cycle](../../processes/manual-journals-and-close.md) when you want the process-level view of recurring journals, accrual settlement, and boundary entries.
 - Use [Executive Overview](../reports/executive-overview.md) when you want the report-level interpretation after the statement bridge is clear.

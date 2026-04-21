@@ -33,7 +33,7 @@ The dataset lets you move from business activity to source documents and from so
 
 ## What the Dataset Contains
 
-The current implementation contains **68 tables** across eight areas:
+The current implementation contains **69 tables** across eight areas:
 
 | Area | What it covers | Count |
 |---|---|---:|
@@ -43,7 +43,7 @@ The current implementation contains **68 tables** across eight areas:
 | Manufacturing | BOMs, routings, work centers, work orders, issues, completions, and close | 14 |
 | Payroll and time | Shifts, rosters, absences, overtime approvals, punches, approved daily time, payroll, and remittances | 14 |
 | Master data | Item, warehouse, and employee records | 3 |
-| Organizational planning | Cost centers and budgets | 2 |
+| Organizational planning | Cost centers, budget summary, and budget detail | 3 |
 | Demand planning and MRP | Forecasting, inventory policy, recommendations, MRP, and rough-cut capacity | 5 |
 
 Most classes use these ready-to-use files:
@@ -102,7 +102,7 @@ You do not need every key on day one. Start with the keys that anchor document c
 | `PayrollRegisterID` | Payroll header to line detail and net-pay settlement |
 | `SupplyPlanRecommendationID` | Planning recommendations to requisitions, work orders, MRP rows, and rough-cut capacity rows |
 | `ItemID` | Product-level analysis across sales, purchasing, manufacturing, and planning |
-| `AccountID` | `GLEntry` and `Budget` to the chart of accounts |
+| `AccountID` | `GLEntry`, `Budget`, and `BudgetLine` to the chart of accounts |
 | `CostCenterID` | Operating activity, labor, budgets, and reporting by organization unit |
 
 For exact field-level lookup, go to [Schema Reference](../reference/schema.md).
@@ -181,7 +181,7 @@ The most important mental rule is simple: planning and setup tables usually do *
 
 | Type of activity | Usually posts to GL? | Examples |
 |---|---|---|
-| Master data and planning | No | `Item`, `Employee`, `Budget`, BOMs, routings, forecasts, inventory policies |
+| Master data and planning | No | `Item`, `Employee`, `Budget`, `BudgetLine`, BOMs, routings, forecasts, inventory policies |
 | Operational commitments | No | `SalesOrder`, `PurchaseRequisition`, `PurchaseOrder`, `WorkOrder` |
 | Operational execution with accounting effect | Yes | `Shipment`, `SalesInvoice`, `GoodsReceipt`, `MaterialIssue`, `ProductionCompletion`, `PayrollRegister` |
 | Settlements and clearances | Yes | `CashReceipt`, `CashReceiptApplication`, `DisbursementPayment`, `PayrollPayment`, `PayrollLiabilityRemittance`, `CustomerRefund` |
@@ -214,6 +214,7 @@ Start with:
 - `PromotionProgram`
 - `PriceOverrideApproval`
 - `Budget`
+- `BudgetLine`
 - `CostCenter`
 - `BillOfMaterial`
 - `WorkOrder`
