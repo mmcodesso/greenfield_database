@@ -13,7 +13,7 @@ This lab keeps the audit work close to the published anomaly set. Students move 
 
 ## Business Scenario
 
-The finance and audit team receives the published five-year dataset with a moderate set of planted anomalies. This lab teaches students how to trace flagged exceptions to source documents, identify the related control, and explain the business risk in plain language. In class, you can narrow the review to one fiscal year with a filter when you want a smaller lab.
+The finance and audit team receives the published three-year dataset for fiscal years 2024 through 2026 with a moderate set of planted anomalies. This lab teaches students how to trace flagged exceptions to source documents, identify the related control, and explain the business risk in plain language. In class, you can narrow the review to one fiscal year with a filter when you want a smaller lab.
 
 ## The Problem to Solve
 

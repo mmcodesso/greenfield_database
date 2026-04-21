@@ -1,9 +1,13 @@
 from dataclasses import replace
 
+import pytest
+
+from generator_dataset.accrual_catalog import ACCRUAL_ACCOUNT_METADATA
 from generator_dataset.fixed_assets import fixed_asset_opening_profiles
 from generator_dataset.anomalies import inject_anomalies
 from generator_dataset.journals import (
     first_business_day_on_or_after,
+    fiscal_months,
     generate_accrual_adjustment_journals,
     generate_recurring_manual_journals,
     generate_year_end_close_journals,
@@ -92,19 +96,29 @@ def _accrual_expense_account_number(context, accrual_journal_id: int) -> str:
     raise AssertionError(f"Missing expense account for accrual journal {accrual_journal_id}")
 
 
-def test_generate_recurring_manual_journals_counts_and_links() -> None:
-    context = build_phase5()
+@pytest.fixture(scope="module")
+def phase5_base_context():
+    return build_phase5()
+
+
+@pytest.fixture
+def phase5_context(clone_generation_context, phase5_base_context):
+    return clone_generation_context(phase5_base_context)
+
+
+def test_generate_recurring_manual_journals_counts_and_links(phase5_context) -> None:
+    context = phase5_context
 
     generate_recurring_manual_journals(context)
 
     entry_type_counts = context.tables["JournalEntry"]["EntryType"].value_counts().to_dict()
-    fiscal_month_count = 60
+    fiscal_month_count = len(fiscal_months(context))
 
     assert int(entry_type_counts["Opening"]) == 1
     assert int(entry_type_counts["Rent"]) == fiscal_month_count * 2
     assert int(entry_type_counts["Utilities"]) == fiscal_month_count
     assert int(entry_type_counts["Depreciation"]) == fiscal_month_count * 3
-    assert int(entry_type_counts["Accrual"]) == fiscal_month_count * 3
+    assert int(entry_type_counts["Accrual"]) == fiscal_month_count * len(ACCRUAL_ACCOUNT_METADATA)
     assert int(entry_type_counts.get("Accrual Reversal", 0)) == 0
     assert len(context.tables["JournalEntry"]) == sum(int(count) for count in entry_type_counts.values())
 
@@ -115,8 +129,8 @@ def test_generate_recurring_manual_journals_counts_and_links() -> None:
     assert 2000 <= len(context.tables["Budget"]) <= 4500
 
 
-def test_generate_year_end_close_journals_clean_phase12_validation() -> None:
-    context = build_phase5()
+def test_generate_year_end_close_journals_clean_phase12_validation(phase5_context) -> None:
+    context = phase5_context
     context.settings = replace(context.settings, anomaly_mode="none")
 
     generate_recurring_manual_journals(context)
@@ -127,8 +141,9 @@ def test_generate_year_end_close_journals_clean_phase12_validation() -> None:
     results = validate_phase13(context)
 
     entry_type_counts = context.tables["JournalEntry"]["EntryType"].value_counts().to_dict()
-    assert int(entry_type_counts["Year-End Close - P&L to Income Summary"]) == 5
-    assert int(entry_type_counts["Year-End Close - Income Summary to Retained Earnings"]) == 5
+    fiscal_year_count = len({year for year, _ in fiscal_months(context)})
+    assert int(entry_type_counts["Year-End Close - P&L to Income Summary"]) == fiscal_year_count
+    assert int(entry_type_counts["Year-End Close - Income Summary to Retained Earnings"]) == fiscal_year_count
     assert len(context.tables["JournalEntry"]) == sum(int(count) for count in entry_type_counts.values())
     assert results["gl_balance"]["exception_count"] == 0
     assert results["trial_balance_difference"] == 0
@@ -145,15 +160,15 @@ def test_generate_year_end_close_journals_clean_phase12_validation() -> None:
         .astype(int)
         .to_dict()
     )
-    for account_number in ["6100", "6140", "6180"]:
+    for account_number in ACCRUAL_ACCOUNT_METADATA:
         account_id = accounts[account_number]
         account_rows = gl[gl["AccountID"].astype(int).eq(account_id)]
         assert round(float(account_rows["Debit"].sum()), 2) > 0
         assert round(float(account_rows["Credit"].sum()), 2) > 0
 
 
-def test_fixed_assets_and_accumulated_depreciation_remain_realistic_over_five_years() -> None:
-    context = build_phase5()
+def test_fixed_assets_and_accumulated_depreciation_remain_realistic_over_five_years(phase5_context) -> None:
+    context = phase5_context
     context.settings = replace(context.settings, anomaly_mode="none")
 
     generate_recurring_manual_journals(context)
@@ -185,8 +200,8 @@ def test_fixed_assets_and_accumulated_depreciation_remain_realistic_over_five_ye
         assert round(gross_balance - accumulated_balance, 2) >= -0.01
 
 
-def test_accrued_expense_settlement_uses_purchase_invoice_path() -> None:
-    context = build_phase5()
+def test_accrued_expense_settlement_uses_purchase_invoice_path(phase5_context) -> None:
+    context = phase5_context
     context.settings = replace(context.settings, anomaly_mode="none")
 
     generate_recurring_manual_journals(context)
@@ -210,8 +225,8 @@ def test_accrued_expense_settlement_uses_purchase_invoice_path() -> None:
     assert results["account_rollforward"]["exception_count"] == 0
 
 
-def test_invoice_linked_under_accrual_creates_exact_full_settlement_adjustment() -> None:
-    context = build_phase5()
+def test_invoice_linked_under_accrual_creates_exact_full_settlement_adjustment(phase5_context) -> None:
+    context = phase5_context
     context.settings = replace(context.settings, anomaly_mode="none")
 
     generate_recurring_manual_journals(context)
@@ -251,8 +266,8 @@ def test_invoice_linked_under_accrual_creates_exact_full_settlement_adjustment()
     assert round(float(credit_expense), 2) == expected_residual
 
 
-def test_invoice_linked_equal_amount_creates_no_adjustment() -> None:
-    context = build_phase5()
+def test_invoice_linked_equal_amount_creates_no_adjustment(phase5_context) -> None:
+    context = phase5_context
     context.settings = replace(context.settings, anomaly_mode="none")
 
     generate_recurring_manual_journals(context)
@@ -269,8 +284,8 @@ def test_invoice_linked_equal_amount_creates_no_adjustment() -> None:
     assert adjustments.empty
 
 
-def test_invoice_linked_over_accrual_expenses_only_the_excess() -> None:
-    context = build_phase5()
+def test_invoice_linked_over_accrual_expenses_only_the_excess(phase5_context) -> None:
+    context = phase5_context
     context.settings = replace(context.settings, anomaly_mode="none")
 
     generate_recurring_manual_journals(context)
@@ -310,8 +325,8 @@ def test_invoice_linked_over_accrual_expenses_only_the_excess() -> None:
     assert adjustments.empty
 
 
-def test_phase8_journal_anomalies_preserve_gl_balance() -> None:
-    context = build_phase5()
+def test_phase8_journal_anomalies_preserve_gl_balance(phase5_context) -> None:
+    context = phase5_context
 
     generate_recurring_manual_journals(context)
     generate_accrued_service_settlements(context)

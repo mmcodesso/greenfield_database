@@ -75,6 +75,7 @@ The default package is a student-facing, anomaly-enriched teaching build. Separa
   pytest -q
   python -B -m compileall -q src tests
   ```
+- Any agent- or tool-driven test invocation must use a timeout of at least one hour (`3600000` ms). The test suite is known to run long enough that shorter defaults frequently fail due to timeout.
 - Package deploy command:
   ```bash
   npm run deploy
@@ -119,7 +120,7 @@ Notes:
 - `src/generated/queryDocCollections.js` drives starter query maps, case sequences, and audit coverage text. Keep it synchronized manually when query coverage or teaching paths change.
 - `config/report_catalog.yaml` is the source of truth for report definitions and asset paths.
 - `config/report_pack_catalog.yaml` is the source of truth for guided report perspectives and their recommended sequences.
-- Default teaching build: `config/settings.yaml` with `anomaly_mode: standard`.
+- Default teaching build: `config/settings.yaml` with `anomaly_mode: standard`, covering fiscal years 2024 through 2026.
 - Clean reconciliation build: `config/settings_reconciliation.yaml` with `anomaly_mode: none` and separate clean SQLite/log outputs.
 - Small validation and performance configs: `config/settings_validation.yaml` and `config/settings_perf.yaml`.
 - Report assets under `static/reports/` or `outputs/reports/` are generated from SQLite and must never be hand-edited.
@@ -130,6 +131,7 @@ Notes:
 ## Validation Rules
 
 - Before finishing, run the checks that match the touched area and report what actually ran.
+- For any explicit test run (`pytest`, targeted pytest selections, or equivalent test commands), use a command timeout of at least one hour (`3600000` ms).
 - Minimum for Python, SQL, config, schema, exporter, or generator changes:
   ```bash
   pytest -q

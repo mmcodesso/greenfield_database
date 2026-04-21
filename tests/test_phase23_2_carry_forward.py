@@ -4,9 +4,8 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
-import yaml
 
-from generator_dataset.main import build_full_dataset, build_phase23
+from generator_dataset.main import build_phase23
 from generator_dataset.planning import manufacture_recommendations_for_month, purchase_recommendations_for_month
 from generator_dataset.schema import TABLE_COLUMNS, create_empty_tables
 from generator_dataset.settings import initialize_context, load_settings
@@ -54,30 +53,14 @@ def _selector_test_context() -> object:
     return context
 
 
-@pytest.fixture(scope="session")
-def phase23_one_year_clean_artifacts(tmp_path_factory: pytest.TempPathFactory) -> dict[str, object]:
-    workdir = tmp_path_factory.mktemp("phase23_one_year_clean")
-    settings = load_settings("config/settings.yaml")
-    payload = dict(vars(settings))
-    payload.update({
-        "anomaly_mode": "none",
-        "export_sqlite": False,
-        "export_excel": False,
-        "export_support_excel": False,
-        "export_csv_zip": False,
-        "fiscal_year_end": "2026-12-31",
-        "generation_log_path": str(workdir / "generation.log"),
-    })
+@pytest.fixture(scope="module")
+def phase23_clean_base_context():
+    return build_phase23("config/settings_validation.yaml", validation_scope="full")
 
-    config_path = workdir / "settings_phase23_one_year.yaml"
-    config_path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
 
-    context = build_full_dataset(str(config_path))
-    return {
-        "context": context,
-        "workdir": workdir,
-        "generation_log_path": Path(payload["generation_log_path"]),
-    }
+@pytest.fixture
+def phase23_clean_context(clone_generation_context, phase23_clean_base_context):
+    return clone_generation_context(phase23_clean_base_context)
 
 
 def test_phase23_2_purchase_and_manufacture_select_overdue_rows() -> None:
@@ -117,8 +100,8 @@ def test_phase23_2_january_picks_up_prefiscal_recommendations() -> None:
     assert january_manufacture["SupplyPlanRecommendationID"].astype(int).tolist() == [11]
 
 
-def test_phase23_2_clean_validation_build_stays_green() -> None:
-    context = build_phase23("config/settings_validation.yaml", validation_scope="full")
+def test_phase23_2_clean_validation_build_stays_green(phase23_clean_context) -> None:
+    context = phase23_clean_context
     phase23 = context.validation_results["phase23"]
 
     assert phase23["exceptions"] == []
@@ -126,9 +109,9 @@ def test_phase23_2_clean_validation_build_stays_green() -> None:
 
 
 def test_phase23_2_one_year_clean_build_clears_overdue_planned_recommendations(
-    phase23_one_year_clean_artifacts: dict[str, object],
+    one_year_clean_dataset_artifacts: dict[str, object],
 ) -> None:
-    context = phase23_one_year_clean_artifacts["context"]
+    context = one_year_clean_dataset_artifacts["context"]
     phase23 = context.validation_results["phase23"]
     recommendations = context.tables["SupplyPlanRecommendation"].copy()
     fiscal_year_end = pd.Timestamp("2026-12-31")
@@ -158,9 +141,9 @@ def test_phase23_2_one_year_clean_build_clears_overdue_planned_recommendations(
 
 
 def test_phase23_2_generation_log_includes_conversion_diagnostics(
-    phase23_one_year_clean_artifacts: dict[str, object],
+    one_year_clean_dataset_artifacts: dict[str, object],
 ) -> None:
-    log_text = phase23_one_year_clean_artifacts["generation_log_path"].read_text(encoding="utf-8")
+    log_text = one_year_clean_dataset_artifacts["generation_log_path"].read_text(encoding="utf-8")
 
     assert "PURCHASE CONVERSION | 2026-01 | eligible_planned=" in log_text
     assert "MANUFACTURING CONVERSION | 2026-02 | eligible_planned=" in log_text

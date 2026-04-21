@@ -71,6 +71,16 @@ WORKING_DAY_TO_CALENDAR_DAY_FACTOR = 7.0 / 5.0
 DEMAND_FORECAST_PROGRESS_INTERVAL = 25
 PLANNING_HORIZON_WEEKS = 12
 MANUFACTURED_COMPONENT_NEED_OFFSET_DAYS = 14
+DEMAND_ANNUAL_GROWTH_RATE = 0.025
+# Anchor the late-year manufactured calibration to the 3-year default build so
+# narrower clean-validation windows inherit the steady-state posture instead of
+# restarting the bridge year.
+MANUFACTURED_LOAD_CALIBRATION_START_YEAR = 2024
+MANUFACTURED_LATE_YEAR_SELL_THROUGH_UPLIFT_BY_YEAR = {
+    2024: 1.00,
+    2025: 1.10,
+    2026: 1.20,
+}
 MANUFACTURED_FORECAST_LOAD_MULTIPLIER = 2.75
 FINISHED_GOODS_OPENING_STOCK_FACTOR = 0.65
 OPENING_SELLABLE_COVERAGE_WEEKS_BY_SUPPLY_MODE = {
@@ -83,13 +93,21 @@ OPENING_COMPONENT_COVERAGE_WEEKS_BY_GROUP = {
 }
 OPENING_PROCUREMENT_RUN_RATE_WEEKS = 8.0
 OPENING_STATE_MANUFACTURED_FORECAST_MULTIPLIER = 3.5
+MANUFACTURED_BRIDGE_TARGET_DAYS_BY_LIFECYCLE = {
+    "Core": 10,
+    "Seasonal": 14,
+}
+MANUFACTURED_BRIDGE_SAFETY_STOCK_BY_LIFECYCLE = {
+    "Core": 6.0,
+    "Seasonal": 10.0,
+}
 MANUFACTURED_TARGET_DAYS_BY_LIFECYCLE = {
-    "Core": 14,
-    "Seasonal": 18,
+    "Core": 12,
+    "Seasonal": 16,
 }
 MANUFACTURED_SAFETY_STOCK_BY_LIFECYCLE = {
-    "Core": 10.0,
-    "Seasonal": 14.0,
+    "Core": 8.0,
+    "Seasonal": 12.0,
 }
 
 
@@ -144,6 +162,74 @@ def week_end(value: pd.Timestamp | str) -> pd.Timestamp:
 
 def fiscal_bounds(context: GenerationContext) -> tuple[pd.Timestamp, pd.Timestamp]:
     return pd.Timestamp(context.settings.fiscal_year_start), pd.Timestamp(context.settings.fiscal_year_end)
+
+
+def annual_demand_growth_factor(context: GenerationContext, year: int) -> float:
+    fiscal_start_year = pd.Timestamp(context.settings.fiscal_year_start).year
+    growth_years = max(int(year) - int(fiscal_start_year), 0)
+    return round((1.0 + DEMAND_ANNUAL_GROWTH_RATE) ** growth_years, 6)
+
+
+def manufactured_late_year_sell_through_factor(year: int) -> float:
+    if not MANUFACTURED_LATE_YEAR_SELL_THROUGH_UPLIFT_BY_YEAR:
+        return 1.0
+    calibration_years = sorted(int(value) for value in MANUFACTURED_LATE_YEAR_SELL_THROUGH_UPLIFT_BY_YEAR)
+    resolved_year = min(max(int(year), calibration_years[0]), calibration_years[-1])
+    return float(MANUFACTURED_LATE_YEAR_SELL_THROUGH_UPLIFT_BY_YEAR.get(
+        resolved_year,
+        MANUFACTURED_LATE_YEAR_SELL_THROUGH_UPLIFT_BY_YEAR[calibration_years[-1]],
+    ))
+
+
+def manufactured_late_year_sell_through_schedule(context: GenerationContext) -> list[dict[str, Any]]:
+    fiscal_start, fiscal_end = fiscal_bounds(context)
+    return [
+        {
+            "FiscalYear": int(year),
+            "SellThroughUpliftFactor": round(manufactured_late_year_sell_through_factor(int(year)), 4),
+        }
+        for year in range(int(fiscal_start.year), int(fiscal_end.year) + 1)
+    ]
+
+
+def manufactured_effective_policy_profile(
+    bucket_start: pd.Timestamp | str,
+    lifecycle_status: str,
+) -> dict[str, Any]:
+    bucket_year = int(pd.Timestamp(bucket_start).year)
+    normalized_lifecycle = str(lifecycle_status or "Core")
+    if bucket_year <= MANUFACTURED_LOAD_CALIBRATION_START_YEAR:
+        phase = "bridge"
+        target_days = int(MANUFACTURED_BRIDGE_TARGET_DAYS_BY_LIFECYCLE.get(normalized_lifecycle, 10))
+        safety_stock = float(MANUFACTURED_BRIDGE_SAFETY_STOCK_BY_LIFECYCLE.get(normalized_lifecycle, 6.0))
+    else:
+        phase = "steady-state"
+        target_days = int(MANUFACTURED_TARGET_DAYS_BY_LIFECYCLE.get(normalized_lifecycle, 12))
+        safety_stock = float(MANUFACTURED_SAFETY_STOCK_BY_LIFECYCLE.get(normalized_lifecycle, 8.0))
+    return {
+        "PolicyPhase": phase,
+        "TargetDaysSupply": target_days,
+        "SafetyStockQuantity": round(safety_stock, 2),
+    }
+
+
+def manufactured_policy_profile_schedule(context: GenerationContext) -> list[dict[str, Any]]:
+    fiscal_start, fiscal_end = fiscal_bounds(context)
+    rows: list[dict[str, Any]] = []
+    for year in range(int(fiscal_start.year), int(fiscal_end.year) + 1):
+        for lifecycle_status in ["Core", "Seasonal"]:
+            profile = manufactured_effective_policy_profile(
+                pd.Timestamp(year=year, month=1, day=1),
+                lifecycle_status,
+            )
+            rows.append({
+                "FiscalYear": int(year),
+                "LifecycleStatus": lifecycle_status,
+                "PolicyPhase": str(profile["PolicyPhase"]),
+                "TargetDaysSupply": int(profile["TargetDaysSupply"]),
+                "SafetyStockQuantity": float(profile["SafetyStockQuantity"]),
+            })
+    return rows
 
 
 def warehouse_ids(context: GenerationContext) -> list[int]:
@@ -1100,12 +1186,18 @@ def generate_demand_forecasts(context: GenerationContext) -> None:
         item_id = int(item.ItemID)
         item_launch = pd.Timestamp(item.LaunchDate)
         forecast_load_multiplier = 1.0
+        is_manufactured_sellable = (
+            str(item.SupplyMode) == "Manufactured"
+            and pd.notna(getattr(item, "RevenueAccountID", None))
+            and str(item.ItemGroup) not in {"Packaging", "Raw Materials", "Services"}
+        )
         if str(item.SupplyMode) == "Manufactured":
             forecast_load_multiplier = MANUFACTURED_FORECAST_LOAD_MULTIPLIER
         prepared_items.append({
             "item": item,
             "item_id": item_id,
             "supply_mode": str(item.SupplyMode),
+            "is_manufactured_sellable": is_manufactured_sellable,
             "lifecycle_status": str(item.LifecycleStatus),
             "first_week": first_forecast_week_start(item_launch),
             "lifecycle_multiplier": LIFECYCLE_DEMAND_MULTIPLIER.get(str(item.LifecycleStatus), 1.0),
@@ -1134,6 +1226,7 @@ def generate_demand_forecasts(context: GenerationContext) -> None:
         lifecycle_multiplier = float(prepared_item["lifecycle_multiplier"])
         base_demand = float(prepared_item["base_demand"])
         forecast_load_multiplier = float(prepared_item["forecast_load_multiplier"])
+        is_manufactured_sellable = bool(prepared_item["is_manufactured_sellable"])
         warehouse_rank = list(prepared_item["warehouse_rank"])
         supply_mode = str(prepared_item["supply_mode"])
         lifecycle_status = str(prepared_item["lifecycle_status"])
@@ -1147,12 +1240,17 @@ def generate_demand_forecasts(context: GenerationContext) -> None:
             weeks_since_launch = max(int((bucket_start - first_week).days // 7), 0)
             if weeks_since_launch < 8:
                 launch_ramp = min(1.0, 0.45 + weeks_since_launch * 0.07)
+            manufactured_sell_through_factor = 1.0
+            if is_manufactured_sellable:
+                manufactured_sell_through_factor = manufactured_late_year_sell_through_factor(int(bucket_start.year))
             baseline_total = max(
                 0.0,
                 qty(
                     base_demand
                     * lifecycle_multiplier
                     * month_multiplier
+                    * annual_demand_growth_factor(context, int(bucket_start.year))
+                    * manufactured_sell_through_factor
                     * style_multiplier
                     * launch_ramp
                     * forecast_load_multiplier
@@ -1464,13 +1562,22 @@ def generate_month_planning(context: GenerationContext, year: int, month: int) -
                 continue
             projected_available = float(inventory_state.get((int(item.ItemID), int(warehouse_id)), 0.0))
             planning_lead_time_days = int(policy["PlanningLeadTimeDays"])
-            safety_stock = float(policy["SafetyStockQuantity"])
-            reorder_qty = float(policy["ReorderQuantity"])
             policy_type = str(policy["PolicyType"])
+            base_target_days = int(policy["TargetDaysSupply"])
+            base_safety_stock = float(policy["SafetyStockQuantity"])
+            reorder_qty = float(policy["ReorderQuantity"])
             for bucket_start in horizon_starts:
                 if bucket_start < week_start(launch_date):
                     continue
                 bucket_end = week_end(bucket_start)
+                policy_phase = "static"
+                target_days = int(base_target_days)
+                safety_stock = float(base_safety_stock)
+                if str(item.SupplyMode) == "Manufactured":
+                    effective_policy = manufactured_effective_policy_profile(bucket_start, str(item.LifecycleStatus))
+                    policy_phase = str(effective_policy["PolicyPhase"])
+                    target_days = int(effective_policy["TargetDaysSupply"])
+                    safety_stock = float(effective_policy["SafetyStockQuantity"])
                 forecast_qty = float(weekly_forecast.get((bucket_start.strftime("%Y-%m-%d"), int(item.ItemID), int(warehouse_id)), 0.0))
                 backlog_qty = 0.0
                 if int(warehouse_id) == int(ranked_warehouses[0]):
@@ -1513,11 +1620,19 @@ def generate_month_planning(context: GenerationContext, year: int, month: int) -
                             "BacklogQuantity": qty(backlog_qty),
                             "GrossRequirementQuantity": qty(gross_requirement),
                             "ProjectedAvailableBeforeReplenishment": qty(projected_after_demand),
+                            "TargetDaysSupply": int(target_days),
                             "SafetyStockTargetQuantity": qty(safety_stock),
                             "NetRequirementQuantity": qty(net_requirement),
                             "RecommendedOrderQuantity": qty(recommended_order_quantity),
                             "LotSizeUpliftQuantity": qty(max(0.0, round(recommended_order_quantity - net_requirement, 2))),
                             "PolicyType": policy_type,
+                            "PolicyPhase": policy_phase,
+                            "ManufacturedSellThroughUpliftFactor": round(
+                                manufactured_late_year_sell_through_factor(int(bucket_start.year))
+                                if str(item.SupplyMode) == "Manufactured"
+                                else 1.0,
+                                4,
+                            ),
                         } if recommended_order_quantity > 0 else None,
                     )
                 projected_available = round(projected_after_demand + recommended_order_quantity, 2)

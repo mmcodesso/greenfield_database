@@ -13,6 +13,7 @@ import pandas as pd
 from generator_dataset.anomalies import inject_anomalies, invalidate_all_caches
 from generator_dataset.budgets import generate_budgets, generate_opening_balances
 from generator_dataset.exporters import (
+    EXCEL_MAX_TABLE_DATA_ROWS,
     export_csv_zip,
     export_excel,
     export_reports,
@@ -81,6 +82,8 @@ from generator_dataset.planning import (
     generate_inventory_policies,
     generate_month_planning,
     inventory_position_as_of,
+    manufactured_late_year_sell_through_schedule,
+    manufactured_policy_profile_schedule,
     manufactured_planning_diagnostics,
 )
 from generator_dataset.posting_engine import post_all_transactions
@@ -114,6 +117,7 @@ from generator_dataset.validations import (
 
 
 LOGGER = logging.getLogger("generator_dataset")
+PREFERRED_EXCEL_GLENTRY_ROW_BUDGET = 1_000_000
 
 
 def generation_log_path(context_or_settings: GenerationContext | Settings) -> Path:
@@ -565,10 +569,96 @@ def manufactured_fg_flow_diagnostics(context: GenerationContext) -> list[dict[st
     return results
 
 
+def annual_manufactured_fg_flow_diagnostics(context: GenerationContext) -> list[dict[str, Any]]:
+    monthly_rows = pd.DataFrame(manufactured_fg_flow_diagnostics(context))
+    if monthly_rows.empty:
+        return []
+
+    monthly_rows["FiscalYear"] = monthly_rows["Period"].astype(str).str.slice(0, 4).astype(int)
+    results: list[dict[str, Any]] = []
+    for (fiscal_year, item_group), rows in monthly_rows.groupby(["FiscalYear", "ItemGroup"], dropna=False):
+        ordered = rows.sort_values("Period").reset_index(drop=True)
+        completion_quantity = round(float(ordered["CompletionQuantity"].astype(float).sum()), 2)
+        completion_cost = round(float(ordered["CompletionCost"].astype(float).sum()), 2)
+        shipment_quantity = round(float(ordered["ShipmentQuantity"].astype(float).sum()), 2)
+        shipment_cost = round(float(ordered["ShipmentCost"].astype(float).sum()), 2)
+        results.append({
+            "FiscalYear": int(fiscal_year),
+            "ItemGroup": str(item_group),
+            "OpeningFGQuantity": round(float(ordered.iloc[0]["OpeningFGQuantity"]), 2),
+            "OpeningFGValue": round(float(ordered.iloc[0]["OpeningFGValue"]), 2),
+            "CompletionQuantity": completion_quantity,
+            "CompletionCost": completion_cost,
+            "ShipmentQuantity": shipment_quantity,
+            "ShipmentCost": shipment_cost,
+            "EndingFGQuantity": round(float(ordered.iloc[-1]["EndingFGQuantity"]), 2),
+            "EndingFGValue": round(float(ordered.iloc[-1]["EndingFGValue"]), 2),
+            "ProductionToShipmentRatio": round(completion_cost / shipment_cost, 2) if shipment_cost > 0 else 0.0,
+            "QuantityGap": round(completion_quantity - shipment_quantity, 2),
+            "CostGap": round(completion_cost - shipment_cost, 2),
+        })
+    return sorted(results, key=lambda row: (int(row["FiscalYear"]), str(row["ItemGroup"])))
+
+
+def annual_capacity_utilization_diagnostics(
+    context: GenerationContext,
+    work_center_codes: Iterable[str] | None = None,
+) -> list[dict[str, Any]]:
+    fiscal_start = pd.Timestamp(context.settings.fiscal_year_start).normalize()
+    fiscal_end = pd.Timestamp(context.settings.fiscal_year_end).normalize()
+    fiscal_months: dict[int, list[int]] = {}
+    current_month_start = fiscal_start.replace(day=1)
+    last_month_start = fiscal_end.replace(day=1)
+    while current_month_start <= last_month_start:
+        fiscal_months.setdefault(int(current_month_start.year), []).append(int(current_month_start.month))
+        current_month_start = current_month_start + pd.DateOffset(months=1)
+
+    selected_codes = [str(code) for code in (work_center_codes or ["ASSEMBLY", "FINISH", "PACK"])]
+    results: list[dict[str, Any]] = []
+    for fiscal_year, months in sorted(fiscal_months.items()):
+        monthly_rows = {
+            int(month): manufacturing_capacity_diagnostics_by_code(context, fiscal_year, int(month))
+            for month in months
+        }
+        for work_center_code in selected_codes:
+            utilizations = [
+                float(monthly_rows[int(month)].get(work_center_code, {}).get("monthly_utilization_pct", 0.0))
+                for month in months
+            ]
+            if not utilizations:
+                continue
+            results.append({
+                "FiscalYear": int(fiscal_year),
+                "WorkCenterCode": work_center_code,
+                "MedianMonthlyUtilizationPct": round(float(pd.Series(utilizations).median()), 2),
+                "PeakMonthlyUtilizationPct": round(float(max(utilizations)), 2),
+                "MonthsAtOrAbove85Pct": int(sum(1 for value in utilizations if float(value) >= 85.0)),
+            })
+    return results
+
+
+def log_manufactured_load_calibration(context: GenerationContext) -> None:
+    for row in manufactured_late_year_sell_through_schedule(context):
+        LOGGER.info(
+            "MANUFACTURED LOAD CALIBRATION | fiscal_year=%s | sell_through_uplift_factor=%s",
+            row["FiscalYear"],
+            row["SellThroughUpliftFactor"],
+        )
+    for row in manufactured_policy_profile_schedule(context):
+        LOGGER.info(
+            "MANUFACTURED FG POLICY | fiscal_year=%s | lifecycle_status=%s | policy_phase=%s | target_days_supply=%s | safety_stock_quantity=%s",
+            row["FiscalYear"],
+            row["LifecycleStatus"],
+            row["PolicyPhase"],
+            row["TargetDaysSupply"],
+            row["SafetyStockQuantity"],
+        )
+
+
 def log_manufactured_planning_diagnostics(context: GenerationContext) -> None:
     for row in manufactured_planning_diagnostics(context):
         LOGGER.info(
-            "MANUFACTURED PLANNING DIAGNOSTIC | recommendation_month=%s | bucket_week_start=%s | item_id=%s | warehouse_id=%s | item_group=%s | lifecycle_status=%s | forecast_quantity=%s | backlog_quantity=%s | gross_requirement_quantity=%s | projected_available_before_replenishment=%s | safety_stock_target_quantity=%s | net_requirement_quantity=%s | recommended_order_quantity=%s | lot_size_uplift_quantity=%s | policy_type=%s",
+            "MANUFACTURED PLANNING DIAGNOSTIC | recommendation_month=%s | bucket_week_start=%s | item_id=%s | warehouse_id=%s | item_group=%s | lifecycle_status=%s | forecast_quantity=%s | backlog_quantity=%s | gross_requirement_quantity=%s | projected_available_before_replenishment=%s | target_days_supply=%s | safety_stock_target_quantity=%s | net_requirement_quantity=%s | recommended_order_quantity=%s | lot_size_uplift_quantity=%s | policy_type=%s | policy_phase=%s | sell_through_uplift_factor=%s",
             row["RecommendationMonth"],
             row["BucketWeekStartDate"],
             row["ItemID"],
@@ -579,11 +669,14 @@ def log_manufactured_planning_diagnostics(context: GenerationContext) -> None:
             row["BacklogQuantity"],
             row["GrossRequirementQuantity"],
             row["ProjectedAvailableBeforeReplenishment"],
+            row["TargetDaysSupply"],
             row["SafetyStockTargetQuantity"],
             row["NetRequirementQuantity"],
             row["RecommendedOrderQuantity"],
             row["LotSizeUpliftQuantity"],
             row["PolicyType"],
+            row["PolicyPhase"],
+            row["ManufacturedSellThroughUpliftFactor"],
         )
 
 
@@ -604,6 +697,115 @@ def log_manufactured_flow_diagnostics(context: GenerationContext) -> None:
             row["ProductionToShipmentRatio"],
             row["QuantityGap"],
             row["CostGap"],
+        )
+    for row in annual_manufactured_fg_flow_diagnostics(context):
+        LOGGER.info(
+            "MANUFACTURED FG FLOW ANNUAL | fiscal_year=%s | item_group=%s | opening_fg_quantity=%s | opening_fg_value=%s | completions_quantity=%s | completions_cost=%s | shipments_quantity=%s | shipments_cost=%s | ending_fg_quantity=%s | ending_fg_value=%s | production_to_shipment_ratio=%s | quantity_gap=%s | cost_gap=%s",
+            row["FiscalYear"],
+            row["ItemGroup"],
+            row["OpeningFGQuantity"],
+            row["OpeningFGValue"],
+            row["CompletionQuantity"],
+            row["CompletionCost"],
+            row["ShipmentQuantity"],
+            row["ShipmentCost"],
+            row["EndingFGQuantity"],
+            row["EndingFGValue"],
+            row["ProductionToShipmentRatio"],
+            row["QuantityGap"],
+            row["CostGap"],
+        )
+
+
+def log_annual_capacity_diagnostics(context: GenerationContext) -> None:
+    for row in annual_capacity_utilization_diagnostics(context):
+        LOGGER.info(
+            "CAPACITY ANNUAL SUMMARY | fiscal_year=%s | work_center=%s | median_monthly_utilization_pct=%s | peak_monthly_utilization_pct=%s | months_at_or_above_85_pct=%s",
+            row["FiscalYear"],
+            row["WorkCenterCode"],
+            row["MedianMonthlyUtilizationPct"],
+            row["PeakMonthlyUtilizationPct"],
+            row["MonthsAtOrAbove85Pct"],
+        )
+
+
+def gl_row_budget_diagnostics(context: GenerationContext) -> dict[str, Any]:
+    gl = context.tables["GLEntry"]
+    if gl.empty:
+        return {
+            "total_rows": 0,
+            "preferred_max_rows": PREFERRED_EXCEL_GLENTRY_ROW_BUDGET,
+            "hard_max_rows": EXCEL_MAX_TABLE_DATA_ROWS,
+            "preferred_ok": True,
+            "hard_ok": True,
+            "payroll_gl_summary_mode": getattr(context, "payroll_gl_summary_mode", {}),
+            "by_source_type": [],
+            "by_fiscal_year": [],
+        }
+
+    posting_dates = pd.to_datetime(gl["PostingDate"], errors="coerce")
+    source_type_summary = (
+        gl.groupby("SourceDocumentType", dropna=False)
+        .agg(
+            RowCount=("GLEntryID", "size"),
+            VoucherCount=("VoucherNumber", "nunique"),
+        )
+        .reset_index()
+        .sort_values(["RowCount", "SourceDocumentType"], ascending=[False, True])
+    )
+    fiscal_year_summary = (
+        gl.assign(FiscalYear=posting_dates.dt.year)
+        .dropna(subset=["FiscalYear"])
+        .groupby("FiscalYear", dropna=False)["GLEntryID"]
+        .size()
+        .reset_index(name="RowCount")
+        .sort_values("FiscalYear")
+    )
+
+    total_rows = int(len(gl.index))
+    return {
+        "total_rows": total_rows,
+        "preferred_max_rows": PREFERRED_EXCEL_GLENTRY_ROW_BUDGET,
+        "hard_max_rows": EXCEL_MAX_TABLE_DATA_ROWS,
+        "preferred_ok": total_rows <= PREFERRED_EXCEL_GLENTRY_ROW_BUDGET,
+        "hard_ok": total_rows <= EXCEL_MAX_TABLE_DATA_ROWS,
+        "payroll_gl_summary_mode": getattr(context, "payroll_gl_summary_mode", {}),
+        "by_source_type": source_type_summary.to_dict(orient="records"),
+        "by_fiscal_year": [
+            {
+                "FiscalYear": int(row["FiscalYear"]),
+                "RowCount": int(row["RowCount"]),
+            }
+            for row in fiscal_year_summary.to_dict(orient="records")
+        ],
+    }
+
+
+def log_gl_row_budget_diagnostics(context: GenerationContext) -> None:
+    diagnostics = gl_row_budget_diagnostics(context)
+    payroll_summary_mode = diagnostics.get("payroll_gl_summary_mode", {})
+    LOGGER.info(
+        "GL ROW BUDGET | total_rows=%s | preferred_max_rows=%s | hard_max_rows=%s | preferred_ok=%s | hard_ok=%s | payroll_register_mode=%s | payroll_payment_mode=%s",
+        diagnostics["total_rows"],
+        diagnostics["preferred_max_rows"],
+        diagnostics["hard_max_rows"],
+        diagnostics["preferred_ok"],
+        diagnostics["hard_ok"],
+        payroll_summary_mode.get("register", "detail"),
+        payroll_summary_mode.get("payment", "detail"),
+    )
+    for row in diagnostics["by_source_type"]:
+        LOGGER.info(
+            "GL ROW BUDGET | source_document_type=%s | row_count=%s | voucher_count=%s",
+            row["SourceDocumentType"],
+            row["RowCount"],
+            row["VoucherCount"],
+        )
+    for row in diagnostics["by_fiscal_year"]:
+        LOGGER.info(
+            "GL ROW BUDGET | fiscal_year=%s | row_count=%s",
+            row["FiscalYear"],
+            row["RowCount"],
         )
 
 
@@ -1064,8 +1266,6 @@ def build_phase22(
     generate_payroll_periods(context)
     generate_shift_definitions_and_assignments(context)
     synchronize_work_center_capacity_and_calendars(context)
-    generate_inventory_policies(context)
-    generate_demand_forecasts(context)
     generate_all_months(context)
     generate_recurring_manual_journals(context)
     generate_accrued_service_settlements(context)
@@ -1087,8 +1287,6 @@ def build_phase23(
     generate_payroll_periods(context)
     generate_shift_definitions_and_assignments(context)
     synchronize_work_center_capacity_and_calendars(context)
-    generate_inventory_policies(context)
-    generate_demand_forecasts(context)
     generate_all_months(context)
     generate_recurring_manual_journals(context)
     generate_accrued_service_settlements(context)
@@ -1138,6 +1336,43 @@ def generate_all_months(context: GenerationContext) -> None:
         generate_month_customer_refunds(context, year, month)
         generate_month_purchase_invoices(context, year, month)
         generate_month_disbursements(context, year, month)
+
+
+def _phase8_results_from_phase23_results(
+    context: GenerationContext,
+    phase23_results: dict[str, Any],
+) -> dict[str, Any]:
+    exceptions = list(phase23_results["exceptions"])
+    if context.settings.anomaly_mode != "none" and not context.anomaly_log:
+        exceptions.append("Anomaly mode is enabled but no anomalies were logged.")
+
+    return {
+        "row_counts": {table: int(len(df)) for table, df in context.tables.items()},
+        "exceptions": exceptions,
+        "gl_balance": phase23_results["gl_balance"],
+        "trial_balance_difference": phase23_results["trial_balance_difference"],
+        "account_rollforward": phase23_results["account_rollforward"],
+        "anomaly_count": len(context.anomaly_log),
+        "o2c_controls": phase23_results["o2c_controls"],
+        "p2p_controls": phase23_results["p2p_controls"],
+        "journal_controls": phase23_results["journal_controls"],
+        "manufacturing_controls": phase23_results["manufacturing_controls"],
+        "manufacturing_audit_seeds": phase23_results.get(
+            "manufacturing_audit_seeds",
+            {"exception_count": 0, "exceptions": []},
+        ),
+        "payroll_controls": phase23_results["payroll_controls"],
+        "routing_controls": phase23_results["routing_controls"],
+        "capacity_controls": phase23_results["capacity_controls"],
+        "time_clock_controls": phase23_results.get("time_clock_controls", {"exception_count": 0, "exceptions": []}),
+        "master_data_controls": phase23_results.get("master_data_controls", {"exception_count": 0, "exceptions": []}),
+        "workforce_planning_controls": phase23_results.get(
+            "workforce_planning_controls",
+            {"exception_count": 0, "exceptions": []},
+        ),
+        "planning_controls": phase23_results.get("planning_controls", {"exception_count": 0, "exceptions": []}),
+        "pricing_controls": phase23_results.get("pricing_controls", {"exception_count": 0, "exceptions": []}),
+    }
 
 
 def build_full_dataset(
@@ -1548,24 +1783,43 @@ def build_full_dataset(
 
     with logged_step("Log opening-state diagnostics"):
         log_opening_state_shock_diagnostics(context)
+        log_manufactured_load_calibration(context)
         log_manufactured_planning_diagnostics(context)
         log_manufactured_flow_diagnostics(context)
+        log_annual_capacity_diagnostics(context)
 
     with logged_step("Validate clean final dataset"):
         log_validation_results("phase23", validate_phase23(context, scope=validation_scope))
+    phase23_results = context.validation_results["phase23"]
 
-    with logged_step("Inject configured anomalies"):
-        inject_anomalies(context)
-        invalidate_all_caches(context)
-        journal_anomaly_count = sum(
-            1
-            for anomaly in context.anomaly_log
-            if anomaly["table_name"] == "JournalEntry" or anomaly["anomaly_type"].endswith("_manual_journal")
-        )
-        LOGGER.info("ANOMALIES | total_count=%s | journal_anomaly_count=%s", len(context.anomaly_log), journal_anomaly_count)
+    if context.settings.anomaly_mode == "none":
+        with logged_step("Skip anomaly injection for clean dataset"):
+            LOGGER.info("ANOMALIES | skipped because anomaly_mode=none")
 
-    with logged_step("Validate anomaly-enriched dataset"):
-        log_validation_results("phase8", validate_phase8(context, scope=validation_scope))
+        with logged_step("Reuse clean validation results for phase 8"):
+            phase8_results = _phase8_results_from_phase23_results(context, phase23_results)
+            context.validation_results["phase8"] = phase8_results
+            log_validation_results("phase8", phase8_results)
+    else:
+        with logged_step("Inject configured anomalies"):
+            inject_anomalies(context)
+            invalidate_all_caches(context)
+            journal_anomaly_count = sum(
+                1
+                for anomaly in context.anomaly_log
+                if anomaly["table_name"] == "JournalEntry" or anomaly["anomaly_type"].endswith("_manual_journal")
+            )
+            LOGGER.info(
+                "ANOMALIES | total_count=%s | journal_anomaly_count=%s",
+                len(context.anomaly_log),
+                journal_anomaly_count,
+            )
+
+        with logged_step("Validate anomaly-enriched dataset"):
+            log_validation_results("phase8", validate_phase8(context, scope=validation_scope))
+
+    with logged_step("Log GL row-budget diagnostics"):
+        log_gl_row_budget_diagnostics(context)
 
     if context.settings.export_sqlite:
         with logged_step("Export SQLite database"):

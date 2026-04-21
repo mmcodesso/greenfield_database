@@ -26,7 +26,8 @@ accrual_amounts AS (
     JOIN Account AS a
         ON a.AccountID = gl.AccountID
     WHERE gl.Debit > 0
-      AND a.AccountNumber IN ('6100', '6140', '6180')
+      AND a.AccountType = 'Expense'
+      AND a.AccountSubType <> 'Header'
     GROUP BY aj.JournalEntryID, aj.FiscalYear, aj.FiscalPeriod, a.AccountNumber, a.AccountName
 ),
 service_invoice_clears AS (

@@ -49,7 +49,7 @@ AccountID,AccountNumber,AccountName,AccountType,AccountSubType,ParentAccountID,N
 45,4040,Sales Revenue - Accessories,Revenue,Operating Revenue,41,Credit,1
 46,4050,Freight Revenue,Revenue,Operating Revenue,41,Credit,1
 47,4060,Sales Returns and Allowances,Revenue,Contra Revenue,41,Debit,1
-48,4070,Sales Discounts,Revenue,Contra Revenue,41,Debit,1
+48,4070,Sales Discounts,Revenue,Contra Revenue,41,Debit,0
 49,5000,Cost of Goods Sold,Expense,Header,,Debit,1
 50,5010,COGS - Furniture,Expense,COGS,49,Debit,1
 51,5020,COGS - Lighting,Expense,COGS,49,Debit,1
@@ -57,7 +57,7 @@ AccountID,AccountNumber,AccountName,AccountType,AccountSubType,ParentAccountID,N
 53,5040,COGS - Accessories,Expense,COGS,49,Debit,1
 54,5050,Freight-Out Expense,Expense,COGS,49,Debit,1
 55,5060,Purchase Price Variance,Expense,COGS,49,Debit,1
-56,5070,Inventory Adjustments,Expense,COGS,49,Debit,1
+56,5070,Inventory Adjustments,Expense,COGS,49,Debit,0
 57,6000,Operating Expenses,Expense,Header,,Debit,1
 58,6010,Salaries Expense - Sales,Expense,Operating Expense,57,Debit,1
 59,6020,Salaries Expense - Warehouse,Expense,Operating Expense,57,Debit,1
@@ -75,7 +75,7 @@ AccountID,AccountNumber,AccountName,AccountType,AccountSubType,ParentAccountID,N
 71,6140,IT and Software Expense,Expense,Operating Expense,57,Debit,1
 72,6150,Marketing and Promotion Expense,Expense,Operating Expense,57,Debit,1
 73,6160,Travel and Entertainment Expense,Expense,Operating Expense,57,Debit,1
-74,6170,Bad Debt Expense,Expense,Operating Expense,57,Debit,1
+74,6170,Bad Debt Expense,Expense,Operating Expense,57,Debit,0
 75,6180,Professional Fees Expense,Expense,Operating Expense,57,Debit,1
 76,6190,Bank Fees Expense,Expense,Operating Expense,57,Debit,1
 77,6200,Miscellaneous Administrative Expense,Expense,Operating Expense,57,Debit,1
@@ -84,11 +84,11 @@ AccountID,AccountNumber,AccountName,AccountType,AccountSubType,ParentAccountID,N
 88,6230,Salaries Expense - Purchasing,Expense,Operating Expense,57,Debit,1
 89,6240,Salaries Expense - Marketing,Expense,Operating Expense,57,Debit,1
 90,6250,Salaries Expense - Research and Development,Expense,Operating Expense,57,Debit,1
-80,7000,Other Income and Expense,Revenue,Header,,Credit,1
-81,7010,Interest Income,Revenue,Other Income,80,Credit,1
-82,7020,Gain or Loss on Asset Disposal,Revenue,Other Income or Expense,80,Credit,1
+80,7000,Other Income and Expense,Revenue,Header,,Credit,0
+81,7010,Interest Income,Revenue,Other Income,80,Credit,0
+82,7020,Gain or Loss on Asset Disposal,Revenue,Other Income or Expense,80,Credit,0
 83,7030,Interest Expense,Expense,Other Expense,80,Debit,1
-84,7040,Foreign Exchange Gain or Loss,Revenue,Other Income or Expense,80,Credit,1
+84,7040,Foreign Exchange Gain or Loss,Revenue,Other Income or Expense,80,Credit,0
 85,8000,Closing and Summary,Equity,Header,,Credit,1
 86,8010,Income Summary,Equity,Closing,85,Credit,1
 87,8020,Suspense and Clearing,Asset,Current Asset,1,Debit,1

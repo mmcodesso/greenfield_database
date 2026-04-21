@@ -120,7 +120,7 @@ The validation layer checks:
 
 Local generation commonly uses these configuration files:
 
-- `config/settings.yaml` for the released five-year teaching dataset
+- `config/settings.yaml` for the released three-year teaching dataset covering 2024 through 2026
 - `config/settings_validation.yaml` for one-year fast validation
 - `config/settings_perf.yaml` for short-horizon performance profiling
 

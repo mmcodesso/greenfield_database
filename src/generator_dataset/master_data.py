@@ -11,6 +11,7 @@ try:
 except ModuleNotFoundError:
     Faker = None
 
+from generator_dataset.accrual_catalog import ACCRUAL_SERVICE_ITEMS
 from generator_dataset.schema import TABLE_COLUMNS
 from generator_dataset.state_cache import drop_context_attributes, get_or_build_cache
 from generator_dataset.settings import GenerationContext
@@ -119,24 +120,6 @@ ITEM_GROUP_CONFIG = {
     "Accessories": ("ACC", "Finished Good", "Each", "1040", "4040", "5040", (8, 95), (1.90, 2.80)),
     "Packaging": ("PKG", "Purchased Material", "Box", "1045", None, None, (1, 18), None),
     "Raw Materials": ("RAW", "Purchased Material", "Roll", "1045", None, None, (5, 55), None),
-}
-
-ACCRUAL_SERVICE_ITEMS = {
-    "6100": {
-        "ItemCode": "SRV-INS",
-        "ItemName": "Insurance Service",
-        "StandardCost": 4500.0,
-    },
-    "6140": {
-        "ItemCode": "SRV-SW",
-        "ItemName": "IT and Software Service",
-        "StandardCost": 6000.0,
-    },
-    "6180": {
-        "ItemCode": "SRV-PRO",
-        "ItemName": "Professional Services",
-        "StandardCost": 5000.0,
-    },
 }
 
 MANUFACTURED_SUPPLY_MODE_PROBABILITY = {

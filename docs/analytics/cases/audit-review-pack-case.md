@@ -13,7 +13,7 @@ This case works as a broad audit triage exercise rather than a single-process wa
 
 ## Business Scenario
 
-The internal-audit team receives the normal five-year package and needs to triage control issues quickly. The job is not to prove every issue from scratch. The job is to use the audit starter queries and the source tables together so the team can explain what happened, where it happened, and what it means.
+The internal-audit team receives the normal three-year package covering fiscal years 2024 through 2026 and needs to triage control issues quickly. The job is not to prove every issue from scratch. The job is to use the audit starter queries and the source tables together so the team can explain what happened, where it happened, and what it means.
 
 ## The Problem to Solve
 

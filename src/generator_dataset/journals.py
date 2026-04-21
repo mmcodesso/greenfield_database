@@ -6,6 +6,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from generator_dataset.accrual_catalog import ACCRUAL_ACCOUNT_METADATA, MONTHLY_ACCRUAL_BASES
 from generator_dataset.fixed_assets import depreciable_fixed_asset_profiles, fixed_asset_profile
 from generator_dataset.master_data import approver_employee_id, current_role_employee_id, valid_employees
 from generator_dataset.payroll import (
@@ -55,27 +56,6 @@ SALARY_ACCOUNT_BY_COST_CENTER = {
 MONTHLY_RENT_BASES = {
     "Office": 18000.0,
     "Warehouse": 24000.0,
-}
-
-MONTHLY_ACCRUAL_BASES = {
-    "6100": 4500.0,
-    "6140": 6000.0,
-    "6180": 5000.0,
-}
-
-ACCRUAL_ACCOUNT_METADATA = {
-    "6100": {
-        "description": "Insurance accrual",
-        "journal_description": "Month-end insurance accrued expense",
-    },
-    "6140": {
-        "description": "IT and software accrual",
-        "journal_description": "Month-end IT and software accrued expense",
-    },
-    "6180": {
-        "description": "Professional fees accrual",
-        "journal_description": "Month-end professional fees accrued expense",
-    },
 }
 
 ACCRUAL_ADJUSTMENTS_PER_YEAR = 1

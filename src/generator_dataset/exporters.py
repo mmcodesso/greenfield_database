@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from io import StringIO
+from numbers import Integral, Real
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
 
@@ -24,6 +25,7 @@ except ModuleNotFoundError:  # pragma: no cover - Linux CI fallback when stdlib 
 
 from generator_dataset.settings import GenerationContext
 from generator_dataset.reports import ReportDefinition, load_report_catalog
+from generator_dataset.schema import SQLITE_INDEXES, TABLE_COLUMNS, TABLE_PRIMARY_KEYS
 
 
 ANOMALY_LOG_COLUMNS = [
@@ -44,6 +46,8 @@ PERCENT_FORMAT = "0.00%"
 EXCEL_TABLE_STYLE = "TableStyleMedium2"
 TIME_ONLY_COLUMNS = {"StartTime", "EndTime"}
 DATETIME_COLUMNS = {"ClockInTime", "ClockOutTime"}
+EXCEL_WORKSHEET_MAX_ROWS = 1_048_576
+EXCEL_MAX_TABLE_DATA_ROWS = EXCEL_WORKSHEET_MAX_ROWS - 1
 
 
 def anomaly_log_dataframe(context: GenerationContext) -> pd.DataFrame:
@@ -338,6 +342,11 @@ def _write_excel_workbook(path: Path, sheets: dict[str, pd.DataFrame]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with pd.ExcelWriter(path, engine="openpyxl") as writer:
         for index, (sheet_name, df) in enumerate(sheets.items(), start=1):
+            if len(df.index) > EXCEL_MAX_TABLE_DATA_ROWS:
+                raise ValueError(
+                    f"Worksheet '{sheet_name}' has {len(df.index):,} data rows; "
+                    f"Excel supports at most {EXCEL_MAX_TABLE_DATA_ROWS:,} data rows plus one header row."
+                )
             prepared, formats = _prepared_excel_dataframe(df)
             prepared.to_excel(writer, sheet_name=sheet_name[:31], index=False)
             worksheet = writer.sheets[sheet_name[:31]]
@@ -354,12 +363,133 @@ def _support_workbook_sheets(context: GenerationContext) -> dict[str, pd.DataFra
     }
 
 
+def _quote_sql_identifier(identifier: str) -> str:
+    return f'"{identifier.replace("\"", "\"\"")}"'
+
+
+def _series_is_integer_like(series: pd.Series) -> bool:
+    non_null = series.dropna()
+    if non_null.empty:
+        return False
+    numeric = pd.to_numeric(non_null, errors="coerce")
+    if not numeric.notna().all():
+        return False
+    return ((numeric - numeric.round()).abs() < 1e-9).all()
+
+
+def _sqlite_column_type(series: pd.Series, *, primary_key: bool) -> str:
+    if primary_key:
+        return "INTEGER NOT NULL PRIMARY KEY"
+
+    if is_bool_dtype(series):
+        return "INTEGER"
+    if is_integer_dtype(series):
+        return "INTEGER"
+    if is_float_dtype(series) or is_numeric_dtype(series):
+        return "INTEGER" if _series_is_integer_like(series) else "REAL"
+    if is_datetime64_any_dtype(series):
+        return "TEXT"
+
+    non_null = series.dropna()
+    if non_null.empty:
+        return "TEXT"
+
+    sample_values = non_null.head(50).tolist()
+    if all(isinstance(value, bool) for value in sample_values):
+        return "INTEGER"
+    if all(isinstance(value, Integral) and not isinstance(value, bool) for value in sample_values):
+        return "INTEGER"
+    if all(isinstance(value, Real) and not isinstance(value, bool) for value in sample_values):
+        return "INTEGER" if _series_is_integer_like(non_null) else "REAL"
+    return "TEXT"
+
+
+def _duplicate_rows(frame: pd.DataFrame, columns: tuple[str, ...]) -> pd.DataFrame:
+    if frame.empty:
+        return frame
+    non_null = frame.loc[frame[list(columns)].notna().all(axis=1), list(columns)]
+    if non_null.empty:
+        return non_null
+    return non_null.loc[non_null.duplicated(subset=list(columns), keep=False)]
+
+
+def _validate_sqlite_export_constraints(context: GenerationContext) -> None:
+    for table_name, columns in TABLE_COLUMNS.items():
+        frame = context.tables[table_name].reindex(columns=columns)
+        primary_key = TABLE_PRIMARY_KEYS[table_name]
+
+        if frame[primary_key].isna().any():
+            raise ValueError(f"{table_name}.{primary_key} contains null values; SQLite PK export requires non-null keys.")
+        if frame[primary_key].duplicated().any():
+            duplicates = frame.loc[frame[primary_key].duplicated(keep=False), primary_key].head(5).tolist()
+            raise ValueError(f"{table_name}.{primary_key} contains duplicate values: {duplicates}.")
+
+        for index_definition in SQLITE_INDEXES.get(table_name, ()):
+            if not index_definition.unique:
+                continue
+            duplicates = _duplicate_rows(frame, index_definition.columns)
+            if not duplicates.empty:
+                sample = duplicates.head(5).to_dict(orient="records")
+                raise ValueError(
+                    f"{table_name} cannot create unique index {index_definition.name}; duplicate values found: {sample}."
+                )
+
+
+def _create_sqlite_table(connection: sqlite3.Connection, table_name: str, frame: pd.DataFrame) -> None:
+    column_sql: list[str] = []
+    primary_key = TABLE_PRIMARY_KEYS[table_name]
+    for column_name in TABLE_COLUMNS[table_name]:
+        column_type = _sqlite_column_type(frame[column_name], primary_key=column_name == primary_key)
+        column_sql.append(f"{_quote_sql_identifier(column_name)} {column_type}")
+
+    sql = f"CREATE TABLE {_quote_sql_identifier(table_name)} ({', '.join(column_sql)})"
+    connection.execute(sql)
+
+
+def _create_sqlite_indexes(connection: sqlite3.Connection) -> None:
+    for table_name, index_definitions in SQLITE_INDEXES.items():
+        for index_definition in index_definitions:
+            unique_sql = "UNIQUE " if index_definition.unique else ""
+            column_list = ", ".join(_quote_sql_identifier(column_name) for column_name in index_definition.columns)
+            connection.execute(
+                f"CREATE {unique_sql}INDEX {_quote_sql_identifier(index_definition.name)} "
+                f"ON {_quote_sql_identifier(table_name)} ({column_list})"
+            )
+
+
 def export_sqlite(context: GenerationContext) -> None:
     path = Path(context.settings.sqlite_path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    with sqlite3.connect(path) as connection:
-        for table_name, df in context.tables.items():
-            df.to_sql(table_name, connection, if_exists="replace", index=False)
+    temp_path = path.with_name(f"{path.name}.tmp")
+
+    _validate_sqlite_export_constraints(context)
+    if temp_path.exists():
+        temp_path.unlink()
+
+    connection: sqlite3.Connection | None = None
+    try:
+        connection = sqlite3.connect(temp_path)
+        with connection:
+            for table_name, columns in TABLE_COLUMNS.items():
+                frame = context.tables[table_name].reindex(columns=columns)
+                _create_sqlite_table(connection, table_name, frame)
+
+            for table_name, columns in TABLE_COLUMNS.items():
+                frame = context.tables[table_name].reindex(columns=columns)
+                frame.to_sql(table_name, connection, if_exists="append", index=False)
+
+            _create_sqlite_indexes(connection)
+            connection.execute("ANALYZE")
+
+        connection.close()
+        connection = None
+        temp_path.replace(path)
+    except Exception:
+        if connection is not None:
+            connection.close()
+        if temp_path.exists():
+            temp_path.unlink()
+        raise
 
 
 def export_excel(context: GenerationContext) -> None:

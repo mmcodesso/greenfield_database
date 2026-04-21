@@ -16,6 +16,14 @@ COALESCE(je.EntryType, '') NOT IN (
     'Year-End Close - Income Summary to Retained Earnings'
 )
 """
+DISABLED_INCOME_STATEMENT_LABELS = {
+    "Sales Discounts",
+    "Inventory Adjustments",
+    "Bad Debt Expense",
+    "Interest Income",
+    "Gain or Loss on Asset Disposal",
+    "Foreign Exchange Gain or Loss",
+}
 
 
 def _read_sql_result(sqlite_path: Path, sql_path: Path) -> pd.DataFrame:
@@ -51,6 +59,19 @@ def _statement_math_assertions(frame: pd.DataFrame, period_columns: list[str]) -
 def _sort_columns(frame: pd.DataFrame, period_columns: list[str]) -> pd.DataFrame:
     order_columns = [*period_columns, "DisplayOrder", "StatementSection", "LineLabel", "LineType", "Amount"]
     return frame[order_columns].sort_values(order_columns[:-1]).reset_index(drop=True)
+
+
+def _inactive_account_visibility_assertions(frame: pd.DataFrame) -> None:
+    account_lines = frame[frame["LineType"].eq("account")].copy()
+    assert not account_lines["LineLabel"].isin(DISABLED_INCOME_STATEMENT_LABELS).any()
+
+    other_income_accounts = sorted(
+        account_lines.loc[
+            account_lines["StatementSection"].eq("Other Income and Expense"),
+            "LineLabel",
+        ].drop_duplicates().tolist()
+    )
+    assert other_income_accounts == ["Interest Expense"]
 
 
 def test_income_statement_queries_return_rows_on_clean_build(
@@ -108,6 +129,10 @@ def test_income_statement_queries_return_rows_on_clean_build(
     assert monthly.groupby(["FiscalYear", "FiscalPeriod"]).size().nunique() == 1
     assert quarterly.groupby(["FiscalYear", "FiscalQuarter"]).size().nunique() == 1
     assert annual.groupby(["FiscalYear"]).size().nunique() == 1
+
+    _inactive_account_visibility_assertions(monthly)
+    _inactive_account_visibility_assertions(quarterly)
+    _inactive_account_visibility_assertions(annual)
 
 
 def test_income_statement_statement_math_ties_for_each_period(

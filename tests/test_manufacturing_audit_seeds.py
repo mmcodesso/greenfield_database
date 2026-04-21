@@ -36,9 +36,9 @@ def test_manufacturing_audit_seeds_absent_from_clean_validation_build(
 
 
 def test_manufacturing_audit_seeds_present_in_default_published_build(
-    default_anomaly_dataset_artifacts: dict[str, object],
+    default_anomaly_published_package_artifacts: dict[str, object],
 ) -> None:
-    context = default_anomaly_dataset_artifacts["context"]
+    context = default_anomaly_published_package_artifacts["context"]
     phase23 = context.validation_results["phase23"]
 
     assert phase23["manufacturing_controls"]["exception_count"] == 0
@@ -51,15 +51,15 @@ def test_manufacturing_audit_seeds_present_in_default_published_build(
         exception["type"] for exception in phase23["manufacturing_audit_seeds"]["exceptions"]
     } == {"released_work_order_due_without_actual_start"}
 
-    log_text = Path(default_anomaly_dataset_artifacts["generation_log_path"]).read_text(encoding="utf-8")
+    log_text = Path(default_anomaly_published_package_artifacts["generation_log_path"]).read_text(encoding="utf-8")
     assert "VALIDATION | phase23.manufacturing_controls | exception_count=0" in log_text
     assert "VALIDATION | phase23.manufacturing_audit_seeds | exception_count=5" in log_text
 
 
 def test_manufacturing_audit_seed_queries_and_support_workbook_align(
-    default_anomaly_dataset_artifacts: dict[str, object],
+    default_anomaly_published_package_artifacts: dict[str, object],
 ) -> None:
-    sqlite_path = Path(default_anomaly_dataset_artifacts["sqlite_path"])
+    sqlite_path = Path(default_anomaly_published_package_artifacts["sqlite_path"])
     detail = _read_sql_result(sqlite_path, DETAIL_QUERY_PATH)
     summary = _read_sql_result(sqlite_path, SUMMARY_QUERY_PATH)
 
@@ -68,7 +68,7 @@ def test_manufacturing_audit_seed_queries_and_support_workbook_align(
     assert set(detail["FirstActualStartStatus"]) == {"No actual start recorded"}
     assert int(summary["WorkOrderCount"].sum()) == 5
 
-    support_path = Path(default_anomaly_dataset_artifacts["support_excel_path"])
+    support_path = Path(default_anomaly_published_package_artifacts["support_excel_path"])
     checks = pd.read_excel(support_path, sheet_name="ValidationChecks")
     exceptions = pd.read_excel(support_path, sheet_name="ValidationExceptions")
 

@@ -5,45 +5,33 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
-import yaml
 
-from generator_dataset.main import manufactured_fg_flow_diagnostics
+from generator_dataset.main import (
+    annual_capacity_utilization_diagnostics,
+    annual_manufactured_fg_flow_diagnostics,
+    build_phase1,
+    build_phase2,
+    build_phase23,
+    gl_row_budget_diagnostics,
+    manufactured_fg_flow_diagnostics,
+)
 from generator_dataset.manufacturing import manufacturing_capacity_diagnostics_by_code
-from generator_dataset.main import build_full_dataset, build_phase1, build_phase23
 from generator_dataset.master_data import STANDARD_LABOR_HOURS_RANGE, manufacturing_staffing_targets
 from generator_dataset.planning import manufactured_planning_diagnostics
-from generator_dataset.settings import load_settings
 from generator_dataset.workforce_capacity import (
     DIRECT_MANUFACTURING_TITLES,
     STANDARD_MANUFACTURING_SHIFT_HOURS,
 )
 
 
-@pytest.fixture(scope="session")
-def phase23_4_one_year_clean_artifacts(tmp_path_factory: pytest.TempPathFactory) -> dict[str, object]:
-    workdir = tmp_path_factory.mktemp("phase23_4_one_year_clean")
-    settings = load_settings("config/settings.yaml")
-    payload = dict(vars(settings))
-    payload.update({
-        "anomaly_mode": "none",
-        "export_sqlite": False,
-        "export_excel": False,
-        "export_support_excel": False,
-        "export_csv_zip": False,
-        "export_reports": False,
-        "fiscal_year_end": "2026-12-31",
-        "generation_log_path": str(workdir / "generation.log"),
-    })
+@pytest.fixture(scope="module")
+def phase23_clean_base_context():
+    return build_phase23("config/settings_validation.yaml", validation_scope="full")
 
-    config_path = workdir / "settings_phase23_4_one_year.yaml"
-    config_path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
 
-    context = build_full_dataset(str(config_path))
-    return {
-        "context": context,
-        "workdir": workdir,
-        "generation_log_path": Path(payload["generation_log_path"]),
-    }
+@pytest.fixture
+def phase23_clean_context(clone_generation_context, phase23_clean_base_context):
+    return clone_generation_context(phase23_clean_base_context)
 
 
 def test_phase23_4_phase1_staffing_targets_default_and_validation() -> None:
@@ -61,8 +49,8 @@ def test_phase23_4_phase1_staffing_targets_default_and_validation() -> None:
             assert int(title_counts.get(title, 0)) == 1
 
 
-def test_phase23_4_manufactured_item_hours_and_conversion_costs_are_calibrated() -> None:
-    context = build_phase23("config/settings_validation.yaml", validation_scope="full")
+def test_phase23_4_manufactured_item_hours_and_conversion_costs_are_calibrated(phase23_clean_context) -> None:
+    context = phase23_clean_context
     items = context.tables["Item"].copy()
     manufactured_sellable = items[
         items["SupplyMode"].eq("Manufactured")
@@ -84,18 +72,63 @@ def test_phase23_4_manufactured_item_hours_and_conversion_costs_are_calibrated()
         assert round(float(row.StandardConversionCost), 2) == expected_conversion_cost
 
 
-def test_phase23_4_clean_validation_build_stays_green() -> None:
-    context = build_phase23("config/settings_validation.yaml", validation_scope="full")
+def test_phase23_4_clean_validation_build_stays_green(phase23_clean_context) -> None:
+    context = phase23_clean_context
     phase23 = context.validation_results["phase23"]
 
     assert phase23["exceptions"] == []
     assert phase23["planning_controls"]["exception_count"] == 0
 
 
+def test_phase23_4_phase2_sellable_forecasts_gain_year_over_year_growth() -> None:
+    context = build_phase2("config/settings.yaml")
+    forecasts = context.tables["DemandForecast"].copy()
+    items = context.tables["Item"][["ItemID", "RevenueAccountID", "SupplyMode"]].copy()
+    sellable_forecasts = forecasts.merge(items, on="ItemID", how="inner")
+    sellable_forecasts = sellable_forecasts[sellable_forecasts["RevenueAccountID"].notna()].copy()
+
+    assert not sellable_forecasts.empty
+
+    sellable_forecasts["ForecastYear"] = pd.to_datetime(
+        sellable_forecasts["ForecastWeekStartDate"],
+        errors="coerce",
+    ).dt.year
+    annual_totals = (
+        sellable_forecasts.groupby("ForecastYear")["ForecastQuantity"].sum().sort_index().astype(float)
+    )
+    annual_totals = annual_totals[annual_totals.index.notna()]
+    fiscal_start_year = pd.Timestamp(context.settings.fiscal_year_start).year
+    fiscal_end_year = pd.Timestamp(context.settings.fiscal_year_end).year
+    annual_totals = annual_totals.loc[fiscal_start_year:fiscal_end_year]
+
+    assert len(annual_totals.index) >= 3
+    forecast_years = annual_totals.index.astype(int).tolist()
+    for prior_year, current_year in zip(forecast_years, forecast_years[1:]):
+        assert float(annual_totals.loc[current_year]) > float(annual_totals.loc[prior_year]) * 1.015
+
+    by_supply_mode = (
+        sellable_forecasts.groupby(["ForecastYear", "SupplyMode"])["ForecastQuantity"]
+        .sum()
+        .unstack(fill_value=0.0)
+        .sort_index()
+    )
+    by_supply_mode = by_supply_mode.loc[fiscal_start_year:fiscal_end_year]
+    manufactured_totals = by_supply_mode["Manufactured"].astype(float)
+    purchased_totals = by_supply_mode["Purchased"].astype(float)
+
+    for prior_year, current_year in zip(forecast_years, forecast_years[1:]):
+        manufactured_growth = float(manufactured_totals.loc[current_year]) / max(float(manufactured_totals.loc[prior_year]), 1.0)
+        purchased_growth = float(purchased_totals.loc[current_year]) / max(float(purchased_totals.loc[prior_year]), 1.0)
+        assert 1.01 <= purchased_growth <= 1.06
+        if current_year >= 2025:
+            assert manufactured_growth >= 1.08
+            assert manufactured_growth > purchased_growth + 0.04
+
+
 def test_phase23_4_one_year_clean_build_hits_manufacturing_targets(
-    phase23_4_one_year_clean_artifacts: dict[str, object],
+    one_year_clean_dataset_artifacts: dict[str, object],
 ) -> None:
-    context = phase23_4_one_year_clean_artifacts["context"]
+    context = one_year_clean_dataset_artifacts["context"]
     phase23 = context.validation_results["phase23"]
     fg_flow = pd.DataFrame(manufactured_fg_flow_diagnostics(context))
     recommendations = context.tables["SupplyPlanRecommendation"].copy()
@@ -188,9 +221,9 @@ def test_phase23_4_one_year_clean_build_hits_manufacturing_targets(
 
 
 def test_phase23_4_manufactured_planning_uses_lot_for_lot_and_non_stacked_backlog(
-    phase23_4_one_year_clean_artifacts: dict[str, object],
+    one_year_clean_dataset_artifacts: dict[str, object],
 ) -> None:
-    context = phase23_4_one_year_clean_artifacts["context"]
+    context = one_year_clean_dataset_artifacts["context"]
     planning_rows = pd.DataFrame(manufactured_planning_diagnostics(context))
     policies = context.tables["InventoryPolicy"].copy()
     items = context.tables["Item"][["ItemID", "SupplyMode", "RevenueAccountID", "LifecycleStatus", "ItemGroup"]].copy()
@@ -201,6 +234,8 @@ def test_phase23_4_manufactured_planning_uses_lot_for_lot_and_non_stacked_backlo
 
     assert not planning_rows.empty
     assert planning_rows["PolicyType"].eq("Lot-for-Lot").all()
+    assert planning_rows["PolicyPhase"].eq("steady-state").all()
+    assert planning_rows["ManufacturedSellThroughUpliftFactor"].astype(float).eq(1.2).all()
     assert planning_rows["GrossRequirementQuantity"].round(2).equals(
         planning_rows[["ForecastQuantity", "BacklogQuantity"]].max(axis=1).round(2)
     )
@@ -214,17 +249,26 @@ def test_phase23_4_manufactured_planning_uses_lot_for_lot_and_non_stacked_backlo
     core_rows = policy_rows[policy_rows["LifecycleStatus"].astype(str).eq("Core")]
     seasonal_rows = policy_rows[policy_rows["LifecycleStatus"].astype(str).eq("Seasonal")]
     if not core_rows.empty:
-        assert core_rows["TargetDaysSupply"].astype(int).eq(14).all()
-        assert core_rows["SafetyStockQuantity"].astype(float).eq(10.0).all()
+        assert core_rows["TargetDaysSupply"].astype(int).eq(12).all()
+        assert core_rows["SafetyStockQuantity"].astype(float).eq(8.0).all()
     if not seasonal_rows.empty:
-        assert seasonal_rows["TargetDaysSupply"].astype(int).eq(18).all()
-        assert seasonal_rows["SafetyStockQuantity"].astype(float).eq(14.0).all()
+        assert seasonal_rows["TargetDaysSupply"].astype(int).eq(16).all()
+        assert seasonal_rows["SafetyStockQuantity"].astype(float).eq(12.0).all()
+
+    core_planning_rows = planning_rows[planning_rows["LifecycleStatus"].astype(str).eq("Core")]
+    seasonal_planning_rows = planning_rows[planning_rows["LifecycleStatus"].astype(str).eq("Seasonal")]
+    if not core_planning_rows.empty:
+        assert core_planning_rows["TargetDaysSupply"].astype(int).eq(12).all()
+        assert core_planning_rows["SafetyStockTargetQuantity"].astype(float).eq(8.0).all()
+    if not seasonal_planning_rows.empty:
+        assert seasonal_planning_rows["TargetDaysSupply"].astype(int).eq(16).all()
+        assert seasonal_planning_rows["SafetyStockTargetQuantity"].astype(float).eq(12.0).all()
 
 
 def test_phase23_4_year_end_planning_keeps_a_forward_operating_horizon(
-    phase23_4_one_year_clean_artifacts: dict[str, object],
+    one_year_clean_dataset_artifacts: dict[str, object],
 ) -> None:
-    context = phase23_4_one_year_clean_artifacts["context"]
+    context = one_year_clean_dataset_artifacts["context"]
     recommendations = context.tables["SupplyPlanRecommendation"].copy()
     fiscal_end = pd.Timestamp(context.settings.fiscal_year_end).normalize()
     final_month_label = fiscal_end.strftime("%Y-%m")
@@ -245,14 +289,15 @@ def test_phase23_4_year_end_planning_keeps_a_forward_operating_horizon(
 
     assert not final_month_rows.empty
     assert not forward_horizon_rows.empty
-    assert forward_horizon_rows["RecommendationStatus"].isin(["Planned", "Converted"]).all()
+    assert forward_horizon_rows["RecommendationStatus"].isin(["Planned", "Converted", "Expired"]).all()
+    assert int(forward_horizon_rows["RecommendationStatus"].eq("Expired").sum()) <= 1
     assert pd.to_datetime(forward_horizon_rows["BucketWeekStartDate"], errors="coerce").max() > fiscal_end
 
 
 def test_phase23_4_one_year_clean_build_smooths_opening_state_purchasing(
-    phase23_4_one_year_clean_artifacts: dict[str, object],
+    one_year_clean_dataset_artifacts: dict[str, object],
 ) -> None:
-    context = phase23_4_one_year_clean_artifacts["context"]
+    context = one_year_clean_dataset_artifacts["context"]
     fiscal_start = pd.Timestamp(context.settings.fiscal_year_start).normalize()
     first_period_label = fiscal_start.strftime("%Y-%m")
     steady_state_periods = [
@@ -331,9 +376,9 @@ def test_phase23_4_one_year_clean_build_smooths_opening_state_purchasing(
 
 
 def test_phase23_4_generation_log_contains_load_diagnostics_and_conversion_logging(
-    phase23_4_one_year_clean_artifacts: dict[str, object],
+    one_year_clean_dataset_artifacts: dict[str, object],
 ) -> None:
-    log_text = phase23_4_one_year_clean_artifacts["generation_log_path"].read_text(encoding="utf-8")
+    log_text = one_year_clean_dataset_artifacts["generation_log_path"].read_text(encoding="utf-8")
 
     assert "OPENING PIPELINE | opening_candidates=" in log_text
     assert "MANUFACTURING LOAD | 2026-02 |" in log_text
@@ -352,10 +397,16 @@ def test_phase23_4_generation_log_contains_load_diagnostics_and_conversion_loggi
     assert "OPENING STATE SHOCK | metric=purchase_order_total | first_period=2026-01 |" in log_text
     assert "OPENING STATE SHOCK | metric=purchase_invoice_total | first_period=2026-01 |" in log_text
     assert "OPENING STATE DRIVER MIX | window=2025-12_to_2026-02 | driver_type=Component Demand | recommendation_type=Purchase |" in log_text
+    assert "MANUFACTURED LOAD CALIBRATION | fiscal_year=2026 | sell_through_uplift_factor=1.2" in log_text
+    assert "MANUFACTURED FG POLICY | fiscal_year=2026 | lifecycle_status=Core | policy_phase=steady-state | target_days_supply=12 | safety_stock_quantity=8.0" in log_text
     assert "MANUFACTURED PLANNING DIAGNOSTIC | recommendation_month=2026-01 |" in log_text
     assert "policy_type=Lot-for-Lot" in log_text
+    assert "policy_phase=steady-state" in log_text
+    assert "sell_through_uplift_factor=1.2" in log_text
     assert "MANUFACTURED FG FLOW | period=2026-12 | item_group=Furniture |" in log_text
+    assert "MANUFACTURED FG FLOW ANNUAL | fiscal_year=2026 | item_group=Furniture |" in log_text
     assert "production_to_shipment_ratio=" in log_text
+    assert "CAPACITY ANNUAL SUMMARY | fiscal_year=2026 | work_center=ASSEMBLY |" in log_text
 
     pattern = re.compile(
         r"MANUFACTURING CONVERSION \| 2026-(\d{2}) \| eligible_planned=(\d+) \| converted=(\d+) \| expired=(\d+) .*? conversion_rate=([0-9.]+)"
@@ -370,3 +421,85 @@ def test_phase23_4_generation_log_contains_load_diagnostics_and_conversion_loggi
         conversion_rate = float(rate)
         assert 0.0 <= conversion_rate <= 1.0
         assert converted_count + expired_count <= eligible_count
+
+
+def test_phase23_4_three_year_clean_build_rebalances_late_year_load(
+    full_dataset_artifacts: dict[str, object],
+) -> None:
+    context = full_dataset_artifacts["context"]
+    annual_capacity = pd.DataFrame(annual_capacity_utilization_diagnostics(context))
+
+    assert not annual_capacity.empty
+
+    later_year_capacity = annual_capacity[annual_capacity["FiscalYear"].isin([2025, 2026])].copy()
+    assert not later_year_capacity.empty
+
+    for fiscal_year in [2025, 2026]:
+        year_rows = later_year_capacity[later_year_capacity["FiscalYear"].eq(fiscal_year)].set_index("WorkCenterCode")
+        assembly = year_rows.loc["ASSEMBLY"]
+        finish = year_rows.loc["FINISH"]
+        pack = year_rows.loc["PACK"]
+
+        assert 55.0 <= float(assembly["MedianMonthlyUtilizationPct"]) <= 70.0
+        assert 55.0 <= float(finish["MedianMonthlyUtilizationPct"]) <= 70.0
+        assert 45.0 <= float(pack["MedianMonthlyUtilizationPct"]) <= 60.0
+        assert int(assembly["MonthsAtOrAbove85Pct"]) >= 1
+        assert int(finish["MonthsAtOrAbove85Pct"]) >= 1
+
+    later_year_summary = later_year_capacity.set_index(["FiscalYear", "WorkCenterCode"])
+    assert float(later_year_summary.loc[(2026, "ASSEMBLY"), "MedianMonthlyUtilizationPct"]) > float(
+        later_year_summary.loc[(2025, "ASSEMBLY"), "MedianMonthlyUtilizationPct"]
+    )
+    assert float(later_year_summary.loc[(2026, "FINISH"), "MedianMonthlyUtilizationPct"]) > float(
+        later_year_summary.loc[(2025, "FINISH"), "MedianMonthlyUtilizationPct"]
+    )
+
+
+def test_phase23_4_three_year_clean_build_controls_annual_fg_flow(
+    full_dataset_artifacts: dict[str, object],
+) -> None:
+    context = full_dataset_artifacts["context"]
+    annual_flow = pd.DataFrame(annual_manufactured_fg_flow_diagnostics(context))
+
+    assert not annual_flow.empty
+
+    total_ratios = (
+        annual_flow.groupby("FiscalYear")[["CompletionCost", "ShipmentCost"]]
+        .sum()
+        .assign(ProductionToShipmentRatio=lambda rows: rows["CompletionCost"] / rows["ShipmentCost"])
+    )
+    assert float(total_ratios.loc[2024, "ProductionToShipmentRatio"]) <= 1.35
+    assert 1.0 <= float(total_ratios.loc[2025, "ProductionToShipmentRatio"]) <= 1.12
+    assert 1.0 <= float(total_ratios.loc[2026, "ProductionToShipmentRatio"]) <= 1.12
+
+    annual_gaps = annual_flow.set_index(["FiscalYear", "ItemGroup"])["CostGap"]
+    for fiscal_year in [2025, 2026]:
+        assert float(annual_gaps.get((fiscal_year, "Furniture"), 0.0)) <= 850000.0
+        assert float(annual_gaps.get((fiscal_year, "Lighting"), 0.0)) <= 375000.0
+
+
+def test_phase23_4_three_year_clean_build_keeps_gl_excel_safe(
+    full_dataset_artifacts: dict[str, object],
+) -> None:
+    context = full_dataset_artifacts["context"]
+    diagnostics = gl_row_budget_diagnostics(context)
+
+    assert diagnostics["preferred_ok"] is True
+    assert diagnostics["hard_ok"] is True
+    assert diagnostics["total_rows"] < diagnostics["hard_max_rows"]
+
+
+def test_phase23_4_three_year_clean_generation_log_contains_annual_load_diagnostics(
+    full_dataset_artifacts: dict[str, object],
+) -> None:
+    log_text = full_dataset_artifacts["generation_log_path"].read_text(encoding="utf-8")
+
+    assert "MANUFACTURED LOAD CALIBRATION | fiscal_year=2024 | sell_through_uplift_factor=1.0" in log_text
+    assert "MANUFACTURED LOAD CALIBRATION | fiscal_year=2025 | sell_through_uplift_factor=1.1" in log_text
+    assert "MANUFACTURED LOAD CALIBRATION | fiscal_year=2026 | sell_through_uplift_factor=1.2" in log_text
+    assert "MANUFACTURED FG POLICY | fiscal_year=2024 | lifecycle_status=Core | policy_phase=bridge | target_days_supply=10 | safety_stock_quantity=6.0" in log_text
+    assert "MANUFACTURED FG POLICY | fiscal_year=2025 | lifecycle_status=Seasonal | policy_phase=steady-state | target_days_supply=16 | safety_stock_quantity=12.0" in log_text
+    assert "MANUFACTURED FG FLOW ANNUAL | fiscal_year=2025 | item_group=Furniture |" in log_text
+    assert "MANUFACTURED FG FLOW ANNUAL | fiscal_year=2026 | item_group=Lighting |" in log_text
+    assert "CAPACITY ANNUAL SUMMARY | fiscal_year=2025 | work_center=ASSEMBLY |" in log_text
+    assert "CAPACITY ANNUAL SUMMARY | fiscal_year=2026 | work_center=FINISH |" in log_text

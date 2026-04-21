@@ -13,7 +13,7 @@ This page separates current release scope from planned future expansion. The res
 
 ### Core business processes and accounting
 
-- five fiscal years of data from 2026 through 2030
+- three fiscal years of data from 2024 through 2026
 - order-to-cash, returns, procure-to-pay, manufacturing, payroll, and close-cycle activity
 - event-based postings into `GLEntry` with source-to-ledger traceability
 - accrued-expense settlement, payroll cash movement, and year-end close activity

@@ -6,11 +6,9 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
-import yaml
 
-from generator_dataset.main import build_full_dataset, build_phase23
+from generator_dataset.main import build_phase23
 from generator_dataset.schema import TABLE_COLUMNS
-from generator_dataset.settings import load_settings
 from generator_dataset.validations import validate_phase23
 
 
@@ -48,36 +46,17 @@ def _values_match(left: object, right: object, *, numeric: bool = False) -> bool
     return str(left) == str(right)
 
 
-@pytest.fixture(scope="session")
-def phase23_anomaly_validation_artifacts(tmp_path_factory: pytest.TempPathFactory) -> dict[str, object]:
-    workdir = tmp_path_factory.mktemp("phase23_anomaly_validation")
-    settings = load_settings("config/settings_validation.yaml")
-    payload = dict(vars(settings))
-    payload.update({
-        "anomaly_mode": "standard",
-        "export_sqlite": True,
-        "export_excel": False,
-        "export_support_excel": False,
-        "export_csv_zip": False,
-        "sqlite_path": str(workdir / "CharlesRiver_phase23_anomaly.sqlite"),
-        "excel_path": str(workdir / "CharlesRiver_phase23_anomaly.xlsx"),
-        "support_excel_path": str(workdir / "CharlesRiver_phase23_anomaly_support.xlsx"),
-        "csv_zip_path": str(workdir / "CharlesRiver_phase23_anomaly_csv.zip"),
-        "generation_log_path": str(workdir / "generation.log"),
-    })
-
-    config_path = workdir / "settings_phase23_anomaly.yaml"
-    config_path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
-
-    context = build_full_dataset(config_path)
-    return {
-        "context": context,
-        "workdir": workdir,
-        "sqlite_path": Path(payload["sqlite_path"]),
-    }
+@pytest.fixture(scope="module")
+def phase23_clean_base_context():
+    return build_phase23("config/settings_validation.yaml", validation_scope="full")
 
 
-def test_phase23_schema_and_clean_build() -> None:
+@pytest.fixture
+def phase23_clean_context(clone_generation_context, phase23_clean_base_context):
+    return clone_generation_context(phase23_clean_base_context)
+
+
+def test_phase23_schema_and_clean_build(phase23_clean_context) -> None:
     for table_name in [
         "PriceList",
         "PriceListLine",
@@ -92,7 +71,7 @@ def test_phase23_schema_and_clean_build() -> None:
         assert column_name in TABLE_COLUMNS["CreditMemoLine"]
     assert "Discount" in TABLE_COLUMNS["CreditMemoLine"]
 
-    context = build_phase23("config/settings_validation.yaml", validation_scope="full")
+    context = phase23_clean_context
     phase23 = context.validation_results["phase23"]
 
     assert phase23["exceptions"] == []
@@ -209,10 +188,10 @@ def test_phase23_schema_and_clean_build() -> None:
 
 def test_phase23_queries_execute_and_return_rows(
     clean_validation_dataset_artifacts: dict[str, object],
-    phase23_anomaly_validation_artifacts: dict[str, object],
+    validation_anomaly_dataset_artifacts: dict[str, object],
 ) -> None:
     clean_sqlite = Path(clean_validation_dataset_artifacts["sqlite_path"])
-    anomaly_sqlite = Path(phase23_anomaly_validation_artifacts["sqlite_path"])
+    anomaly_sqlite = Path(validation_anomaly_dataset_artifacts["sqlite_path"])
 
     for sql_path in [*PHASE23_FINANCIAL_QUERIES, *PHASE23_MANAGERIAL_QUERIES]:
         result = _read_sql_result(clean_sqlite, sql_path)
@@ -224,9 +203,9 @@ def test_phase23_queries_execute_and_return_rows(
 
 
 def test_phase23_anomalies_are_logged_and_detected(
-    phase23_anomaly_validation_artifacts: dict[str, object],
+    validation_anomaly_dataset_artifacts: dict[str, object],
 ) -> None:
-    context = phase23_anomaly_validation_artifacts["context"]
+    context = validation_anomaly_dataset_artifacts["context"]
     anomaly_counts = Counter(entry["anomaly_type"] for entry in context.anomaly_log)
 
     for anomaly_type in [

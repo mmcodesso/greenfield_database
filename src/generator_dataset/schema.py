@@ -1,8 +1,21 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import pandas as pd
 
 from generator_dataset.settings import GenerationContext
+
+
+@dataclass(frozen=True)
+class SQLiteIndexDefinition:
+    name: str
+    columns: tuple[str, ...]
+    unique: bool = False
+
+
+def _sqlite_index(name: str, *columns: str, unique: bool = False) -> SQLiteIndexDefinition:
+    return SQLiteIndexDefinition(name=name, columns=tuple(columns), unique=unique)
 
 
 TABLE_COLUMNS = {
@@ -322,6 +335,127 @@ TABLE_COLUMNS = {
         "SupplyPlanRecommendationID", "PlannedLoadHours", "AvailableHours", "UtilizationPct",
         "CapacityStatus",
     ],
+}
+
+TABLE_PRIMARY_KEYS = {
+    table_name: columns[0]
+    for table_name, columns in TABLE_COLUMNS.items()
+}
+
+SQLITE_INDEXES = {
+    "Account": (
+        _sqlite_index("ux_account_accountnumber", "AccountNumber", unique=True),
+    ),
+    "JournalEntry": (
+        _sqlite_index("ux_journalentry_entrynumber", "EntryNumber", unique=True),
+    ),
+    "GLEntry": (
+        _sqlite_index("ix_glentry_accountid_fiscalyear_fiscalperiod", "AccountID", "FiscalYear", "FiscalPeriod"),
+        _sqlite_index("ix_glentry_sourcedocument_trace", "SourceDocumentType", "SourceDocumentID", "SourceLineID"),
+    ),
+    "SalesOrder": (
+        _sqlite_index("ux_salesorder_ordernumber", "OrderNumber", unique=True),
+    ),
+    "SalesOrderLine": (
+        _sqlite_index("ix_salesorderline_salesorderid", "SalesOrderID"),
+    ),
+    "Shipment": (
+        _sqlite_index("ux_shipment_shipmentnumber", "ShipmentNumber", unique=True),
+    ),
+    "ShipmentLine": (
+        _sqlite_index("ix_shipmentline_shipmentid_salesorderlineid", "ShipmentID", "SalesOrderLineID"),
+    ),
+    "SalesInvoice": (
+        _sqlite_index("ux_salesinvoice_invoicenumber", "InvoiceNumber", unique=True),
+    ),
+    "SalesInvoiceLine": (
+        _sqlite_index(
+            "ix_salesinvoiceline_salesinvoiceid_salesorderlineid_itemid",
+            "SalesInvoiceID",
+            "SalesOrderLineID",
+            "ItemID",
+        ),
+    ),
+    "CashReceipt": (
+        _sqlite_index("ux_cashreceipt_receiptnumber", "ReceiptNumber", unique=True),
+    ),
+    "CashReceiptApplication": (
+        _sqlite_index("ix_cashreceiptapplication_salesinvoiceid", "SalesInvoiceID"),
+    ),
+    "SalesReturn": (
+        _sqlite_index("ux_salesreturn_returnnumber", "ReturnNumber", unique=True),
+    ),
+    "SalesReturnLine": (
+        _sqlite_index("ix_salesreturnline_salesreturnid", "SalesReturnID"),
+    ),
+    "CreditMemo": (
+        _sqlite_index("ix_creditmemo_salesreturnid", "SalesReturnID"),
+        _sqlite_index("ux_creditmemo_creditmemonumber", "CreditMemoNumber", unique=True),
+    ),
+    "CustomerRefund": (
+        _sqlite_index("ux_customerrefund_refundnumber", "RefundNumber", unique=True),
+    ),
+    "PurchaseRequisition": (
+        _sqlite_index("ux_purchaserequisition_requisitionnumber", "RequisitionNumber", unique=True),
+    ),
+    "PurchaseOrder": (
+        _sqlite_index("ux_purchaseorder_ponumber", "PONumber", unique=True),
+    ),
+    "PurchaseOrderLine": (
+        _sqlite_index("ix_purchaseorderline_purchaseorderid_requisitionid", "PurchaseOrderID", "RequisitionID"),
+    ),
+    "GoodsReceipt": (
+        _sqlite_index("ux_goodsreceipt_receiptnumber", "ReceiptNumber", unique=True),
+    ),
+    "GoodsReceiptLine": (
+        _sqlite_index("ix_goodsreceiptline_goodsreceiptid_polineid", "GoodsReceiptID", "POLineID"),
+    ),
+    "PurchaseInvoiceLine": (
+        _sqlite_index(
+            "ix_purchaseinvoiceline_piid_polid_grid_accrualjeid",
+            "PurchaseInvoiceID",
+            "POLineID",
+            "GoodsReceiptLineID",
+            "AccrualJournalEntryID",
+        ),
+    ),
+    "DisbursementPayment": (
+        _sqlite_index("ix_disbursementpayment_purchaseinvoiceid_supplierid", "PurchaseInvoiceID", "SupplierID"),
+        _sqlite_index("ux_disbursementpayment_paymentnumber", "PaymentNumber", unique=True),
+    ),
+    "Item": (
+        _sqlite_index("ux_item_itemcode", "ItemCode", unique=True),
+    ),
+    "WorkCenter": (
+        _sqlite_index("ux_workcenter_workcentercode", "WorkCenterCode", unique=True),
+    ),
+    "WorkOrder": (
+        _sqlite_index("ux_workorder_workordernumber", "WorkOrderNumber", unique=True),
+    ),
+    "LaborTimeEntry": (
+        _sqlite_index("ix_labortimeentry_employeeid_payrollperiodid", "EmployeeID", "PayrollPeriodID"),
+    ),
+    "ShiftDefinition": (
+        _sqlite_index("ux_shiftdefinition_shiftcode", "ShiftCode", unique=True),
+    ),
+    "TimeClockEntry": (
+        _sqlite_index("ix_timeclockentry_employeeid_payrollperiodid", "EmployeeID", "PayrollPeriodID"),
+    ),
+    "TimeClockPunch": (
+        _sqlite_index("ix_timeclockpunch_employeeid_payrollperiodid", "EmployeeID", "PayrollPeriodID"),
+    ),
+    "PayrollPeriod": (
+        _sqlite_index("ux_payrollperiod_periodnumber", "PeriodNumber", unique=True),
+    ),
+    "PayrollRegister": (
+        _sqlite_index("ix_payrollregister_employeeid_payrollperiodid", "EmployeeID", "PayrollPeriodID"),
+    ),
+    "PayrollRegisterLine": (
+        _sqlite_index("ix_payrollregisterline_payrollregisterid_labortimeentryid", "PayrollRegisterID", "LaborTimeEntryID"),
+    ),
+    "Employee": (
+        _sqlite_index("ux_employee_employeenumber", "EmployeeNumber", unique=True),
+    ),
 }
 
 

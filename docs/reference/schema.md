@@ -10,6 +10,12 @@ This reference is the table map for the dataset: which tables belong together, h
 
 If you need the big-picture business story first, start with [Dataset Guide](../start-here/dataset-overview.md) and [Process Flows](../learn-the-business/process-flows.md).
 
+## SQLite Physical Schema
+
+- The generated SQLite file now includes a physical primary key on each table's main surrogate ID column.
+- The SQLite file also includes a curated index set for high-value joins and stable business identifiers, but it does not index every relationship column in the model.
+- Some business identifiers remain intentionally non-unique in anomaly scenarios, so fields such as supplier invoice numbers or payment references are not universally enforced as unique in SQLite.
+
 ## How the Reference Is Organized
 
 - Start with **Table Groups** to see how the model is divided.

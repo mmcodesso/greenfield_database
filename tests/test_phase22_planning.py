@@ -6,13 +6,10 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
-import yaml
 
 from generator_dataset.fixed_assets import fixed_asset_opening_profiles
-from generator_dataset.main import build_full_dataset
 from generator_dataset.main import build_phase2, build_phase22
 from generator_dataset.planning import opening_inventory_diagnostics, projected_monthly_procurement_cost
-from generator_dataset.settings import load_settings
 from generator_dataset.schema import TABLE_COLUMNS
 from generator_dataset.validations import validate_phase22
 
@@ -43,34 +40,24 @@ def _read_sql_result(sqlite_path: Path, sql_path: Path) -> pd.DataFrame:
     with sqlite3.connect(sqlite_path) as connection:
         return pd.read_sql_query(sql_path.read_text(encoding="utf-8"), connection)
 
+@pytest.fixture(scope="module")
+def phase22_clean_base_context():
+    return build_phase22("config/settings_validation.yaml", validation_scope="full")
 
-@pytest.fixture(scope="session")
-def phase22_anomaly_validation_artifacts(tmp_path_factory: pytest.TempPathFactory) -> dict[str, object]:
-    workdir = tmp_path_factory.mktemp("phase22_anomaly_validation")
-    settings = load_settings("config/settings_validation.yaml")
-    payload = dict(vars(settings))
-    payload.update({
-        "anomaly_mode": "standard",
-        "export_sqlite": True,
-        "export_excel": False,
-        "export_support_excel": False,
-        "export_csv_zip": False,
-        "sqlite_path": str(workdir / "CharlesRiver_phase22_anomaly.sqlite"),
-        "excel_path": str(workdir / "CharlesRiver_phase22_anomaly.xlsx"),
-        "support_excel_path": str(workdir / "CharlesRiver_phase22_anomaly_support.xlsx"),
-        "csv_zip_path": str(workdir / "CharlesRiver_phase22_anomaly_csv.zip"),
-        "generation_log_path": str(workdir / "generation.log"),
-    })
 
-    config_path = workdir / "settings_phase22_anomaly.yaml"
-    config_path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+@pytest.fixture
+def phase22_clean_context(clone_generation_context, phase22_clean_base_context):
+    return clone_generation_context(phase22_clean_base_context)
 
-    context = build_full_dataset(config_path)
-    return {
-        "context": context,
-        "workdir": workdir,
-        "sqlite_path": Path(payload["sqlite_path"]),
-    }
+
+@pytest.fixture(scope="module")
+def phase22_phase2_base_context():
+    return build_phase2("config/settings_validation.yaml")
+
+
+@pytest.fixture
+def phase22_phase2_context(clone_generation_context, phase22_phase2_base_context):
+    return clone_generation_context(phase22_phase2_base_context)
 
 
 def test_phase22_schema_extensions_exist() -> None:
@@ -87,8 +74,8 @@ def test_phase22_schema_extensions_exist() -> None:
     assert "SupplyPlanRecommendationID" in TABLE_COLUMNS["WorkOrder"]
 
 
-def test_phase22_helper_generates_clean_dataset() -> None:
-    context = build_phase22("config/settings_validation.yaml", validation_scope="full")
+def test_phase22_helper_generates_clean_dataset(phase22_clean_context) -> None:
+    context = phase22_clean_context
     phase22 = context.validation_results["phase22"]
 
     assert phase22["exceptions"] == []
@@ -132,8 +119,8 @@ def test_phase22_helper_generates_clean_dataset() -> None:
     assert revalidated["planning_controls"]["exception_count"] == 0
 
 
-def test_phase22_phase2_opening_balances_align_with_seeded_inventory() -> None:
-    context = build_phase2("config/settings_validation.yaml")
+def test_phase22_phase2_opening_balances_align_with_seeded_inventory(phase22_phase2_context) -> None:
+    context = phase22_phase2_context
     fiscal_start = pd.Timestamp(context.settings.fiscal_year_start).normalize()
     voucher_number = f"JE-{fiscal_start.year}-000001"
     diagnostics = opening_inventory_diagnostics(context)
@@ -170,10 +157,10 @@ def test_phase22_phase2_opening_balances_align_with_seeded_inventory() -> None:
 
 def test_phase22_queries_execute_and_return_expected_rows(
     clean_validation_dataset_artifacts: dict[str, object],
-    phase22_anomaly_validation_artifacts: dict[str, object],
+    validation_anomaly_dataset_artifacts: dict[str, object],
 ) -> None:
     clean_sqlite = Path(clean_validation_dataset_artifacts["sqlite_path"])
-    anomaly_sqlite = Path(phase22_anomaly_validation_artifacts["sqlite_path"])
+    anomaly_sqlite = Path(validation_anomaly_dataset_artifacts["sqlite_path"])
 
     for sql_path in [*PHASE22_FINANCIAL_QUERIES, *PHASE22_MANAGERIAL_QUERIES]:
         result = _read_sql_result(clean_sqlite, sql_path)
@@ -185,9 +172,9 @@ def test_phase22_queries_execute_and_return_expected_rows(
 
 
 def test_phase22_new_anomalies_are_logged_and_detected(
-    phase22_anomaly_validation_artifacts: dict[str, object],
+    validation_anomaly_dataset_artifacts: dict[str, object],
 ) -> None:
-    context = phase22_anomaly_validation_artifacts["context"]
+    context = validation_anomaly_dataset_artifacts["context"]
     anomaly_counts = Counter(entry["anomaly_type"] for entry in context.anomaly_log)
 
     for anomaly_type in [

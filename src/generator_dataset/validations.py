@@ -5,8 +5,8 @@ from typing import Any
 
 import pandas as pd
 
-from generator_dataset.journals import ACCRUAL_ACCOUNT_METADATA, accrual_journal_details
-from generator_dataset.master_data import ACCRUAL_SERVICE_ITEMS
+from generator_dataset.accrual_catalog import ACCRUAL_ACCOUNT_METADATA, ACCRUAL_SERVICE_ITEMS
+from generator_dataset.journals import accrual_journal_details
 from generator_dataset.manufacturing import (
     CAPACITY_EXCEPTION_REASONS,
     active_routing_by_item,

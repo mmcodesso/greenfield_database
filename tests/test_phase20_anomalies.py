@@ -45,9 +45,9 @@ def test_phase20_helper_generates_clean_dataset() -> None:
 
 
 def test_phase20_new_anomalies_are_logged_with_detection_metadata(
-    default_anomaly_dataset_artifacts: dict[str, object],
+    default_anomaly_core_artifacts: dict[str, object],
 ) -> None:
-    context = default_anomaly_dataset_artifacts["context"]
+    context = default_anomaly_core_artifacts["context"]
     anomaly_counts = Counter(entry["anomaly_type"] for entry in context.anomaly_log)
 
     for anomaly_type in [
@@ -72,9 +72,9 @@ def test_phase20_new_anomalies_are_logged_with_detection_metadata(
 
 
 def test_phase20_new_audit_queries_return_rows_on_default_build(
-    default_anomaly_dataset_artifacts: dict[str, object],
+    default_anomaly_core_artifacts: dict[str, object],
 ) -> None:
-    sqlite_path = Path(default_anomaly_dataset_artifacts["sqlite_path"])
+    sqlite_path = Path(default_anomaly_core_artifacts["sqlite_path"])
     assert sqlite_path.exists()
 
     for sql_path in [*PHASE20_NEW_AUDIT_QUERIES, *PHASE20_RELATED_AUDIT_QUERIES]:
@@ -83,13 +83,13 @@ def test_phase20_new_audit_queries_return_rows_on_default_build(
 
 
 def test_phase20_default_build_preserves_export_and_balance_contract(
-    default_anomaly_dataset_artifacts: dict[str, object],
+    default_anomaly_published_package_artifacts: dict[str, object],
 ) -> None:
-    context = default_anomaly_dataset_artifacts["context"]
+    context = default_anomaly_published_package_artifacts["context"]
 
-    assert Path(default_anomaly_dataset_artifacts["sqlite_path"]).exists()
-    assert Path(default_anomaly_dataset_artifacts["support_excel_path"]).exists()
-    assert Path(default_anomaly_dataset_artifacts["csv_zip_path"]).exists()
+    assert Path(default_anomaly_published_package_artifacts["sqlite_path"]).exists()
+    assert Path(default_anomaly_published_package_artifacts["support_excel_path"]).exists()
+    assert Path(default_anomaly_published_package_artifacts["csv_zip_path"]).exists()
 
     phase8 = context.validation_results["phase8"]
     assert phase8["gl_balance"]["exception_count"] == 0

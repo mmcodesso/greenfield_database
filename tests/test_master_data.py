@@ -1,3 +1,4 @@
+from generator_dataset.accrual_catalog import ACCRUAL_SERVICE_ITEMS
 from generator_dataset.manufacturing import generate_boms
 from generator_dataset.master_data import (
     backfill_cost_center_managers,
@@ -58,7 +59,7 @@ def test_generate_phase2_master_data() -> None:
     generate_customers(context)
     generate_suppliers(context)
 
-    assert len(context.tables["Item"]) == context.settings.item_count + 3
+    assert len(context.tables["Item"]) == context.settings.item_count + len(ACCRUAL_SERVICE_ITEMS)
     assert len(context.tables["BillOfMaterial"]) > 0
     assert len(context.tables["BillOfMaterialLine"]) > 0
     assert len(context.tables["Customer"]) == context.settings.customer_count

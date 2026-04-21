@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from typing import Any
 
 import pandas as pd
@@ -18,6 +19,9 @@ from generator_dataset.utils import money, next_id
 
 
 SYSTEM_EMPLOYEE_ID = 1
+PAYROLL_SUMMARY_VOUCHER_TYPE = "PayrollSummary"
+PAYROLL_SUMMARY_SOURCE_DOCUMENT_TYPE = "PayrollSummary"
+PREFERRED_EXCEL_GLENTRY_ROW_BUDGET = 1_000_000
 SALARY_ACCOUNT_BY_COST_CENTER = {
     "Executive": "6050",
     "Sales": "6010",
@@ -90,6 +94,55 @@ def assert_balanced(rows: list[dict[str, Any]], voucher_number: str) -> None:
 def payroll_account_numbers(context: GenerationContext) -> dict[str, str]:
     cost_centers = context.tables["CostCenter"].set_index("CostCenterID")["CostCenterName"].to_dict()
     return {int(cost_center_id): SALARY_ACCOUNT_BY_COST_CENTER[str(name)] for cost_center_id, name in cost_centers.items()}
+
+
+def payroll_summary_document_id(payroll_period_id: int, cost_center_id: int, summary_kind: str) -> int:
+    kind_offset = 1 if str(summary_kind) == "register" else 2
+    return int(kind_offset * 1_000_000 + int(payroll_period_id) * 1_000 + int(cost_center_id))
+
+
+def payroll_summary_voucher_number(payroll_period_id: int, cost_center_id: int, summary_kind: str) -> str:
+    prefix = "PRS" if str(summary_kind) == "register" else "PRPS"
+    return f"{prefix}-{int(payroll_period_id):04d}-{int(cost_center_id):03d}"
+
+
+def _payroll_summary_rows(
+    context: GenerationContext,
+    aggregated_amounts: dict[tuple[int, int, int], dict[str, Any]],
+    *,
+    summary_kind: str,
+    voucher_type: str,
+    source_document_type: str,
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for (payroll_period_id, cost_center_id, account_id), amounts in sorted(aggregated_amounts.items()):
+        debit = money(float(amounts["debit"]))
+        credit = money(float(amounts["credit"]))
+        if debit <= 0 and credit <= 0:
+            continue
+        rows.append(build_gl_row(
+            context,
+            str(amounts["posting_date"]),
+            int(account_id),
+            debit,
+            credit,
+            voucher_type,
+            payroll_summary_voucher_number(int(payroll_period_id), int(cost_center_id), summary_kind),
+            source_document_type,
+            payroll_summary_document_id(int(payroll_period_id), int(cost_center_id), summary_kind),
+            None,
+            int(cost_center_id),
+            str(amounts["description"]),
+            int(amounts["created_by_employee_id"]),
+        ))
+
+    rows_by_voucher: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in rows:
+        rows_by_voucher[str(row["VoucherNumber"])].append(row)
+    for voucher_rows in rows_by_voucher.values():
+        assert_balanced(voucher_rows, str(voucher_rows[0]["VoucherNumber"]))
+
+    return rows
 
 
 def post_shipments(context: GenerationContext) -> list[dict[str, Any]]:
@@ -516,11 +569,12 @@ def post_payroll_registers(context: GenerationContext) -> list[dict[str, Any]]:
     register_lines = context.tables["PayrollRegisterLine"]
     employees = context.tables["Employee"]
     cost_centers = context.tables["CostCenter"]
-    if registers.empty or register_lines.empty or employees.empty or cost_centers.empty:
+    payroll_periods = context.tables["PayrollPeriod"]
+    if registers.empty or register_lines.empty or employees.empty or cost_centers.empty or payroll_periods.empty:
         return []
 
-    employee_lookup = employees.set_index("EmployeeID").to_dict("index")
     cost_center_names = cost_centers.set_index("CostCenterID")["CostCenterName"].to_dict()
+    payroll_period_lookup = payroll_periods.set_index("PayrollPeriodID").to_dict("index")
     lines_by_register = {key: value for key, value in register_lines.groupby("PayrollRegisterID")}
     salary_accounts = payroll_account_numbers(context)
     accrued_payroll_account_id = account_id_by_number(context, "2030")
@@ -529,17 +583,40 @@ def post_payroll_registers(context: GenerationContext) -> list[dict[str, Any]]:
     benefits_account_id = account_id_by_number(context, "2033")
     burden_expense_account_id = account_id_by_number(context, "6060")
     manufacturing_overhead_account_id = account_id_by_number(context, "6270")
-    rows: list[dict[str, Any]] = []
+    aggregated_amounts: dict[tuple[int, int, int], dict[str, Any]] = {}
+
+    def add_summary_amount(
+        payroll_period_id: int,
+        cost_center_id: int,
+        account_id: int,
+        debit: float,
+        credit: float,
+        posting_date: str,
+        created_by_employee_id: int,
+        description: str,
+    ) -> None:
+        key = (int(payroll_period_id), int(cost_center_id), int(account_id))
+        row = aggregated_amounts.get(key)
+        if row is None:
+            row = {
+                "debit": 0.0,
+                "credit": 0.0,
+                "posting_date": str(posting_date),
+                "created_by_employee_id": int(created_by_employee_id),
+                "description": str(description),
+            }
+            aggregated_amounts[key] = row
+        row["debit"] = money(float(row["debit"]) + float(debit))
+        row["credit"] = money(float(row["credit"]) + float(credit))
 
     for register in registers.itertuples(index=False):
-        voucher_number = f"PR-{int(register.PayrollRegisterID):06d}"
-        employee = employee_lookup[int(register.EmployeeID)]
+        period = payroll_period_lookup[int(register.PayrollPeriodID)]
+        posting_date = pd.Timestamp(period["PayDate"]).strftime("%Y-%m-%d")
         cost_center_name = str(cost_center_names[int(register.CostCenterID)])
         register_line_group = lines_by_register.get(int(register.PayrollRegisterID))
         if register_line_group is None or register_line_group.empty:
             continue
 
-        voucher_rows: list[dict[str, Any]] = []
         employee_tax_withholding = 0.0
         benefits_and_deductions = 0.0
 
@@ -550,128 +627,94 @@ def post_payroll_registers(context: GenerationContext) -> list[dict[str, Any]]:
                     debit_account_id = account_id_by_number(context, "6260") if pd.notna(line.WorkOrderID) else manufacturing_overhead_account_id
                 else:
                     debit_account_id = account_id_by_number(context, salary_accounts[int(register.CostCenterID)])
-                voucher_rows.append(build_gl_row(
-                    context,
-                    register.ApprovedDate,
-                    debit_account_id,
+                add_summary_amount(
+                    int(register.PayrollPeriodID),
+                    int(register.CostCenterID),
+                    int(debit_account_id),
                     float(line.Amount),
                     0.0,
-                    "PayrollRegister",
-                    voucher_number,
-                    "PayrollRegister",
-                    int(register.PayrollRegisterID),
-                    int(line.PayrollRegisterLineID),
-                    int(register.CostCenterID),
-                    f"Record {line_type.lower()}",
+                    posting_date,
                     int(register.ApprovedByEmployeeID),
-                ))
+                    f"Summarize {line_type.lower()}",
+                )
             elif line_type == "Employee Tax Withholding":
                 employee_tax_withholding += float(line.Amount)
             elif line_type == "Benefits Deduction":
                 benefits_and_deductions += float(line.Amount)
             elif line_type == "Employer Payroll Tax":
                 expense_account_id = manufacturing_overhead_account_id if cost_center_name == "Manufacturing" else burden_expense_account_id
-                voucher_rows.append(build_gl_row(
-                    context,
-                    register.ApprovedDate,
-                    expense_account_id,
+                add_summary_amount(
+                    int(register.PayrollPeriodID),
+                    int(register.CostCenterID),
+                    int(expense_account_id),
                     float(line.Amount),
                     0.0,
-                    "PayrollRegister",
-                    voucher_number,
-                    "PayrollRegister",
-                    int(register.PayrollRegisterID),
-                    int(line.PayrollRegisterLineID),
-                    int(register.CostCenterID),
-                    "Record employer payroll tax expense",
+                    posting_date,
                     int(register.ApprovedByEmployeeID),
-                ))
+                    "Summarize employer payroll tax expense",
+                )
             elif line_type == "Employer Benefits":
                 expense_account_id = manufacturing_overhead_account_id if cost_center_name == "Manufacturing" else burden_expense_account_id
-                voucher_rows.append(build_gl_row(
-                    context,
-                    register.ApprovedDate,
-                    expense_account_id,
+                add_summary_amount(
+                    int(register.PayrollPeriodID),
+                    int(register.CostCenterID),
+                    int(expense_account_id),
                     float(line.Amount),
                     0.0,
-                    "PayrollRegister",
-                    voucher_number,
-                    "PayrollRegister",
-                    int(register.PayrollRegisterID),
-                    int(line.PayrollRegisterLineID),
-                    int(register.CostCenterID),
-                    "Record employer benefits expense",
+                    posting_date,
                     int(register.ApprovedByEmployeeID),
-                ))
+                    "Summarize employer benefits expense",
+                )
                 benefits_and_deductions += float(line.Amount)
 
-        voucher_rows.extend([
-            build_gl_row(
-                context,
-                register.ApprovedDate,
-                accrued_payroll_account_id,
-                0.0,
-                float(register.NetPay),
-                "PayrollRegister",
-                voucher_number,
-                "PayrollRegister",
-                int(register.PayrollRegisterID),
-                None,
-                int(register.CostCenterID),
-                "Record net pay liability",
-                int(register.ApprovedByEmployeeID),
-            ),
-            build_gl_row(
-                context,
-                register.ApprovedDate,
-                withholdings_account_id,
-                0.0,
-                money(employee_tax_withholding),
-                "PayrollRegister",
-                voucher_number,
-                "PayrollRegister",
-                int(register.PayrollRegisterID),
-                None,
-                int(register.CostCenterID),
-                "Record payroll tax withholdings payable",
-                int(register.ApprovedByEmployeeID),
-            ),
-            build_gl_row(
-                context,
-                register.ApprovedDate,
-                employer_tax_account_id,
-                0.0,
-                float(register.EmployerPayrollTax),
-                "PayrollRegister",
-                voucher_number,
-                "PayrollRegister",
-                int(register.PayrollRegisterID),
-                None,
-                int(register.CostCenterID),
-                "Record employer payroll tax payable",
-                int(register.ApprovedByEmployeeID),
-            ),
-            build_gl_row(
-                context,
-                register.ApprovedDate,
-                benefits_account_id,
-                0.0,
-                money(benefits_and_deductions),
-                "PayrollRegister",
-                voucher_number,
-                "PayrollRegister",
-                int(register.PayrollRegisterID),
-                None,
-                int(register.CostCenterID),
-                "Record benefits and deductions payable",
-                int(register.ApprovedByEmployeeID),
-            ),
-        ])
+        add_summary_amount(
+            int(register.PayrollPeriodID),
+            int(register.CostCenterID),
+            int(accrued_payroll_account_id),
+            0.0,
+            float(register.NetPay),
+            posting_date,
+            int(register.ApprovedByEmployeeID),
+            "Summarize net pay liability",
+        )
+        add_summary_amount(
+            int(register.PayrollPeriodID),
+            int(register.CostCenterID),
+            int(withholdings_account_id),
+            0.0,
+            money(employee_tax_withholding),
+            posting_date,
+            int(register.ApprovedByEmployeeID),
+            "Summarize payroll tax withholdings payable",
+        )
+        add_summary_amount(
+            int(register.PayrollPeriodID),
+            int(register.CostCenterID),
+            int(employer_tax_account_id),
+            0.0,
+            float(register.EmployerPayrollTax),
+            posting_date,
+            int(register.ApprovedByEmployeeID),
+            "Summarize employer payroll tax payable",
+        )
+        add_summary_amount(
+            int(register.PayrollPeriodID),
+            int(register.CostCenterID),
+            int(benefits_account_id),
+            0.0,
+            money(benefits_and_deductions),
+            posting_date,
+            int(register.ApprovedByEmployeeID),
+            "Summarize benefits and deductions payable",
+        )
 
-        assert_balanced(voucher_rows, voucher_number)
-        rows.extend(voucher_rows)
-
-    return rows
+    return _payroll_summary_rows(
+        context,
+        aggregated_amounts,
+        summary_kind="register",
+        voucher_type=PAYROLL_SUMMARY_VOUCHER_TYPE,
+        source_document_type=PAYROLL_SUMMARY_SOURCE_DOCUMENT_TYPE,
+    )
 
 
 def post_payroll_payments(context: GenerationContext) -> list[dict[str, Any]]:
@@ -721,6 +764,79 @@ def post_payroll_payments(context: GenerationContext) -> list[dict[str, Any]]:
         assert_balanced(voucher_rows, payment.ReferenceNumber)
         rows.extend(voucher_rows)
     return rows
+
+
+def post_payroll_payments_summary(context: GenerationContext) -> list[dict[str, Any]]:
+    payments = context.tables["PayrollPayment"]
+    registers = context.tables["PayrollRegister"]
+    payroll_periods = context.tables["PayrollPeriod"]
+    if payments.empty or registers.empty or payroll_periods.empty:
+        return []
+
+    register_lookup = registers.set_index("PayrollRegisterID").to_dict("index")
+    payroll_period_lookup = payroll_periods.set_index("PayrollPeriodID").to_dict("index")
+    accrued_payroll_account_id = account_id_by_number(context, "2030")
+    cash_account_id = account_id_by_number(context, "1010")
+    aggregated_amounts: dict[tuple[int, int, int], dict[str, Any]] = {}
+
+    def add_summary_amount(
+        payroll_period_id: int,
+        cost_center_id: int,
+        account_id: int,
+        debit: float,
+        credit: float,
+        posting_date: str,
+        created_by_employee_id: int,
+        description: str,
+    ) -> None:
+        key = (int(payroll_period_id), int(cost_center_id), int(account_id))
+        row = aggregated_amounts.get(key)
+        if row is None:
+            row = {
+                "debit": 0.0,
+                "credit": 0.0,
+                "posting_date": str(posting_date),
+                "created_by_employee_id": int(created_by_employee_id),
+                "description": str(description),
+            }
+            aggregated_amounts[key] = row
+        row["debit"] = money(float(row["debit"]) + float(debit))
+        row["credit"] = money(float(row["credit"]) + float(credit))
+
+    for payment in payments.itertuples(index=False):
+        register = register_lookup[int(payment.PayrollRegisterID)]
+        payroll_period_id = int(register["PayrollPeriodID"])
+        period = payroll_period_lookup[payroll_period_id]
+        posting_date = pd.Timestamp(period["PayDate"]).strftime("%Y-%m-%d")
+        cost_center_id = int(register["CostCenterID"])
+        add_summary_amount(
+            payroll_period_id,
+            cost_center_id,
+            int(accrued_payroll_account_id),
+            float(register["NetPay"]),
+            0.0,
+            posting_date,
+            int(payment.RecordedByEmployeeID),
+            "Summarize payroll cash clearing",
+        )
+        add_summary_amount(
+            payroll_period_id,
+            cost_center_id,
+            int(cash_account_id),
+            0.0,
+            float(register["NetPay"]),
+            posting_date,
+            int(payment.RecordedByEmployeeID),
+            "Summarize payroll cash disbursement",
+        )
+
+    return _payroll_summary_rows(
+        context,
+        aggregated_amounts,
+        summary_kind="payment",
+        voucher_type="PayrollPayment",
+        source_document_type="PayrollPayment",
+    )
 
 
 def post_payroll_liability_remittances(context: GenerationContext) -> list[dict[str, Any]]:
@@ -1342,6 +1458,10 @@ def post_all_transactions(context: GenerationContext) -> None:
         context.tables["GLEntry"]["VoucherType"].eq("JournalEntry")
     ].copy()
 
+    payroll_register_rows = post_payroll_registers(context)
+    payroll_payment_rows = post_payroll_payments(context)
+    payroll_payment_summary_mode = "detail"
+
     operational_rows: list[dict[str, Any]] = []
     operational_rows.extend(post_shipments(context))
     operational_rows.extend(post_sales_invoices(context))
@@ -1350,8 +1470,7 @@ def post_all_transactions(context: GenerationContext) -> None:
     operational_rows.extend(post_sales_returns(context))
     operational_rows.extend(post_credit_memos(context))
     operational_rows.extend(post_customer_refunds(context))
-    operational_rows.extend(post_payroll_registers(context))
-    operational_rows.extend(post_payroll_payments(context))
+    operational_rows.extend(payroll_register_rows)
     operational_rows.extend(post_payroll_liability_remittances(context))
     operational_rows.extend(post_material_issues(context))
     operational_rows.extend(post_production_completions(context))
@@ -1359,6 +1478,17 @@ def post_all_transactions(context: GenerationContext) -> None:
     operational_rows.extend(post_goods_receipts(context))
     operational_rows.extend(post_purchase_invoices(context))
     operational_rows.extend(post_disbursements(context))
+
+    projected_total_rows = len(opening_gl) + len(operational_rows) + len(payroll_payment_rows)
+    if projected_total_rows > PREFERRED_EXCEL_GLENTRY_ROW_BUDGET:
+        payroll_payment_rows = post_payroll_payments_summary(context)
+        payroll_payment_summary_mode = "period_cost_center_account"
+
+    operational_rows.extend(payroll_payment_rows)
+    setattr(context, "payroll_gl_summary_mode", {
+        "register": "period_cost_center_account",
+        "payment": payroll_payment_summary_mode,
+    })
 
     operational_gl = pd.DataFrame(operational_rows, columns=TABLE_COLUMNS["GLEntry"])
     context.tables["GLEntry"] = pd.concat([opening_gl, operational_gl], ignore_index=True)

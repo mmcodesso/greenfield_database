@@ -23,6 +23,7 @@ WITH filtered_gl AS (
         ON je.JournalEntryID = gl.SourceDocumentID
        AND gl.SourceDocumentType = 'JournalEntry'
     WHERE a.AccountType IN ('Revenue', 'Expense')
+      AND a.IsActive = 1
       AND a.AccountSubType <> 'Header'
       AND COALESCE(je.EntryType, '') NOT IN (
             'Year-End Close - P&L to Income Summary',
@@ -86,6 +87,7 @@ account_layout AS (
         END AS SectionBaseOrder
     FROM Account
     WHERE AccountType IN ('Revenue', 'Expense')
+      AND IsActive = 1
       AND AccountSubType <> 'Header'
 ),
 account_lines AS (

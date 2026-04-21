@@ -18,7 +18,8 @@ WITH accrual_amounts AS (
         ON a.AccountID = gl.AccountID
     WHERE je.EntryType = 'Accrual'
       AND gl.Debit > 0
-      AND a.AccountNumber IN ('6100', '6140', '6180')
+      AND a.AccountType = 'Expense'
+      AND a.AccountSubType <> 'Header'
     GROUP BY je.JournalEntryID, date(je.PostingDate), a.AccountNumber, a.AccountName
 ),
 payment_summary AS (

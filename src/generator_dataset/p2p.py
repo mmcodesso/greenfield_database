@@ -7,7 +7,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from generator_dataset.journals import ACCRUAL_ACCOUNT_METADATA, accrual_journal_details
+from generator_dataset.accrual_catalog import ACCRUAL_ACCOUNT_NUMBERS, ACCRUAL_SERVICE_ITEMS
+from generator_dataset.journals import accrual_journal_details
 from generator_dataset.master_data import approver_employee_id, employee_ids_for_cost_center_as_of, eligible_item_mask
 from generator_dataset.planning import primary_warehouse_rank, purchase_recommendations_for_month, update_recommendation_conversion
 from generator_dataset.schema import TABLE_COLUMNS
@@ -69,12 +70,6 @@ SUPPLIER_RISK_LEAD_DAYS = {
     "Low": (0, 2),
     "Medium": (2, 4),
     "High": (4, 8),
-}
-
-ACCRUAL_SERVICE_ITEM_CODE_BY_ACCOUNT = {
-    "6100": "SRV-INS",
-    "6140": "SRV-SW",
-    "6180": "SRV-PRO",
 }
 
 ACCRUED_SERVICE_SETTLEMENT_RATE = 0.93
@@ -275,7 +270,8 @@ def payment_term_days(payment_terms: str) -> int:
 def service_item_id_by_account(context: GenerationContext) -> dict[str, int]:
     items = context.tables["Item"]
     mapping: dict[str, int] = {}
-    for account_number, item_code in ACCRUAL_SERVICE_ITEM_CODE_BY_ACCOUNT.items():
+    for account_number, service_item in ACCRUAL_SERVICE_ITEMS.items():
+        item_code = str(service_item["ItemCode"])
         matches = items.loc[items["ItemCode"].eq(item_code), "ItemID"]
         if matches.empty:
             raise ValueError(f"Service item {item_code} is required for accrued expense settlement.")
@@ -295,7 +291,7 @@ def preferred_service_supplier_by_account(context: GenerationContext) -> dict[st
     risk_order = {"Low": 0, "Medium": 1, "High": 2}
     service_suppliers["RiskOrder"] = service_suppliers["SupplierRiskRating"].map(risk_order).fillna(99)
     supplier_ids = service_suppliers.sort_values(["RiskOrder", "SupplierID"])["SupplierID"].astype(int).tolist()
-    account_numbers = list(ACCRUAL_ACCOUNT_METADATA)
+    account_numbers = list(ACCRUAL_ACCOUNT_NUMBERS)
     return {
         account_number: supplier_ids[index % len(supplier_ids)]
         for index, account_number in enumerate(account_numbers)

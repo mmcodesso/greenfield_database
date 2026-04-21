@@ -13,7 +13,7 @@ Most students should begin with the documentation site and the packaged output f
 
 ## What This Repository Contains
 
-- a five-year teaching dataset covering fiscal years 2026 through 2030
+- a three-year teaching dataset covering fiscal years 2024 through 2026
 - 55 implemented tables across accounting, O2C, P2P, manufacturing, payroll and time, master data, and planning
 - starter SQL packs for financial, managerial, and audit analytics
 - ready-to-use download files for SQLite and Excel through GitHub Releases

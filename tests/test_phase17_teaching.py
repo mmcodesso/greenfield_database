@@ -52,9 +52,9 @@ def test_phase17_helper_generates_clean_dataset() -> None:
 
 
 def test_phase17_new_anomalies_are_logged_and_detectable(
-    default_anomaly_dataset_artifacts: dict[str, object],
+    default_anomaly_core_artifacts: dict[str, object],
 ) -> None:
-    context = default_anomaly_dataset_artifacts["context"]
+    context = default_anomaly_core_artifacts["context"]
     results = context.validation_results["phase8"]
     anomaly_counts = Counter(entry["anomaly_type"] for entry in context.anomaly_log)
 
@@ -134,9 +134,9 @@ def test_phase17_new_anomalies_are_logged_and_detectable(
 
 
 def test_phase17_default_build_targeted_audit_queries_return_rows(
-    default_anomaly_dataset_artifacts: dict[str, object],
+    default_anomaly_core_artifacts: dict[str, object],
 ) -> None:
-    sqlite_path = Path(default_anomaly_dataset_artifacts["sqlite_path"])
+    sqlite_path = Path(default_anomaly_core_artifacts["sqlite_path"])
     assert sqlite_path.exists()
 
     with sqlite3.connect(sqlite_path) as connection:
@@ -155,20 +155,20 @@ def test_phase17_clean_validation_build_all_starter_sql_executes(
 
 
 def test_phase17_default_build_all_starter_sql_executes(
-    default_anomaly_dataset_artifacts: dict[str, object],
+    default_anomaly_core_artifacts: dict[str, object],
 ) -> None:
-    sqlite_path = Path(default_anomaly_dataset_artifacts["sqlite_path"])
+    sqlite_path = Path(default_anomaly_core_artifacts["sqlite_path"])
     assert sqlite_path.exists()
     _execute_all_starter_sql(sqlite_path)
 
 
 def test_phase17_default_export_artifacts_follow_split_contract(
-    default_anomaly_dataset_artifacts: dict[str, object],
+    default_anomaly_published_package_artifacts: dict[str, object],
 ) -> None:
-    sqlite_path = Path(default_anomaly_dataset_artifacts["sqlite_path"])
-    excel_path = Path(default_anomaly_dataset_artifacts["excel_path"])
-    support_excel_path = Path(default_anomaly_dataset_artifacts["support_excel_path"])
-    csv_zip_path = Path(default_anomaly_dataset_artifacts["csv_zip_path"])
+    sqlite_path = Path(default_anomaly_published_package_artifacts["sqlite_path"])
+    excel_path = Path(default_anomaly_published_package_artifacts["excel_path"])
+    support_excel_path = Path(default_anomaly_published_package_artifacts["support_excel_path"])
+    csv_zip_path = Path(default_anomaly_published_package_artifacts["csv_zip_path"])
     assert sqlite_path.exists()
     assert excel_path.exists()
     assert support_excel_path.exists()
@@ -196,7 +196,9 @@ def test_phase17_default_export_artifacts_follow_split_contract(
 
     with ZipFile(csv_zip_path) as archive:
         zip_members = set(archive.namelist())
-    assert zip_members == {f"{table_name}.csv" for table_name in default_anomaly_dataset_artifacts["context"].tables}
+    assert zip_members == {
+        f"{table_name}.csv" for table_name in default_anomaly_published_package_artifacts["context"].tables
+    }
 
 
 def test_phase17_docs_include_cases_matrix_and_subprocess_diagrams() -> None:

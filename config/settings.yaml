@@ -1,6 +1,6 @@
 random_seed: 20260401
-fiscal_year_start: "2026-01-01"
-fiscal_year_end: "2030-12-31"
+fiscal_year_start: "2024-01-01"
+fiscal_year_end: "2026-12-31"
 company_name: "Charles River Home Furnishings, Inc."
 short_name: "CharlesRiver"
 base_url: "https://charlesriver.accountinganalyticshub.com"

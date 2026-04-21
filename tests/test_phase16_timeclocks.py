@@ -3,11 +3,22 @@ from __future__ import annotations
 from collections import Counter
 
 import pandas as pd
+import pytest
 
 from generator_dataset.anomalies import inject_anomalies
-from generator_dataset.main import build_full_dataset, build_phase15_2, build_phase16
+from generator_dataset.main import build_phase15_2, build_phase16
 from generator_dataset.schema import TABLE_COLUMNS
 from generator_dataset.validations import validate_phase8
+
+
+@pytest.fixture(scope="module")
+def phase16_base_context():
+    return build_phase16()
+
+
+@pytest.fixture
+def phase16_context(clone_generation_context, phase16_base_context):
+    return clone_generation_context(phase16_base_context)
 
 
 def test_phase15_2_validation_scope_helper_runs_clean() -> None:
@@ -27,8 +38,8 @@ def test_phase16_schema_extensions_exist() -> None:
     assert "TimeClockEntryID" in TABLE_COLUMNS["LaborTimeEntry"]
 
 
-def test_phase16_helper_generates_clean_time_clock_dataset() -> None:
-    context = build_phase16()
+def test_phase16_helper_generates_clean_time_clock_dataset(phase16_context) -> None:
+    context = phase16_context
     phase16 = context.validation_results["phase16"]
 
     assert phase16["exceptions"] == []
@@ -62,8 +73,8 @@ def test_phase16_helper_generates_clean_time_clock_dataset() -> None:
     assert direct_labor_entries["TimeClockEntryID"].notna().all()
 
 
-def test_phase16_time_clock_anomalies_are_logged_and_detected() -> None:
-    context = build_phase16()
+def test_phase16_time_clock_anomalies_are_logged_and_detected(phase16_context) -> None:
+    context = phase16_context
 
     inject_anomalies(context)
     results = validate_phase8(context)
@@ -81,8 +92,10 @@ def test_phase16_time_clock_anomalies_are_logged_and_detected() -> None:
     assert results["time_clock_controls"]["exception_count"] > 0
 
 
-def test_phase16_full_build_respects_anomaly_none_validation_profile() -> None:
-    context = build_full_dataset("config/settings_validation.yaml", validation_scope="full")
+def test_phase16_full_build_respects_anomaly_none_validation_profile(
+    clean_validation_dataset_artifacts: dict[str, object],
+) -> None:
+    context = clean_validation_dataset_artifacts["context"]
 
     assert context.validation_results["phase16"]["exceptions"] == []
     assert context.validation_results["phase8"]["exceptions"] == []
