@@ -2,7 +2,7 @@
 -- Main tables: SalesInvoice, SalesInvoiceLine, CreditMemo, CreditMemoLine, GLEntry, Account, JournalEntry.
 -- Expected output shape: One row per fiscal year with operational, pre-close GL, and statement net-revenue totals plus variances.
 -- Recommended build mode: Either. Start with the clean build to confirm the revenue pipeline before investigating anomalies.
--- Interpretation notes: Operational gross revenue should tie to invoice-line totals, contra revenue should tie to credit-memo lines, and both should reconcile to the pre-close GL and annual income statement.
+-- Interpretation notes: Operational gross revenue should tie to invoice merchandise plus billed freight, contra revenue should tie to credit-memo merchandise plus freight credits, and both should reconcile to the pre-close GL and annual income statement.
 
 WITH closed_years AS (
     SELECT
@@ -15,23 +15,67 @@ WITH closed_years AS (
     GROUP BY CAST(substr(PostingDate, 1, 4) AS INTEGER)
     HAVING COUNT(DISTINCT EntryType) = 2
 ),
-invoice_totals AS (
+invoice_line_totals AS (
     SELECT
         CAST(substr(si.InvoiceDate, 1, 4) AS INTEGER) AS FiscalYear,
-        ROUND(SUM(sil.LineTotal), 2) AS OperationalGrossRevenue
+        ROUND(SUM(sil.LineTotal), 2) AS MerchandiseRevenue
     FROM SalesInvoice AS si
     JOIN SalesInvoiceLine AS sil
         ON sil.SalesInvoiceID = si.SalesInvoiceID
     GROUP BY CAST(substr(si.InvoiceDate, 1, 4) AS INTEGER)
 ),
-credit_memo_totals AS (
+invoice_freight_totals AS (
+    SELECT
+        CAST(substr(InvoiceDate, 1, 4) AS INTEGER) AS FiscalYear,
+        ROUND(SUM(FreightAmount), 2) AS FreightRevenue
+    FROM SalesInvoice
+    GROUP BY CAST(substr(InvoiceDate, 1, 4) AS INTEGER)
+),
+invoice_years AS (
+    SELECT FiscalYear FROM invoice_line_totals
+    UNION
+    SELECT FiscalYear FROM invoice_freight_totals
+),
+invoice_totals AS (
+    SELECT
+        iy.FiscalYear,
+        ROUND(COALESCE(ilt.MerchandiseRevenue, 0) + COALESCE(ift.FreightRevenue, 0), 2) AS OperationalGrossRevenue
+    FROM invoice_years AS iy
+    LEFT JOIN invoice_line_totals AS ilt
+        ON ilt.FiscalYear = iy.FiscalYear
+    LEFT JOIN invoice_freight_totals AS ift
+        ON ift.FiscalYear = iy.FiscalYear
+),
+credit_memo_line_totals AS (
     SELECT
         CAST(substr(cm.CreditMemoDate, 1, 4) AS INTEGER) AS FiscalYear,
-        ROUND(-SUM(cml.LineTotal), 2) AS OperationalContraRevenue
+        ROUND(SUM(cml.LineTotal), 2) AS MerchandiseCredits
     FROM CreditMemo AS cm
     JOIN CreditMemoLine AS cml
         ON cml.CreditMemoID = cm.CreditMemoID
     GROUP BY CAST(substr(cm.CreditMemoDate, 1, 4) AS INTEGER)
+),
+credit_memo_freight_totals AS (
+    SELECT
+        CAST(substr(CreditMemoDate, 1, 4) AS INTEGER) AS FiscalYear,
+        ROUND(SUM(FreightCreditAmount), 2) AS FreightCredits
+    FROM CreditMemo
+    GROUP BY CAST(substr(CreditMemoDate, 1, 4) AS INTEGER)
+),
+credit_memo_years AS (
+    SELECT FiscalYear FROM credit_memo_line_totals
+    UNION
+    SELECT FiscalYear FROM credit_memo_freight_totals
+),
+credit_memo_totals AS (
+    SELECT
+        cmy.FiscalYear,
+        ROUND(-(COALESCE(cmlt.MerchandiseCredits, 0) + COALESCE(cmft.FreightCredits, 0)), 2) AS OperationalContraRevenue
+    FROM credit_memo_years AS cmy
+    LEFT JOIN credit_memo_line_totals AS cmlt
+        ON cmlt.FiscalYear = cmy.FiscalYear
+    LEFT JOIN credit_memo_freight_totals AS cmft
+        ON cmft.FiscalYear = cmy.FiscalYear
 ),
 pre_close_gl_revenue AS (
     SELECT

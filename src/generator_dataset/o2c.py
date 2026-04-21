@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+import hashlib
 from typing import Any
 
 import numpy as np
@@ -106,6 +107,163 @@ DEPOSIT_FRACTION_RANGES = {
     "Design Trade": (0.07, 0.15),
     "Small Business": (0.06, 0.12),
 }
+FREIGHT_TERMS_PASS_THROUGH_PROBABILITIES = {
+    "Strategic": 0.30,
+    "Wholesale": 0.50,
+    "Design Trade": 0.65,
+    "Small Business": 0.80,
+}
+FREIGHT_ITEM_WEIGHT_PROXIES = {
+    "Furniture": 5.20,
+    "Lighting": 2.85,
+    "Textiles": 1.65,
+    "Accessories": 0.75,
+    "Packaging": 0.40,
+    "Raw Materials": 1.20,
+}
+FREIGHT_CARRIER_RATE_TABLE = {
+    "Private Fleet": {"base_charge": 24.0, "weight_rate": 1.08},
+    "FedEx Freight": {"base_charge": 31.0, "weight_rate": 1.28},
+    "UPS Freight": {"base_charge": 29.0, "weight_rate": 1.35},
+    "DHL Supply Chain": {"base_charge": 27.0, "weight_rate": 1.24},
+}
+FREIGHT_REGION_MULTIPLIERS = {
+    "Northeast": 1.00,
+    "Midwest": 1.05,
+    "South": 1.10,
+    "West": 1.18,
+}
+FREIGHT_PARTIAL_SHIPMENT_SURCHARGE = 1.15
+FREIGHT_BILLABLE_RATE_RANGE = (0.92, 1.08)
+FREIGHT_BILLABLE_CAP_RATE = 0.12
+FREIGHT_CREDIT_REASON_CODES = {"Damaged", "Wrong Item", "Quality Concern", "Late Delivery"}
+
+
+def stable_seed(context: GenerationContext, *parts: object) -> int:
+    payload = "|".join(str(part) for part in parts)
+    digest = hashlib.sha256(payload.encode("utf-8")).digest()
+    return (context.settings.random_seed + int.from_bytes(digest[:8], "big")) % (2**32 - 1)
+
+
+def stable_rng(context: GenerationContext, *parts: object) -> np.random.Generator:
+    return np.random.default_rng(stable_seed(context, *parts))
+
+
+def stable_uniform(context: GenerationContext, low: float, high: float, *parts: object) -> float:
+    return float(stable_rng(context, *parts).uniform(low, high))
+
+
+def freight_pass_through_probability(customer_segment: str, order_total: float) -> float:
+    probability = float(FREIGHT_TERMS_PASS_THROUGH_PROBABILITIES.get(str(customer_segment), 0.50))
+    if float(order_total) > 20000.0:
+        probability -= 0.10
+    elif float(order_total) < 2500.0:
+        probability += 0.10
+    return float(np.clip(probability, 0.10, 0.90))
+
+
+def freight_terms_for_order(
+    context: GenerationContext,
+    *,
+    sales_order_id: int,
+    customer_segment: str,
+    order_total: float,
+) -> str:
+    pass_through_probability = freight_pass_through_probability(customer_segment, order_total)
+    return (
+        "Prepaid and Add"
+        if float(stable_rng(context, "freight-terms", sales_order_id).random()) < pass_through_probability
+        else "Prepaid"
+    )
+
+
+def shipment_invoice_schedule(
+    context: GenerationContext,
+    *,
+    shipment_id: int,
+    shipment_date: pd.Timestamp,
+    year: int,
+    month: int,
+) -> tuple[bool, pd.Timestamp]:
+    rng = stable_rng(context, "shipment-invoice", shipment_id, year, month)
+    invoice_probability = 0.88 if shipment_date.year == year and shipment_date.month == month else 0.97
+    if float(rng.random()) > invoice_probability:
+        return False, shipment_date
+
+    if shipment_date.year == year and shipment_date.month == month:
+        invoice_date = clamp_date_to_month(
+            shipment_date + pd.Timedelta(days=int(rng.integers(0, 5))),
+            year,
+            month,
+        )
+    else:
+        invoice_date = clamp_date_to_month(
+            pd.Timestamp(year=year, month=month, day=1) + pd.Timedelta(days=int(rng.integers(0, 7))),
+            year,
+            month,
+        )
+    return True, invoice_date
+
+
+def shipment_freight_amounts(
+    context: GenerationContext,
+    *,
+    shipment_id: int,
+    customer_region: str,
+    carrier_name: str,
+    freight_terms: str,
+    shipped_line_metrics: list[dict[str, float | str]],
+    is_partial_shipment: bool,
+) -> tuple[float, float]:
+    if not shipped_line_metrics:
+        return 0.0, 0.0
+
+    carrier_profile = FREIGHT_CARRIER_RATE_TABLE.get(str(carrier_name), FREIGHT_CARRIER_RATE_TABLE["Private Fleet"])
+    region_multiplier = float(FREIGHT_REGION_MULTIPLIERS.get(str(customer_region), 1.10))
+    line_count_factor = 1.0 + max(len(shipped_line_metrics) - 1, 0) * 0.04
+    partial_multiplier = FREIGHT_PARTIAL_SHIPMENT_SURCHARGE if is_partial_shipment else 1.0
+    total_weight_units = 0.0
+    merchandise_subtotal = 0.0
+    for line_metric in shipped_line_metrics:
+        item_group = str(line_metric["ItemGroup"])
+        quantity_shipped = float(line_metric["QuantityShipped"])
+        total_weight_units += quantity_shipped * float(FREIGHT_ITEM_WEIGHT_PROXIES.get(item_group, 1.0))
+        merchandise_subtotal += float(line_metric["MerchandiseSubTotal"])
+
+    cost_jitter = stable_uniform(context, 0.96, 1.05, "shipment-freight-cost", shipment_id)
+    actual_cost = money(
+        (
+            float(carrier_profile["base_charge"])
+            + total_weight_units * float(carrier_profile["weight_rate"])
+        )
+        * region_multiplier
+        * line_count_factor
+        * partial_multiplier
+        * cost_jitter
+    )
+
+    billable_freight_amount = 0.0
+    if str(freight_terms) == "Prepaid and Add" and merchandise_subtotal > 0 and actual_cost > 0:
+        bill_factor = stable_uniform(context, FREIGHT_BILLABLE_RATE_RANGE[0], FREIGHT_BILLABLE_RATE_RANGE[1], "shipment-freight-bill", shipment_id)
+        capped_amount = min(float(round(actual_cost * bill_factor)), merchandise_subtotal * FREIGHT_BILLABLE_CAP_RATE)
+        billable_freight_amount = money(max(capped_amount, 0.0))
+
+    return actual_cost, billable_freight_amount
+
+
+def freight_credit_amount(
+    *,
+    invoice_subtotal: float,
+    invoice_freight_amount: float,
+    returned_subtotal: float,
+    reason_code: str,
+) -> float:
+    if str(reason_code) not in FREIGHT_CREDIT_REASON_CODES:
+        return 0.0
+    if float(invoice_subtotal) <= 0 or float(invoice_freight_amount) <= 0 or float(returned_subtotal) <= 0:
+        return 0.0
+    pro_rata_credit = float(invoice_freight_amount) * (float(returned_subtotal) / float(invoice_subtotal))
+    return money(min(float(invoice_freight_amount), pro_rata_credit))
 
 
 def append_rows(context: GenerationContext, table_name: str, rows: list[dict]) -> None:
@@ -1710,6 +1868,12 @@ def generate_month_sales_orders(context: GenerationContext, year: int, month: in
             if override_row is not None:
                 override_rows.append(override_row)
 
+        freight_terms = freight_terms_for_order(
+            context,
+            sales_order_id=order_id,
+            customer_segment=segment,
+            order_total=order_total,
+        )
         order_rows.append({
             "SalesOrderID": order_id,
             "OrderNumber": format_doc_number("SO", year, order_id),
@@ -1720,6 +1884,7 @@ def generate_month_sales_orders(context: GenerationContext, year: int, month: in
             "SalesRepEmployeeID": sales_rep_id,
             "CostCenterID": sales_center_id,
             "OrderTotal": order_total,
+            "FreightTerms": freight_terms,
             "Notes": None,
         })
 
@@ -1739,6 +1904,9 @@ def generate_month_shipments(context: GenerationContext, year: int, month: int) 
     shipped_quantities = sales_order_line_shipped_quantities(context)
     inventory = shadow_inventory_state(context)
     items = context.tables["Item"].set_index("ItemID").to_dict("index")
+    customers = context.tables["Customer"].set_index("CustomerID").to_dict("index")
+    sales_order_lookup = orders.set_index("SalesOrderID").to_dict("index")
+    sales_order_line_lookup = order_lines.set_index("SalesOrderLineID").to_dict("index")
     warehouses = warehouse_ids(context)
 
     receipt_headers = (
@@ -1829,21 +1997,31 @@ def generate_month_shipments(context: GenerationContext, year: int, month: int) 
 
         shipment_id = next_id(context, "Shipment")
         line_number = 1
+        remaining_after_shipment = 0.0
+        shipped_line_metrics: list[dict[str, float | str]] = []
         for line in related_lines.itertuples(index=False):
             available = max(0.0, round(float(inventory.get((int(line.ItemID), chosen_warehouse_id), 0.0)), 2))
+            remaining = float(line.RemainingQuantity)
             if available <= 0:
+                remaining_after_shipment = round(remaining_after_shipment + remaining, 2)
                 continue
 
-            remaining = float(line.RemainingQuantity)
             ship_cap = remaining
             if rng.random() <= 0.22:
                 ship_cap = max(1.0, qty(remaining * rng.uniform(0.40, 0.85)))
             shipped_quantity = qty(min(remaining, available, ship_cap))
             if shipped_quantity <= 0:
+                remaining_after_shipment = round(remaining_after_shipment + remaining, 2)
                 continue
 
             inventory[(int(line.ItemID), chosen_warehouse_id)] = round(available - shipped_quantity, 2)
             item = items[int(line.ItemID)]
+            sales_order_line = sales_order_line_lookup[int(line.SalesOrderLineID)]
+            merchandise_subtotal = money(
+                shipped_quantity
+                * float(sales_order_line["UnitPrice"])
+                * (1 - float(sales_order_line["Discount"]))
+            )
             shipment_line_rows.append({
                 "ShipmentLineID": next_id(context, "ShipmentLine"),
                 "ShipmentID": shipment_id,
@@ -1853,6 +2031,12 @@ def generate_month_shipments(context: GenerationContext, year: int, month: int) 
                 "QuantityShipped": shipped_quantity,
                 "ExtendedStandardCost": money(shipped_quantity * float(item["StandardCost"])),
             })
+            shipped_line_metrics.append({
+                "ItemGroup": str(item["ItemGroup"]),
+                "QuantityShipped": shipped_quantity,
+                "MerchandiseSubTotal": merchandise_subtotal,
+            })
+            remaining_after_shipment = round(remaining_after_shipment + max(0.0, remaining - shipped_quantity), 2)
             line_number += 1
 
         if line_number == 1:
@@ -1861,16 +2045,30 @@ def generate_month_shipments(context: GenerationContext, year: int, month: int) 
 
         preferred_ship_date = pd.Timestamp(shipment_date)
         delivery_date = clamp_date_to_month(preferred_ship_date + pd.Timedelta(days=int(rng.integers(1, 6))), year, month)
+        sales_order = sales_order_lookup[int(order.SalesOrderID)]
+        customer = customers[int(sales_order["CustomerID"])]
+        carrier_name = str(rng.choice(CARRIERS))
+        freight_cost, billable_freight_amount = shipment_freight_amounts(
+            context,
+            shipment_id=shipment_id,
+            customer_region=str(customer["Region"]),
+            carrier_name=carrier_name,
+            freight_terms=str(sales_order.get("FreightTerms") or "Prepaid"),
+            shipped_line_metrics=shipped_line_metrics,
+            is_partial_shipment=remaining_after_shipment > 0,
+        )
         shipment_rows.append({
             "ShipmentID": shipment_id,
             "ShipmentNumber": format_doc_number("SH", year, shipment_id),
             "SalesOrderID": int(order.SalesOrderID),
             "ShipmentDate": preferred_ship_date.strftime("%Y-%m-%d"),
             "WarehouseID": chosen_warehouse_id,
-            "ShippedBy": str(rng.choice(CARRIERS)),
+            "ShippedBy": carrier_name,
             "TrackingNumber": f"TRK{year}{shipment_id:08d}" if rng.random() > 0.04 else None,
             "Status": "Delivered" if rng.random() > 0.08 else "In Transit",
             "DeliveryDate": delivery_date.strftime("%Y-%m-%d"),
+            "FreightCost": freight_cost,
+            "BillableFreightAmount": billable_freight_amount,
         })
 
     for receipt_date in sorted(date for date in availability_events if date not in processed_receipt_dates):
@@ -1897,8 +2095,21 @@ def generate_month_sales_invoices(context: GenerationContext, year: int, month: 
     sales_orders = context.tables["SalesOrder"].set_index("SalesOrderID").to_dict("index")
     sales_order_lines = context.tables["SalesOrderLine"].set_index("SalesOrderLineID").to_dict("index")
     customers = context.tables["Customer"].set_index("CustomerID").to_dict("index")
+    existing_invoice_lines = context.tables["SalesInvoiceLine"]
+    already_billed_shipment_ids: set[int] = set()
+    if not existing_invoice_lines.empty:
+        existing_shipment_links = existing_invoice_lines[existing_invoice_lines["ShipmentLineID"].notna()][
+            ["ShipmentLineID"]
+        ].merge(
+            shipment_lines[["ShipmentLineID", "ShipmentID"]],
+            on="ShipmentLineID",
+            how="left",
+        )
+        already_billed_shipment_ids = set(
+            existing_shipment_links["ShipmentID"].dropna().astype(int).tolist()
+        )
 
-    groups: dict[tuple[int, str], list[Any]] = defaultdict(list)
+    groups: dict[tuple[int, str], list[tuple[Any, float]]] = defaultdict(list)
     for shipment_line in shipment_lines.itertuples(index=False):
         billed_quantity = float(billed_quantities.get(int(shipment_line.ShipmentLineID), 0.0))
         remaining_quantity = round(float(shipment_line.QuantityShipped) - billed_quantity, 2)
@@ -1912,7 +2123,11 @@ def generate_month_sales_invoices(context: GenerationContext, year: int, month: 
         if rng.random() > invoice_probability:
             continue
         invoice_date = clamp_date_to_month(
-            (shipment_date + pd.Timedelta(days=int(rng.integers(0, 5)))) if shipment_date.year == year and shipment_date.month == month else pd.Timestamp(year=year, month=month, day=1) + pd.Timedelta(days=int(rng.integers(0, 6))),
+            (
+                shipment_date + pd.Timedelta(days=int(rng.integers(0, 5)))
+            ) if shipment_date.year == year and shipment_date.month == month else (
+                pd.Timestamp(year=year, month=month, day=1) + pd.Timedelta(days=int(rng.integers(0, 6)))
+            ),
             year,
             month,
         )
@@ -1920,6 +2135,7 @@ def generate_month_sales_invoices(context: GenerationContext, year: int, month: 
 
     invoice_rows: list[dict[str, Any]] = []
     invoice_line_rows: list[dict[str, Any]] = []
+    billed_shipment_ids = set(already_billed_shipment_ids)
     for (sales_order_id, invoice_date_str), grouped_lines in sorted(groups.items(), key=lambda item: (item[0][1], item[0][0])):
         invoice_date = pd.Timestamp(invoice_date_str)
         sales_order = sales_orders[int(sales_order_id)]
@@ -1927,8 +2143,17 @@ def generate_month_sales_invoices(context: GenerationContext, year: int, month: 
         invoice_id = next_id(context, "SalesInvoice")
         due_date = invoice_date + pd.Timedelta(days=payment_term_days(str(customer["PaymentTerms"])))
         subtotal = 0.0
+        freight_amount = 0.0
         line_number = 1
         for shipment_line, remaining_quantity in grouped_lines:
+            shipment = shipment_headers[int(shipment_line.ShipmentID)]
+            shipment_id = int(shipment_line.ShipmentID)
+            if shipment_id not in billed_shipment_ids:
+                shipment_freight_amount = shipment.get("BillableFreightAmount")
+                if pd.notna(shipment_freight_amount):
+                    freight_amount = money(freight_amount + float(shipment_freight_amount))
+                billed_shipment_ids.add(shipment_id)
+
             sales_line = sales_order_lines[int(shipment_line.SalesOrderLineID)]
             quantity = qty(remaining_quantity)
             line_total = money(quantity * float(sales_line["UnitPrice"]) * (1 - float(sales_line["Discount"])))
@@ -1952,7 +2177,7 @@ def generate_month_sales_invoices(context: GenerationContext, year: int, month: 
             })
             line_number += 1
 
-        tax_amount = money(subtotal * context.settings.tax_rate)
+        tax_amount = money((subtotal + freight_amount) * context.settings.tax_rate)
         invoice_rows.append({
             "SalesInvoiceID": invoice_id,
             "InvoiceNumber": format_doc_number("SI", year, invoice_id),
@@ -1961,8 +2186,9 @@ def generate_month_sales_invoices(context: GenerationContext, year: int, month: 
             "SalesOrderID": int(sales_order_id),
             "CustomerID": int(sales_order["CustomerID"]),
             "SubTotal": subtotal,
+            "FreightAmount": freight_amount,
             "TaxAmount": tax_amount,
-            "GrandTotal": money(subtotal + tax_amount),
+            "GrandTotal": money(subtotal + freight_amount + tax_amount),
             "Status": "Submitted",
             "PaymentDate": None,
         })
@@ -2286,7 +2512,13 @@ def generate_month_sales_returns(context: GenerationContext, year: int, month: i
             context.counters["CreditMemo"] -= 1
             continue
 
-        tax_amount = money(subtotal * context.settings.tax_rate)
+        freight_credit_value = freight_credit_amount(
+            invoice_subtotal=float(invoice_record["SubTotal"]),
+            invoice_freight_amount=0.0 if pd.isna(invoice_record.get("FreightAmount")) else float(invoice_record["FreightAmount"]),
+            returned_subtotal=subtotal,
+            reason_code=reason_code,
+        )
+        tax_amount = money((subtotal + freight_credit_value) * context.settings.tax_rate)
         memo_rows.append({
             "CreditMemoID": credit_memo_id,
             "CreditMemoNumber": format_doc_number("CM", year, credit_memo_id),
@@ -2296,8 +2528,9 @@ def generate_month_sales_returns(context: GenerationContext, year: int, month: i
             "CustomerID": int(invoice_record["CustomerID"]),
             "OriginalSalesInvoiceID": int(sales_invoice_id),
             "SubTotal": subtotal,
+            "FreightCreditAmount": freight_credit_value,
             "TaxAmount": tax_amount,
-            "GrandTotal": money(subtotal + tax_amount),
+            "GrandTotal": money(subtotal + freight_credit_value + tax_amount),
             "Status": "Issued",
             "ApprovedByEmployeeID": int(invoice_rng.choice(employee_ids_for_cost_center(context, "Customer Service", credit_memo_date))),
             "ApprovedDate": credit_memo_date.strftime("%Y-%m-%d"),

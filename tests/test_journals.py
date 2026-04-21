@@ -11,9 +11,11 @@ from generator_dataset.journals import (
     generate_accrual_adjustment_journals,
     generate_recurring_manual_journals,
     generate_year_end_close_journals,
+    planned_freight_settlements,
 )
 from generator_dataset.main import build_phase5
 from generator_dataset.p2p import generate_accrued_service_settlements
+from generator_dataset.payroll import monthly_factory_overhead_amount
 from generator_dataset.posting_engine import post_all_transactions
 from generator_dataset.validations import validate_phase8, validate_phase13
 
@@ -113,10 +115,18 @@ def test_generate_recurring_manual_journals_counts_and_links(phase5_context) -> 
 
     entry_type_counts = context.tables["JournalEntry"]["EntryType"].value_counts().to_dict()
     fiscal_month_count = len(fiscal_months(context))
+    factory_overhead_month_count = sum(
+        1 for year, month in fiscal_months(context) if monthly_factory_overhead_amount(context, year, month) > 0
+    )
+    freight_settlement_count = len(planned_freight_settlements(context))
 
     assert int(entry_type_counts["Opening"]) == 1
     assert int(entry_type_counts["Rent"]) == fiscal_month_count * 2
     assert int(entry_type_counts["Utilities"]) == fiscal_month_count
+    assert int(entry_type_counts.get("Freight Settlement", 0)) == freight_settlement_count
+    assert int(entry_type_counts.get("Factory Overhead", 0)) == factory_overhead_month_count
+    assert int(entry_type_counts.get("Direct Labor Reclass", 0)) == 0
+    assert int(entry_type_counts.get("Manufacturing Overhead Reclass", 0)) == 0
     assert int(entry_type_counts["Depreciation"]) == fiscal_month_count * 3
     assert int(entry_type_counts["Accrual"]) == fiscal_month_count * len(ACCRUAL_ACCOUNT_METADATA)
     assert int(entry_type_counts.get("Accrual Reversal", 0)) == 0

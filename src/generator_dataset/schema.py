@@ -62,7 +62,7 @@ TABLE_COLUMNS = {
     ],
     "SalesOrder": [
         "SalesOrderID", "OrderNumber", "OrderDate", "CustomerID", "RequestedDeliveryDate",
-        "Status", "SalesRepEmployeeID", "CostCenterID", "OrderTotal", "Notes",
+        "Status", "SalesRepEmployeeID", "CostCenterID", "OrderTotal", "FreightTerms", "Notes",
     ],
     "SalesOrderLine": [
         "SalesOrderLineID", "SalesOrderID", "LineNumber", "ItemID", "Quantity",
@@ -71,7 +71,8 @@ TABLE_COLUMNS = {
     ],
     "Shipment": [
         "ShipmentID", "ShipmentNumber", "SalesOrderID", "ShipmentDate", "WarehouseID",
-        "ShippedBy", "TrackingNumber", "Status", "DeliveryDate",
+        "ShippedBy", "TrackingNumber", "Status", "DeliveryDate", "FreightCost",
+        "BillableFreightAmount",
     ],
     "ShipmentLine": [
         "ShipmentLineID", "ShipmentID", "SalesOrderLineID", "LineNumber", "ItemID",
@@ -79,7 +80,8 @@ TABLE_COLUMNS = {
     ],
     "SalesInvoice": [
         "SalesInvoiceID", "InvoiceNumber", "InvoiceDate", "DueDate", "SalesOrderID",
-        "CustomerID", "SubTotal", "TaxAmount", "GrandTotal", "Status", "PaymentDate",
+        "CustomerID", "SubTotal", "FreightAmount", "TaxAmount", "GrandTotal", "Status",
+        "PaymentDate",
     ],
     "SalesInvoiceLine": [
         "SalesInvoiceLineID", "SalesInvoiceID", "SalesOrderLineID", "ShipmentLineID",
@@ -105,8 +107,8 @@ TABLE_COLUMNS = {
     ],
     "CreditMemo": [
         "CreditMemoID", "CreditMemoNumber", "CreditMemoDate", "SalesReturnID", "SalesOrderID",
-        "CustomerID", "OriginalSalesInvoiceID", "SubTotal", "TaxAmount", "GrandTotal", "Status",
-        "ApprovedByEmployeeID", "ApprovedDate",
+        "CustomerID", "OriginalSalesInvoiceID", "SubTotal", "FreightCreditAmount",
+        "TaxAmount", "GrandTotal", "Status", "ApprovedByEmployeeID", "ApprovedDate",
     ],
     "CreditMemoLine": [
         "CreditMemoLineID", "CreditMemoID", "SalesReturnLineID", "LineNumber", "ItemID",

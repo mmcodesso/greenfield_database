@@ -121,17 +121,17 @@ erDiagram
 | `PriceListLine` | Item-level pricing rule | `PriceListLineID`, `PriceListID`, `ItemID`, `UnitPrice`, `MinimumUnitPrice` |
 | `PromotionProgram` | Promotion definition | `PromotionID`, `PromotionCode`, `ScopeType`, `DiscountPct`, `EffectiveStartDate`, `EffectiveEndDate` |
 | `PriceOverrideApproval` | Manual below-floor approval | `PriceOverrideApprovalID`, `SalesOrderLineID`, `RequestedByEmployeeID`, `ApprovedByEmployeeID`, `ApprovedUnitPrice`, `Status` |
-| `SalesOrder` | Order header | `SalesOrderID`, `OrderNumber`, `CustomerID`, `OrderDate`, `RequestedDeliveryDate`, `Status` |
+| `SalesOrder` | Order header | `SalesOrderID`, `OrderNumber`, `CustomerID`, `OrderDate`, `RequestedDeliveryDate`, `FreightTerms`, `Status` |
 | `SalesOrderLine` | Ordered line with pricing lineage | `SalesOrderLineID`, `SalesOrderID`, `ItemID`, `PriceListLineID`, `PromotionID`, `PriceOverrideApprovalID`, `PricingMethod` |
-| `Shipment` | Shipment header | `ShipmentID`, `SalesOrderID`, `ShipmentDate`, `WarehouseID`, `Status` |
+| `Shipment` | Shipment header | `ShipmentID`, `SalesOrderID`, `ShipmentDate`, `WarehouseID`, `FreightCost`, `BillableFreightAmount`, `Status` |
 | `ShipmentLine` | Shipped line | `ShipmentLineID`, `ShipmentID`, `SalesOrderLineID`, `ItemID`, `QuantityShipped` |
-| `SalesInvoice` | Invoice header | `SalesInvoiceID`, `InvoiceNumber`, `CustomerID`, `InvoiceDate`, `DueDate`, `Status` |
+| `SalesInvoice` | Invoice header | `SalesInvoiceID`, `InvoiceNumber`, `CustomerID`, `InvoiceDate`, `DueDate`, `FreightAmount`, `Status` |
 | `SalesInvoiceLine` | Billed line | `SalesInvoiceLineID`, `SalesInvoiceID`, `SalesOrderLineID`, `ShipmentLineID`, `ItemID`, `PricingMethod` |
 | `CashReceipt` | Customer cash event | `CashReceiptID`, `ReceiptNumber`, `CustomerID`, `ReceiptDate`, `Amount` |
 | `CashReceiptApplication` | Invoice settlement detail | `CashReceiptApplicationID`, `CashReceiptID`, `SalesInvoiceID`, `ApplicationDate`, `AppliedAmount` |
 | `SalesReturn` | Return header | `SalesReturnID`, `ReturnNumber`, `CustomerID`, `ReturnDate`, `Status` |
 | `SalesReturnLine` | Returned line | `SalesReturnLineID`, `SalesReturnID`, `ShipmentLineID`, `ItemID`, `QuantityReturned` |
-| `CreditMemo` | Credit header | `CreditMemoID`, `CreditMemoNumber`, `SalesReturnID`, `OriginalSalesInvoiceID`, `CreditMemoDate`, `Status` |
+| `CreditMemo` | Credit header | `CreditMemoID`, `CreditMemoNumber`, `SalesReturnID`, `OriginalSalesInvoiceID`, `CreditMemoDate`, `FreightCreditAmount`, `Status` |
 | `CreditMemoLine` | Credit detail with inherited pricing lineage | `CreditMemoLineID`, `CreditMemoID`, `SalesReturnLineID`, `ItemID`, `PricingMethod`, `PriceListLineID` |
 | `CustomerRefund` | Refund against customer credit | `CustomerRefundID`, `CreditMemoID`, `CustomerID`, `RefundDate`, `Amount` |
 
@@ -378,6 +378,7 @@ erDiagram
 ## Important Schema Notes
 
 - `CashReceipt.SalesInvoiceID` is compatibility metadata only. The authoritative O2C settlement link is `CashReceiptApplication`.
+- O2C freight remains header-level. `SalesOrder.FreightTerms` sets the policy, `Shipment.FreightCost` and `Shipment.BillableFreightAmount` capture the fulfillment result, `SalesInvoice.FreightAmount` carries billed freight, and `CreditMemo.FreightCreditAmount` shows any freight credit.
 - Price-list and promotion lineage live directly on `SalesOrderLine`, `SalesInvoiceLine`, and `CreditMemoLine`. Postings remain net revenue.
 - `PurchaseOrder.RequisitionID` is compatibility metadata when one PO batches multiple requisitions. Use `PurchaseOrderLine.RequisitionID` as the authoritative trace.
 - `PurchaseInvoiceLine.GoodsReceiptLineID` is the main match key for receipt-based inventory invoicing.

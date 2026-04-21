@@ -438,8 +438,6 @@ def inject_same_creator_approver_journals(context: GenerationContext, count_per_
         "Rent",
         "Utilities",
         "Factory Overhead",
-        "Direct Labor Reclass",
-        "Manufacturing Overhead Reclass",
         "Depreciation",
         "Accrual",
         "Accrual Adjustment",
@@ -884,8 +882,6 @@ def inject_round_dollar_manual_journals(context: GenerationContext, count_per_ye
         "Rent",
         "Utilities",
         "Factory Overhead",
-        "Direct Labor Reclass",
-        "Manufacturing Overhead Reclass",
         "Depreciation",
         "Year-End Close - Income Summary to Retained Earnings",
     }

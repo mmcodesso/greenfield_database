@@ -13,7 +13,7 @@ description: Learn the manual journals and close cycle in the synthetic accounti
 
 ## Business Storyline
 
-The dataset includes both operational activity and finance-controlled journal activity. Finance records the recurring and period-end entries that students expect in a real accounting system: rent, utilities, depreciation, month-end accruals, accrual adjustments, factory-overhead journals, manufacturing labor and overhead reclasses, and year-end close.
+The dataset includes both operational activity and finance-controlled journal activity. Finance records the recurring and period-end entries that students expect in a real accounting system: rent, utilities, depreciation, month-end accruals, accrual adjustments, factory-overhead journals, and year-end close.
 
 This process shows what happens outside the normal document chains. Students can compare operational postings from shipments, receipts, payroll, and purchasing with finance-controlled entries that start directly in the journal process. The most important cross-process bridge is accrued-expense settlement, where a finance estimate is later cleared operationally through AP.
 
@@ -50,7 +50,7 @@ Read this page in three passes: first recurring journals, then the accrual-settl
 | Process stage | Main tables | Grain or event represented | Why students use them |
 |---|---|---|---|
 | Recurring finance journals | `JournalEntry`, `GLEntry`, `Account`, `CostCenter`, `Employee` | One finance-controlled journal header with posted ledger detail | Review recurring expenses, approvals, and posted accounting effect |
-| Manufacturing-support journals | `JournalEntry`, `GLEntry`, `Account` | Factory overhead, direct labor reclass, and manufacturing overhead reclass | Connect finance-controlled journals to manufacturing costing support |
+| Manufacturing-support journals | `JournalEntry`, `GLEntry`, `Account` | Factory overhead posted directly to manufacturing clearing | Connect finance-controlled journals to manufacturing costing support |
 | Accrual settlement bridge | `JournalEntry`, `PurchaseInvoice`, `PurchaseInvoiceLine`, `DisbursementPayment` | Prior expense estimate and later AP settlement path | Analyze accrued-expense roll-forward and later supplier settlement |
 | Boundary entries | `JournalEntry`, `GLEntry`, `Account` | Opening balance and year-end close journal activity | Understand the start and end boundaries of the reporting cycle |
 
@@ -59,7 +59,7 @@ Read this page in three passes: first recurring journals, then the accrual-settl
 | Event | Business meaning | Accounting effect |
 |---|---|---|
 | Recurring operating journal | Finance records a monthly expense or estimate directly in the journal cycle | Debit expense or clearing accounts and credit cash, accrued expenses, or other offset accounts depending on entry type |
-| Manufacturing-support journal | Finance records factory overhead or reclass support for manufacturing costing | Debit manufacturing clearing or expense accounts and credit the supporting expense pools or cash |
+| Manufacturing-support journal | Finance records factory overhead directly into manufacturing costing support | Debit manufacturing clearing, or manufacturing variance when the month has no capitalizable direct labor, and credit cash |
 | Accrual adjustment | Finance reverses the residual from an accrual after a linked supplier invoice or partially cleans up a stale uninvoiced estimate | Debit `2040` Accrued Expenses and credit the original accrued expense account |
 | Direct service supplier invoice | AP clears a prior accrual through a later service invoice | Debit `2040` up to the estimate, expense any excess above estimate, and credit AP |
 | Disbursement payment | Treasury clears the AP created by the service invoice | Debit AP and credit cash |
@@ -109,43 +109,41 @@ flowchart LR
 -- Suggested analysis: Group by EntryType, month, account, or cost center.
 ```
 
-### Manufacturing Reclass and Factory Overhead Journals
+### Factory Overhead Journals
 
 Some finance-controlled journals support manufacturing costing even though they do not start in the manufacturing subledger. Students should read these entries as accounting support for the factory-cost story, not as replacements for the operational manufacturing documents.
 
 ```mermaid
 flowchart LR
     FO[Factory Overhead]
-    DL[Direct Labor Reclass]
-    OH[Manufacturing Overhead Reclass]
     JE[JournalEntry]
     GL[GLEntry]
     MFG[Manufacturing costing support]
 
     FO --> JE --> GL --> MFG
-    DL --> JE
-    OH --> JE
 ```
 
 **Tables involved**
 
 | Table | Role in the flow |
 |---|---|
-| `JournalEntry` | Stores the factory-overhead and reclass journal headers |
-| `GLEntry` | Shows the posted effect on manufacturing clearing and expense accounts |
-| `Account` | Helps separate factory-overhead expense, manufacturing clearing, and labor-support accounts |
+| `JournalEntry` | Stores the factory-overhead journal headers |
+| `GLEntry` | Shows the posted effect on manufacturing clearing and cash |
+| `Account` | Helps separate manufacturing clearing from operating-expense accounts that stay outside overhead |
 
-**Starter analytical question:** How much manufacturing-support journal activity exists beside the operational manufacturing postings in each month?
+Warehouse payroll, warehouse rent, and warehouse supplies stay in operating expense in this model. The warehouse function is treated as support and distribution activity, not factory overhead absorbed into product cost.
+
+**Starter analytical question:** How much finance-controlled factory-overhead activity exists beside the operational manufacturing postings in each month?
 
 ```sql
 -- Teaching objective: Isolate finance-controlled manufacturing support journals from operational manufacturing postings.
 -- Main join path: JournalEntry -> GLEntry -> Account.
--- Suggested analysis: Filter EntryType to Factory Overhead, Direct Labor Reclass, and Manufacturing Overhead Reclass.
+-- Suggested analysis: Filter EntryType to Factory Overhead.
 ```
 
 ### Accrual Estimate to AP Settlement
 
-This is the most important subprocess on the page. Students should learn that accrued expenses are usually cleared later through AP rather than blanket-reversed at month end. Finance records the estimate first, AP later clears it through a direct service invoice, treasury pays it later, and any under-accrual residual is reversed through a linked `Accrual Adjustment`. Only stale uninvoiced accruals keep the rare partial-cleanup pattern.
+This is the most important subprocess on the page. Students should learn that finance-managed accrued expenses are usually cleared later through AP rather than blanket-reversed at month end. Finance records the estimate first, AP later clears it through a direct service invoice, treasury pays it later, and any under-accrual residual is reversed through a linked `Accrual Adjustment`. Only stale uninvoiced accruals keep the rare partial-cleanup pattern. In the wider dataset, `2040` also carries outbound-freight timing from O2C, but that operational use sits outside this finance-controlled accrual path.
 
 ```mermaid
 flowchart LR

@@ -23,7 +23,16 @@ DISABLED_INCOME_STATEMENT_LABELS = {
     "Interest Income",
     "Gain or Loss on Asset Disposal",
     "Foreign Exchange Gain or Loss",
+    "Salaries Expense - Manufacturing",
+    "Factory Overhead Expense",
 }
+WAREHOUSE_OPERATING_EXPENSE_LABELS = {
+    "Salaries Expense - Warehouse",
+    "Rent Expense - Warehouse",
+    "Warehouse Supplies Expense",
+}
+FREIGHT_REVENUE_LABEL = "Freight Revenue"
+FREIGHT_COGS_LABEL = "Freight-Out Expense"
 
 
 def _read_sql_result(sqlite_path: Path, sql_path: Path) -> pd.DataFrame:
@@ -72,6 +81,23 @@ def _inactive_account_visibility_assertions(frame: pd.DataFrame) -> None:
         ].drop_duplicates().tolist()
     )
     assert other_income_accounts == ["Interest Expense"]
+
+
+def _warehouse_operating_expense_assertions(frame: pd.DataFrame) -> None:
+    account_lines = frame[frame["LineType"].eq("account")].copy()
+    warehouse_lines = account_lines[account_lines["LineLabel"].isin(WAREHOUSE_OPERATING_EXPENSE_LABELS)].copy()
+    assert set(warehouse_lines["LineLabel"].tolist()) == WAREHOUSE_OPERATING_EXPENSE_LABELS
+    assert warehouse_lines["StatementSection"].eq("Operating Expenses").all()
+
+
+def _freight_account_assertions(frame: pd.DataFrame) -> None:
+    account_lines = frame[frame["LineType"].eq("account")].copy()
+    freight_revenue = account_lines[account_lines["LineLabel"].eq(FREIGHT_REVENUE_LABEL)].copy()
+    freight_cogs = account_lines[account_lines["LineLabel"].eq(FREIGHT_COGS_LABEL)].copy()
+    assert not freight_revenue.empty
+    assert not freight_cogs.empty
+    assert freight_revenue["StatementSection"].eq("Operating Revenue").all()
+    assert freight_cogs["StatementSection"].eq("Cost of Goods Sold").all()
 
 
 def test_income_statement_queries_return_rows_on_clean_build(
@@ -133,6 +159,12 @@ def test_income_statement_queries_return_rows_on_clean_build(
     _inactive_account_visibility_assertions(monthly)
     _inactive_account_visibility_assertions(quarterly)
     _inactive_account_visibility_assertions(annual)
+    _warehouse_operating_expense_assertions(monthly)
+    _warehouse_operating_expense_assertions(quarterly)
+    _warehouse_operating_expense_assertions(annual)
+    _freight_account_assertions(monthly)
+    _freight_account_assertions(quarterly)
+    _freight_account_assertions(annual)
 
 
 def test_income_statement_statement_math_ties_for_each_period(

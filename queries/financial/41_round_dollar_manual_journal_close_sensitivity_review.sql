@@ -26,8 +26,6 @@ WITH candidate_lines AS (
     WHERE je.EntryType IN (
         'Utilities',
         'Factory Overhead',
-        'Direct Labor Reclass',
-        'Manufacturing Overhead Reclass',
         'Year-End Close - P&L to Income Summary',
         'Year-End Close - Income Summary to Retained Earnings'
     )

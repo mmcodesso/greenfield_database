@@ -13,7 +13,7 @@ description: Learn the order-to-cash process in the synthetic accounting analyti
 
 ## Business Storyline
 
-In this dataset, the order-to-cash cycle starts when the sales team records customer demand and ends only when that sale is settled in cash. Several teams touch the process along the way. Sales captures the order, warehouse staff ship what is available, accounting bills what actually left the warehouse, treasury records the money when it arrives, and accounting applies that cash against open invoices.
+In this dataset, the order-to-cash cycle starts when the sales team records customer demand and ends only when that sale is settled in cash. Several teams touch the process along the way. Sales captures the order and freight terms, warehouse staff ship what is available, accounting bills what actually left the warehouse and any billable freight, treasury records the money when it arrives, and accounting applies that cash against open invoices.
 
 That distinction matters. A customer order is not revenue. A shipment is not the same thing as an invoice. A cash receipt is not the same thing as settlement. Students can see those stages separately in the data and use that separation to answer both accounting and audit questions.
 
@@ -33,8 +33,8 @@ flowchart LR
 
     C --> SO --> SH --> SI
     C --> CR --> CRA
-    SH -. Posts COGS and Inventory .-> GL
-    SI -. Posts AR Revenue and Sales Tax .-> GL
+    SH -. Posts COGS Inventory and Freight-Out Accrual .-> GL
+    SI -. Posts AR Revenue Freight Revenue and Sales Tax .-> GL
     CR -. Posts Cash and Customer Deposits .-> GL
     CRA -. Clears AR from Customer Deposits .-> GL
 ```
@@ -54,9 +54,9 @@ Start with the business flow, then move into the subsection diagrams and tables 
 | Process stage | Main tables | Grain or event represented | Why students use them |
 |---|---|---|---|
 | Pricing and commercial setup | `PriceList`, `PriceListLine`, `PromotionProgram`, `PriceOverrideApproval` | Pricing rules, promotions, and rare override approvals behind a sales line | Review commercial terms, pricing controls, and margin drivers |
-| Order capture | `SalesOrder`, `SalesOrderLine` | Customer order header and ordered line | See promised demand and ordered quantity before fulfillment |
-| Fulfillment | `Shipment`, `ShipmentLine` | Physical shipment event and shipped line | Measure what actually left the warehouse and when |
-| Billing | `SalesInvoice`, `SalesInvoiceLine` | Invoice header and billed line | Trace receivable creation and billed revenue back to shipment |
+| Order capture | `SalesOrder`, `SalesOrderLine` | Customer order header and ordered line | See promised demand, ordered quantity, and freight terms before fulfillment |
+| Fulfillment | `Shipment`, `ShipmentLine` | Physical shipment event and shipped line | Measure what actually left the warehouse, carrier choice, and shipment-level freight accrual |
+| Billing | `SalesInvoice`, `SalesInvoiceLine` | Invoice header and billed line | Trace receivable creation, merchandise revenue, and billed freight back to shipment |
 | Cash receipt | `CashReceipt` | Cash arrival from the customer | Review collection timing, unapplied cash, and deposit behavior |
 | Settlement | `CashReceiptApplication` | Application of received cash to one or more invoices | Measure true invoice settlement and open-AR reduction |
 
@@ -64,14 +64,15 @@ Start with the business flow, then move into the subsection diagrams and tables 
 
 | Event | Business meaning | Accounting effect |
 |---|---|---|
-| Shipment | Goods physically leave inventory and customer fulfillment occurs | Debit COGS and credit inventory |
-| Sales invoice | Accounting bills shipped quantity and creates the customer receivable | Debit AR and credit revenue plus sales tax payable |
+| Shipment | Goods physically leave inventory and customer fulfillment occurs | Debit COGS and freight-out expense, and credit inventory plus accrued expenses for outbound freight |
+| Sales invoice | Accounting bills shipped quantity and creates the customer receivable | Debit AR and credit merchandise revenue, freight revenue, and sales tax payable |
 | Cash receipt | Customer money arrives, even if it is not yet matched to a specific invoice | Debit cash and credit customer deposits or unapplied cash |
 | Cash application | Accounting settles one or more open invoices with previously received cash | Debit customer deposits or unapplied cash and credit AR |
 
 ## Key Traceability and Data Notes
 
 - `SalesInvoiceLine.ShipmentLineID` is the main shipment-to-invoice traceability field in the normal O2C path.
+- `SalesOrder.FreightTerms`, `Shipment.FreightCost`, `Shipment.BillableFreightAmount`, and `SalesInvoice.FreightAmount` show how outbound freight moves from commercial policy into operational cost and customer billing.
 - `CashReceiptApplication` is the true settlement table because it shows which invoices the cash actually cleared.
 - `CashReceipt.SalesInvoiceID` is compatibility metadata only and should not be treated as the authoritative settlement link.
 - `SalesOrderLine` carries pricing lineage through `BaseListPrice`, `PriceListLineID`, `PromotionID`, `PriceOverrideApprovalID`, and `PricingMethod`.
@@ -132,10 +133,10 @@ flowchart LR
 
 | Table | Role in the flow |
 |---|---|
-| `SalesOrder`, `SalesOrderLine` | Show the original customer promise and ordered quantity |
-| `Shipment`, `ShipmentLine` | Show what actually shipped and when it shipped |
-| `SalesInvoice`, `SalesInvoiceLine` | Show what was billed from the shipped quantity |
-| `GLEntry` | Shows the posted receivable and revenue effect |
+| `SalesOrder`, `SalesOrderLine` | Show the original customer promise, ordered quantity, and freight terms |
+| `Shipment`, `ShipmentLine` | Show what actually shipped, when it shipped, and the shipment-level freight accrual |
+| `SalesInvoice`, `SalesInvoiceLine` | Show what was billed from the shipped quantity and whether freight was billed to the customer |
+| `GLEntry` | Shows the posted receivable, revenue, COGS, and freight effects |
 
 **Key joins**
 
@@ -246,13 +247,14 @@ flowchart LR
 | Event | Business meaning | Accounting effect |
 |---|---|---|
 | Sales return | Goods come back after a shipment and invoice already existed | Debit inventory and credit COGS |
-| Credit memo | Accounting reverses part of the original sale | Debit sales returns and allowances plus tax reversal, and credit AR or customer credit |
+| Credit memo | Accounting reverses part of the original sale | Debit sales returns and allowances, freight revenue when policy allows a freight credit, and tax reversal, then credit AR or customer credit |
 | Customer refund | Treasury clears customer credit in cash | Debit customer credit and credit cash |
 
 **Traceability notes**
 
 - `SalesReturnLine.ShipmentLineID` is the core operational return trace field.
 - `CreditMemo.OriginalSalesInvoiceID` ties the financial correction back to the earlier invoice.
+- `CreditMemo.FreightCreditAmount` shows when part of the original billed freight was credited back because the return reason justified it.
 - `CreditMemoLine` preserves the original pricing lineage through `BaseListPrice`, `PriceListLineID`, `PromotionID`, `PriceOverrideApprovalID`, `PricingMethod`, and `Discount`.
 - `CustomerRefund` is used only when the return scenario leaves customer credit that is later cleared in cash.
 

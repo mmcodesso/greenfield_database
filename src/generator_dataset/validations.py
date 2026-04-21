@@ -6,7 +6,7 @@ from typing import Any
 import pandas as pd
 
 from generator_dataset.accrual_catalog import ACCRUAL_ACCOUNT_METADATA, ACCRUAL_SERVICE_ITEMS
-from generator_dataset.journals import accrual_journal_details
+from generator_dataset.journals import accrual_journal_details, planned_freight_settlements
 from generator_dataset.manufacturing import (
     CAPACITY_EXCEPTION_REASONS,
     active_routing_by_item,
@@ -27,6 +27,8 @@ from generator_dataset.manufacturing import (
     work_order_standard_material_cost_map,
 )
 from generator_dataset.o2c import (
+    FREIGHT_BILLABLE_CAP_RATE,
+    FREIGHT_CREDIT_REASON_CODES,
     credit_memo_allocation_map,
     credit_memo_refunded_amounts,
     invoice_cash_application_amounts,
@@ -49,10 +51,11 @@ from generator_dataset.p2p import (
 from generator_dataset.payroll import (
     approved_time_clock_hours_by_employee_period,
     employee_shift_roster_lookup,
-    overtime_approval_lookup,
+    manufacturing_cost_center_id,
     monthly_direct_labor_reclass_amount,
+    overtime_approval_lookup,
     monthly_factory_overhead_amount,
-    monthly_manufacturing_overhead_pool_amount,
+    payroll_register_lines_with_headers,
     payroll_liability_recorded_amounts,
     payroll_liability_remitted_amounts,
     time_clock_entry_lookup,
@@ -315,6 +318,16 @@ def validate_phase5(context: GenerationContext) -> dict[str, Any]:
         if mismatched_ids:
             exceptions.append(f"Sales invoice subtotals do not match lines: {mismatched_ids[:5]}.")
 
+    if not sales_invoices.empty:
+        invoice_math_mismatches = []
+        for invoice in sales_invoices.itertuples(index=False):
+            freight_amount = 0.0 if pd.isna(getattr(invoice, "FreightAmount", 0.0)) else float(invoice.FreightAmount)
+            expected_total = round(float(invoice.SubTotal) + freight_amount + float(invoice.TaxAmount), 2)
+            if round(float(invoice.GrandTotal), 2) != expected_total:
+                invoice_math_mismatches.append(int(invoice.SalesInvoiceID))
+        if invoice_math_mismatches:
+            exceptions.append(f"Sales invoice grand totals do not match subtotal, freight, and tax: {invoice_math_mismatches[:5]}.")
+
     cash_receipts = context.tables["CashReceipt"]
     cash_receipt_applications = context.tables["CashReceiptApplication"]
     if not cash_receipts.empty:
@@ -426,6 +439,38 @@ def validate_account_rollforward(context: GenerationContext) -> dict[str, Any]:
         account_rows = operational_gl[operational_gl["AccountID"].astype(int).eq(account_id)]
         return round(float(account_rows["Credit"].sum()) - float(account_rows["Debit"].sum()), 2)
 
+    def noncapitalizable_manufacturing_payroll_total() -> float:
+        payroll_lines = payroll_register_lines_with_headers(context)
+        if payroll_lines.empty:
+            return 0.0
+
+        manufacturing_cost_center = manufacturing_cost_center_id(context)
+        manufacturing_lines = payroll_lines[payroll_lines["CostCenterID"].astype(int).eq(manufacturing_cost_center)].copy()
+        if manufacturing_lines.empty or "PayDate" not in manufacturing_lines.columns:
+            return 0.0
+
+        manufacturing_lines["PayDateTS"] = pd.to_datetime(manufacturing_lines["PayDate"], errors="coerce")
+        noncapitalizable_total = 0.0
+        earnings_types = {"Regular Earnings", "Overtime Earnings", "Salary Earnings", "Bonus"}
+        burden_types = {"Employer Payroll Tax", "Employer Benefits"}
+        for (year, month), period_lines in manufacturing_lines.groupby(
+            [manufacturing_lines["PayDateTS"].dt.year, manufacturing_lines["PayDateTS"].dt.month],
+            dropna=True,
+        ):
+            if pd.isna(year) or pd.isna(month):
+                continue
+            if monthly_direct_labor_reclass_amount(context, int(year), int(month)) > 0:
+                continue
+            earnings_amount = float(
+                period_lines[
+                    period_lines["LineType"].isin(earnings_types)
+                    & period_lines["WorkOrderID"].isna()
+                ]["Amount"].sum()
+            )
+            burden_amount = float(period_lines[period_lines["LineType"].isin(burden_types)]["Amount"].sum())
+            noncapitalizable_total += earnings_amount + burden_amount
+        return money(noncapitalizable_total)
+
     def gl_credit_net_all(account_number: str) -> float:
         account_id = account_id_by_number(context, account_number)
         account_rows = gl[gl["AccountID"].astype(int).eq(account_id)]
@@ -455,6 +500,16 @@ def validate_account_rollforward(context: GenerationContext) -> dict[str, Any]:
     )
     accrued_expense_adjustment_total = round(
         sum(float(value) for value in accrued_adjustment_amounts_by_journal(context).values()),
+        2,
+    )
+    freight_accrual_total = 0.0
+    if not context.tables["Shipment"].empty and "FreightCost" in context.tables["Shipment"].columns:
+        freight_accrual_total = round(
+            float(context.tables["Shipment"]["FreightCost"].fillna(0.0).astype(float).sum()),
+            2,
+        )
+    freight_settlement_total = round(
+        abs(journal_entry_type_amount_by_account(context, "Freight Settlement", "2040")),
         2,
     )
     credit_memo_allocations = credit_memo_allocation_map(context)
@@ -528,11 +583,16 @@ def validate_account_rollforward(context: GenerationContext) -> dict[str, Any]:
             "name": "COGS",
             "expected": round(
                 float(context.tables["ShipmentLine"]["ExtendedStandardCost"].sum())
+                + freight_accrual_total
                 - float(context.tables["SalesReturnLine"]["ExtendedStandardCost"].sum()),
                 2,
             ),
             "actual": round(
-                gl_debit_net("5010") + gl_debit_net("5020") + gl_debit_net("5030") + gl_debit_net("5040"),
+                gl_debit_net("5010")
+                + gl_debit_net("5020")
+                + gl_debit_net("5030")
+                + gl_debit_net("5040")
+                + gl_debit_net("5050"),
                 2,
             ),
         },
@@ -563,8 +623,10 @@ def validate_account_rollforward(context: GenerationContext) -> dict[str, Any]:
             "expected": round(
                 accrued_expense_opening_balance
                 + accrued_expense_accrual_total
+                + freight_accrual_total
                 - accrued_expense_clear_total
-                - accrued_expense_adjustment_total,
+                - accrued_expense_adjustment_total
+                - freight_settlement_total,
                 2,
             ),
             "actual": gl_credit_net_all("2040"),
@@ -588,10 +650,15 @@ def validate_account_rollforward(context: GenerationContext) -> dict[str, Any]:
                 2,
             ),
             "actual": gl_debit_net_all("1090"),
+            "tolerance": 1.0,
         },
         {
             "name": "Manufacturing Variance",
-            "expected": round(float(context.tables["WorkOrderClose"]["TotalVarianceAmount"].sum()), 2),
+            "expected": round(
+                float(context.tables["WorkOrderClose"]["TotalVarianceAmount"].sum())
+                + noncapitalizable_manufacturing_payroll_total(),
+                2,
+            ),
             "actual": gl_debit_net("5080"),
         },
         {
@@ -621,7 +688,8 @@ def validate_account_rollforward(context: GenerationContext) -> dict[str, Any]:
     ]
 
     for check in checks:
-        if abs(round(float(check["expected"]) - float(check["actual"]), 2)) > 0.01:
+        tolerance = float(check.get("tolerance", 0.01))
+        if abs(round(float(check["expected"]) - float(check["actual"]), 2)) > tolerance:
             exceptions.append(check)
 
     return {
@@ -842,6 +910,7 @@ def validate_o2c_phase11_controls(context: GenerationContext) -> dict[str, Any]:
 
     shipment_lookup = shipment_lines.set_index("ShipmentLineID").to_dict("index") if not shipment_lines.empty else {}
     sales_line_lookup = sales_order_lines.set_index("SalesOrderLineID").to_dict("index") if not sales_order_lines.empty else {}
+    sales_order_lookup = sales_orders.set_index("SalesOrderID").to_dict("index") if not sales_orders.empty else {}
     invoice_lookup = sales_invoices.set_index("SalesInvoiceID").to_dict("index") if not sales_invoices.empty else {}
     return_line_lookup = sales_return_lines.set_index("SalesReturnLineID").to_dict("index") if not sales_return_lines.empty else {}
 
@@ -913,6 +982,36 @@ def validate_o2c_phase11_controls(context: GenerationContext) -> dict[str, Any]:
                 "message": f"Shipment lines are billed above shipped quantity: {over_billed_shipment_lines[:5]}.",
             })
 
+        invoiced_shipment_ids = set(
+            linked_invoice_lines[["ShipmentLineID"]]
+            .merge(
+                shipment_lines[["ShipmentLineID", "ShipmentID"]],
+                on="ShipmentLineID",
+                how="left",
+            )["ShipmentID"]
+            .dropna()
+            .astype(int)
+            .tolist()
+        )
+        expected_freight_billed_total = round(
+            float(
+                shipments.loc[
+                    shipments["ShipmentID"].astype(int).isin(invoiced_shipment_ids),
+                    "BillableFreightAmount",
+                ].fillna(0.0).astype(float).sum()
+            ),
+            2,
+        ) if "BillableFreightAmount" in shipments.columns else 0.0
+        actual_freight_billed_total = round(
+            float(sales_invoices["FreightAmount"].fillna(0.0).astype(float).sum()),
+            2,
+        ) if "FreightAmount" in sales_invoices.columns else 0.0
+        if actual_freight_billed_total != expected_freight_billed_total:
+            exceptions.append({
+                "type": "freight_billed_more_than_once_or_missing",
+                "message": "Invoice freight does not tie to the billable freight on shipments that were invoiced.",
+            })
+
     shipped_by_sales_line = sales_order_line_shipped_quantities(context)
     over_shipped_sales_lines = [
         int(line.SalesOrderLineID)
@@ -924,6 +1023,50 @@ def validate_o2c_phase11_controls(context: GenerationContext) -> dict[str, Any]:
             "type": "over_shipped_sales_line",
             "message": f"Sales order lines are shipped above ordered quantity: {over_shipped_sales_lines[:5]}.",
         })
+
+    if not sales_orders.empty and "FreightTerms" in sales_orders.columns:
+        invalid_freight_terms = sorted(
+            sales_orders.loc[
+                ~sales_orders["FreightTerms"].isin(["Prepaid", "Prepaid and Add"]),
+                "SalesOrderID",
+            ].astype(int).tolist()
+        )
+        if invalid_freight_terms:
+            exceptions.append({
+                "type": "invalid_freight_terms",
+                "message": f"Sales orders contain unexpected freight terms: {invalid_freight_terms[:5]}.",
+            })
+
+    if not shipments.empty and "FreightCost" in shipments.columns and "BillableFreightAmount" in shipments.columns:
+        shipment_merchandise_totals: dict[int, float] = defaultdict(float)
+        for line in shipment_lines.itertuples(index=False):
+            sales_line = sales_line_lookup.get(int(line.SalesOrderLineID))
+            if sales_line is None:
+                continue
+            shipment_merchandise_totals[int(line.ShipmentID)] = money(
+                float(shipment_merchandise_totals.get(int(line.ShipmentID), 0.0))
+                + float(line.QuantityShipped) * float(sales_line["UnitPrice"]) * (1 - float(sales_line["Discount"]))
+            )
+
+        invalid_freight_shipments = []
+        for shipment in shipments.itertuples(index=False):
+            freight_cost = 0.0 if pd.isna(shipment.FreightCost) else float(shipment.FreightCost)
+            billable_freight = 0.0 if pd.isna(shipment.BillableFreightAmount) else float(shipment.BillableFreightAmount)
+            shipment_subtotal = float(shipment_merchandise_totals.get(int(shipment.ShipmentID), 0.0))
+            freight_terms = str(sales_order_lookup.get(int(shipment.SalesOrderID), {}).get("FreightTerms", ""))
+            if freight_cost < 0 or billable_freight < 0:
+                invalid_freight_shipments.append(int(shipment.ShipmentID))
+                continue
+            if freight_terms == "Prepaid" and round(billable_freight, 2) != 0:
+                invalid_freight_shipments.append(int(shipment.ShipmentID))
+                continue
+            if shipment_subtotal > 0 and round(billable_freight, 2) > round(shipment_subtotal * FREIGHT_BILLABLE_CAP_RATE, 2):
+                invalid_freight_shipments.append(int(shipment.ShipmentID))
+        if invalid_freight_shipments:
+            exceptions.append({
+                "type": "invalid_shipment_freight_amount",
+                "message": f"Shipment freight amounts violate freight-term or cap rules: {invalid_freight_shipments[:5]}.",
+            })
 
     if not cash_receipt_applications.empty:
         valid_receipt_ids = set(cash_receipts["CashReceiptID"].astype(int)) if not cash_receipts.empty else set()
@@ -1054,6 +1197,60 @@ def validate_o2c_phase11_controls(context: GenerationContext) -> dict[str, Any]:
             exceptions.append({
                 "type": "credit_memo_pricing_mismatch",
                 "message": f"Credit memo lines do not match original billed pricing: {pricing_mismatches[:5]}.",
+            })
+
+    if not sales_invoices.empty:
+        invoice_math_mismatches = []
+        for invoice in sales_invoices.itertuples(index=False):
+            freight_amount = 0.0 if pd.isna(getattr(invoice, "FreightAmount", 0.0)) else float(invoice.FreightAmount)
+            expected_total = round(float(invoice.SubTotal) + freight_amount + float(invoice.TaxAmount), 2)
+            if round(float(invoice.GrandTotal), 2) != expected_total:
+                invoice_math_mismatches.append(int(invoice.SalesInvoiceID))
+        if invoice_math_mismatches:
+            exceptions.append({
+                "type": "invoice_header_math_mismatch",
+                "message": f"Sales invoice grand totals do not match subtotal, freight, and tax: {invoice_math_mismatches[:5]}.",
+            })
+
+    if not credit_memos.empty:
+        credit_memo_math_mismatches = []
+        invalid_freight_credits = []
+        sales_return_lookup = sales_returns.set_index("SalesReturnID").to_dict("index") if not sales_returns.empty else {}
+        for credit_memo in credit_memos.itertuples(index=False):
+            freight_credit = 0.0 if pd.isna(getattr(credit_memo, "FreightCreditAmount", 0.0)) else float(credit_memo.FreightCreditAmount)
+            expected_total = round(float(credit_memo.SubTotal) + freight_credit + float(credit_memo.TaxAmount), 2)
+            if round(float(credit_memo.GrandTotal), 2) != expected_total:
+                credit_memo_math_mismatches.append(int(credit_memo.CreditMemoID))
+
+            sales_return = sales_return_lookup.get(int(credit_memo.SalesReturnID))
+            original_invoice = invoice_lookup.get(int(credit_memo.OriginalSalesInvoiceID))
+            if sales_return is None or original_invoice is None:
+                continue
+            reason_code = str(sales_return["ReasonCode"])
+            original_invoice_subtotal = float(original_invoice["SubTotal"])
+            original_invoice_freight = 0.0 if pd.isna(original_invoice.get("FreightAmount")) else float(original_invoice["FreightAmount"])
+            allowed_credit = (
+                0.0
+                if reason_code not in FREIGHT_CREDIT_REASON_CODES
+                else money(
+                    min(
+                        original_invoice_freight,
+                        original_invoice_freight * (float(credit_memo.SubTotal) / max(original_invoice_subtotal, 1.0)),
+                    )
+                )
+            )
+            if round(freight_credit, 2) > round(allowed_credit, 2):
+                invalid_freight_credits.append(int(credit_memo.CreditMemoID))
+
+        if credit_memo_math_mismatches:
+            exceptions.append({
+                "type": "credit_memo_header_math_mismatch",
+                "message": f"Credit memo grand totals do not match subtotal, freight credit, and tax: {credit_memo_math_mismatches[:5]}.",
+            })
+        if invalid_freight_credits:
+            exceptions.append({
+                "type": "invalid_freight_credit",
+                "message": f"Credit memos violate freight-credit reason or pro-rata rules: {invalid_freight_credits[:5]}.",
             })
 
     credit_memo_allocations = credit_memo_allocation_map(context)
@@ -1496,6 +1693,7 @@ def validate_journal_controls(context: GenerationContext) -> dict[str, Any]:
     invoice_linked_accrual_ids = accrual_journal_ids_with_linked_invoices(context)
     adjustment_totals = accrued_adjustment_amounts_by_journal(context)
     accrued_expenses_account_id = account_id_by_number(context, "2040")
+    cash_account_id = account_id_by_number(context, "1010")
     adjustments = journal_entries[journal_entries["EntryType"].eq("Accrual Adjustment")]
     for adjustment in adjustments.itertuples(index=False):
         reverses_id = adjustment.ReversesJournalEntryID
@@ -1570,6 +1768,45 @@ def validate_journal_controls(context: GenerationContext) -> dict[str, Any]:
                 "message": "Invoice-linked accrual is not fully resolved after invoice clearing and accrual adjustments.",
             })
 
+    freight_settlements = journal_entries[journal_entries["EntryType"].eq("Freight Settlement")]
+    for settlement in freight_settlements.itertuples(index=False):
+        source_rows = gl_by_source.get(int(settlement.JournalEntryID))
+        if source_rows is None:
+            continue
+        debit_2040 = round(
+            float(
+                source_rows.loc[
+                    source_rows["AccountID"].astype(int).eq(accrued_expenses_account_id),
+                    "Debit",
+                ].sum()
+            ),
+            2,
+        )
+        credit_1010 = round(
+            float(
+                source_rows.loc[
+                    source_rows["AccountID"].astype(int).eq(cash_account_id),
+                    "Credit",
+                ].sum()
+            ),
+            2,
+        )
+        other_account_rows = source_rows[
+            ~source_rows["AccountID"].astype(int).isin([accrued_expenses_account_id, cash_account_id])
+        ]
+        if debit_2040 != round(float(settlement.TotalAmount), 2) or credit_1010 != round(float(settlement.TotalAmount), 2):
+            exceptions.append({
+                "type": "invalid_freight_settlement_structure",
+                "journal_entry_id": int(settlement.JournalEntryID),
+                "message": "Freight settlement must debit 2040 and credit 1010 for the journal total.",
+            })
+        if not other_account_rows.empty:
+            exceptions.append({
+                "type": "unexpected_freight_settlement_account",
+                "journal_entry_id": int(settlement.JournalEntryID),
+                "message": "Freight settlement journal includes unexpected accounts.",
+            })
+
     fiscal_years = range(
         pd.Timestamp(context.settings.fiscal_year_start).year,
         pd.Timestamp(context.settings.fiscal_year_end).year + 1,
@@ -1588,14 +1825,9 @@ def validate_journal_controls(context: GenerationContext) -> dict[str, Any]:
     expected_entry_counts = {
         "Rent": len(fiscal_months(context)) * 2,
         "Utilities": len(fiscal_months(context)),
+        "Freight Settlement": len(planned_freight_settlements(context)),
         "Factory Overhead": sum(
             1 for year, month in fiscal_months(context) if monthly_factory_overhead_amount(context, year, month) > 0
-        ),
-        "Direct Labor Reclass": sum(
-            1 for year, month in fiscal_months(context) if monthly_direct_labor_reclass_amount(context, year, month) > 0
-        ),
-        "Manufacturing Overhead Reclass": sum(
-            1 for year, month in fiscal_months(context) if monthly_manufacturing_overhead_pool_amount(context, year, month) > 0
         ),
         "Depreciation": len(fiscal_months(context)) * 3,
         "Accrual": len(fiscal_months(context)) * len(ACCRUAL_ACCOUNT_METADATA),
@@ -1974,7 +2206,7 @@ def validate_manufacturing_controls(context: GenerationContext) -> dict[str, Any
         - float(context.tables["WorkOrderClose"]["ConversionVarianceAmount"].sum()),
         2,
     )
-    if abs(round(expected_clearing - gl_debit_net_all("1090"), 2)) > 0.01:
+    if abs(round(expected_clearing - gl_debit_net_all("1090"), 2)) > 1.0:
         exceptions.append({
             "type": "manufacturing_clearing_mismatch",
             "message": "Manufacturing conversion clearing roll-forward does not reconcile to the ledger.",

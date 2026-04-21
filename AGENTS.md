@@ -32,6 +32,13 @@ The default package is a student-facing, anomaly-enriched teaching build. Separa
   # activate the environment for your shell
   pip install -r requirements.txt
   ```
+- For all agent-driven Python commands, use the repo-local virtual environment instead of the system interpreter. Prefer invoking the interpreter directly, for example:
+  ```bash
+  .venv\Scripts\python.exe -m pip install -r requirements.txt
+  .venv\Scripts\python.exe -m pytest -q
+  .venv\Scripts\python.exe -B -m compileall -q src tests
+  ```
+  On non-Windows shells, use `.venv/bin/python`.
 - Node dependencies:
   ```bash
   npm ci
@@ -85,6 +92,9 @@ Notes:
 
 - `npm run start`, `npm run build`, and `npm run serve` already run the pre-hooks that generate branding/manifests and prepare/validate report assets.
 - If `static/reports/` is missing, `npm run start` and `npm run build` may try to download the published SQLite asset using `published_sqlite_url` in `config/settings.yaml` or `REPORTS_SQLITE_URL`.
+- In this Windows PowerShell workspace, prefer search/read commands that are stable here: use `git grep -n -- "<text>"` for tracked-text search, `Select-String -Path <file> -SimpleMatch -Pattern '<literal>'` for literal file search, and `Get-Content <file>` or `Get-Content <file> | Select-Object -Index ...` for targeted line reads.
+- If `rg` is unavailable, returns `Access is denied`, or starts requiring awkward escaping, switch immediately to `git grep`, `Select-String`, and `Get-Content` instead of retrying `rg`.
+- When running PowerShell commands with search patterns or inline text, prefer single-quoted literals and intermediate variables or here-strings for complex text so patches stay targeted and quoting failures do not derail the edit flow.
 - No lint or formatter script is configured. Do not invent one in session handoffs.
 
 ## Coding And Editing Conventions
@@ -92,6 +102,7 @@ Notes:
 - Python follows the existing style: 4-space indentation, type hints, `pathlib`, dataclasses/settings objects, and pandas-driven table construction.
 - Site code is plain JavaScript/JSX, not TypeScript. Preserve the existing 2-space indentation and component structure.
 - Keep edits narrow and reviewable. Stable file names, query names, section headings, slugs, and routes matter because docs, manifests, and tests reference them directly.
+- On PowerShell, avoid unnecessarily complex one-line command quoting. Prefer shorter native commands, intermediate variables, or separate reads/searches when locating edit points.
 - Keep generated outputs out of Git. Do not hand-edit `build/`, `.docusaurus/`, `static/reports/`, `outputs/`, or the script-generated files in `src/generated/`.
 - If branding changes, update the source settings/helper and rerun `npm run generate-site-branding`. Do not hand-edit `static/CNAME` or the generated SVGs.
 - If query, report, or report-pack inventories change, update the source SQL/YAML/docs first and regenerate the relevant manifests.
@@ -131,11 +142,12 @@ Notes:
 ## Validation Rules
 
 - Before finishing, run the checks that match the touched area and report what actually ran.
+- For Python validation or dataset-generation commands, use the interpreter from the repo-local `.venv` so tests run against the project environment, not the system Python.
 - For any explicit test run (`pytest`, targeted pytest selections, or equivalent test commands), use a command timeout of at least one hour (`3600000` ms).
 - Minimum for Python, SQL, config, schema, exporter, or generator changes:
   ```bash
-  pytest -q
-  python -B -m compileall -q src tests
+  .venv\Scripts\python.exe -m pytest -q
+  .venv\Scripts\python.exe -B -m compileall -q src tests
   ```
 - Minimum for docs, Docusaurus config, sidebar, component, query-catalog, report-catalog, or branding changes:
   ```bash
@@ -144,9 +156,9 @@ Notes:
 - When changing query files, report catalogs, report packs, or branding inputs, make sure the generated manifests/assets were refreshed. A full `npm run build` already triggers the prebuild generators.
 - When changing dataset generation behavior, settings, anomalies, schema, or report exports, also run the relevant dataset build such as:
   ```bash
-  python generate_dataset.py
+  .venv\Scripts\python.exe generate_dataset.py
   ```
-  or the smallest relevant alternate-config run.
+  or the smallest relevant alternate-config run through the same `.venv` interpreter.
 - Manual checks still matter:
   - confirm the docs still read in the intended process-led sequence
   - confirm report preview/download cards still point to existing assets

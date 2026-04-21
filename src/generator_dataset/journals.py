@@ -45,13 +45,17 @@ SALARY_ACCOUNT_BY_COST_CENTER = {
     "Executive": "6050",
     "Sales": "6010",
     "Warehouse": "6020",
-    "Manufacturing": "6260",
+    "Manufacturing": "1090",
     "Purchasing": "6230",
     "Administration": "6030",
     "Customer Service": "6040",
     "Research and Development": "6250",
     "Marketing": "6240",
 }
+
+MANUFACTURING_CLEARING_ACCOUNT = "1090"
+MANUFACTURING_VARIANCE_ACCOUNT = "5080"
+NONMANUFACTURING_PAYROLL_BURDEN_ACCOUNT = "6060"
 
 MONTHLY_RENT_BASES = {
     "Office": 18000.0,
@@ -90,6 +94,11 @@ def stable_seed(context: GenerationContext, *parts: object) -> int:
 def stable_uniform(context: GenerationContext, low: float, high: float, *parts: object) -> float:
     rng = np.random.default_rng(stable_seed(context, *parts))
     return float(rng.uniform(low, high))
+
+
+def previous_month(year: int, month: int) -> tuple[int, int]:
+    current = pd.Timestamp(year=year, month=month, day=1) - pd.DateOffset(months=1)
+    return int(current.year), int(current.month)
 
 
 def first_business_day(year: int, month: int) -> pd.Timestamp:
@@ -402,6 +411,59 @@ def monthly_accrual_amount(context: GenerationContext, year: int, month: int, ac
     return money(MONTHLY_ACCRUAL_BASES[account_number] * growth_factor * jitter)
 
 
+def shipment_freight_accruals_by_month(context: GenerationContext) -> dict[tuple[int, int], float]:
+    shipments = context.tables["Shipment"]
+    if shipments.empty or "FreightCost" not in shipments.columns:
+        return {}
+
+    accruals: dict[tuple[int, int], float] = {}
+    for shipment in shipments.itertuples(index=False):
+        freight_cost = 0.0 if pd.isna(shipment.FreightCost) else float(shipment.FreightCost)
+        if freight_cost <= 0:
+            continue
+        shipment_date = pd.Timestamp(shipment.ShipmentDate)
+        period_key = (int(shipment_date.year), int(shipment_date.month))
+        accruals[period_key] = money(float(accruals.get(period_key, 0.0)) + freight_cost)
+    return accruals
+
+
+def planned_freight_settlements(context: GenerationContext) -> list[dict[str, Any]]:
+    freight_accruals_by_month = shipment_freight_accruals_by_month(context)
+    if not freight_accruals_by_month:
+        return []
+
+    settlements: list[dict[str, Any]] = []
+    open_balance = 0.0
+    for settlement_year, settlement_month in fiscal_months(context):
+        accrual_year, accrual_month = previous_month(settlement_year, settlement_month)
+        open_balance = money(open_balance + float(freight_accruals_by_month.get((accrual_year, accrual_month), 0.0)))
+        if open_balance <= 0:
+            continue
+
+        settlement_rate = stable_uniform(
+            context,
+            0.85,
+            0.95,
+            "freight-settlement-rate",
+            settlement_year,
+            settlement_month,
+        )
+        settlement_amount = money(open_balance * settlement_rate)
+        if settlement_amount <= 0:
+            continue
+
+        settlements.append({
+            "SettlementYear": int(settlement_year),
+            "SettlementMonth": int(settlement_month),
+            "AccrualYear": int(accrual_year),
+            "AccrualMonth": int(accrual_month),
+            "PostingDate": first_business_day(settlement_year, settlement_month).strftime("%Y-%m-%d"),
+            "Amount": settlement_amount,
+        })
+        open_balance = money(open_balance - settlement_amount)
+    return settlements
+
+
 def monthly_depreciation_amount(asset_account_number: str) -> float:
     profile = fixed_asset_profile(asset_account_number)
     if profile.useful_life_months <= 0:
@@ -438,7 +500,18 @@ def generate_payroll_accruals(context: GenerationContext, year: int, month: int)
 
     for cost_center_id, amounts in payroll_totals.items():
         cost_center_name = cost_center_names[int(cost_center_id)]
-        salary_account = SALARY_ACCOUNT_BY_COST_CENTER[cost_center_name]
+        if cost_center_name == "Manufacturing":
+            capitalizable_manufacturing_month = monthly_direct_labor_reclass_amount(context, year, month) > 0
+            manufacturing_account = (
+                MANUFACTURING_CLEARING_ACCOUNT
+                if capitalizable_manufacturing_month
+                else MANUFACTURING_VARIANCE_ACCOUNT
+            )
+            salary_account = manufacturing_account
+            burden_account = manufacturing_account
+        else:
+            salary_account = SALARY_ACCOUNT_BY_COST_CENTER[cost_center_name]
+            burden_account = NONMANUFACTURING_PAYROLL_BURDEN_ACCOUNT
         creator_id = cost_center_manager_id(context, int(cost_center_id))
         description = f"{cost_center_name} payroll accrual for {year}-{month:02d}"
         lines = [
@@ -450,7 +523,7 @@ def generate_payroll_accruals(context: GenerationContext, year: int, month: int)
                 "CostCenterID": int(cost_center_id),
             },
             {
-                "AccountNumber": "6060",
+                "AccountNumber": burden_account,
                 "Debit": amounts["benefits"],
                 "Credit": 0.0,
                 "Description": f"{cost_center_name} payroll burden accrual",
@@ -630,6 +703,17 @@ def generate_factory_overhead_journal(context: GenerationContext, year: int, mon
     if overhead_total <= 0:
         return
 
+    capitalizable_manufacturing_month = monthly_direct_labor_reclass_amount(context, year, month) > 0
+    debit_account = (
+        MANUFACTURING_CLEARING_ACCOUNT
+        if capitalizable_manufacturing_month
+        else MANUFACTURING_VARIANCE_ACCOUNT
+    )
+    debit_description = (
+        "Record factory overhead in manufacturing clearing"
+        if capitalizable_manufacturing_month
+        else "Record noncapitalizable factory overhead in manufacturing variance"
+    )
     posting_date = last_business_day(year, month).strftime("%Y-%m-%d")
     creator_id = manufacturing_journal_creator_id(context)
     approver_id = manufacturing_journal_approver_id(context)
@@ -640,10 +724,10 @@ def generate_factory_overhead_journal(context: GenerationContext, year: int, mon
         f"Factory overhead for {year}-{month:02d}",
         [
             {
-                "AccountNumber": "6270",
+                "AccountNumber": debit_account,
                 "Debit": overhead_total,
                 "Credit": 0.0,
-                "Description": "Factory overhead expense",
+                "Description": debit_description,
                 "CostCenterID": None,
             },
             {
@@ -651,74 +735,6 @@ def generate_factory_overhead_journal(context: GenerationContext, year: int, mon
                 "Debit": 0.0,
                 "Credit": overhead_total,
                 "Description": "Factory overhead cash payment",
-                "CostCenterID": None,
-            },
-        ],
-        creator_id,
-        approver_id,
-    )
-
-
-def generate_direct_labor_reclass_journal(context: GenerationContext, year: int, month: int) -> None:
-    salary_total = float(monthly_direct_labor_reclass_amount(context, year, month))
-    if salary_total <= 0:
-        return
-
-    posting_date = last_business_day(year, month).strftime("%Y-%m-%d")
-    creator_id = manufacturing_journal_creator_id(context)
-    approver_id = manufacturing_journal_approver_id(context)
-    create_journal(
-        context,
-        posting_date,
-        "Direct Labor Reclass",
-        f"Direct labor reclass for {year}-{month:02d}",
-        [
-            {
-                "AccountNumber": "1090",
-                "Debit": salary_total,
-                "Credit": 0.0,
-                "Description": "Reclass direct labor to manufacturing clearing",
-                "CostCenterID": None,
-            },
-            {
-                "AccountNumber": "6260",
-                "Debit": 0.0,
-                "Credit": salary_total,
-                "Description": "Credit manufacturing labor expense",
-                "CostCenterID": None,
-            },
-        ],
-        creator_id,
-        approver_id,
-    )
-
-
-def generate_manufacturing_overhead_reclass_journal(context: GenerationContext, year: int, month: int) -> None:
-    overhead_total = float(monthly_manufacturing_overhead_pool_amount(context, year, month))
-    if overhead_total <= 0:
-        return
-
-    posting_date = last_business_day(year, month).strftime("%Y-%m-%d")
-    creator_id = manufacturing_journal_creator_id(context)
-    approver_id = manufacturing_journal_approver_id(context)
-    create_journal(
-        context,
-        posting_date,
-        "Manufacturing Overhead Reclass",
-        f"Manufacturing overhead reclass for {year}-{month:02d}",
-        [
-            {
-                "AccountNumber": "1090",
-                "Debit": overhead_total,
-                "Credit": 0.0,
-                "Description": "Reclass manufacturing overhead to clearing",
-                "CostCenterID": None,
-            },
-            {
-                "AccountNumber": "6270",
-                "Debit": 0.0,
-                "Credit": overhead_total,
-                "Description": "Credit manufacturing overhead expense",
                 "CostCenterID": None,
             },
         ],
@@ -801,6 +817,41 @@ def generate_month_end_accruals(context: GenerationContext, year: int, month: in
             "Amount": amount,
         })
     return accrual_rows
+
+
+def generate_freight_settlement_journals(context: GenerationContext, year: int, month: int) -> None:
+    creator_id = accounting_journal_creator_id(context)
+    approver_id = accounting_journal_approver_id(context)
+    for settlement in planned_freight_settlements(context):
+        if int(settlement["SettlementYear"]) != int(year) or int(settlement["SettlementMonth"]) != int(month):
+            continue
+        create_journal(
+            context,
+            str(settlement["PostingDate"]),
+            "Freight Settlement",
+            (
+                "Settle outbound freight accruals through "
+                f"{int(settlement['AccrualYear'])}-{int(settlement['AccrualMonth']):02d}"
+            ),
+            [
+                {
+                    "AccountNumber": "2040",
+                    "Debit": float(settlement["Amount"]),
+                    "Credit": 0.0,
+                    "Description": "Clear accrued outbound freight liability",
+                    "CostCenterID": None,
+                },
+                {
+                    "AccountNumber": "1010",
+                    "Debit": 0.0,
+                    "Credit": float(settlement["Amount"]),
+                    "Description": "Cash settlement of accrued outbound freight",
+                    "CostCenterID": None,
+                },
+            ],
+            creator_id,
+            approver_id,
+        )
 
 
 def accrual_journal_details(context: GenerationContext) -> list[dict[str, Any]]:
@@ -1009,10 +1060,9 @@ def generate_recurring_manual_journals(context: GenerationContext) -> None:
 
     for year, month in fiscal_months(context):
         generate_rent_journals(context, year, month)
+        generate_freight_settlement_journals(context, year, month)
         generate_utilities_journal(context, year, month)
         generate_factory_overhead_journal(context, year, month)
-        generate_direct_labor_reclass_journal(context, year, month)
-        generate_manufacturing_overhead_reclass_journal(context, year, month)
         generate_depreciation_journals(context, year, month)
         generate_month_end_accruals(context, year, month)
 

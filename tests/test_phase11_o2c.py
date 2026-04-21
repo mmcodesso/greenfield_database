@@ -65,6 +65,73 @@ def test_phase11_multimonth_o2c_backorders_returns_and_applications() -> None:
     assert (pd.to_datetime(returns_with_invoice_dates["ReturnDate"]) > pd.to_datetime(returns_with_invoice_dates["InvoiceDate"])).all()
 
 
+def test_phase11_multimonth_o2c_freight_modeling() -> None:
+    context = build_phase5()
+
+    for year, month in [(2026, 2), (2026, 3), (2026, 4)]:
+        generate_month_o2c(context, year, month)
+        generate_month_p2p(context, year, month)
+        generate_month_goods_receipts(context, year, month)
+        generate_month_shipments(context, year, month)
+        generate_month_sales_invoices(context, year, month)
+        generate_month_cash_receipts(context, year, month)
+        generate_month_sales_returns(context, year, month)
+        generate_month_customer_refunds(context, year, month)
+        generate_month_purchase_invoices(context, year, month)
+        generate_month_disbursements(context, year, month)
+
+    sales_orders = context.tables["SalesOrder"]
+    shipments = context.tables["Shipment"]
+    shipment_lines = context.tables["ShipmentLine"]
+    sales_invoices = context.tables["SalesInvoice"]
+    sales_invoice_lines = context.tables["SalesInvoiceLine"]
+    sales_returns = context.tables["SalesReturn"]
+    credit_memos = context.tables["CreditMemo"]
+
+    assert sales_orders["FreightTerms"].isin(["Prepaid", "Prepaid and Add"]).all()
+    assert set(sales_orders["FreightTerms"].dropna().unique()) == {"Prepaid", "Prepaid and Add"}
+    assert shipments["FreightCost"].fillna(0.0).astype(float).gt(0).any()
+    assert shipments["BillableFreightAmount"].fillna(0.0).astype(float).gt(0).any()
+    assert shipments["BillableFreightAmount"].fillna(0.0).astype(float).eq(0).any()
+    assert sales_invoices["FreightAmount"].fillna(0.0).astype(float).gt(0).any()
+    assert sales_invoices["FreightAmount"].fillna(0.0).astype(float).eq(0).any()
+    assert ((
+        sales_invoices["SubTotal"].astype(float)
+        + sales_invoices["FreightAmount"].fillna(0.0).astype(float)
+        + sales_invoices["TaxAmount"].astype(float)
+    ).round(2) == sales_invoices["GrandTotal"].astype(float).round(2)).all()
+    assert ((
+        credit_memos["SubTotal"].astype(float)
+        + credit_memos["FreightCreditAmount"].fillna(0.0).astype(float)
+        + credit_memos["TaxAmount"].astype(float)
+    ).round(2) == credit_memos["GrandTotal"].astype(float).round(2)).all()
+
+    invoiced_shipment_ids = set(
+        sales_invoice_lines[["ShipmentLineID"]]
+        .merge(shipment_lines[["ShipmentLineID", "ShipmentID"]], on="ShipmentLineID", how="left")["ShipmentID"]
+        .dropna()
+        .astype(int)
+        .tolist()
+    )
+    expected_freight_billed_total = round(
+        float(
+            shipments.loc[
+                shipments["ShipmentID"].astype(int).isin(invoiced_shipment_ids),
+                "BillableFreightAmount",
+            ].fillna(0.0).astype(float).sum()
+        ),
+        2,
+    )
+    assert round(float(sales_invoices["FreightAmount"].fillna(0.0).astype(float).sum()), 2) == expected_freight_billed_total
+
+    remorse_freight_credits = (
+        sales_returns[sales_returns["ReasonCode"].eq("Customer Remorse")][["SalesReturnID"]]
+        .merge(credit_memos[["SalesReturnID", "FreightCreditAmount"]], on="SalesReturnID", how="inner")
+    )
+    if not remorse_freight_credits.empty:
+        assert remorse_freight_credits["FreightCreditAmount"].fillna(0.0).astype(float).eq(0.0).all()
+
+
 def test_phase11_full_dataset_clean_validation(full_dataset_artifacts: dict[str, object]) -> None:
     context = full_dataset_artifacts["context"]
     phase11 = context.validation_results["phase11"]

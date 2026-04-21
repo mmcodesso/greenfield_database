@@ -95,5 +95,5 @@ AccountID,AccountNumber,AccountName,AccountType,AccountSubType,ParentAccountID,N
 91,1046,Inventory - Work in Process,Asset,Current Asset,1,Debit,1
 92,1090,Manufacturing Cost Clearing,Asset,Current Asset,1,Debit,1
 93,5080,Manufacturing Variance,Expense,COGS,49,Debit,1
-94,6260,Salaries Expense - Manufacturing,Expense,Operating Expense,57,Debit,1
-95,6270,Factory Overhead Expense,Expense,Operating Expense,57,Debit,1
+94,6260,Salaries Expense - Manufacturing,Expense,Operating Expense,57,Debit,0
+95,6270,Factory Overhead Expense,Expense,Operating Expense,57,Debit,0

@@ -3,6 +3,7 @@ from __future__ import annotations
 import pandas as pd
 
 from generator_dataset.main import build_phase13, build_phase23
+from generator_dataset.payroll import monthly_direct_labor_reclass_amount
 from generator_dataset.posting_engine import (
     PAYROLL_SUMMARY_SOURCE_DOCUMENT_TYPE,
     account_id_by_number,
@@ -117,7 +118,8 @@ def test_phase13_payroll_gl_is_summarized_and_ties_to_payroll_tables() -> None:
     employer_tax_account_id = account_id_by_number(context, "2032")
     benefits_account_id = account_id_by_number(context, "2033")
     burden_expense_account_id = account_id_by_number(context, "6060")
-    manufacturing_overhead_account_id = account_id_by_number(context, "6270")
+    manufacturing_clearing_account_id = account_id_by_number(context, "1090")
+    manufacturing_variance_account_id = account_id_by_number(context, "5080")
     cash_account_id = account_id_by_number(context, "1010")
 
     expected_summary: dict[tuple[str, int, int], dict[str, float]] = {}
@@ -130,6 +132,9 @@ def test_phase13_payroll_gl_is_summarized_and_ties_to_payroll_tables() -> None:
 
     for register in registers.itertuples(index=False):
         pay_date = pd.Timestamp(payroll_period_lookup[int(register.PayrollPeriodID)]["PayDate"]).strftime("%Y-%m-%d")
+        pay_year = pd.Timestamp(pay_date).year
+        pay_month = pd.Timestamp(pay_date).month
+        capitalizable_manufacturing_month = monthly_direct_labor_reclass_amount(context, pay_year, pay_month) > 0
         cost_center_id = int(register.CostCenterID)
         cost_center_name = str(cost_center_names[cost_center_id])
         register_line_group = lines_by_register.get(int(register.PayrollRegisterID))
@@ -143,7 +148,11 @@ def test_phase13_payroll_gl_is_summarized_and_ties_to_payroll_tables() -> None:
             amount = float(line.Amount)
             if line_type in {"Regular Earnings", "Overtime Earnings", "Salary Earnings", "Bonus"}:
                 if cost_center_name == "Manufacturing":
-                    debit_account_id = account_id_by_number(context, "6260") if pd.notna(line.WorkOrderID) else manufacturing_overhead_account_id
+                    debit_account_id = (
+                        manufacturing_clearing_account_id
+                        if pd.notna(line.WorkOrderID) or capitalizable_manufacturing_month
+                        else manufacturing_variance_account_id
+                    )
                 else:
                     debit_account_id = account_id_by_number(context, salary_accounts[cost_center_id])
                 add_expected(pay_date, cost_center_id, int(debit_account_id), amount, 0.0)
@@ -152,10 +161,22 @@ def test_phase13_payroll_gl_is_summarized_and_ties_to_payroll_tables() -> None:
             elif line_type == "Benefits Deduction":
                 benefits_and_deductions += amount
             elif line_type == "Employer Payroll Tax":
-                expense_account_id = manufacturing_overhead_account_id if cost_center_name == "Manufacturing" else burden_expense_account_id
+                expense_account_id = (
+                    manufacturing_clearing_account_id
+                    if cost_center_name == "Manufacturing" and capitalizable_manufacturing_month
+                    else manufacturing_variance_account_id
+                    if cost_center_name == "Manufacturing"
+                    else burden_expense_account_id
+                )
                 add_expected(pay_date, cost_center_id, int(expense_account_id), amount, 0.0)
             elif line_type == "Employer Benefits":
-                expense_account_id = manufacturing_overhead_account_id if cost_center_name == "Manufacturing" else burden_expense_account_id
+                expense_account_id = (
+                    manufacturing_clearing_account_id
+                    if cost_center_name == "Manufacturing" and capitalizable_manufacturing_month
+                    else manufacturing_variance_account_id
+                    if cost_center_name == "Manufacturing"
+                    else burden_expense_account_id
+                )
                 add_expected(pay_date, cost_center_id, int(expense_account_id), amount, 0.0)
                 benefits_and_deductions += amount
 

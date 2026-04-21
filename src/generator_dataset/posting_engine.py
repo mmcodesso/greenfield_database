@@ -13,6 +13,7 @@ from generator_dataset.p2p import (
     purchase_invoice_unique_cost_center_map,
 )
 from generator_dataset.o2c import credit_memo_allocation_map
+from generator_dataset.payroll import monthly_direct_labor_reclass_amount
 from generator_dataset.schema import TABLE_COLUMNS
 from generator_dataset.settings import GenerationContext
 from generator_dataset.utils import money, next_id
@@ -31,8 +32,12 @@ SALARY_ACCOUNT_BY_COST_CENTER = {
     "Customer Service": "6040",
     "Research and Development": "6250",
     "Marketing": "6240",
-    "Manufacturing": "6260",
+    "Manufacturing": "1090",
 }
+
+MANUFACTURING_CLEARING_ACCOUNT_NUMBER = "1090"
+MANUFACTURING_VARIANCE_ACCOUNT_NUMBER = "5080"
+NONMANUFACTURING_BURDEN_ACCOUNT_NUMBER = "6060"
 
 
 def account_id_by_number(context: GenerationContext, account_number: str) -> int:
@@ -151,46 +156,86 @@ def post_shipments(context: GenerationContext) -> list[dict[str, Any]]:
     if shipments.empty or shipment_lines.empty:
         return []
 
+    freight_expense_account_id = account_id_by_number(context, "5050")
+    accrued_expenses_account_id = account_id_by_number(context, "2040")
     items = context.tables["Item"].set_index("ItemID").to_dict("index")
     sales_orders = context.tables["SalesOrder"].set_index("SalesOrderID").to_dict("index")
-    shipment_headers = shipments.set_index("ShipmentID").to_dict("index")
+    lines_by_shipment = {int(key): value for key, value in shipment_lines.groupby("ShipmentID")}
     rows: list[dict[str, Any]] = []
 
-    for line in shipment_lines.itertuples(index=False):
-        shipment = shipment_headers[int(line.ShipmentID)]
-        item = items[int(line.ItemID)]
-        sales_order = sales_orders[int(shipment["SalesOrderID"])]
-        voucher_rows = [
-            build_gl_row(
-                context,
-                shipment["ShipmentDate"],
-                int(item["COGSAccountID"]),
-                float(line.ExtendedStandardCost),
-                0.0,
-                "Shipment",
-                shipment["ShipmentNumber"],
-                "Shipment",
-                int(line.ShipmentID),
-                int(line.ShipmentLineID),
-                int(sales_order["CostCenterID"]),
-                "Recognize COGS on shipment",
-            ),
-            build_gl_row(
-                context,
-                shipment["ShipmentDate"],
-                int(item["InventoryAccountID"]),
-                0.0,
-                float(line.ExtendedStandardCost),
-                "Shipment",
-                shipment["ShipmentNumber"],
-                "Shipment",
-                int(line.ShipmentID),
-                int(line.ShipmentLineID),
-                int(sales_order["CostCenterID"]),
-                "Relieve inventory on shipment",
-            ),
-        ]
-        assert_balanced(voucher_rows, shipment["ShipmentNumber"])
+    for shipment in shipments.itertuples(index=False):
+        shipment_line_group = lines_by_shipment.get(int(shipment.ShipmentID))
+        if shipment_line_group is None or shipment_line_group.empty:
+            continue
+        sales_order = sales_orders[int(shipment.SalesOrderID)]
+        cost_center_id = int(sales_order["CostCenterID"])
+        voucher_rows: list[dict[str, Any]] = []
+        for line in shipment_line_group.itertuples(index=False):
+            item = items[int(line.ItemID)]
+            voucher_rows.extend([
+                build_gl_row(
+                    context,
+                    shipment.ShipmentDate,
+                    int(item["COGSAccountID"]),
+                    float(line.ExtendedStandardCost),
+                    0.0,
+                    "Shipment",
+                    shipment.ShipmentNumber,
+                    "Shipment",
+                    int(shipment.ShipmentID),
+                    int(line.ShipmentLineID),
+                    cost_center_id,
+                    "Recognize COGS on shipment",
+                ),
+                build_gl_row(
+                    context,
+                    shipment.ShipmentDate,
+                    int(item["InventoryAccountID"]),
+                    0.0,
+                    float(line.ExtendedStandardCost),
+                    "Shipment",
+                    shipment.ShipmentNumber,
+                    "Shipment",
+                    int(shipment.ShipmentID),
+                    int(line.ShipmentLineID),
+                    cost_center_id,
+                    "Relieve inventory on shipment",
+                ),
+            ])
+
+        freight_cost = 0.0 if pd.isna(shipment.FreightCost) else float(shipment.FreightCost)
+        if freight_cost > 0:
+            voucher_rows.extend([
+                build_gl_row(
+                    context,
+                    shipment.ShipmentDate,
+                    freight_expense_account_id,
+                    freight_cost,
+                    0.0,
+                    "Shipment",
+                    shipment.ShipmentNumber,
+                    "Shipment",
+                    int(shipment.ShipmentID),
+                    None,
+                    cost_center_id,
+                    "Recognize freight-out expense on shipment",
+                ),
+                build_gl_row(
+                    context,
+                    shipment.ShipmentDate,
+                    accrued_expenses_account_id,
+                    0.0,
+                    freight_cost,
+                    "Shipment",
+                    shipment.ShipmentNumber,
+                    "Shipment",
+                    int(shipment.ShipmentID),
+                    None,
+                    cost_center_id,
+                    "Accrue outbound freight payable",
+                ),
+            ])
+        assert_balanced(voucher_rows, shipment.ShipmentNumber)
         rows.extend(voucher_rows)
 
     return rows
@@ -203,6 +248,7 @@ def post_sales_invoices(context: GenerationContext) -> list[dict[str, Any]]:
         return []
 
     ar_account_id = account_id_by_number(context, "1020")
+    freight_revenue_account_id = account_id_by_number(context, "4050")
     tax_account_id = account_id_by_number(context, "2050")
     items = context.tables["Item"].set_index("ItemID").to_dict("index")
     sales_orders = context.tables["SalesOrder"].set_index("SalesOrderID").to_dict("index")
@@ -242,6 +288,23 @@ def post_sales_invoices(context: GenerationContext) -> list[dict[str, Any]]:
                 int(line.SalesInvoiceLineID),
                 int(sales_order["CostCenterID"]),
                 "Recognize sales revenue",
+            ))
+
+        freight_amount = 0.0 if pd.isna(invoice.FreightAmount) else float(invoice.FreightAmount)
+        if freight_amount > 0:
+            voucher_rows.append(build_gl_row(
+                context,
+                invoice.InvoiceDate,
+                freight_revenue_account_id,
+                0.0,
+                freight_amount,
+                "SalesInvoice",
+                invoice.InvoiceNumber,
+                "SalesInvoice",
+                int(invoice.SalesInvoiceID),
+                None,
+                int(sales_order["CostCenterID"]),
+                "Recognize billed freight revenue",
             ))
 
         if float(invoice.TaxAmount) > 0:
@@ -428,6 +491,7 @@ def post_credit_memos(context: GenerationContext) -> list[dict[str, Any]]:
         return []
 
     contra_revenue_account_id = account_id_by_number(context, "4060")
+    freight_revenue_account_id = account_id_by_number(context, "4050")
     tax_account_id = account_id_by_number(context, "2050")
     ar_account_id = account_id_by_number(context, "1020")
     unapplied_cash_account_id = account_id_by_number(context, "2060")
@@ -457,6 +521,24 @@ def post_credit_memos(context: GenerationContext) -> list[dict[str, Any]]:
                 int(line.CreditMemoLineID),
                 int(sales_order["CostCenterID"]),
                 "Record sales return and allowance",
+                int(credit_memo.ApprovedByEmployeeID),
+            ))
+
+        freight_credit_amount = 0.0 if pd.isna(credit_memo.FreightCreditAmount) else float(credit_memo.FreightCreditAmount)
+        if freight_credit_amount > 0:
+            voucher_rows.append(build_gl_row(
+                context,
+                credit_memo.CreditMemoDate,
+                freight_revenue_account_id,
+                freight_credit_amount,
+                0.0,
+                "CreditMemo",
+                credit_memo.CreditMemoNumber,
+                "CreditMemo",
+                int(credit_memo.CreditMemoID),
+                None,
+                int(sales_order["CostCenterID"]),
+                "Reverse billed freight revenue",
                 int(credit_memo.ApprovedByEmployeeID),
             ))
 
@@ -581,9 +663,24 @@ def post_payroll_registers(context: GenerationContext) -> list[dict[str, Any]]:
     withholdings_account_id = account_id_by_number(context, "2031")
     employer_tax_account_id = account_id_by_number(context, "2032")
     benefits_account_id = account_id_by_number(context, "2033")
-    burden_expense_account_id = account_id_by_number(context, "6060")
-    manufacturing_overhead_account_id = account_id_by_number(context, "6270")
+    burden_expense_account_id = account_id_by_number(context, NONMANUFACTURING_BURDEN_ACCOUNT_NUMBER)
+    manufacturing_clearing_account_id = account_id_by_number(context, MANUFACTURING_CLEARING_ACCOUNT_NUMBER)
+    manufacturing_variance_account_id = account_id_by_number(context, MANUFACTURING_VARIANCE_ACCOUNT_NUMBER)
     aggregated_amounts: dict[tuple[int, int, int], dict[str, Any]] = {}
+
+    direct_labor_month_flags: dict[tuple[int, int], bool] = {
+        (year, month): monthly_direct_labor_reclass_amount(context, year, month) > 0
+        for year, month in {
+            fiscal_fields(pd.Timestamp(period["PayDate"]).strftime("%Y-%m-%d"))
+            for period in payroll_period_lookup.values()
+        }
+    }
+
+    def manufacturing_payroll_account_id(posting_date: str, work_order_id: object) -> int:
+        fiscal_year, fiscal_period = fiscal_fields(posting_date)
+        if pd.notna(work_order_id) or direct_labor_month_flags.get((fiscal_year, fiscal_period), False):
+            return manufacturing_clearing_account_id
+        return manufacturing_variance_account_id
 
     def add_summary_amount(
         payroll_period_id: int,
@@ -624,7 +721,7 @@ def post_payroll_registers(context: GenerationContext) -> list[dict[str, Any]]:
             line_type = str(line.LineType)
             if line_type in {"Regular Earnings", "Overtime Earnings", "Salary Earnings", "Bonus"}:
                 if cost_center_name == "Manufacturing":
-                    debit_account_id = account_id_by_number(context, "6260") if pd.notna(line.WorkOrderID) else manufacturing_overhead_account_id
+                    debit_account_id = manufacturing_payroll_account_id(posting_date, line.WorkOrderID)
                 else:
                     debit_account_id = account_id_by_number(context, salary_accounts[int(register.CostCenterID)])
                 add_summary_amount(
@@ -642,7 +739,11 @@ def post_payroll_registers(context: GenerationContext) -> list[dict[str, Any]]:
             elif line_type == "Benefits Deduction":
                 benefits_and_deductions += float(line.Amount)
             elif line_type == "Employer Payroll Tax":
-                expense_account_id = manufacturing_overhead_account_id if cost_center_name == "Manufacturing" else burden_expense_account_id
+                expense_account_id = (
+                    manufacturing_payroll_account_id(posting_date, None)
+                    if cost_center_name == "Manufacturing"
+                    else burden_expense_account_id
+                )
                 add_summary_amount(
                     int(register.PayrollPeriodID),
                     int(register.CostCenterID),
@@ -654,7 +755,11 @@ def post_payroll_registers(context: GenerationContext) -> list[dict[str, Any]]:
                     "Summarize employer payroll tax expense",
                 )
             elif line_type == "Employer Benefits":
-                expense_account_id = manufacturing_overhead_account_id if cost_center_name == "Manufacturing" else burden_expense_account_id
+                expense_account_id = (
+                    manufacturing_payroll_account_id(posting_date, None)
+                    if cost_center_name == "Manufacturing"
+                    else burden_expense_account_id
+                )
                 add_summary_amount(
                     int(register.PayrollPeriodID),
                     int(register.CostCenterID),

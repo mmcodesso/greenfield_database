@@ -42,24 +42,23 @@ These documents are generated for process analysis but do **not** create `GLEntr
 | Opening balance journal | `JournalEntry` plus seeded GL rows | `2026-01-01` | Asset accounts and selected opening balances | Liability, equity, contra-asset balances, and retained earnings plug |
 | Rent | `JournalEntry` plus seeded GL rows | First business day of month | `6070` Warehouse Rent or `6080` Office Rent | `1010` Cash and Cash Equivalents |
 | Utilities | `JournalEntry` plus seeded GL rows | Last business day of month | `6090` Utilities Expense | `1010` Cash and Cash Equivalents |
-| Factory overhead | `JournalEntry` plus seeded GL rows | Last business day of month | `6270` Factory Overhead Expense | `1010` Cash and Cash Equivalents |
-| Direct labor reclass | `JournalEntry` plus seeded GL rows | Last business day of month | `1090` Manufacturing Cost Clearing | `6260` Salaries Expense - Manufacturing |
-| Manufacturing overhead reclass | `JournalEntry` plus seeded GL rows | Last business day of month | `1090` Manufacturing Cost Clearing | `6270` Factory Overhead Expense |
+| Factory overhead | `JournalEntry` plus seeded GL rows | Last business day of month | `1090` Manufacturing Cost Clearing, or `5080` Manufacturing Variance when the month has no capitalizable direct labor | `1010` Cash and Cash Equivalents |
 | Depreciation | `JournalEntry` plus seeded GL rows | Last calendar day of month | `6130` Depreciation Expense | accumulated depreciation accounts |
 | Month-end accrual | `JournalEntry` plus seeded GL rows | Last business day of month | selected operating expenses | `2040` Accrued Expenses |
 | Accrual adjustment | `JournalEntry` plus seeded GL rows | First business day on or after the linked invoice approval date for invoice-linked residuals, or a rare later cleanup date for stale uninvoiced accruals | `2040` Accrued Expenses | original accrued expense account |
-| Shipment | `Shipment`, `ShipmentLine` | `ShipmentDate` | Item COGS account | Item inventory account |
-| Sales invoice | `SalesInvoice`, `SalesInvoiceLine` | `InvoiceDate` | Accounts receivable | Item revenue account and sales tax payable |
+| Freight settlement | `JournalEntry` plus seeded GL rows | First business day of month | `2040` Accrued Expenses | `1010` Cash and Cash Equivalents |
+| Shipment | `Shipment`, `ShipmentLine` | `ShipmentDate` | Item COGS account and `5050` Freight-Out Expense | Item inventory account and `2040` Accrued Expenses for outbound freight |
+| Sales invoice | `SalesInvoice`, `SalesInvoiceLine` | `InvoiceDate` | Accounts receivable | Item revenue account, `4050` Freight Revenue, and sales tax payable |
 | Cash receipt | `CashReceipt` | `ReceiptDate` | Cash | `2060` Customer Deposits and Unapplied Cash |
 | Cash receipt application | `CashReceiptApplication` | `ApplicationDate` | `2060` Customer Deposits and Unapplied Cash | Accounts receivable |
 | Sales return | `SalesReturn`, `SalesReturnLine` | `ReturnDate` | Item inventory account | Item COGS account |
-| Credit memo | `CreditMemo`, `CreditMemoLine` | `CreditMemoDate` | `4060` Sales Returns and Allowances and sales tax payable reversal | Accounts receivable or `2060` Customer Deposits and Unapplied Cash |
+| Credit memo | `CreditMemo`, `CreditMemoLine` | `CreditMemoDate` | `4060` Sales Returns and Allowances, optional `4050` Freight Revenue reversal, and sales tax payable reversal | Accounts receivable or `2060` Customer Deposits and Unapplied Cash |
 | Customer refund | `CustomerRefund` | `RefundDate` | `2060` Customer Deposits and Unapplied Cash | Cash |
 | Goods receipt | `GoodsReceipt`, `GoodsReceiptLine` | `ReceiptDate` | Item inventory account | `2020` Goods Received Not Invoiced |
 | Material issue | `MaterialIssue`, `MaterialIssueLine` | `IssueDate` | `1046` Inventory - Work in Process | `1045` Inventory - Materials and Packaging |
 | Production completion | `ProductionCompletion`, `ProductionCompletionLine` | `CompletionDate` | `1040` Inventory - Finished Goods | `1046` Inventory - Work in Process and `1090` Manufacturing Cost Clearing |
 | Work-order close | `WorkOrderClose` | `CloseDate` | or credit `5080` Manufacturing Variance depending on sign | offset `1046` or `1090` residual balances |
-| Payroll register | `PayrollRegister`, `PayrollRegisterLine` | `ApprovedDate` | Salary and wage expense by cost center, `6060` nonmanufacturing payroll burden, `6270` manufacturing-indirect burden | `2030` Accrued Payroll, `2031` Payroll Tax Withholdings Payable, `2032` Employer Payroll Taxes Payable, `2033` Employee Benefits and Other Deductions Payable |
+| Payroll register | `PayrollRegister`, `PayrollRegisterLine` | `ApprovedDate` | Salary and wage expense by nonmanufacturing cost center, `6060` nonmanufacturing payroll burden, `1090` capitalizable manufacturing labor plus related burden, and `5080` noncapitalizable manufacturing payroll in no-direct-labor months | `2030` Accrued Payroll, `2031` Payroll Tax Withholdings Payable, `2032` Employer Payroll Taxes Payable, `2033` Employee Benefits and Other Deductions Payable |
 | Payroll payment | `PayrollPayment` | `PaymentDate` | `2030` Accrued Payroll | Cash |
 | Payroll liability remittance | `PayrollLiabilityRemittance` | `RemittanceDate` | `2031`, `2032`, or `2033` | Cash |
 | Purchase invoice | `PurchaseInvoice`, `PurchaseInvoiceLine` | `ApprovedDate` | For receipt-matched inventory lines: GRNI cleared at matched receipt-line basis, purchase variance when needed, and nonrecoverable tax to variance. For accrued-service lines: `2040` up to the linked accrued amount and expense for any excess above the estimate; any invoice shortfall is reversed later through a linked accrual adjustment. | Accounts payable and purchase variance when needed |
@@ -86,7 +85,9 @@ These documents are generated for process analysis but do **not** create `GLEntr
 | `2040` | Accrued expenses |
 | `2050` | Sales tax payable |
 | `2060` | Customer deposits and unapplied cash |
+| `4050` | Freight revenue |
 | `4060` | Sales returns and allowances |
+| `5050` | Freight-out expense |
 | `5080` | Manufacturing variance |
 | `3030` | Retained earnings |
 | `5060` | Purchase price variance |
