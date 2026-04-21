@@ -34,7 +34,7 @@ profiles:
     terminated_employee_on_payroll_per_year: 1
     terminated_employee_approval_per_year: 1
     inactive_employee_time_or_labor_per_year: 1
-    duplicate_executive_title_assignment_per_year: 1
+    duplicate_executive_title_assignment_per_year: 0
     missing_item_catalog_attribute_per_year: 1
     discontinued_item_in_new_activity_per_year: 1
     approval_above_authority_limit_per_year: 2
