@@ -12,6 +12,7 @@ except ModuleNotFoundError:
     Faker = None
 
 from generator_dataset.accrual_catalog import ACCRUAL_SERVICE_ITEMS
+from generator_dataset.fixed_assets import capex_item_definitions
 from generator_dataset.schema import TABLE_COLUMNS
 from generator_dataset.state_cache import drop_context_attributes, get_or_build_cache
 from generator_dataset.settings import GenerationContext
@@ -1482,6 +1483,14 @@ def material_or_packaging_attributes(item_group: str, sequence_number: int, item
     }
 
 
+def _capex_seed_standard_cost(item_code: str) -> float:
+    plan = capex_item_definitions()
+    item = plan[str(item_code)]
+    useful_life_months = int(item.get("useful_life_months", 0) or 0)
+    base_cost = 5000.0 if useful_life_months <= 0 else float(useful_life_months) * 250.0
+    return money(base_cost)
+
+
 def generate_items(context: GenerationContext) -> None:
     if context.tables["Account"].empty:
         raise ValueError("Load accounts before items.")
@@ -1638,6 +1647,45 @@ def generate_items(context: GenerationContext) -> None:
 
     if service_rows:
         items = pd.concat([items, pd.DataFrame(service_rows, columns=TABLE_COLUMNS["Item"])], ignore_index=True)
+
+    capex_rows = []
+    for item_definition in capex_item_definitions().values():
+        launch_date = launch_date_for_lifecycle(context, rng, "Core", allow_in_range_launch=False)
+        capex_rows.append({
+            "ItemID": next_id(context, "Item"),
+            "ItemCode": str(item_definition["item_code"]),
+            "ItemName": str(item_definition["item_name"]),
+            "ItemGroup": str(item_definition.get("item_group", "Capex")),
+            "ItemType": "Capex",
+            "StandardCost": _capex_seed_standard_cost(str(item_definition["item_code"])),
+            "ListPrice": None,
+            "UnitOfMeasure": str(item_definition.get("unit_of_measure", "Each")),
+            "SupplyMode": "Purchased",
+            "ProductionLeadTimeDays": 0,
+            "StandardLaborHoursPerUnit": 0.0,
+            "StandardDirectLaborCost": 0.0,
+            "StandardVariableOverheadCost": 0.0,
+            "StandardFixedOverheadCost": 0.0,
+            "StandardConversionCost": 0.0,
+            "RoutingID": None,
+            "InventoryAccountID": account_id_by_number(context, str(item_definition["asset_account_number"])),
+            "RevenueAccountID": None,
+            "COGSAccountID": None,
+            "PurchaseVarianceAccountID": account_id_by_number(context, "5060"),
+            "TaxCategory": "Exempt",
+            "CollectionName": None,
+            "StyleFamily": None,
+            "PrimaryMaterial": None,
+            "Finish": None,
+            "Color": None,
+            "SizeDescriptor": None,
+            "LifecycleStatus": "Core",
+            "LaunchDate": pd.Timestamp(launch_date).strftime("%Y-%m-%d"),
+            "IsActive": 1,
+        })
+
+    if capex_rows:
+        items = pd.concat([items, pd.DataFrame(capex_rows, columns=TABLE_COLUMNS["Item"])], ignore_index=True)
 
     context.tables["Item"] = items[TABLE_COLUMNS["Item"]]
     clear_master_data_caches(context)

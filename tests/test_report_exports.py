@@ -617,3 +617,26 @@ def test_curated_reports_export_expected_columns(
             report_root / report.area / report.process_group / report.slug / f"{report.slug}.csv"
         )
         assert csv_frame.columns.tolist() == expected_columns
+
+
+def test_budget_bridge_queries_assign_period_index_after_distinct_periods() -> None:
+    expected_fragment = """ROW_NUMBER() OVER (ORDER BY FiscalYear, FiscalPeriod) AS PeriodIndex
+    FROM (
+        SELECT DISTINCT
+            FiscalYear,
+            FiscalPeriod
+        FROM GLEntry
+    ) AS """
+    invalid_fragment = """SELECT DISTINCT
+        FiscalYear,
+        FiscalPeriod,
+        ROW_NUMBER() OVER (ORDER BY FiscalYear, FiscalPeriod) AS PeriodIndex
+    FROM GLEntry"""
+
+    for query_path in [
+        Path("queries/financial/52_budget_vs_actual_statement_bridge_monthly.sql"),
+        Path("queries/financial/53_budget_vs_actual_working_capital_and_cash_bridge.sql"),
+    ]:
+        query_text = query_path.read_text(encoding="utf-8")
+        assert expected_fragment in query_text
+        assert invalid_fragment not in query_text

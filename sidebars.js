@@ -90,6 +90,7 @@ const sidebars = {
               items: [
                 "analytics/cases/working-capital-and-cash-conversion-case",
                 "analytics/cases/financial-statement-bridge-case",
+                "analytics/cases/capex-fixed-asset-lifecycle-case",
                 "analytics/cases/pricing-and-margin-governance-case",
               ],
             },

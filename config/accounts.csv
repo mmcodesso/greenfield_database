@@ -86,7 +86,7 @@ AccountID,AccountNumber,AccountName,AccountType,AccountSubType,ParentAccountID,N
 90,6250,Salaries Expense - Research and Development,Expense,Operating Expense,57,Debit,1
 80,7000,Other Income and Expense,Revenue,Header,,Credit,0
 81,7010,Interest Income,Revenue,Other Income,80,Credit,0
-82,7020,Gain or Loss on Asset Disposal,Revenue,Other Income or Expense,80,Credit,0
+82,7020,Gain or Loss on Asset Disposal,Revenue,Other Income or Expense,80,Credit,1
 83,7030,Interest Expense,Expense,Other Expense,80,Debit,1
 84,7040,Foreign Exchange Gain or Loss,Revenue,Other Income or Expense,80,Credit,0
 85,8000,Closing and Summary,Equity,Header,,Credit,1
@@ -97,3 +97,5 @@ AccountID,AccountNumber,AccountName,AccountType,AccountSubType,ParentAccountID,N
 93,5080,Manufacturing Variance,Expense,COGS,49,Debit,1
 94,6260,Salaries Expense - Manufacturing,Expense,Operating Expense,57,Debit,0
 95,6270,Factory Overhead Expense,Expense,Operating Expense,57,Debit,0
+99,1185,Manufacturing Equipment,Asset,Fixed Asset,11,Debit,1
+100,1186,Accumulated Depreciation - Manufacturing Equipment,Asset,Contra Fixed Asset,11,Credit,1

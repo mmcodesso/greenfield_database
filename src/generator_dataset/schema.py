@@ -160,6 +160,28 @@ TABLE_COLUMNS = {
         "PurchaseInvoiceID", "Amount", "PaymentMethod", "CheckNumber",
         "ApprovedByEmployeeID", "ClearedDate",
     ],
+    "FixedAsset": [
+        "FixedAssetID", "AssetCode", "AssetDescription", "AssetCategory", "BehaviorGroup",
+        "ItemID", "AssetAccountID", "AccumulatedDepreciationAccountID", "DepreciationDebitAccountID",
+        "CostCenterID", "WarehouseID", "WorkCenterID", "InServiceDate", "UsefulLifeMonths",
+        "OriginalCost", "OpeningAccumulatedDepreciation", "ResidualValue", "Status", "DisposalDate",
+    ],
+    "FixedAssetEvent": [
+        "FixedAssetEventID", "FixedAssetID", "EventType", "EventDate", "Amount",
+        "PurchaseRequisitionID", "PurchaseOrderID", "GoodsReceiptID", "PurchaseInvoiceID",
+        "PurchaseInvoiceLineID", "DisbursementID", "DebtAgreementID", "JournalEntryID",
+        "FinancingType", "ProceedsAmount", "Description",
+    ],
+    "DebtAgreement": [
+        "DebtAgreementID", "AgreementNumber", "FixedAssetID", "OriginationDate", "PrincipalAmount",
+        "AnnualInterestRate", "TermMonths", "PaymentStartDate", "ScheduledPaymentAmount",
+        "NotesPayableAccountID", "InterestExpenseAccountID", "Status",
+    ],
+    "DebtScheduleLine": [
+        "DebtScheduleLineID", "DebtAgreementID", "PaymentSequence", "PaymentDate",
+        "BeginningPrincipal", "PrincipalAmount", "InterestAmount", "PaymentAmount",
+        "EndingPrincipal", "JournalEntryID", "Status",
+    ],
     "Item": [
         "ItemID", "ItemCode", "ItemName", "ItemGroup", "ItemType", "StandardCost",
         "ListPrice", "UnitOfMeasure", "SupplyMode", "ProductionLeadTimeDays",
@@ -358,6 +380,7 @@ SQLITE_INDEXES = {
     ),
     "GLEntry": (
         _sqlite_index("ix_glentry_accountid_fiscalyear_fiscalperiod", "AccountID", "FiscalYear", "FiscalPeriod"),
+        _sqlite_index("ix_glentry_fiscalyear_fiscalperiod_accountid", "FiscalYear", "FiscalPeriod", "AccountID"),
         _sqlite_index("ix_glentry_sourcedocument_trace", "SourceDocumentType", "SourceDocumentID", "SourceLineID"),
     ),
     "SalesOrder": (
@@ -429,6 +452,21 @@ SQLITE_INDEXES = {
     "DisbursementPayment": (
         _sqlite_index("ix_disbursementpayment_purchaseinvoiceid_supplierid", "PurchaseInvoiceID", "SupplierID"),
         _sqlite_index("ux_disbursementpayment_paymentnumber", "PaymentNumber", unique=True),
+    ),
+    "FixedAsset": (
+        _sqlite_index("ux_fixedasset_assetcode", "AssetCode", unique=True),
+        _sqlite_index("ix_fixedasset_behaviorgroup_status", "BehaviorGroup", "Status"),
+    ),
+    "FixedAssetEvent": (
+        _sqlite_index("ix_fixedassetevent_fixedassetid_eventdate", "FixedAssetID", "EventDate"),
+        _sqlite_index("ix_fixedassetevent_purchaseinvoiceid", "PurchaseInvoiceID"),
+    ),
+    "DebtAgreement": (
+        _sqlite_index("ux_debtagreement_agreementnumber", "AgreementNumber", unique=True),
+        _sqlite_index("ix_debtagreement_fixedassetid", "FixedAssetID"),
+    ),
+    "DebtScheduleLine": (
+        _sqlite_index("ix_debtscheduleline_agreementid_paymentdate", "DebtAgreementID", "PaymentDate"),
     ),
     "Item": (
         _sqlite_index("ux_item_itemcode", "ItemCode", unique=True),

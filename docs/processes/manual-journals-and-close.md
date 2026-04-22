@@ -13,7 +13,7 @@ description: Learn the manual journals and close cycle in the synthetic accounti
 
 ## Business Storyline
 
-The dataset includes both operational activity and finance-controlled journal activity. Finance records the recurring and period-end entries that students expect in a real accounting system: rent, utilities, depreciation, month-end accruals, accrual adjustments, factory-overhead journals, and year-end close.
+The dataset includes both operational activity and finance-controlled journal activity. Finance records the recurring and period-end entries that students expect in a real accounting system: rent, utilities, depreciation, month-end accruals, accrual adjustments, factory-overhead journals, fixed-asset debt reclasses, debt payments, asset disposals, and year-end close.
 
 This process shows what happens outside the normal document chains. Students can compare operational postings from shipments, receipts, payroll, and purchasing with finance-controlled entries that start directly in the journal process. The most important cross-process bridge is accrued-expense settlement, where a finance estimate is later cleared operationally through AP.
 
@@ -51,6 +51,7 @@ Read this page in three passes: first recurring journals, then the accrual-settl
 |---|---|---|---|
 | Recurring finance journals | `JournalEntry`, `GLEntry`, `Account`, `CostCenter`, `Employee` | One finance-controlled journal header with posted ledger detail | Review recurring expenses, approvals, and posted accounting effect |
 | Manufacturing-support journals | `JournalEntry`, `GLEntry`, `Account` | Factory overhead posted directly to manufacturing clearing | Connect finance-controlled journals to manufacturing costing support |
+| Fixed-asset and debt journals | `JournalEntry`, `GLEntry`, `FixedAsset`, `FixedAssetEvent`, `DebtAgreement`, `DebtScheduleLine` | Depreciation, debt reclass, note payment, and disposal events that complete the asset lifecycle | Tie the asset register back to manufacturing cost, operating expense, financing cash, and gain-or-loss accounting |
 | Accrual settlement bridge | `JournalEntry`, `PurchaseInvoice`, `PurchaseInvoiceLine`, `DisbursementPayment` | Prior expense estimate and later AP settlement path | Analyze accrued-expense roll-forward and later supplier settlement |
 | Boundary entries | `JournalEntry`, `GLEntry`, `Account` | Opening balance and year-end close journal activity | Understand the start and end boundaries of the reporting cycle |
 
@@ -60,6 +61,10 @@ Read this page in three passes: first recurring journals, then the accrual-settl
 |---|---|---|
 | Recurring operating journal | Finance records a monthly expense or estimate directly in the journal cycle | Debit expense or clearing accounts and credit cash, accrued expenses, or other offset accounts depending on entry type |
 | Manufacturing-support journal | Finance records factory overhead directly into manufacturing costing support | Debit manufacturing clearing, or manufacturing variance when the month has no capitalizable direct labor, and credit cash |
+| Debt reclass | Finance converts a note-financed CAPEX invoice from AP into notes payable | Debit `2010` Accounts Payable and credit `2110` Notes Payable |
+| Debt principal payment | Finance records scheduled principal payment on a CAPEX note | Debit `2110` Notes Payable and credit cash |
+| Interest payment | Finance records the interest portion of a CAPEX note payment | Debit `7030` Interest Expense and credit cash |
+| Asset disposal | Finance removes the disposed asset, clears accumulated depreciation, and records any proceeds or gain or loss | Debit cash proceeds and accumulated depreciation, credit the gross asset account, and plug the residual to `7020` Gain or Loss on Asset Disposal |
 | Accrual adjustment | Finance reverses the residual from an accrual after a linked supplier invoice or partially cleans up a stale uninvoiced estimate | Debit `2040` Accrued Expenses and credit the original accrued expense account |
 | Direct service supplier invoice | AP clears a prior accrual through a later service invoice | Debit `2040` up to the estimate, expense any excess above estimate, and credit AP |
 | Disbursement payment | Treasury clears the AP created by the service invoice | Debit AP and credit cash |
@@ -72,6 +77,7 @@ Read this page in three passes: first recurring journals, then the accrual-settl
 - `GLEntry` is the posted detail layer and the main bridge into financial reporting and control-account analysis.
 - `PurchaseInvoiceLine.AccrualJournalEntryID` is the authoritative link from a direct service invoice line back to the original accrual.
 - `PurchaseInvoiceLine.GoodsReceiptLineID` belongs to receipt-matched inventory or material invoicing and should not be confused with accrued-service settlement.
+- `FixedAssetEvent.JournalEntryID` and `DebtScheduleLine.JournalEntryID` extend the journal trail into note-financed CAPEX, monthly debt payments, and disposal accounting.
 - `ReversesJournalEntryID` is used on `Accrual Adjustment` cleanup activity that points back to the original accrual.
 - Payroll is operationally modeled through payroll tables, so payroll accrual and settlement journals are not part of this recurring-journal set.
 - For raw multi-year income-statement analysis, filter out the year-end close entry types.
@@ -226,14 +232,17 @@ flowchart LR
 
 - Which journal types recur each month?
 - Which recurring journal categories are cash-based versus accrued?
+- Which finance-controlled journals move CAPEX from AP into notes payable, then split future note cash into principal and interest?
 - Which accrued expenses later clear through AP through supplier invoicing and payment?
 - Which entries support manufacturing cost accounting even though they are journal-based?
+- Which disposal journals removed gross cost and accumulated depreciation cleanly?
 - How much finance-controlled journal activity exists beside operational postings?
 - How should year-end close entries be treated in multi-year income-statement analysis?
 
 ## Next Steps
 
 - Read [P2P](p2p.md) for the supplier-invoice and disbursement flow that clears many accrued expenses.
+- Read [CAPEX and Fixed Asset Lifecycle Case](../analytics/cases/capex-fixed-asset-lifecycle-case.md) when you want the fixed-asset subledger, note schedule, and manual journal layer in one walkthrough.
 - Read [Payroll](payroll.md) for the operational payroll cycle that sits outside this finance-controlled journal family.
 - Read [GLEntry Posting Reference](../reference/posting.md) for the detailed posting logic behind recurring journals, accruals, and close.
 - Read [Financial Analytics](../analytics/financial.md) for journal, accrual, and close-cycle analysis examples.

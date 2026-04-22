@@ -5,12 +5,17 @@ from collections import defaultdict
 import pandas as pd
 import pytest
 
-from generator_dataset.budgets import SUMMARY_BUDGET_CATEGORIES, _opening_balance_map, budget_horizon_months
-from generator_dataset.fixed_assets import depreciable_fixed_asset_profiles
+from generator_dataset.budgets import (
+    SUMMARY_BUDGET_CATEGORIES,
+    _budget_monthly_capex_by_account,
+    _budget_monthly_depreciation_rollforward,
+    _budget_monthly_note_activity,
+    _opening_balance_map,
+    budget_horizon_months,
+)
 from generator_dataset.journals import (
     PAYROLL_BURDEN_RATE,
     monthly_accrual_amount,
-    monthly_depreciation_amount,
     monthly_rent_amount,
     monthly_utilities_amount,
 )
@@ -353,6 +358,7 @@ def test_budget_payroll_and_recurring_expense_drivers_follow_source_formulas(pha
                     "Recurring Utilities Driver",
                     "Recurring Accrual Driver",
                     "Depreciation Schedule",
+                    "Debt Interest Schedule",
                 }
             )
             & budget_lines["BudgetCategory"].astype(str).eq("Operating Expense")
@@ -363,11 +369,13 @@ def test_budget_payroll_and_recurring_expense_drivers_follow_source_formulas(pha
     )
 
     expected_recurring_rows: list[dict[str, float | int | str]] = []
-    monthly_depreciation_total = round(
-        sum(monthly_depreciation_amount(asset_account_number) for asset_account_number in depreciable_fixed_asset_profiles()),
-        2,
-    )
     for fiscal_year, fiscal_month in budget_horizon_months(context):
+        month_start = pd.Timestamp(f"{fiscal_year}-{fiscal_month:02d}-01")
+        operating_depreciation_total = round(
+            float(_budget_monthly_depreciation_rollforward(context, month_start)["debit_by_account"].get("6130", 0.0)),
+            2,
+        )
+        interest_expense_total = round(float(_budget_monthly_note_activity(month_start)["interest_paid"]), 2)
         expected_recurring_rows.extend(
             [
                 {
@@ -402,13 +410,20 @@ def test_budget_payroll_and_recurring_expense_drivers_follow_source_formulas(pha
                     "FiscalYear": fiscal_year,
                     "Month": fiscal_month,
                     "DriverType": "Depreciation Schedule",
-                    "BudgetAmount": monthly_depreciation_total,
+                    "BudgetAmount": operating_depreciation_total,
+                },
+                {
+                    "FiscalYear": fiscal_year,
+                    "Month": fiscal_month,
+                    "DriverType": "Debt Interest Schedule",
+                    "BudgetAmount": interest_expense_total,
                 },
             ]
         )
 
     expected_recurring = (
         pd.DataFrame(expected_recurring_rows)
+        .loc[lambda frame: frame["BudgetAmount"].astype(float).round(2).ne(0)]
         .sort_values(["FiscalYear", "Month", "DriverType"])
         .reset_index(drop=True)
     )
@@ -417,7 +432,7 @@ def test_budget_payroll_and_recurring_expense_drivers_follow_source_formulas(pha
     pd.testing.assert_frame_equal(recurring_totals, expected_recurring)
 
 
-def test_budget_balance_sheet_rollforwards_reconcile_to_net_income_and_capex_policy(phase2_budget_context) -> None:
+def test_budget_balance_sheet_rollforwards_reconcile_to_net_income_and_capex_plan(phase2_budget_context) -> None:
     context = phase2_budget_context
     budget_lines = _budget_lines_with_accounts(context)
 
@@ -442,7 +457,7 @@ def test_budget_balance_sheet_rollforwards_reconcile_to_net_income_and_capex_pol
     )
 
     balance_sheet = budget_lines[budget_lines["BudgetCategory"].astype(str).eq("Balance Sheet")].copy()
-    tracked_account_numbers = [1010, 1020, 1040, 1045, 2010, 2030, 2040]
+    tracked_account_numbers = [1010, 1020, 1040, 1045, 2010, 2030, 2040, 2110]
     ending_balances = (
         balance_sheet[balance_sheet["AccountNumber"].astype(int).isin(tracked_account_numbers)][
             ["FiscalYear", "Month", "AccountNumber", "BudgetAmount"]
@@ -463,38 +478,38 @@ def test_budget_balance_sheet_rollforwards_reconcile_to_net_income_and_capex_pol
         ][["FiscalYear", "Month", "BudgetAmount"]]
         .groupby(["FiscalYear", "Month"], as_index=False, dropna=False)["BudgetAmount"]
         .sum()
-        .rename(columns={"BudgetAmount": "DepreciationExpense"})
+        .rename(columns={"BudgetAmount": "OperatingDepreciationExpense"})
     )
-    maintenance_capex_ending = (
+    capex_rollforward_ending = (
         balance_sheet[
-            balance_sheet["DriverType"].astype(str).eq("Maintenance Capex Rollforward")
+            balance_sheet["DriverType"].astype(str).eq("CAPEX Plan Rollforward")
         ][["FiscalYear", "Month", "BudgetAmount"]]
         .groupby(["FiscalYear", "Month"], as_index=False, dropna=False)["BudgetAmount"]
         .sum()
-        .rename(columns={"BudgetAmount": "MaintenanceCapexEndingBalance"})
+        .rename(columns={"BudgetAmount": "CapexEndingBalance"})
         .sort_values(["FiscalYear", "Month"])
         .reset_index(drop=True)
     )
     opening_balance_lookup = _opening_balance_map(context)
-    opening_maintenance_capex_balance = round(
+    opening_capex_balance = round(
         sum(
             float(amount)
             for account_number, amount in opening_balance_lookup.items()
-            if str(account_number) in {"1110", "1120", "1130", "1140"}
+            if str(account_number) in {"1110", "1120", "1130", "1140", "1185"}
         ),
         2,
     )
-    maintenance_capex = maintenance_capex_ending.copy()
-    maintenance_capex["MaintenanceCapex"] = (
-        maintenance_capex["MaintenanceCapexEndingBalance"].astype(float).diff().fillna(
-            maintenance_capex["MaintenanceCapexEndingBalance"].astype(float) - opening_maintenance_capex_balance
+    capex_rollforward = capex_rollforward_ending.copy()
+    capex_rollforward["CapexRollforwardChange"] = (
+        capex_rollforward["CapexEndingBalance"].astype(float).diff().fillna(
+            capex_rollforward["CapexEndingBalance"].astype(float) - opening_capex_balance
         )
     ).round(2)
-    maintenance_capex = maintenance_capex[["FiscalYear", "Month", "MaintenanceCapex"]]
+    capex_rollforward = capex_rollforward[["FiscalYear", "Month", "CapexRollforwardChange"]]
 
     accumulated_depreciation_ending = (
         balance_sheet[
-            balance_sheet["DriverType"].astype(str).eq("Depreciation Rollforward")
+            balance_sheet["DriverType"].astype(str).eq("Accumulated Depreciation Rollforward")
         ][["FiscalYear", "Month", "BudgetAmount"]]
         .groupby(["FiscalYear", "Month"], as_index=False, dropna=False)["BudgetAmount"]
         .sum()
@@ -502,12 +517,69 @@ def test_budget_balance_sheet_rollforwards_reconcile_to_net_income_and_capex_pol
         .sort_values(["FiscalYear", "Month"])
         .reset_index(drop=True)
     )
+    debt_rollforward_ending = (
+        balance_sheet[
+            balance_sheet["DriverType"].astype(str).eq("Debt Schedule Rollforward")
+        ][["FiscalYear", "Month", "BudgetAmount"]]
+        .groupby(["FiscalYear", "Month"], as_index=False, dropna=False)["BudgetAmount"]
+        .sum()
+        .rename(columns={"BudgetAmount": "DebtEndingBalance"})
+        .sort_values(["FiscalYear", "Month"])
+        .reset_index(drop=True)
+    )
+    opening_notes_payable_balance = round(float(opening_balance_lookup.get("2110", 0.0)), 2)
+    debt_rollforward = debt_rollforward_ending.copy()
+    debt_rollforward["DebtRollforwardChange"] = (
+        debt_rollforward["DebtEndingBalance"].astype(float).diff().fillna(
+            debt_rollforward["DebtEndingBalance"].astype(float) - opening_notes_payable_balance
+        )
+    ).round(2)
+    debt_rollforward = debt_rollforward[["FiscalYear", "Month", "DebtRollforwardChange"]]
+
+    capex_and_note_rows: list[dict[str, float | int]] = []
+    total_depreciation_rows: list[dict[str, float | int]] = []
+    for fiscal_year, fiscal_month in budget_horizon_months(context):
+        month_start = pd.Timestamp(f"{fiscal_year}-{fiscal_month:02d}-01")
+        capex_additions_by_account, cash_capex_total, _ = _budget_monthly_capex_by_account(month_start)
+        note_activity = _budget_monthly_note_activity(month_start)
+        depreciation_rollforward = _budget_monthly_depreciation_rollforward(context, month_start)
+        capex_and_note_rows.append(
+            {
+                "FiscalYear": fiscal_year,
+                "Month": fiscal_month,
+                "TotalCapexAdditions": round(sum(float(amount) for amount in capex_additions_by_account.values()), 2),
+                "CashCapex": round(float(cash_capex_total), 2),
+                "PrincipalBorrowed": round(float(note_activity["principal_borrowed"]), 2),
+                "PrincipalPaid": round(float(note_activity["principal_paid"]), 2),
+            }
+        )
+        total_depreciation_rows.append(
+            {
+                "FiscalYear": fiscal_year,
+                "Month": fiscal_month,
+                "TotalBudgetDepreciation": round(
+                    sum(float(amount) for amount in depreciation_rollforward["accumulated_by_account"].values()),
+                    2,
+                ),
+            }
+        )
+    capex_and_note_activity = pd.DataFrame(capex_and_note_rows)
+    total_budget_depreciation = pd.DataFrame(total_depreciation_rows)
+
     cash_rollforward = (
         ending_balance_pivot
         .merge(monthly_income[["FiscalYear", "Month", "NetIncome"]], on=["FiscalYear", "Month"], how="left")
         .merge(monthly_depreciation, on=["FiscalYear", "Month"], how="left")
-        .merge(maintenance_capex, on=["FiscalYear", "Month"], how="left")
-        .fillna({"NetIncome": 0.0, "DepreciationExpense": 0.0, "MaintenanceCapex": 0.0})
+        .merge(capex_and_note_activity, on=["FiscalYear", "Month"], how="left")
+        .fillna(
+            {
+                "NetIncome": 0.0,
+                "OperatingDepreciationExpense": 0.0,
+                "CashCapex": 0.0,
+                "PrincipalBorrowed": 0.0,
+                "PrincipalPaid": 0.0,
+            }
+        )
         .sort_values(["FiscalYear", "Month"])
         .reset_index(drop=True)
     )
@@ -527,14 +599,16 @@ def test_budget_balance_sheet_rollforwards_reconcile_to_net_income_and_capex_pol
         expected_cash = round(
             previous_balances[1010]
             + float(row["NetIncome"])
-            + float(row["DepreciationExpense"])
+            + float(row["OperatingDepreciationExpense"])
             - accounts_receivable_change
             - finished_goods_change
             - materials_change
             + accounts_payable_change
             + accrued_payroll_change
             + accrued_expenses_change
-            - float(row["MaintenanceCapex"]),
+            - float(row["CashCapex"])
+            + float(row["PrincipalBorrowed"])
+            - float(row["PrincipalPaid"]),
             2,
         )
         assert ending_cash == expected_cash
@@ -546,6 +620,7 @@ def test_budget_balance_sheet_rollforwards_reconcile_to_net_income_and_capex_pol
             2010: round(float(row.get(2010, 0.0)), 2),
             2030: round(float(row.get(2030, 0.0)), 2),
             2040: round(float(row.get(2040, 0.0)), 2),
+            2110: round(float(row.get(2110, 0.0)), 2),
         }
 
     retained_earnings_account_id = int(
@@ -585,14 +660,16 @@ def test_budget_balance_sheet_rollforwards_reconcile_to_net_income_and_capex_pol
         )
         assert retained_earnings_increase == annual_income_lookup[fiscal_year - 1]
 
-    comparison = maintenance_capex.merge(monthly_depreciation, on=["FiscalYear", "Month"], how="inner")
-    assert not comparison.empty
-    assert comparison["MaintenanceCapex"].round(2).equals(comparison["DepreciationExpense"].round(2))
+    capex_comparison = capex_rollforward.merge(capex_and_note_activity, on=["FiscalYear", "Month"], how="inner")
+    assert not capex_comparison.empty
+    assert capex_comparison["CapexRollforwardChange"].round(2).equals(
+        capex_comparison["TotalCapexAdditions"].round(2)
+    )
     opening_accumulated_depreciation_balance = round(
         sum(
             float(amount)
             for account_number, amount in opening_balance_lookup.items()
-            if str(account_number) in {"1150", "1160", "1170"}
+            if str(account_number) in {"1150", "1160", "1170", "1186"}
         ),
         2,
     )
@@ -604,10 +681,15 @@ def test_budget_balance_sheet_rollforwards_reconcile_to_net_income_and_capex_pol
         )
     ).round(2)
     depreciation_comparison = accumulated_depreciation_change.merge(
-        monthly_depreciation,
+        total_budget_depreciation,
         on=["FiscalYear", "Month"],
         how="inner",
     )
     assert depreciation_comparison["DepreciationRollforwardChange"].round(2).equals(
-        depreciation_comparison["DepreciationExpense"].round(2)
+        depreciation_comparison["TotalBudgetDepreciation"].round(2)
+    )
+
+    debt_comparison = debt_rollforward.merge(capex_and_note_activity, on=["FiscalYear", "Month"], how="inner")
+    assert debt_comparison["DebtRollforwardChange"].round(2).equals(
+        (debt_comparison["PrincipalBorrowed"] - debt_comparison["PrincipalPaid"]).round(2)
     )

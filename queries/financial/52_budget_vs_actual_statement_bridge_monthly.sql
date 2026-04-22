@@ -138,11 +138,16 @@ budget_pnl AS (
     GROUP BY bl.FiscalYear, bl.Month
 ),
 actual_balance_periods AS (
-    SELECT DISTINCT
+    SELECT
         FiscalYear,
         FiscalPeriod,
         ROW_NUMBER() OVER (ORDER BY FiscalYear, FiscalPeriod) AS PeriodIndex
-    FROM GLEntry
+    FROM (
+        SELECT DISTINCT
+            FiscalYear,
+            FiscalPeriod
+        FROM GLEntry
+    ) AS distinct_actual_balance_periods
 ),
 balance_account_layout AS (
     SELECT

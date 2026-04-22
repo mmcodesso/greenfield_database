@@ -7,7 +7,13 @@ import numpy as np
 import pandas as pd
 
 from generator_dataset.accrual_catalog import ACCRUAL_ACCOUNT_METADATA, MONTHLY_ACCRUAL_BASES
-from generator_dataset.fixed_assets import depreciable_fixed_asset_profiles, fixed_asset_profile
+from generator_dataset.fixed_assets import (
+    debt_schedule_lines_for_month,
+    disposal_events_for_month,
+    financed_capex_events_for_month,
+    fixed_asset_opening_profiles,
+    monthly_depreciation_entries,
+)
 from generator_dataset.master_data import approver_employee_id, current_role_employee_id, valid_employees
 from generator_dataset.payroll import (
     monthly_direct_labor_reclass_amount,
@@ -465,31 +471,76 @@ def planned_freight_settlements(context: GenerationContext) -> list[dict[str, An
 
 
 def monthly_depreciation_amount(asset_account_number: str) -> float:
-    profile = fixed_asset_profile(asset_account_number)
-    if profile.useful_life_months <= 0:
-        return 0.0
-    return money(float(profile.gross_opening_balance) / float(profile.useful_life_months))
+    total = 0.0
+    for profile in fixed_asset_opening_profiles().values():
+        if str(profile.asset_account_number) != str(asset_account_number) or int(profile.useful_life_months) <= 0:
+            continue
+        total += float(profile.gross_opening_balance) / float(profile.useful_life_months)
+    return money(total)
 
 
-def accumulated_depreciation_balance(context: GenerationContext, asset_account_number: str) -> float:
-    profile = fixed_asset_profile(asset_account_number)
-    accumulated_account_number = profile.accumulated_depreciation_account_number
-    if not accumulated_account_number:
-        return 0.0
-    gl = context.tables["GLEntry"]
-    if gl.empty:
-        return 0.0
-    account_rows = gl[gl["AccountID"].astype(int).eq(account_id_by_number(context, accumulated_account_number))]
-    if account_rows.empty:
-        return 0.0
-    return money(float(account_rows["Credit"].astype(float).sum()) - float(account_rows["Debit"].astype(float).sum()))
+def _fixed_asset_lookup(context: GenerationContext) -> dict[int, dict[str, Any]]:
+    fixed_assets = context.tables["FixedAsset"]
+    if fixed_assets.empty:
+        return {}
+    return fixed_assets.set_index("FixedAssetID").to_dict("index")
 
 
-def remaining_depreciable_base(context: GenerationContext, asset_account_number: str) -> float:
-    profile = fixed_asset_profile(asset_account_number)
-    return money(
-        max(float(profile.gross_opening_balance) - float(accumulated_depreciation_balance(context, asset_account_number)), 0.0)
+def _purchase_invoice_lookup(context: GenerationContext) -> dict[int, dict[str, Any]]:
+    purchase_invoices = context.tables["PurchaseInvoice"]
+    if purchase_invoices.empty:
+        return {}
+    return purchase_invoices.set_index("PurchaseInvoiceID").to_dict("index")
+
+
+def _debt_agreement_lookup(context: GenerationContext) -> dict[int, dict[str, Any]]:
+    agreements = context.tables["DebtAgreement"]
+    if agreements.empty:
+        return {}
+    return agreements.set_index("DebtAgreementID").to_dict("index")
+
+
+def _asset_monthly_depreciation(asset_row: dict[str, Any]) -> float:
+    useful_life_months = int(asset_row.get("UsefulLifeMonths", 0) or 0)
+    original_cost = float(asset_row.get("OriginalCost", 0.0) or 0.0)
+    residual_value = float(asset_row.get("ResidualValue", 0.0) or 0.0)
+    if useful_life_months <= 0 or original_cost <= residual_value:
+        return 0.0
+    return money((original_cost - residual_value) / float(useful_life_months))
+
+
+def _first_depreciation_month(asset_row: dict[str, Any]) -> pd.Timestamp:
+    in_service_date = pd.Timestamp(asset_row["InServiceDate"])
+    return pd.Timestamp(year=in_service_date.year, month=in_service_date.month, day=1) + pd.DateOffset(months=1)
+
+
+def _months_between(start_month: pd.Timestamp, end_month: pd.Timestamp) -> int:
+    return int((end_month.year - start_month.year) * 12 + (end_month.month - start_month.month))
+
+
+def _accumulated_depreciation_before_month(
+    context: GenerationContext,
+    asset_row: dict[str, Any],
+    stop_before_month: pd.Timestamp,
+) -> float:
+    monthly_amount = _asset_monthly_depreciation(asset_row)
+    opening_accumulated = float(asset_row.get("OpeningAccumulatedDepreciation", 0.0) or 0.0)
+    if monthly_amount <= 0:
+        return money(opening_accumulated)
+
+    fiscal_start = pd.Timestamp(context.settings.fiscal_year_start).normalize()
+    fiscal_start_month = pd.Timestamp(year=fiscal_start.year, month=fiscal_start.month, day=1)
+    depreciation_start_month = max(_first_depreciation_month(asset_row), fiscal_start_month)
+    if stop_before_month <= depreciation_start_month:
+        return money(opening_accumulated)
+
+    months_elapsed = max(_months_between(depreciation_start_month, stop_before_month), 0)
+    depreciable_base = max(
+        float(asset_row.get("OriginalCost", 0.0) or 0.0) - float(asset_row.get("ResidualValue", 0.0) or 0.0),
+        0.0,
     )
+    accumulated = opening_accumulated + (monthly_amount * months_elapsed)
+    return money(min(accumulated, depreciable_base))
 
 
 def generate_payroll_accruals(context: GenerationContext, year: int, month: int) -> None:
@@ -743,39 +794,251 @@ def generate_factory_overhead_journal(context: GenerationContext, year: int, mon
     )
 
 
-def generate_depreciation_journals(context: GenerationContext, year: int, month: int) -> None:
-    posting_date = last_calendar_day(year, month).strftime("%Y-%m-%d")
-    creator_id = close_journal_creator_id(context)
-    approver_id = close_journal_approver_id(context)
-    for asset_account_number, profile in depreciable_fixed_asset_profiles().items():
-        asset_description = f"{profile.description} depreciation"
-        amount = money(min(monthly_depreciation_amount(asset_account_number), remaining_depreciable_base(context, asset_account_number)))
-        if amount <= 0:
+def _update_fixed_asset_event_journal_id(context: GenerationContext, fixed_asset_event_id: int, journal_entry_id: int) -> None:
+    mask = context.tables["FixedAssetEvent"]["FixedAssetEventID"].astype(int).eq(int(fixed_asset_event_id))
+    context.tables["FixedAssetEvent"].loc[mask, "JournalEntryID"] = int(journal_entry_id)
+
+
+def generate_capex_financing_reclass_journals(context: GenerationContext, year: int, month: int) -> None:
+    financed_events = financed_capex_events_for_month(context, year, month)
+    if financed_events.empty:
+        return
+
+    invoice_lookup = _purchase_invoice_lookup(context)
+    creator_id = accounting_journal_creator_id(context)
+    approver_id = accounting_journal_approver_id(context)
+
+    for event in financed_events.sort_values(["EventDate", "FixedAssetEventID"]).itertuples(index=False):
+        if pd.notna(event.JournalEntryID):
             continue
-        create_journal(
+        invoice = invoice_lookup.get(int(event.PurchaseInvoiceID)) if pd.notna(event.PurchaseInvoiceID) else None
+        posting_date = (
+            str(invoice.get("ApprovedDate"))
+            if invoice is not None and pd.notna(invoice.get("ApprovedDate"))
+            else str(event.EventDate)
+        )
+        header = create_journal(
             context,
             posting_date,
-            "Depreciation",
-            f"{asset_description} for {year}-{month:02d}",
+            "Debt Reclass",
+            f"Reclass note-financed CAPEX invoice {int(event.PurchaseInvoiceID)} to notes payable",
             [
                 {
-                    "AccountNumber": "6130",
-                    "Debit": amount,
+                    "AccountNumber": "2010",
+                    "Debit": float(event.Amount),
                     "Credit": 0.0,
-                    "Description": asset_description,
+                    "Description": "Clear accounts payable for note-financed CAPEX",
                     "CostCenterID": None,
                 },
                 {
-                    "AccountNumber": str(profile.accumulated_depreciation_account_number),
+                    "AccountNumber": "2110",
                     "Debit": 0.0,
-                    "Credit": amount,
-                    "Description": f"Accumulated depreciation for {asset_description.lower()}",
+                    "Credit": float(event.Amount),
+                    "Description": "Record notes payable for CAPEX financing",
                     "CostCenterID": None,
                 },
             ],
             creator_id,
             approver_id,
         )
+        _update_fixed_asset_event_journal_id(context, int(event.FixedAssetEventID), int(header["JournalEntryID"]))
+
+
+def generate_debt_payment_journals(context: GenerationContext, year: int, month: int) -> None:
+    debt_lines = debt_schedule_lines_for_month(context, year, month)
+    if debt_lines.empty:
+        return
+
+    fixed_asset_lookup = _fixed_asset_lookup(context)
+    debt_lookup = _debt_agreement_lookup(context)
+    creator_id = accounting_journal_creator_id(context)
+    approver_id = accounting_journal_approver_id(context)
+
+    for schedule_line in debt_lines.sort_values(["PaymentDate", "DebtAgreementID", "PaymentSequence"]).itertuples(index=False):
+        if str(schedule_line.Status) == "Paid":
+            continue
+        debt = debt_lookup.get(int(schedule_line.DebtAgreementID), {})
+        fixed_asset = fixed_asset_lookup.get(int(debt.get("FixedAssetID", 0) or 0), {})
+        payment_date = str(schedule_line.PaymentDate)
+        principal_amount = float(schedule_line.PrincipalAmount)
+        interest_amount = float(schedule_line.InterestAmount)
+        principal_journal_id: int | None = None
+
+        if principal_amount > 0:
+            principal_header = create_journal(
+                context,
+                payment_date,
+                "Debt Principal Payment",
+                f"Principal payment for {fixed_asset.get('AssetDescription', 'fixed asset note')}",
+                [
+                    {
+                        "AccountNumber": "2110",
+                        "Debit": principal_amount,
+                        "Credit": 0.0,
+                        "Description": "Reduce notes payable principal",
+                        "CostCenterID": None,
+                    },
+                    {
+                        "AccountNumber": "1010",
+                        "Debit": 0.0,
+                        "Credit": principal_amount,
+                        "Description": "Cash payment of note principal",
+                        "CostCenterID": None,
+                    },
+                ],
+                creator_id,
+                approver_id,
+            )
+            principal_journal_id = int(principal_header["JournalEntryID"])
+
+        if interest_amount > 0:
+            create_journal(
+                context,
+                payment_date,
+                "Interest Payment",
+                f"Interest payment for {fixed_asset.get('AssetDescription', 'fixed asset note')}",
+                [
+                    {
+                        "AccountNumber": "7030",
+                        "Debit": interest_amount,
+                        "Credit": 0.0,
+                        "Description": "Record interest expense on notes payable",
+                        "CostCenterID": None,
+                    },
+                    {
+                        "AccountNumber": "1010",
+                        "Debit": 0.0,
+                        "Credit": interest_amount,
+                        "Description": "Cash payment of note interest",
+                        "CostCenterID": None,
+                    },
+                ],
+                creator_id,
+                approver_id,
+            )
+
+        mask = context.tables["DebtScheduleLine"]["DebtScheduleLineID"].astype(int).eq(int(schedule_line.DebtScheduleLineID))
+        context.tables["DebtScheduleLine"].loc[mask, "JournalEntryID"] = principal_journal_id
+        context.tables["DebtScheduleLine"].loc[mask, "Status"] = "Paid"
+
+
+def generate_depreciation_journals(context: GenerationContext, year: int, month: int) -> None:
+    depreciation_entries = monthly_depreciation_entries(context, year, month)
+    if not depreciation_entries:
+        return
+
+    posting_date = last_calendar_day(year, month).strftime("%Y-%m-%d")
+    creator_id = close_journal_creator_id(context)
+    approver_id = close_journal_approver_id(context)
+    lines: list[dict[str, Any]] = []
+    for entry in depreciation_entries:
+        lines.append({
+            "AccountNumber": str(entry["DebitAccountNumber"]),
+            "Debit": float(entry["Amount"]),
+            "Credit": 0.0,
+            "Description": f"Depreciation for {entry['AssetDescription']}",
+            "CostCenterID": entry.get("CostCenterID"),
+        })
+        lines.append({
+            "AccountNumber": str(entry["AccumulatedAccountNumber"]),
+            "Debit": 0.0,
+            "Credit": float(entry["Amount"]),
+            "Description": f"Accumulated depreciation for {entry['AssetDescription']}",
+            "CostCenterID": None,
+        })
+    create_journal(
+        context,
+        posting_date,
+        "Depreciation",
+        f"Monthly fixed asset depreciation for {year}-{month:02d}",
+        lines,
+        creator_id,
+        approver_id,
+    )
+
+
+def generate_asset_disposal_journals(context: GenerationContext, year: int, month: int) -> None:
+    disposal_events = disposal_events_for_month(context, year, month)
+    if disposal_events.empty:
+        return
+
+    fixed_asset_lookup = _fixed_asset_lookup(context)
+    creator_id = accounting_journal_creator_id(context)
+    approver_id = accounting_journal_approver_id(context)
+    disposal_month = pd.Timestamp(year=year, month=month, day=1)
+
+    for event in disposal_events.sort_values(["EventDate", "FixedAssetEventID"]).itertuples(index=False):
+        if pd.notna(event.JournalEntryID):
+            continue
+        asset = fixed_asset_lookup.get(int(event.FixedAssetID))
+        if asset is None:
+            continue
+
+        accumulated_depreciation = _accumulated_depreciation_before_month(context, asset, disposal_month)
+        asset_cost = money(float(asset.get("OriginalCost", 0.0) or 0.0))
+        proceeds_amount = money(float(event.ProceedsAmount or 0.0))
+        net_book_value = money(max(asset_cost - accumulated_depreciation, 0.0))
+        gain_or_loss = money(proceeds_amount - net_book_value)
+        accumulated_account_number = context.tables["Account"].loc[
+            context.tables["Account"]["AccountID"].astype(int).eq(int(asset["AccumulatedDepreciationAccountID"])),
+            "AccountNumber",
+        ].astype(str).iloc[0]
+        asset_account_number = context.tables["Account"].loc[
+            context.tables["Account"]["AccountID"].astype(int).eq(int(asset["AssetAccountID"])),
+            "AccountNumber",
+        ].astype(str).iloc[0]
+
+        lines: list[dict[str, Any]] = []
+        if proceeds_amount > 0:
+            lines.append({
+                "AccountNumber": "1010",
+                "Debit": proceeds_amount,
+                "Credit": 0.0,
+                "Description": "Cash proceeds from asset disposal",
+                "CostCenterID": None,
+            })
+        if accumulated_depreciation > 0:
+            lines.append({
+                "AccountNumber": accumulated_account_number,
+                "Debit": accumulated_depreciation,
+                "Credit": 0.0,
+                "Description": "Clear accumulated depreciation on disposal",
+                "CostCenterID": None,
+            })
+        if gain_or_loss < 0:
+            lines.append({
+                "AccountNumber": "7020",
+                "Debit": abs(gain_or_loss),
+                "Credit": 0.0,
+                "Description": "Recognize loss on asset disposal",
+                "CostCenterID": None,
+            })
+        lines.append({
+            "AccountNumber": asset_account_number,
+            "Debit": 0.0,
+            "Credit": asset_cost,
+            "Description": "Remove disposed asset cost",
+            "CostCenterID": None,
+        })
+        if gain_or_loss > 0:
+            lines.append({
+                "AccountNumber": "7020",
+                "Debit": 0.0,
+                "Credit": gain_or_loss,
+                "Description": "Recognize gain on asset disposal",
+                "CostCenterID": None,
+            })
+
+        header = create_journal(
+            context,
+            str(event.EventDate),
+            "Asset Disposal",
+            f"Dispose {asset.get('AssetDescription', 'fixed asset')}",
+            lines,
+            creator_id,
+            approver_id,
+        )
+        _update_fixed_asset_event_journal_id(context, int(event.FixedAssetEventID), int(header["JournalEntryID"]))
 
 
 def generate_month_end_accruals(context: GenerationContext, year: int, month: int) -> list[dict[str, Any]]:
@@ -1058,12 +1321,20 @@ def generate_recurring_manual_journals(context: GenerationContext) -> None:
     if not existing_non_opening.empty:
         raise ValueError("Recurring manual journals have already been generated.")
 
+    from generator_dataset.capex import generate_capex_history_through
+
+    fiscal_end = pd.Timestamp(context.settings.fiscal_year_end).normalize()
+    generate_capex_history_through(context, int(fiscal_end.year), int(fiscal_end.month))
+
     for year, month in fiscal_months(context):
+        generate_capex_financing_reclass_journals(context, year, month)
+        generate_debt_payment_journals(context, year, month)
         generate_rent_journals(context, year, month)
         generate_freight_settlement_journals(context, year, month)
         generate_utilities_journal(context, year, month)
         generate_factory_overhead_journal(context, year, month)
         generate_depreciation_journals(context, year, month)
+        generate_asset_disposal_journals(context, year, month)
         generate_month_end_accruals(context, year, month)
 
 

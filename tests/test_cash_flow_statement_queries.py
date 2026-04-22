@@ -355,7 +355,13 @@ def test_direct_and_indirect_methods_match_for_net_change_and_ending_cash(
     for indirect_path, direct_path, period_columns in comparisons:
         indirect = _read_sql_result(sqlite_path, indirect_path)
         direct = _read_sql_result(sqlite_path, direct_path)
-        labels = ["Net Change in Cash", "Ending Cash"]
+        labels = [
+            "Net Cash from Operating Activities",
+            "Net Cash from Investing Activities",
+            "Net Cash from Financing Activities",
+            "Net Change in Cash",
+            "Ending Cash",
+        ]
 
         indirect_subset = indirect[indirect["LineLabel"].isin(labels)].copy()
         direct_subset = direct[direct["LineLabel"].isin(labels)].copy()
@@ -487,10 +493,10 @@ def test_opening_balance_seed_affects_beginning_cash_but_not_flow_sections(
     assert round(section_total, 2) == round(cash_change_excluding_opening, 2)
 
 
-def test_investing_and_financing_rows_are_preserved_when_activity_is_zero(
-    clean_validation_dataset_artifacts: dict[str, object],
+def test_investing_and_financing_rows_are_preserved_when_activity_exists(
+    full_dataset_artifacts: dict[str, object],
 ) -> None:
-    sqlite_path = Path(clean_validation_dataset_artifacts["sqlite_path"])
+    sqlite_path = Path(full_dataset_artifacts["sqlite_path"])
 
     for sql_path in [
         INDIRECT_MONTHLY_QUERY_PATH,
@@ -506,8 +512,8 @@ def test_investing_and_financing_rows_are_preserved_when_activity_is_zero(
 
         assert not investing.empty
         assert not financing.empty
-        assert investing["Amount"].round(2).eq(0).all()
-        assert financing["Amount"].round(2).eq(0).all()
+        assert investing["Amount"].abs().round(2).sum() > 0
+        assert financing["Amount"].abs().round(2).sum() > 0
 
 
 def test_direct_method_classifies_known_cash_sources(
@@ -532,6 +538,15 @@ def test_direct_method_classifies_known_cash_sources(
         )
         GROUP BY CAST(substr(PostingDate, 1, 4) AS INTEGER)
         HAVING COUNT(DISTINCT EntryType) = 2
+    ),
+    capex_disbursement_flags AS (
+        SELECT DISTINCT
+            dp.DisbursementID,
+            1 AS IsCapexDisbursement
+        FROM DisbursementPayment AS dp
+        JOIN FixedAssetEvent AS fae
+            ON fae.DisbursementID = dp.DisbursementID
+        WHERE fae.EventType IN ('Acquisition', 'Improvement')
     )
     SELECT
         gl.SourceDocumentType AS SourceDocumentType,
@@ -542,6 +557,11 @@ def test_direct_method_classifies_known_cash_sources(
     LEFT JOIN JournalEntry AS je
         ON je.JournalEntryID = gl.SourceDocumentID
        AND gl.SourceDocumentType = 'JournalEntry'
+    LEFT JOIN DisbursementPayment AS dp
+        ON dp.DisbursementID = gl.SourceDocumentID
+       AND gl.SourceDocumentType = 'DisbursementPayment'
+    LEFT JOIN capex_disbursement_flags AS cdf
+        ON cdf.DisbursementID = dp.DisbursementID
     WHERE a.AccountNumber = '1010'
       AND gl.FiscalYear IN (SELECT FiscalYear FROM closed_years)
       AND COALESCE(je.EntryType, '') NOT IN (
@@ -555,6 +575,10 @@ def test_direct_method_classifies_known_cash_sources(
             'DisbursementPayment',
             'PayrollPayment',
             'PayrollLiabilityRemittance'
+      )
+      AND NOT (
+            gl.SourceDocumentType = 'DisbursementPayment'
+        AND COALESCE(cdf.IsCapexDisbursement, 0) = 1
       )
     GROUP BY gl.SourceDocumentType
     """
@@ -578,18 +602,52 @@ def test_direct_method_classifies_known_cash_sources(
         )
         GROUP BY CAST(substr(PostingDate, 1, 4) AS INTEGER)
         HAVING COUNT(DISTINCT EntryType) = 2
+    ),
+    cash_vouchers AS (
+        SELECT
+            gl.SourceDocumentType,
+            gl.SourceDocumentID,
+            ROUND(SUM(gl.Debit - gl.Credit), 2) AS CashAmount
+        FROM GLEntry AS gl
+        JOIN Account AS a
+            ON a.AccountID = gl.AccountID
+        LEFT JOIN JournalEntry AS je
+            ON je.JournalEntryID = gl.SourceDocumentID
+           AND gl.SourceDocumentType = 'JournalEntry'
+        WHERE a.AccountNumber = '1010'
+          AND gl.FiscalYear IN (SELECT FiscalYear FROM closed_years)
+          AND COALESCE(je.EntryType, '') NOT IN (
+                'Opening',
+                'Year-End Close - P&L to Income Summary',
+                'Year-End Close - Income Summary to Retained Earnings'
+          )
+          AND gl.SourceDocumentType = 'JournalEntry'
+        GROUP BY gl.SourceDocumentType, gl.SourceDocumentID
+    ),
+    voucher_counterpart_flags AS (
+        SELECT
+            cv.SourceDocumentType,
+            cv.SourceDocumentID,
+            MAX(CASE WHEN a.AccountType = 'Expense' THEN 1 ELSE 0 END) AS HasExpenseCounterpart
+        FROM cash_vouchers AS cv
+        JOIN GLEntry AS gl
+            ON gl.SourceDocumentType = cv.SourceDocumentType
+           AND gl.SourceDocumentID = cv.SourceDocumentID
+        JOIN Account AS a
+            ON a.AccountID = gl.AccountID
+        WHERE a.AccountNumber <> '1010'
+        GROUP BY cv.SourceDocumentType, cv.SourceDocumentID
     )
-    SELECT ROUND(SUM(gl.Debit - gl.Credit), 2) AS Amount
-    FROM GLEntry AS gl
-    JOIN Account AS a
-        ON a.AccountID = gl.AccountID
+    SELECT ROUND(SUM(cv.CashAmount), 2) AS Amount
+    FROM cash_vouchers AS cv
+    LEFT JOIN voucher_counterpart_flags AS vcf
+        ON vcf.SourceDocumentType = cv.SourceDocumentType
+       AND vcf.SourceDocumentID = cv.SourceDocumentID
     LEFT JOIN JournalEntry AS je
-        ON je.JournalEntryID = gl.SourceDocumentID
-       AND gl.SourceDocumentType = 'JournalEntry'
-    WHERE a.AccountNumber = '1010'
-      AND gl.FiscalYear IN (SELECT FiscalYear FROM closed_years)
-      AND gl.SourceDocumentType = 'JournalEntry'
-      AND je.EntryType IN ('Rent', 'Utilities', 'Factory Overhead')
+        ON je.JournalEntryID = cv.SourceDocumentID
+       AND cv.SourceDocumentType = 'JournalEntry'
+    WHERE COALESCE(je.EntryType, '') IN ('Rent', 'Utilities', 'Factory Overhead')
+       OR (COALESCE(vcf.HasExpenseCounterpart, 0) = 1 AND cv.CashAmount < 0)
     """
     raw_other_operating = float(_read_sql_text_result(sqlite_path, raw_other_operating_sql).iloc[0]["Amount"])
     direct_other_operating = float(

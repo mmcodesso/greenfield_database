@@ -36,6 +36,20 @@ variance_cost AS (
     FROM WorkOrderClose
     GROUP BY substr(CloseDate, 1, 7)
 ),
+depreciation_cost AS (
+    SELECT
+        substr(gl.PostingDate, 1, 7) AS PeriodMonth,
+        ROUND(SUM(gl.Debit - gl.Credit), 2) AS ManufacturingDepreciationAmount
+    FROM GLEntry AS gl
+    JOIN Account AS a
+        ON a.AccountID = gl.AccountID
+    LEFT JOIN JournalEntry AS je
+        ON je.JournalEntryID = gl.SourceDocumentID
+       AND gl.SourceDocumentType = 'JournalEntry'
+    WHERE a.AccountNumber = '1090'
+      AND COALESCE(je.EntryType, '') = 'Depreciation'
+    GROUP BY substr(gl.PostingDate, 1, 7)
+),
 ledger_cost AS (
     SELECT
         substr(gl.PostingDate, 1, 7) AS PeriodMonth,
@@ -55,6 +69,8 @@ months AS (
     UNION
     SELECT PeriodMonth FROM variance_cost
     UNION
+    SELECT PeriodMonth FROM depreciation_cost
+    UNION
     SELECT PeriodMonth FROM ledger_cost
 )
 SELECT
@@ -69,6 +85,7 @@ SELECT
     ROUND(COALESCE(vc.DirectLaborVarianceAmount, 0), 2) AS DirectLaborVarianceAmount,
     ROUND(COALESCE(vc.OverheadVarianceAmount, 0), 2) AS OverheadVarianceAmount,
     ROUND(COALESCE(vc.TotalVarianceAmount, 0), 2) AS TotalVarianceAmount,
+    ROUND(COALESCE(dc.ManufacturingDepreciationAmount, 0), 2) AS ManufacturingDepreciationAmount,
     ROUND(COALESCE(lc.WipNetLedgerMovement, 0), 2) AS WipNetLedgerMovement,
     ROUND(COALESCE(lc.ManufacturingClearingNetMovement, 0), 2) AS ManufacturingClearingNetMovement,
     ROUND(COALESCE(lc.ManufacturingVarianceNetMovement, 0), 2) AS ManufacturingVarianceNetMovement
@@ -79,6 +96,8 @@ LEFT JOIN completion_cost AS cc
     ON cc.PeriodMonth = m.PeriodMonth
 LEFT JOIN variance_cost AS vc
     ON vc.PeriodMonth = m.PeriodMonth
+LEFT JOIN depreciation_cost AS dc
+    ON dc.PeriodMonth = m.PeriodMonth
 LEFT JOIN ledger_cost AS lc
     ON lc.PeriodMonth = m.PeriodMonth
 ORDER BY m.PeriodMonth;

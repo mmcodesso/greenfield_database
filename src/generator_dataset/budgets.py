@@ -8,15 +8,16 @@ import pandas as pd
 
 from generator_dataset.accrual_catalog import MONTHLY_ACCRUAL_BASES
 from generator_dataset.fixed_assets import (
-    depreciable_fixed_asset_profiles,
+    capex_item_definitions,
+    capex_plan_events,
     fixed_asset_opening_balance_amounts,
+    load_capex_plan,
 )
 from generator_dataset.journals import (
     NONMANUFACTURING_PAYROLL_BURDEN_ACCOUNT,
     PAYROLL_BURDEN_RATE,
     SALARY_ACCOUNT_BY_COST_CENTER,
     monthly_accrual_amount,
-    monthly_depreciation_amount,
     monthly_rent_amount,
     monthly_utilities_amount,
 )
@@ -771,6 +772,190 @@ def _inventory_targets_for_month(
     }
 
 
+def _first_business_day_on_or_after(timestamp: pd.Timestamp | str) -> pd.Timestamp:
+    current = pd.Timestamp(timestamp)
+    while current.day_name() in {"Saturday", "Sunday"}:
+        current = current + pd.Timedelta(days=1)
+    return current
+
+
+def _months_between(start_month: pd.Timestamp, end_month: pd.Timestamp) -> int:
+    return int((end_month.year - start_month.year) * 12 + (end_month.month - start_month.month))
+
+
+def _scheduled_note_payment_amount(principal_amount: float, annual_interest_rate: float, term_months: int) -> float:
+    if term_months <= 0:
+        return 0.0
+    monthly_rate = float(annual_interest_rate) / 12.0
+    if monthly_rate <= 0:
+        return money(float(principal_amount) / float(term_months))
+    payment = float(principal_amount) * monthly_rate / (1.0 - (1.0 + monthly_rate) ** (-int(term_months)))
+    return money(payment)
+
+
+def _budget_fixed_asset_records() -> list[dict[str, Any]]:
+    plan = load_capex_plan()
+    item_definitions = capex_item_definitions()
+    disposal_dates_by_asset_code = {
+        str(event["source_asset_code"]): pd.Timestamp(event["event_date"]).normalize()
+        for event in capex_plan_events()
+        if str(event.get("event_type")) == "Disposal" and event.get("source_asset_code")
+    }
+
+    rows: list[dict[str, Any]] = []
+    for opening_asset in plan["opening_assets"]:
+        item = item_definitions[str(opening_asset["item_code"])]
+        rows.append({
+            "AssetCode": str(opening_asset["asset_code"]),
+            "AssetAccountNumber": str(item["asset_account_number"]),
+            "AccumulatedDepreciationAccountNumber": str(item["accumulated_depreciation_account_number"]),
+            "DepreciationAccountNumber": str(item["depreciation_account_number"]),
+            "OriginalCost": money(float(opening_asset["original_cost"])),
+            "OpeningAccumulatedDepreciation": money(float(opening_asset.get("opening_accumulated_depreciation", 0.0) or 0.0)),
+            "UsefulLifeMonths": int(item["useful_life_months"]),
+            "InServiceDate": pd.Timestamp(opening_asset["in_service_date"]).normalize(),
+            "DisposalDate": disposal_dates_by_asset_code.get(str(opening_asset["asset_code"])),
+            "BehaviorGroup": str(item["behavior_group"]),
+        })
+
+    for event in capex_plan_events():
+        if str(event.get("event_type")) not in {"Acquisition", "Improvement"}:
+            continue
+        item = item_definitions[str(event["item_code"])]
+        rows.append({
+            "AssetCode": str(event["asset_code"]),
+            "AssetAccountNumber": str(item["asset_account_number"]),
+            "AccumulatedDepreciationAccountNumber": str(item["accumulated_depreciation_account_number"]),
+            "DepreciationAccountNumber": str(item["depreciation_account_number"]),
+            "OriginalCost": money(float(event["original_cost"])),
+            "OpeningAccumulatedDepreciation": 0.0,
+            "UsefulLifeMonths": int(event.get("useful_life_months", item["useful_life_months"])),
+            "InServiceDate": pd.Timestamp(event["event_date"]).normalize(),
+            "DisposalDate": disposal_dates_by_asset_code.get(str(event["asset_code"])),
+            "BehaviorGroup": str(item["behavior_group"]),
+        })
+    return rows
+
+
+def _budget_monthly_depreciation_rollforward(
+    context: GenerationContext,
+    month_start: pd.Timestamp,
+) -> dict[str, dict[str, float]]:
+    fiscal_start = pd.Timestamp(context.settings.fiscal_year_start).normalize()
+    fiscal_start_month = pd.Timestamp(year=fiscal_start.year, month=fiscal_start.month, day=1)
+    period_start = pd.Timestamp(month_start).normalize().replace(day=1)
+    debit_totals: dict[str, float] = defaultdict(float)
+    accumulated_totals: dict[str, float] = defaultdict(float)
+
+    for asset in _budget_fixed_asset_records():
+        useful_life_months = int(asset["UsefulLifeMonths"])
+        original_cost = float(asset["OriginalCost"])
+        if useful_life_months <= 0 or original_cost <= 0:
+            continue
+        monthly_amount = money(original_cost / float(useful_life_months))
+        if monthly_amount <= 0:
+            continue
+
+        first_depreciation_month = pd.Timestamp(year=asset["InServiceDate"].year, month=asset["InServiceDate"].month, day=1) + pd.DateOffset(months=1)
+        depreciation_start_month = max(first_depreciation_month, fiscal_start_month)
+        if period_start < depreciation_start_month:
+            continue
+        disposal_date = asset.get("DisposalDate")
+        if disposal_date is not None:
+            disposal_month = pd.Timestamp(year=disposal_date.year, month=disposal_date.month, day=1)
+            if period_start >= disposal_month:
+                continue
+
+        months_elapsed = max(_months_between(depreciation_start_month, period_start), 0)
+        accumulated_before = money(float(asset["OpeningAccumulatedDepreciation"]) + (monthly_amount * months_elapsed))
+        remaining_base = money(max(original_cost - accumulated_before, 0.0))
+        if remaining_base <= 0:
+            continue
+        amount = money(min(monthly_amount, remaining_base))
+        debit_account_number = str(asset["DepreciationAccountNumber"])
+        accumulated_account_number = str(asset["AccumulatedDepreciationAccountNumber"])
+        debit_totals[debit_account_number] = money(float(debit_totals.get(debit_account_number, 0.0)) + amount)
+        accumulated_totals[accumulated_account_number] = money(
+            float(accumulated_totals.get(accumulated_account_number, 0.0)) + amount
+        )
+
+    return {
+        "debit_by_account": dict(debit_totals),
+        "accumulated_by_account": dict(accumulated_totals),
+    }
+
+
+def _budget_monthly_capex_by_account(month_start: pd.Timestamp) -> tuple[dict[str, float], float, float]:
+    item_definitions = capex_item_definitions()
+    gross_additions: dict[str, float] = defaultdict(float)
+    cash_capex = 0.0
+    note_financed_capex = 0.0
+    target_key = _month_key(month_start)
+
+    for event in capex_plan_events():
+        event_date = pd.Timestamp(event["event_date"]).normalize()
+        if _month_key(event_date) != target_key or str(event.get("event_type")) not in {"Acquisition", "Improvement"}:
+            continue
+        item = item_definitions[str(event["item_code"])]
+        amount = money(float(event["original_cost"]))
+        gross_additions[str(item["asset_account_number"])] = money(
+            float(gross_additions.get(str(item["asset_account_number"]), 0.0)) + amount
+        )
+        if str(event.get("financing_type", "Cash")) == "Note":
+            note_financed_capex = money(note_financed_capex + amount)
+        else:
+            cash_capex = money(cash_capex + amount)
+
+    return dict(gross_additions), money(cash_capex), money(note_financed_capex)
+
+
+def _budget_monthly_note_activity(month_start: pd.Timestamp) -> dict[str, float]:
+    target_key = _month_key(month_start)
+    principal_borrowed = 0.0
+    principal_paid = 0.0
+    interest_paid = 0.0
+
+    for event in capex_plan_events():
+        if str(event.get("financing_type", "Cash")) != "Note":
+            continue
+        event_date = pd.Timestamp(event["event_date"]).normalize()
+        if _month_key(event_date) == target_key:
+            principal_borrowed = money(principal_borrowed + float(event["original_cost"]))
+
+        principal_amount = float(event["original_cost"])
+        annual_interest_rate = float(event["annual_interest_rate"])
+        term_months = int(event["term_months"])
+        payment_start_date = _first_business_day_on_or_after(
+            event.get("payment_start_date") or event_date + pd.DateOffset(months=1)
+        )
+        scheduled_payment = _scheduled_note_payment_amount(principal_amount, annual_interest_rate, term_months)
+        remaining_principal = money(principal_amount)
+        monthly_rate = annual_interest_rate / 12.0
+
+        for payment_sequence in range(int(term_months)):
+            payment_date = _first_business_day_on_or_after(payment_start_date + pd.DateOffset(months=payment_sequence))
+            if _month_key(payment_date) != target_key:
+                interest_amount = money(remaining_principal * monthly_rate)
+                principal_component = money(scheduled_payment - interest_amount)
+                if principal_component > remaining_principal or payment_sequence == int(term_months) - 1:
+                    principal_component = money(remaining_principal)
+                remaining_principal = money(remaining_principal - principal_component)
+                continue
+            interest_amount = money(remaining_principal * monthly_rate)
+            principal_component = money(scheduled_payment - interest_amount)
+            if principal_component > remaining_principal or payment_sequence == int(term_months) - 1:
+                principal_component = money(remaining_principal)
+            principal_paid = money(principal_paid + principal_component)
+            interest_paid = money(interest_paid + interest_amount)
+            remaining_principal = money(remaining_principal - principal_component)
+
+    return {
+        "principal_borrowed": money(principal_borrowed),
+        "principal_paid": money(principal_paid),
+        "interest_paid": money(interest_paid),
+    }
+
+
 def generate_budgets(context: GenerationContext) -> None:
     if not context.tables["Budget"].empty or not context.tables["BudgetLine"].empty:
         return
@@ -792,13 +977,15 @@ def generate_budgets(context: GenerationContext) -> None:
     cost_center_name_by_id = cost_centers.set_index("CostCenterID")["CostCenterName"].astype(str).to_dict()
     sales_cost_center_id = _cost_center_id_by_name(context, "Sales")
     manufacturing_cost_center_id = _cost_center_id_by_name(context, "Manufacturing")
+    administration_cost_center_id = _cost_center_id_by_name(context, "Administration")
 
     account_ids = {
         account_number: account_id_by_number(context, account_number)
         for account_number in [
-            "1010", "1020", "1040", "1045", "1050", "1110", "1120", "1130", "1150", "1160", "1170",
-            "2010", "2030", "2040", "2110", "2120", "2130", "3010", "3020", "3030", "6060", "6070",
-            "6080", "6090", "6100", "6110", "6120", "6130", "6140", "6180", "6190", "6200",
+            "1010", "1020", "1040", "1045", "1050", "1110", "1120", "1130", "1140", "1150", "1160", "1170",
+            "1185", "1186", "2010", "2030", "2040", "2110", "2120", "2130", "3010", "3020", "3030",
+            "6060", "6070", "6080", "6090", "6100", "6110", "6120", "6130", "6140", "6180", "6190",
+            "6200", "7030",
         ]
         if not context.tables["Account"].loc[
             context.tables["Account"]["AccountNumber"].astype(str).eq(account_number)
@@ -825,15 +1012,16 @@ def generate_budgets(context: GenerationContext) -> None:
         "3020": money(float(opening_balance_map.get("3020", 0.0))),
         "3030": money(float(opening_balance_map.get("3030", 0.0))),
     }
+    budget_fixed_asset_records = _budget_fixed_asset_records()
     fixed_asset_gross_balances = {
         account_number: money(float(opening_balance_map.get(account_number, 0.0)))
-        for account_number in ["1110", "1120", "1130", "1140"]
-        if account_number in opening_balance_map or account_number in account_ids
+        for account_number in sorted({str(record["AssetAccountNumber"]) for record in budget_fixed_asset_records})
+        if account_number in account_ids
     }
     fixed_asset_accumulated_balances = {
         account_number: money(float(opening_balance_map.get(account_number, 0.0)))
-        for account_number in ["1150", "1160", "1170"]
-        if account_number in opening_balance_map or account_number in account_ids
+        for account_number in sorted({str(record["AccumulatedDepreciationAccountNumber"]) for record in budget_fixed_asset_records})
+        if account_number in account_ids
     }
     current_year_net_income: dict[int, float] = defaultdict(float)
     prior_month_fiscal_year: int | None = None
@@ -1014,18 +1202,21 @@ def generate_budgets(context: GenerationContext) -> None:
             )
         month_operating_expense += total_accrual_expense
 
-        depreciation_total = 0.0
-        capex_total = 0.0
-        for asset_account_number, profile in depreciable_fixed_asset_profiles().items():
-            monthly_depreciation = monthly_depreciation_amount(asset_account_number)
-            depreciation_total += monthly_depreciation
-            capex_total += monthly_depreciation
+        depreciation_rollforward = _budget_monthly_depreciation_rollforward(context, month_start)
+        depreciation_by_debit_account = depreciation_rollforward["debit_by_account"]
+        accumulated_depreciation_by_account = depreciation_rollforward["accumulated_by_account"]
+        capex_additions_by_account, cash_capex_total, note_financed_capex_total = _budget_monthly_capex_by_account(month_start)
+        note_activity = _budget_monthly_note_activity(month_start)
+        operating_depreciation_total = float(depreciation_by_debit_account.get("6130", 0.0))
+        interest_expense_total = float(note_activity["interest_paid"])
+
+        for asset_account_number, capex_addition in capex_additions_by_account.items():
             fixed_asset_gross_balances[asset_account_number] = money(
-                float(fixed_asset_gross_balances.get(asset_account_number, 0.0)) + monthly_depreciation
+                float(fixed_asset_gross_balances.get(asset_account_number, 0.0)) + float(capex_addition)
             )
-            accumulated_account = str(profile.accumulated_depreciation_account_number)
-            fixed_asset_accumulated_balances[accumulated_account] = money(
-                float(fixed_asset_accumulated_balances.get(accumulated_account, 0.0)) + monthly_depreciation
+        for accumulated_account_number, depreciation_amount in accumulated_depreciation_by_account.items():
+            fixed_asset_accumulated_balances[accumulated_account_number] = money(
+                float(fixed_asset_accumulated_balances.get(accumulated_account_number, 0.0)) + float(depreciation_amount)
             )
 
         _append_budget_line(
@@ -1034,13 +1225,28 @@ def generate_budgets(context: GenerationContext) -> None:
             fiscal_year=fiscal_year,
             month=fiscal_month,
             account_id=account_id_by_number(context, "6130"),
-            budget_amount=depreciation_total,
+            cost_center_id=administration_cost_center_id,
+            budget_amount=operating_depreciation_total,
             budget_category="Operating Expense",
             driver_type="Depreciation Schedule",
             approved_by_employee_id=approver_id,
             approved_date=approved_date,
         )
-        month_operating_expense += depreciation_total
+        if interest_expense_total > 0 and "7030" in account_ids:
+            _append_budget_line(
+                context,
+                budget_line_rows,
+                fiscal_year=fiscal_year,
+                month=fiscal_month,
+                account_id=account_ids["7030"],
+                cost_center_id=administration_cost_center_id,
+                budget_amount=interest_expense_total,
+                budget_category="Operating Expense",
+                driver_type="Debt Interest Schedule",
+                approved_by_employee_id=approver_id,
+                approved_date=approved_date,
+            )
+        month_operating_expense += operating_depreciation_total + interest_expense_total
 
         inventory_targets = _inventory_targets_for_month(
             context,
@@ -1091,14 +1297,16 @@ def generate_budgets(context: GenerationContext) -> None:
         ending_cash = money(
             float(running_balance["1010"])
             + net_income
-            + depreciation_total
+            + operating_depreciation_total
             - accounts_receivable_change
             - finished_goods_change
             - materials_change
             + accounts_payable_change
             + accrued_payroll_change
             + accrued_expenses_change
-            - capex_total
+            - cash_capex_total
+            + float(note_activity["principal_borrowed"])
+            - float(note_activity["principal_paid"])
         )
 
         running_balance["1010"] = ending_cash
@@ -1108,6 +1316,11 @@ def generate_budgets(context: GenerationContext) -> None:
         running_balance["2010"] = ending_accounts_payable
         running_balance["2030"] = ending_accrued_payroll
         running_balance["2040"] = ending_accrued_expenses
+        running_balance["2110"] = money(
+            float(running_balance["2110"])
+            + float(note_activity["principal_borrowed"])
+            - float(note_activity["principal_paid"])
+        )
 
         for account_number in ["1010", "1020", "1040", "1045", "1050", "2010", "2030", "2040", "2110", "2120", "2130", "3010", "3020", "3030"]:
             if account_number not in account_ids or account_number not in running_balance:
@@ -1120,6 +1333,7 @@ def generate_budgets(context: GenerationContext) -> None:
                 "2010": "Supplier Payment Timing Rollforward",
                 "2030": "Payroll Cadence Rollforward",
                 "2040": "Accrual Timing Rollforward",
+                "2110": "Debt Schedule Rollforward",
                 "3030": "Prior-Year Earnings Carryforward",
             }.get(account_number, "Opening Balance Carryforward")
             _append_budget_line(
@@ -1146,7 +1360,7 @@ def generate_budgets(context: GenerationContext) -> None:
                 account_id=account_ids[asset_account_number],
                 budget_amount=float(ending_balance),
                 budget_category="Balance Sheet",
-                driver_type="Maintenance Capex Rollforward",
+                driver_type="CAPEX Plan Rollforward",
                 approved_by_employee_id=approver_id,
                 approved_date=approved_date,
             )
@@ -1161,7 +1375,7 @@ def generate_budgets(context: GenerationContext) -> None:
                 account_id=account_ids[accumulated_account_number],
                 budget_amount=float(ending_balance),
                 budget_category="Balance Sheet",
-                driver_type="Depreciation Rollforward",
+                driver_type="Accumulated Depreciation Rollforward",
                 approved_by_employee_id=approver_id,
                 approved_date=approved_date,
             )

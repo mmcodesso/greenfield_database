@@ -19,6 +19,8 @@ That distinction matters. A requisition is not the same thing as a purchase orde
 
 Most P2P activity follows the normal inventory and materials path: plan, requisition, order, receive, invoice, pay. A secondary AP path also exists for certain operating expenses. Finance may estimate the expense first through an accrual, then AP later clears that estimate through a direct service invoice that has no goods receipt behind it.
 
+Capital purchases now follow the same front-end P2P approvals and supplier-document path. The difference shows up after invoicing: a CAPEX item creates a `FixedAsset` and `FixedAssetEvent` trail, cash purchases settle through the normal disbursement path, and note-financed purchases are later reclassed from AP into notes payable instead of being paid immediately in cash.
+
 ## Normal Process Overview
 
 ```mermaid
@@ -73,6 +75,7 @@ Start with why the purchase was needed, then move into supplier commitment, rece
 - `GoodsReceiptLine.POLineID` is the operational bridge from ordered line to received line.
 - `PurchaseInvoiceLine.GoodsReceiptLineID` is the authoritative receipt-match link for inventory and material invoicing.
 - `PurchaseInvoiceLine.AccrualJournalEntryID` is the authoritative link for direct accrued-service settlement.
+- `FixedAssetEvent.PurchaseInvoiceID`, `PurchaseInvoiceLineID`, and `DisbursementID` extend that same trace when the purchased item is capitalized instead of expensed or stocked.
 - P2P is multi-period in the current generator. Receipt, invoicing, and payment do not need to occur in the same month.
 
 ## Analytical Subsections
@@ -209,6 +212,7 @@ flowchart LR
 - Which supplier invoice lines matched receipt lines cleanly?
 - Which invoices remained unpaid after due date?
 - Which AP lines cleared a prior accrual instead of matching a receipt?
+- Which supplier invoices created capital assets, and which of those were later paid in cash versus reclassed into notes payable?
 - How do receiving, invoicing, and payment timing differ by supplier, item group, or cost center?
 
 ## Next Steps
@@ -216,6 +220,7 @@ flowchart LR
 - Read [Commercial and Working Capital](../analytics/reports/commercial-and-working-capital.md) when you want the wider view of supplier settlement, AP timing, and working-capital pressure.
 - Read [Financial Reports](../analytics/reports/financial.md) when you want the reporting layer behind AP, accrual settlement, and cash conversion.
 - Read [P2P Accrual Case](../analytics/cases/p2p-accrual-settlement-case.md) when you want a guided walkthrough from requisition and receipt into AP and payment.
+- Read [CAPEX and Fixed Asset Lifecycle Case](../analytics/cases/capex-fixed-asset-lifecycle-case.md) when you want to keep the same P2P document trail in view while teaching capitalization, financing, and disposal.
 - Jump to [Accrual Estimate to AP Settlement](../processes/manual-journals-and-close.md#accrual-estimate-to-ap-settlement) when you want the finance-to-AP bridge for accrued services.
 - Read [Manufacturing](manufacturing.md) to see how purchasing supports work orders and material availability.
 - Read [GLEntry Posting Reference](../reference/posting.md) and [Schema Reference](../reference/schema.md) when you need the detailed posting or join logic.

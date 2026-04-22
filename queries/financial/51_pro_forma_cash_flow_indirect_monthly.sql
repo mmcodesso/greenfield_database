@@ -1,7 +1,7 @@
 -- Teaching objective: Produce a monthly pro forma indirect-method cash flow statement from the driver-based budget roll-forward.
 -- Main tables: BudgetLine, Account, GLEntry, JournalEntry.
 -- Output shape: One row per fiscal month and cash-flow statement line.
--- Interpretation notes: Beginning balances for the first budget period come from the opening journal. Operating cash is reconciled from net income plus non-cash items and working-capital movement; investing cash reflects gross fixed-asset additions implied by the maintenance-capex policy.
+-- Interpretation notes: Beginning balances for the first budget period come from the opening journal. Operating cash is reconciled from net income plus non-cash items and working-capital movement; investing and financing cash reflect the explicit CAPEX and debt schedules carried in the budget roll-forward.
 
 WITH reporting_periods AS (
     SELECT
@@ -72,6 +72,7 @@ balance_sheet_accounts AS (
     UNION ALL SELECT 1120, 'Capital Expenditures and Asset Transactions', 'Asset'
     UNION ALL SELECT 1130, 'Capital Expenditures and Asset Transactions', 'Asset'
     UNION ALL SELECT 1140, 'Capital Expenditures and Asset Transactions', 'Asset'
+    UNION ALL SELECT 1185, 'Capital Expenditures and Asset Transactions', 'Asset'
     UNION ALL SELECT 2110, 'Debt and Equity Cash', 'Liability'
     UNION ALL SELECT 2120, 'Debt and Equity Cash', 'Liability'
     UNION ALL SELECT 2130, 'Debt and Equity Cash', 'Liability'

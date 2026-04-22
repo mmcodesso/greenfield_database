@@ -18,6 +18,7 @@ CLOSE_ENTRY_TYPES = {
 CONTRA_LINE_LABELS = {
     "Allowance for Doubtful Accounts",
     "Accumulated Depreciation - Furniture and Fixtures",
+    "Accumulated Depreciation - Manufacturing Equipment",
     "Accumulated Depreciation - Warehouse Equipment",
     "Accumulated Depreciation - Office Equipment",
     "Dividends or Owner Distributions",
@@ -51,6 +52,13 @@ def _read_gl_details(sqlite_path: Path) -> pd.DataFrame:
     """
     with sqlite3.connect(sqlite_path) as connection:
         return pd.read_sql_query(sql_text, connection)
+
+
+def _published_sqlite_path() -> Path:
+    for candidate in [Path("outputs/CharlesRiver.sqlite"), Path("outputs/greenfield.sqlite")]:
+        if candidate.exists() and candidate.stat().st_size > 0:
+            return candidate
+    raise AssertionError("No populated published SQLite file is available in outputs/.")
 
 
 def _sort_columns(frame: pd.DataFrame, period_columns: list[str]) -> pd.DataFrame:
@@ -223,7 +231,7 @@ def test_balance_sheet_queries_return_rows_on_clean_build(
 
 def test_monthly_balance_sheet_excludes_post_horizon_spillover_periods() -> None:
     settings = load_settings("config/settings.yaml")
-    sqlite_path = Path("outputs/greenfield.sqlite")
+    sqlite_path = _published_sqlite_path()
     expected_years = set(
         range(
             pd.Timestamp(settings.fiscal_year_start).year,

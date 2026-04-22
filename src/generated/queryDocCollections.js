@@ -195,6 +195,18 @@ export const starterQueryMaps = {
     {
       "label": "Budget vs actual working capital and cash bridge",
       "queryKey": "financial/53_budget_vs_actual_working_capital_and_cash_bridge.sql"
+    },
+    {
+      "label": "Fixed-asset rollforward by behavior group",
+      "queryKey": "financial/54_fixed_asset_rollforward_by_behavior_group.sql"
+    },
+    {
+      "label": "CAPEX acquisitions, financing, and disposals",
+      "queryKey": "financial/55_capex_acquisitions_financing_and_disposals.sql"
+    },
+    {
+      "label": "Debt amortization and cash impact",
+      "queryKey": "financial/56_debt_amortization_and_cash_impact.sql"
     }
   ],
   "managerial": [
@@ -810,6 +822,32 @@ export const caseQuerySequences = {
         "queryKey": "financial/52_budget_vs_actual_statement_bridge_monthly.sql"
       }
     ],
+  "capex-fixed-asset-lifecycle-case": [
+    {
+      "lead": "Run",
+      "queryKey": "financial/54_fixed_asset_rollforward_by_behavior_group.sql"
+    },
+    {
+      "lead": "Run",
+      "queryKey": "financial/55_capex_acquisitions_financing_and_disposals.sql"
+    },
+    {
+      "lead": "Run",
+      "queryKey": "financial/56_debt_amortization_and_cash_impact.sql"
+    },
+    {
+      "lead": "Then connect plant depreciation into manufacturing cost with",
+      "queryKey": "financial/17_manufacturing_cost_component_bridge.sql"
+    },
+    {
+      "lead": "Then show the statement and cash impact with",
+      "queryKey": "financial/33_cash_flow_statement_indirect_monthly.sql"
+    },
+    {
+      "lead": "Then compare the plan to the budget roll-forward with",
+      "queryKey": "financial/51_pro_forma_cash_flow_indirect_monthly.sql"
+    }
+  ],
   "manufacturing-labor-cost-case": [
     {
       "lead": "Run",

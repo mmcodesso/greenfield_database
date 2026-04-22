@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 
 from generator_dataset.accrual_catalog import ACCRUAL_ACCOUNT_NUMBERS, ACCRUAL_SERVICE_ITEMS
+from generator_dataset.fixed_assets import financed_capex_invoice_ids
 from generator_dataset.journals import accrual_journal_details
 from generator_dataset.master_data import approver_employee_id, employee_ids_for_cost_center_as_of, eligible_item_mask
 from generator_dataset.planning import primary_warehouse_rank, purchase_recommendations_for_month, update_recommendation_conversion
@@ -302,6 +303,7 @@ def active_purchasable_items(context: GenerationContext, event_date: pd.Timestam
     items = context.tables["Item"]
     purchasable = items[
         eligible_item_mask(items, event_date)
+        & items["ItemGroup"].astype(str).ne("Capex")
         & items["InventoryAccountID"].notna()
         & items["StandardCost"].notna()
         & (
@@ -1260,12 +1262,15 @@ def generate_month_disbursements(context: GenerationContext, year: int, month: i
 
     paid_amounts = invoice_paid_amounts(context)
     payment_event_counts = invoice_payment_event_counts(context)
+    financed_invoice_ids = financed_capex_invoice_ids(context)
     candidates = invoices[pd.to_datetime(invoices["InvoiceDate"]).le(month_end)].copy()
     if candidates.empty:
         return
 
     payment_rows: list[dict] = []
     for invoice in candidates.sort_values(["DueDate", "PurchaseInvoiceID"]).itertuples(index=False):
+        if int(invoice.PurchaseInvoiceID) in financed_invoice_ids:
+            continue
         outstanding_amount = money(float(invoice.GrandTotal) - float(paid_amounts.get(int(invoice.PurchaseInvoiceID), 0.0)))
         if outstanding_amount <= 0:
             continue

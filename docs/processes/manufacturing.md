@@ -81,6 +81,7 @@ Read this page in three passes: first `planning`, then `execution`, then `costin
 | Production completion | Finished goods are completed from WIP at standard manufacturing cost | Debit `1040` Inventory - Finished Goods, credit `1046` Inventory - Work in Process, and credit `1090` Manufacturing Cost Clearing |
 | Work-order close | Accounting clears residual WIP and clearing balances and recognizes manufacturing variance | Debit or credit `5080` Manufacturing Variance with the offset to unresolved WIP or clearing balances |
 | Direct labor and overhead reclass support | Payroll-supported manufacturing labor and burden are moved into manufacturing costing flows | Journal-driven reclass from payroll expense pools into direct labor or manufacturing overhead paths |
+| Manufacturing equipment depreciation | Monthly fixed-asset depreciation is recorded for plant equipment tied to manufacturing work centers | Debit `1090` Manufacturing Cost Clearing and credit `1186` Accumulated Depreciation - Manufacturing Equipment |
 
 ## Key Traceability and Data Notes
 
@@ -90,6 +91,7 @@ Read this page in three passes: first `planning`, then `execution`, then `costin
 - `WorkOrderOperationSchedule` is the daily schedule students should use for operation-timing and capacity-use questions.
 - `LaborTimeEntry` is the bridge from approved time into manufacturing cost traceability, especially when linked to `WorkOrderOperationID`.
 - `WorkOrderClose` is the accounting close event, not the physical production event.
+- `FixedAsset.BehaviorGroup`, `WorkCenterID`, and `DepreciationDebitAccountID` explain why plant equipment depreciation flows into `1090`, while warehouse equipment still remains outside product cost.
 - Manufacturing stays standard-cost based even though payroll and time provide operational labor support beneath that costing layer.
 
 ## Analytical Subsections
@@ -327,6 +329,7 @@ flowchart LR
 - Read [Operations and Risk](../analytics/reports/operations-and-risk.md) when you want the business perspective built around planning pressure, supply reliability, capacity, workforce context, and controls.
 - Read [Managerial Reports](../analytics/reports/managerial.md) when you want the broader report layer behind utilization, planning, workforce context, and supply risk.
 - Read [Manufacturing Labor Case](../analytics/cases/manufacturing-labor-cost-case.md) when you want a guided walkthrough from production support into costing and close.
+- Read [CAPEX and Fixed Asset Lifecycle Case](../analytics/cases/capex-fixed-asset-lifecycle-case.md) when you want to add plant-equipment depreciation and note-financed equipment into the manufacturing-cost story.
 - Read [P2P](p2p.md) to see how raw materials and packaging are replenished when manufacturing needs purchased support.
 - Read [Payroll](payroll.md#time-attendance-and-approved-hours) for approved attendance support and [Payroll](payroll.md#direct-labor-and-manufacturing-reclass) for the labor and reclass side of the same production story.
 - Read [GLEntry Posting Reference](../reference/posting.md) and [Schema Reference](../reference/schema.md) when you need the detailed posting or join logic.

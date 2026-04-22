@@ -7,6 +7,7 @@ import pandas as pd
 
 from generator_dataset.accrual_catalog import ACCRUAL_ACCOUNT_METADATA, ACCRUAL_SERVICE_ITEMS
 from generator_dataset.budgets import SUMMARY_BUDGET_CATEGORIES, budget_horizon_months
+from generator_dataset.fixed_assets import capex_item_count
 from generator_dataset.journals import accrual_journal_details, planned_freight_settlements
 from generator_dataset.manufacturing import (
     CAPACITY_EXCEPTION_REASONS,
@@ -110,7 +111,7 @@ def validate_phase2(context: GenerationContext) -> dict[str, Any]:
     exceptions = list(results["exceptions"])
 
     expected_counts = {
-        "Item": context.settings.item_count + len(ACCRUAL_SERVICE_ITEMS),
+        "Item": context.settings.item_count + len(ACCRUAL_SERVICE_ITEMS) + capex_item_count(),
         "Customer": context.settings.customer_count,
         "Supplier": context.settings.supplier_count,
     }

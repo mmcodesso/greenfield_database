@@ -15,6 +15,7 @@ import { starterQueryMaps } from "@site/src/generated/queryDocCollections";
 |---|---|
 | Balance sheet reporting | `GLEntry`, `Account`, `JournalEntry` |
 | Cash flow reporting | `GLEntry`, `Account`, `JournalEntry` |
+| Fixed assets and CAPEX | `FixedAsset`, `FixedAssetEvent`, `DebtAgreement`, `DebtScheduleLine`, `PurchaseInvoice`, `DisbursementPayment`, `JournalEntry`, `GLEntry` |
 | Income statement reporting | `GLEntry`, `Account`, `JournalEntry` |
 | Revenue and gross margin | `SalesInvoice`, `SalesInvoiceLine`, `Shipment`, `ShipmentLine`, `CreditMemo`, `CreditMemoLine`, `Item`, `PriceList`, `PriceListLine`, `PromotionProgram`, `GLEntry`, `Account` |
 | AR and customer cash | `SalesInvoice`, `CashReceipt`, `CashReceiptApplication`, `CreditMemo`, `CustomerRefund`, `Customer` |
@@ -63,6 +64,40 @@ This sequence follows the statement tie from annual net income into retained ear
   helperText="Open each query from the guide and work through the sequence from statement tie-out into revenue cutoff detail."
 />
 
+## CAPEX and Fixed Asset Path
+
+This sequence starts in the fixed-asset subledger, then ties the asset lifecycle back into manufacturing cost, debt cash flows, and the budget roll-forward. Work through it in order so students keep the operational document chain separate from depreciation, note financing, and disposal accounting.
+
+<QuerySequence
+  items={[
+    {
+      queryKey: "financial/54_fixed_asset_rollforward_by_behavior_group.sql",
+      lead: "Start with the monthly rollforward by behavior group so manufacturing, warehouse, and office assets stay separated.",
+    },
+    {
+      queryKey: "financial/55_capex_acquisitions_financing_and_disposals.sql",
+      lead: "Then trace the lifecycle events behind each addition, financing choice, and disposal.",
+    },
+    {
+      queryKey: "financial/56_debt_amortization_and_cash_impact.sql",
+      lead: "Use the debt schedule next so principal, interest, and cash timing are explicit.",
+    },
+    {
+      queryKey: "financial/17_manufacturing_cost_component_bridge.sql",
+      lead: "Then connect manufacturing-equipment depreciation back into manufacturing clearing and conversion cost.",
+    },
+    {
+      queryKey: "financial/33_cash_flow_statement_indirect_monthly.sql",
+      lead: "Use the indirect cash flow statement to show how CAPEX moves into investing cash while note activity moves into financing cash.",
+    },
+    {
+      queryKey: "financial/51_pro_forma_cash_flow_indirect_monthly.sql",
+      lead: "Finish with the pro forma cash flow to compare the explicit CAPEX and note schedule with the budget roll-forward.",
+    },
+  ]}
+  helperText="This is the fastest path for teaching the asset register, depreciation routing, financing cash, and disposal effects as one connected story."
+/>
+
 - Keep the broader timing scan in view through [Audit Analytics](audit.md), especially `Cutoff and timing analysis` and `Potential anomaly review`. Those queries show the wider timing population, while the reconciliation sequence narrows the investigation to the invoices that actually affect annual net-revenue tie-out.
 - If the cutoff summary shows invoices with `InvoiceBeforeShipmentFlag = 1` and `InvoiceYearVsGlYearFlag = 1`, treat that pattern as seeded anomaly behavior inside the published teaching dataset rather than a defect in the statement logic.
 - After net revenue, repeat the same source-to-GL-to-statement-to-close pattern for COGS, manufacturing variance, labor, overhead, operating expenses, other income and expense, and retained earnings.
@@ -71,6 +106,7 @@ This sequence follows the statement tie from annual net income into retained ear
 
 - Use [Working Capital and Cash Conversion Case](cases/working-capital-and-cash-conversion-case.md) when you want a balance-sheet and settlement-timing exercise.
 - Use [Financial Statement Bridge Case](cases/financial-statement-bridge-case.md) when you want to move from operations into `GLEntry`, control accounts, and close entries.
+- Use [CAPEX and Fixed Asset Lifecycle Case](cases/capex-fixed-asset-lifecycle-case.md) when you want to teach the asset register, depreciation routing, debt financing, and disposal accounting together.
 - Use [Product Portfolio Profitability Case](cases/product-portfolio-profitability-case.md) when you want a financial view of collection, lifecycle, and supply-mode performance.
 - Use [Demand Planning and Replenishment Case](cases/demand-planning-and-replenishment-case.md) when you want forecast, replenishment, and planning-pressure analysis to sit beside working-capital and inventory timing.
 - Use [Pricing and Margin Governance Case](cases/pricing-and-margin-governance-case.md) when you want list-price realization, promotions, override pressure, and net-margin dilution in one commercial analysis path.
@@ -94,4 +130,7 @@ This sequence follows the statement tie from annual net income into retained ear
 - The indirect-method cash flow starter queries reconcile from pre-close net income into operating cash, then combine that with investing and financing cash movements.
 - The direct-method cash flow starter queries classify cash-ledger activity into teaching buckets such as customer receipts, supplier payments, payroll, and other operating cash.
 - The cash flow starter queries treat opening journals as the `Beginning Cash` seed for the first reporting period instead of showing them as operating, investing, or financing flows.
+- Manufacturing-equipment depreciation debits `1090` Manufacturing Cost Clearing, so it belongs in manufacturing-cost interpretation rather than warehouse or office operating expense review.
+- Warehouse and office fixed-asset depreciation debits `6130`, which keeps those assets in operating expense even when they share the same broad fixed-asset lifecycle controls as plant equipment.
+- CAPEX additions, note-financing reclasses, debt payments, and disposals now sit in the same financial-analysis path, so students can reconcile the asset register to investing cash, financing cash, and gain-or-loss activity.
 - The published default SQLite is anomaly-enriched when `anomaly_mode` is `standard`, so it is useful for teaching comparisons but not as the clean baseline for database-integrity reconciliation.

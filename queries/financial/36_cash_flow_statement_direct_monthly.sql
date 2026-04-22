@@ -173,11 +173,23 @@ voucher_counterpart_flags AS (
         cv.VoucherType,
         cv.VoucherNumber
 ),
+capex_disbursement_flags AS (
+    SELECT DISTINCT
+        dp.DisbursementID,
+        1 AS IsCapexDisbursement
+    FROM DisbursementPayment AS dp
+    JOIN FixedAssetEvent AS fae
+        ON fae.DisbursementID = dp.DisbursementID
+    WHERE fae.EventType IN ('Acquisition', 'Improvement')
+),
 classified_cash_vouchers AS (
     SELECT
         cv.FiscalYear,
         cv.FiscalPeriod,
         CASE
+            WHEN cv.SourceDocumentType = 'DisbursementPayment'
+             AND COALESCE(cdf.IsCapexDisbursement, 0) = 1
+                THEN 'Investing Activities'
             WHEN cv.SourceDocumentType IN (
                 'CashReceipt',
                 'CustomerRefund',
@@ -198,11 +210,15 @@ classified_cash_vouchers AS (
             WHEN cv.SourceDocumentType = 'CustomerRefund'
                 THEN 'Cash Refunded to Customers'
             WHEN cv.SourceDocumentType = 'DisbursementPayment'
+             AND COALESCE(cdf.IsCapexDisbursement, 0) = 0
                 THEN 'Cash Paid to Suppliers'
             WHEN cv.SourceDocumentType = 'PayrollPayment'
                 THEN 'Cash Paid for Payroll'
             WHEN cv.SourceDocumentType = 'PayrollLiabilityRemittance'
                 THEN 'Cash Paid for Payroll Taxes and Withholdings'
+            WHEN cv.SourceDocumentType = 'DisbursementPayment'
+             AND COALESCE(cdf.IsCapexDisbursement, 0) = 1
+                THEN 'Capital Expenditures and Asset Transactions'
             WHEN vcf.HasInvestingCounterpart = 1
                 THEN 'Capital Expenditures and Asset Transactions'
             WHEN vcf.HasFinancingCounterpart = 1
@@ -223,6 +239,9 @@ classified_cash_vouchers AS (
        AND vcf.FiscalPeriod = cv.FiscalPeriod
        AND vcf.VoucherType = cv.VoucherType
        AND vcf.VoucherNumber = cv.VoucherNumber
+    LEFT JOIN capex_disbursement_flags AS cdf
+        ON cdf.DisbursementID = cv.SourceDocumentID
+       AND cv.SourceDocumentType = 'DisbursementPayment'
     LEFT JOIN JournalEntry AS je
         ON je.JournalEntryID = cv.SourceDocumentID
        AND cv.SourceDocumentType = 'JournalEntry'

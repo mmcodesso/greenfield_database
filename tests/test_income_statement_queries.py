@@ -21,7 +21,6 @@ DISABLED_INCOME_STATEMENT_LABELS = {
     "Inventory Adjustments",
     "Bad Debt Expense",
     "Interest Income",
-    "Gain or Loss on Asset Disposal",
     "Foreign Exchange Gain or Loss",
     "Salaries Expense - Manufacturing",
     "Factory Overhead Expense",
@@ -80,7 +79,7 @@ def _inactive_account_visibility_assertions(frame: pd.DataFrame) -> None:
             "LineLabel",
         ].drop_duplicates().tolist()
     )
-    assert other_income_accounts == ["Interest Expense"]
+    assert other_income_accounts == ["Gain or Loss on Asset Disposal", "Interest Expense"]
 
 
 def _warehouse_operating_expense_assertions(frame: pd.DataFrame) -> None:

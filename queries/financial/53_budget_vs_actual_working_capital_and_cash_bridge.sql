@@ -30,11 +30,16 @@ opening_balance_seed AS (
         CAST(a.AccountNumber AS INTEGER)
 ),
 actual_periods AS (
-    SELECT DISTINCT
+    SELECT
         FiscalYear,
         FiscalPeriod,
         ROW_NUMBER() OVER (ORDER BY FiscalYear, FiscalPeriod) AS PeriodIndex
-    FROM GLEntry
+    FROM (
+        SELECT DISTINCT
+            FiscalYear,
+            FiscalPeriod
+        FROM GLEntry
+    ) AS distinct_actual_periods
 ),
 actual_balance_activity AS (
     SELECT

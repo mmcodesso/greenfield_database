@@ -34,6 +34,10 @@ These documents are generated for process analysis but do **not** create `GLEntr
 - `AttendanceException`
 - `PayrollPeriod`
 - `LaborTimeEntry`
+- `FixedAsset`
+- `FixedAssetEvent`
+- `DebtAgreement`
+- `DebtScheduleLine`
 
 ## Posting Matrix
 
@@ -43,7 +47,11 @@ These documents are generated for process analysis but do **not** create `GLEntr
 | Rent | `JournalEntry` plus seeded GL rows | First business day of month | `6070` Warehouse Rent or `6080` Office Rent | `1010` Cash and Cash Equivalents |
 | Utilities | `JournalEntry` plus seeded GL rows | Last business day of month | `6090` Utilities Expense | `1010` Cash and Cash Equivalents |
 | Factory overhead | `JournalEntry` plus seeded GL rows | Last business day of month | `1090` Manufacturing Cost Clearing, or `5080` Manufacturing Variance when the month has no capitalizable direct labor | `1010` Cash and Cash Equivalents |
-| Depreciation | `JournalEntry` plus seeded GL rows | Last calendar day of month | `6130` Depreciation Expense | accumulated depreciation accounts |
+| Depreciation | `JournalEntry` plus seeded GL rows, supported by `FixedAsset` | Last calendar day of month | `1090` for manufacturing equipment or `6130` for warehouse, office, and showroom assets | accumulated depreciation accounts such as `1150`, `1160`, `1170`, and `1186` |
+| Debt reclass | `JournalEntry` plus `FixedAssetEvent` | linked CAPEX invoice approval date, or asset event date when approval metadata is unavailable | `2010` Accounts Payable | `2110` Notes Payable |
+| Debt principal payment | `JournalEntry` plus `DebtScheduleLine` | `PaymentDate` | `2110` Notes Payable | `1010` Cash and Cash Equivalents |
+| Interest payment | `JournalEntry` plus `DebtScheduleLine` | `PaymentDate` | `7030` Interest Expense | `1010` Cash and Cash Equivalents |
+| Asset disposal | `JournalEntry` plus `FixedAssetEvent` | `EventDate` | cash proceeds when present, accumulated depreciation, and any loss on disposal | gross fixed-asset account and any gain on disposal |
 | Month-end accrual | `JournalEntry` plus seeded GL rows | Last business day of month | selected operating expenses | `2040` Accrued Expenses |
 | Accrual adjustment | `JournalEntry` plus seeded GL rows | First business day on or after the linked invoice approval date for invoice-linked residuals, or a rare later cleanup date for stale uninvoiced accruals | `2040` Accrued Expenses | original accrued expense account |
 | Freight settlement | `JournalEntry` plus seeded GL rows | First business day of month | `2040` Accrued Expenses | `1010` Cash and Cash Equivalents |
@@ -61,7 +69,7 @@ These documents are generated for process analysis but do **not** create `GLEntr
 | Payroll register | `PayrollRegister`, `PayrollRegisterLine` | `ApprovedDate` | Salary and wage expense by nonmanufacturing cost center, `6060` nonmanufacturing payroll burden, `1090` capitalizable manufacturing labor plus related burden, and `5080` noncapitalizable manufacturing payroll in no-direct-labor months | `2030` Accrued Payroll, `2031` Payroll Tax Withholdings Payable, `2032` Employer Payroll Taxes Payable, `2033` Employee Benefits and Other Deductions Payable |
 | Payroll payment | `PayrollPayment` | `PaymentDate` | `2030` Accrued Payroll | Cash |
 | Payroll liability remittance | `PayrollLiabilityRemittance` | `RemittanceDate` | `2031`, `2032`, or `2033` | Cash |
-| Purchase invoice | `PurchaseInvoice`, `PurchaseInvoiceLine` | `ApprovedDate` | For receipt-matched inventory lines: GRNI cleared at matched receipt-line basis, purchase variance when needed, and nonrecoverable tax to variance. For accrued-service lines: `2040` up to the linked accrued amount and expense for any excess above the estimate; any invoice shortfall is reversed later through a linked accrual adjustment. | Accounts payable and purchase variance when needed |
+| Purchase invoice | `PurchaseInvoice`, `PurchaseInvoiceLine` | `ApprovedDate` | For receipt-matched inventory lines: GRNI cleared at matched receipt-line basis, purchase variance when needed, and nonrecoverable tax to variance. For capitalized CAPEX lines: the linked fixed-asset gross account such as `1110`, `1120`, `1130`, or `1185`. For accrued-service lines: `2040` up to the linked accrued amount and expense for any excess above the estimate; any invoice shortfall is reversed later through a linked accrual adjustment. | Accounts payable and purchase variance when needed |
 | Disbursement | `DisbursementPayment` | `PaymentDate` | Accounts payable | Cash |
 | Year-end close: P&L to income summary | `JournalEntry` plus seeded GL rows | `YYYY-12-31` | Revenue or expense balances needed to close annual P&L accounts | `8010` Income Summary |
 | Year-end close: income summary to retained earnings | `JournalEntry` plus seeded GL rows | `YYYY-12-31` | `8010` Income Summary or `3030` Retained Earnings depending on sign | offset retained earnings or income summary |
@@ -76,6 +84,8 @@ These documents are generated for process analysis but do **not** create `GLEntr
 | `1045` | Inventory - materials and packaging |
 | `1046` | Inventory - work in process |
 | `1090` | Manufacturing cost clearing |
+| `1185` | Manufacturing equipment |
+| `1186` | Accumulated depreciation - manufacturing equipment |
 | `2010` | Accounts payable |
 | `2020` | Goods Received Not Invoiced |
 | `2030` | Accrued payroll |
@@ -85,10 +95,13 @@ These documents are generated for process analysis but do **not** create `GLEntr
 | `2040` | Accrued expenses |
 | `2050` | Sales tax payable |
 | `2060` | Customer deposits and unapplied cash |
+| `2110` | Notes payable |
 | `4050` | Freight revenue |
 | `4060` | Sales returns and allowances |
 | `5050` | Freight-out expense |
 | `5080` | Manufacturing variance |
+| `7020` | Gain or loss on asset disposal |
+| `7030` | Interest expense |
 | `3030` | Retained earnings |
 | `5060` | Purchase price variance |
 | `8010` | Income summary |

@@ -1,6 +1,6 @@
 ---
 title: Schema Reference
-description: Student-friendly reference for the 69 implemented tables, key columns, and ER relationships.
+description: Student-friendly reference for the 73 implemented tables, key columns, and ER relationships.
 sidebar_label: Schema Reference
 ---
 
@@ -28,6 +28,7 @@ If you need the big-picture business story first, start with [Dataset Guide](../
 | Group | What belongs here | Count |
 |---|---|---:|
 | Accounting core | Accounts, journals, and posted ledger detail | 3 |
+| Fixed assets and financing | Asset register, lifecycle events, and note schedules | 4 |
 | Order-to-cash | Customers, commercial pricing, orders, shipments, invoices, cash, returns, credits, and refunds | 18 |
 | Procure-to-pay | Requisitions, purchase orders, receipts, supplier invoices, and disbursements | 9 |
 | Manufacturing | BOMs, routings, work centers, work orders, issues, completions, and close | 14 |
@@ -35,7 +36,7 @@ If you need the big-picture business story first, start with [Dataset Guide](../
 | Master data | Item, warehouse, and employee records | 3 |
 | Organizational planning | Cost centers, budget summary, and budget detail | 3 |
 | Demand planning and MRP | Forecasting, inventory policy, recommendations, MRP, and rough-cut capacity | 5 |
-| Total |  | 69 |
+| Total |  | 73 |
 
 ## How to Read the ER Diagrams
 
@@ -52,6 +53,8 @@ These are the main keys students use to move across groups.
 | Bridge key | Main bridge | How it connects |
 |---|---|---|
 | `ItemID` | Master data into O2C, P2P, manufacturing, and planning | Product-level analysis across the whole dataset |
+| `FixedAssetID` | Fixed assets into lifecycle events and note agreements | Connects the asset register to acquisitions, depreciation, financing, and disposal activity |
+| `DebtAgreementID` | Fixed-asset financing into monthly payment schedules | Connects note origination to principal and interest cash behavior |
 | `SupplyPlanRecommendationID` | Demand planning into requisitions, work orders, MRP, and rough-cut capacity | Connects planning pressure to later purchasing or manufacturing execution |
 | `WorkOrderID` | Manufacturing into issues, completions, close, and labor support | Main manufacturing execution anchor |
 | `WorkOrderOperationID` | Manufacturing into operation schedules and labor traceability | Connects scheduling and labor detail to one operation |
@@ -82,6 +85,33 @@ erDiagram
 - When `GLEntry.SourceDocumentType = 'JournalEntry'`, `GLEntry.SourceDocumentID -> JournalEntry.JournalEntryID`
 - For journal-origin rows, `GLEntry.VoucherNumber` typically matches `JournalEntry.EntryNumber`
 - `GLEntry.SourceDocumentType`, `SourceDocumentID`, and `SourceLineID` are the main operational trace fields
+
+## Fixed Assets and Financing
+
+This group holds the fixed-asset subledger: the asset register itself, the lifecycle events that tie CAPEX back to purchasing and disposal, and the note-payable schedules used for financed equipment.
+
+```mermaid
+erDiagram
+    FixedAsset ||--o{ FixedAssetEvent : tracks
+    FixedAsset ||--o{ DebtAgreement : financed_by
+    DebtAgreement ||--o{ DebtScheduleLine : amortizes
+```
+
+| Table | Use it for | Highest-value keys or fields |
+|---|---|---|
+| `FixedAsset` | Asset register and depreciation-routing setup | `FixedAssetID`, `AssetCode`, `BehaviorGroup`, `AssetAccountID`, `AccumulatedDepreciationAccountID`, `DepreciationDebitAccountID`, `CostCenterID`, `WarehouseID`, `WorkCenterID`, `InServiceDate`, `DisposalDate` |
+| `FixedAssetEvent` | Lifecycle events tied back to purchasing, financing, and disposal | `FixedAssetEventID`, `FixedAssetID`, `EventType`, `EventDate`, `PurchaseInvoiceID`, `PurchaseInvoiceLineID`, `DisbursementID`, `DebtAgreementID`, `JournalEntryID`, `FinancingType`, `ProceedsAmount` |
+| `DebtAgreement` | Note-payable agreement created for financed CAPEX | `DebtAgreementID`, `AgreementNumber`, `FixedAssetID`, `OriginationDate`, `PrincipalAmount`, `AnnualInterestRate`, `TermMonths`, `PaymentStartDate`, `ScheduledPaymentAmount` |
+| `DebtScheduleLine` | Monthly principal and interest schedule detail | `DebtScheduleLineID`, `DebtAgreementID`, `PaymentSequence`, `PaymentDate`, `PrincipalAmount`, `InterestAmount`, `PaymentAmount`, `EndingPrincipal`, `JournalEntryID`, `Status` |
+
+### Join and Traceability Cues
+
+- `FixedAssetEvent.FixedAssetID -> FixedAsset.FixedAssetID`
+- `DebtAgreement.FixedAssetID -> FixedAsset.FixedAssetID`
+- `DebtScheduleLine.DebtAgreementID -> DebtAgreement.DebtAgreementID`
+- `FixedAssetEvent.PurchaseInvoiceID -> PurchaseInvoice.PurchaseInvoiceID`
+- `FixedAssetEvent.DisbursementID -> DisbursementPayment.DisbursementID`
+- `FixedAssetEvent.JournalEntryID -> JournalEntry.JournalEntryID`
 
 ## Order-to-Cash
 
@@ -389,6 +419,8 @@ erDiagram
 - `PurchaseOrder.RequisitionID` is compatibility metadata when one PO batches multiple requisitions. Use `PurchaseOrderLine.RequisitionID` as the authoritative trace.
 - `PurchaseInvoiceLine.GoodsReceiptLineID` is the main match key for receipt-based inventory invoicing.
 - `PurchaseInvoiceLine.AccrualJournalEntryID` links direct service invoices back to accrual journals.
+- `FixedAsset.BehaviorGroup` controls whether depreciation feeds manufacturing cost or operating expense.
+- `FixedAssetEvent` preserves the bridge from capital purchases and disposals back to the source purchasing and journal documents.
 - `GoodsReceiptLine.ExtendedStandardCost` stores the receipt posting basis used for inventory and GRNI.
 - `EmployeeShiftRoster`, `EmployeeAbsence`, `TimeClockPunch`, and `OvertimeApproval` sit beneath the approved `TimeClockEntry` layer.
 - Manufacturing uses single-level BOMs plus one active routing per manufactured item.

@@ -6,6 +6,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from generator_dataset.fixed_assets import monthly_depreciation_by_debit_account
 from generator_dataset.master_data import current_role_employee_id
 from generator_dataset.schema import TABLE_COLUMNS
 from generator_dataset.state_cache import drop_context_attributes, get_or_build_cache
@@ -2092,7 +2093,8 @@ def monthly_manufacturing_overhead_pool_amount(context: GenerationContext, year:
         payroll_component = float(manufacturing_earnings) + float(manufacturing_burden)
     if monthly_direct_labor_reclass_amount(context, year, month) <= 0:
         return 0.0
-    return money(payroll_component + monthly_factory_overhead_amount(context, year, month))
+    manufacturing_depreciation = float(monthly_depreciation_by_debit_account(context, year, month).get("1090", 0.0))
+    return money(payroll_component + monthly_factory_overhead_amount(context, year, month) + manufacturing_depreciation)
 
 
 def work_order_overhead_cost_map(context: GenerationContext) -> dict[int, float]:

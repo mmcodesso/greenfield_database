@@ -1,0 +1,286 @@
+item_definitions:
+  - item_code: CAPEX-FURN-FIXT
+    item_name: Office And Showroom Furniture And Fixtures
+    item_group: Capex
+    asset_category: Furniture and Fixtures
+    behavior_group: Office
+    asset_account_number: "1110"
+    accumulated_depreciation_account_number: "1150"
+    depreciation_account_number: "6130"
+    cost_center_name: Administration
+    useful_life_months: 96
+    unit_of_measure: Each
+    supplier_category: Services
+  - item_code: CAPEX-WH-EQUIP
+    item_name: Warehouse Equipment
+    item_group: Capex
+    asset_category: Warehouse Equipment
+    behavior_group: Warehouse
+    asset_account_number: "1120"
+    accumulated_depreciation_account_number: "1160"
+    depreciation_account_number: "6130"
+    cost_center_name: Warehouse
+    useful_life_months: 84
+    unit_of_measure: Each
+    supplier_category: Logistics
+  - item_code: CAPEX-WH-DOCK
+    item_name: Warehouse Dock And Material Handling Equipment
+    item_group: Capex
+    asset_category: Warehouse Equipment
+    behavior_group: Warehouse
+    asset_account_number: "1120"
+    accumulated_depreciation_account_number: "1160"
+    depreciation_account_number: "6130"
+    cost_center_name: Warehouse
+    useful_life_months: 120
+    unit_of_measure: Each
+    supplier_category: Logistics
+  - item_code: CAPEX-WH-LABEL
+    item_name: Warehouse Labeling And Wrapping Equipment
+    item_group: Capex
+    asset_category: Warehouse Equipment
+    behavior_group: Warehouse
+    asset_account_number: "1120"
+    accumulated_depreciation_account_number: "1160"
+    depreciation_account_number: "6130"
+    cost_center_name: Warehouse
+    useful_life_months: 60
+    unit_of_measure: Each
+    supplier_category: Logistics
+  - item_code: CAPEX-OFF-IT
+    item_name: Office IT And Network Equipment
+    item_group: Capex
+    asset_category: Office Equipment
+    behavior_group: Office
+    asset_account_number: "1130"
+    accumulated_depreciation_account_number: "1170"
+    depreciation_account_number: "6130"
+    cost_center_name: Administration
+    useful_life_months: 48
+    unit_of_measure: Each
+    supplier_category: Services
+  - item_code: CAPEX-OFF-AV
+    item_name: Conference And Presentation Equipment
+    item_group: Capex
+    asset_category: Office Equipment
+    behavior_group: Office
+    asset_account_number: "1130"
+    accumulated_depreciation_account_number: "1170"
+    depreciation_account_number: "6130"
+    cost_center_name: Administration
+    useful_life_months: 60
+    unit_of_measure: Each
+    supplier_category: Services
+  - item_code: CAPEX-MFG-CUT
+    item_name: Cutting Cell Equipment
+    item_group: Capex
+    asset_category: Manufacturing Equipment
+    behavior_group: Manufacturing
+    asset_account_number: "1185"
+    accumulated_depreciation_account_number: "1186"
+    depreciation_account_number: "1090"
+    cost_center_name: Manufacturing
+    useful_life_months: 120
+    unit_of_measure: Each
+    supplier_category: Services
+    work_center_code: CUT
+  - item_code: CAPEX-MFG-ASM
+    item_name: Assembly Equipment
+    item_group: Capex
+    asset_category: Manufacturing Equipment
+    behavior_group: Manufacturing
+    asset_account_number: "1185"
+    accumulated_depreciation_account_number: "1186"
+    depreciation_account_number: "1090"
+    cost_center_name: Manufacturing
+    useful_life_months: 96
+    unit_of_measure: Each
+    supplier_category: Services
+    work_center_code: ASSEMBLY
+  - item_code: CAPEX-MFG-FIN
+    item_name: Finishing Equipment
+    item_group: Capex
+    asset_category: Manufacturing Equipment
+    behavior_group: Manufacturing
+    asset_account_number: "1185"
+    accumulated_depreciation_account_number: "1186"
+    depreciation_account_number: "1090"
+    cost_center_name: Manufacturing
+    useful_life_months: 120
+    unit_of_measure: Each
+    supplier_category: Services
+    work_center_code: FINISH
+  - item_code: CAPEX-MFG-PACK
+    item_name: Packing Line Equipment
+    item_group: Capex
+    asset_category: Manufacturing Equipment
+    behavior_group: Manufacturing
+    asset_account_number: "1185"
+    accumulated_depreciation_account_number: "1186"
+    depreciation_account_number: "1090"
+    cost_center_name: Manufacturing
+    useful_life_months: 84
+    unit_of_measure: Each
+    supplier_category: Services
+    work_center_code: PACK
+  - item_code: CAPEX-MFG-QA
+    item_name: Quality Assurance Equipment
+    item_group: Capex
+    asset_category: Manufacturing Equipment
+    behavior_group: Manufacturing
+    asset_account_number: "1185"
+    accumulated_depreciation_account_number: "1186"
+    depreciation_account_number: "1090"
+    cost_center_name: Manufacturing
+    useful_life_months: 60
+    unit_of_measure: Each
+    supplier_category: Services
+    work_center_code: QA
+
+opening_assets:
+  - asset_code: MFG-0001
+    item_code: CAPEX-MFG-CUT
+    asset_description: Panel Saw And Cutting Cell
+    in_service_date: "2021-12-15"
+    original_cost: 780000.0
+    opening_accumulated_depreciation: 156000.0
+  - asset_code: MFG-0002
+    item_code: CAPEX-MFG-ASM
+    asset_description: Assembly Benches And Pneumatic Tool Cells
+    in_service_date: "2021-12-10"
+    original_cost: 420000.0
+    opening_accumulated_depreciation: 105000.0
+  - asset_code: MFG-0003
+    item_code: CAPEX-MFG-FIN
+    asset_description: Finish Booth And Dust Collection System
+    in_service_date: "2020-12-15"
+    original_cost: 600000.0
+    opening_accumulated_depreciation: 180000.0
+  - asset_code: MFG-0004
+    item_code: CAPEX-MFG-PACK
+    asset_description: Packing Line Conveyors And Sealers
+    in_service_date: "2022-06-15"
+    original_cost: 210000.0
+    opening_accumulated_depreciation: 45000.0
+  - asset_code: MFG-0005
+    item_code: CAPEX-MFG-QA
+    asset_description: QA Benches And Test Equipment
+    in_service_date: "2022-12-15"
+    original_cost: 150000.0
+    opening_accumulated_depreciation: 30000.0
+  - asset_code: WH-0001
+    item_code: CAPEX-WH-EQUIP
+    asset_description: Forklift A And Charging Rack
+    in_service_date: "2020-12-15"
+    original_cost: 168000.0
+    opening_accumulated_depreciation: 72000.0
+    warehouse_name: East Distribution Center
+  - asset_code: WH-0002
+    item_code: CAPEX-WH-DOCK
+    asset_description: Dock Levelers And Pallet Lift Equipment
+    in_service_date: "2022-04-01"
+    original_cost: 240000.0
+    opening_accumulated_depreciation: 40000.0
+    warehouse_name: East Distribution Center
+  - asset_code: WH-0003
+    item_code: CAPEX-WH-LABEL
+    asset_description: Stretch Wrap And Labeling Station
+    in_service_date: "2023-04-01"
+    original_cost: 90000.0
+    opening_accumulated_depreciation: 12000.0
+    warehouse_name: East Distribution Center
+  - asset_code: WH-0004
+    item_code: CAPEX-WH-DOCK
+    asset_description: Racking And Pallet Flow Modules
+    in_service_date: "2020-12-01"
+    original_cost: 144000.0
+    opening_accumulated_depreciation: 36000.0
+    warehouse_name: East Distribution Center
+  - asset_code: OFF-0001
+    item_code: CAPEX-FURN-FIXT
+    asset_description: Headquarters Furniture Suite And Showroom Fixtures
+    in_service_date: "2021-12-01"
+    original_cost: 420000.0
+    opening_accumulated_depreciation: 105000.0
+  - asset_code: OFF-0002
+    item_code: CAPEX-OFF-IT
+    asset_description: Laptop Fleet Printers And Network Closets
+    in_service_date: "2022-12-01"
+    original_cost: 240000.0
+    opening_accumulated_depreciation: 60000.0
+  - asset_code: OFF-0003
+    item_code: CAPEX-OFF-AV
+    asset_description: Conference Room AV And Presentation Systems
+    in_service_date: "2023-04-01"
+    original_cost: 120000.0
+    opening_accumulated_depreciation: 16000.0
+
+events:
+  - event_code: OFF-202403-IT
+    event_type: Acquisition
+    event_date: "2024-03-22"
+    asset_code: OFF-0004
+    item_code: CAPEX-OFF-IT
+    asset_description: Office IT Refresh For Finance And Customer Service
+    original_cost: 85000.0
+    financing_type: Cash
+  - event_code: MFG-202407-ASM
+    event_type: Acquisition
+    event_date: "2024-07-18"
+    asset_code: MFG-0006
+    item_code: CAPEX-MFG-ASM
+    asset_description: Assembly Automation Cell Addition
+    original_cost: 360000.0
+    financing_type: Note
+    annual_interest_rate: 0.0675
+    term_months: 48
+    payment_start_date: "2024-08-01"
+  - event_code: WH-202502-DISPOSE
+    event_type: Disposal
+    event_date: "2025-02-12"
+    source_asset_code: WH-0001
+    asset_description: Disposal Of Replaced Forklift A
+    proceeds_amount: 28000.0
+  - event_code: WH-202502-FORK
+    event_type: Acquisition
+    event_date: "2025-02-12"
+    asset_code: WH-0005
+    item_code: CAPEX-WH-EQUIP
+    asset_description: Replacement Forklift And Battery Charging Package
+    original_cost: 220000.0
+    financing_type: Cash
+    warehouse_name: East Distribution Center
+  - event_code: WH-202509-RACK
+    event_type: Improvement
+    event_date: "2025-09-09"
+    asset_code: WH-0006
+    item_code: CAPEX-WH-DOCK
+    asset_description: Dock And Racking Expansion For Overflow Warehouse Lanes
+    original_cost: 140000.0
+    financing_type: Cash
+    warehouse_name: East Distribution Center
+  - event_code: OFF-202511-AV
+    event_type: Acquisition
+    event_date: "2025-11-03"
+    asset_code: OFF-0005
+    item_code: CAPEX-OFF-AV
+    asset_description: Conference Room Furniture And AV Refresh
+    original_cost: 65000.0
+    financing_type: Cash
+  - event_code: MFG-202601-FIN
+    event_type: Improvement
+    event_date: "2026-01-14"
+    asset_code: MFG-0007
+    item_code: CAPEX-MFG-FIN
+    asset_description: Finishing Booth Upgrade And Air Handling Retrofit
+    original_cost: 280000.0
+    financing_type: Note
+    annual_interest_rate: 0.064
+    term_months: 60
+    payment_start_date: "2026-02-02"
+  - event_code: MFG-202606-DISPOSE
+    event_type: Disposal
+    event_date: "2026-06-05"
+    source_asset_code: MFG-0004
+    asset_description: Retirement Of Obsolete Packing Line Conveyor
+    proceeds_amount: 0.0

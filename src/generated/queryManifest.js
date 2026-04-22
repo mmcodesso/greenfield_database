@@ -554,6 +554,21 @@ const queryManifest = {
     "filename": "53_budget_vs_actual_working_capital_and_cash_bridge.sql",
     "publicPath": "/financial/53_budget_vs_actual_working_capital_and_cash_bridge.sql"
   },
+  "financial/54_fixed_asset_rollforward_by_behavior_group.sql": {
+    "category": "financial",
+    "filename": "54_fixed_asset_rollforward_by_behavior_group.sql",
+    "publicPath": "/financial/54_fixed_asset_rollforward_by_behavior_group.sql"
+  },
+  "financial/55_capex_acquisitions_financing_and_disposals.sql": {
+    "category": "financial",
+    "filename": "55_capex_acquisitions_financing_and_disposals.sql",
+    "publicPath": "/financial/55_capex_acquisitions_financing_and_disposals.sql"
+  },
+  "financial/56_debt_amortization_and_cash_impact.sql": {
+    "category": "financial",
+    "filename": "56_debt_amortization_and_cash_impact.sql",
+    "publicPath": "/financial/56_debt_amortization_and_cash_impact.sql"
+  },
   "managerial/01_budget_vs_actual_by_cost_center.sql": {
     "category": "managerial",
     "filename": "01_budget_vs_actual_by_cost_center.sql",

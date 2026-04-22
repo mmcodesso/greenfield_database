@@ -12,6 +12,7 @@ import pandas as pd
 
 from generator_dataset.anomalies import inject_anomalies, invalidate_all_caches
 from generator_dataset.budgets import generate_budgets, generate_opening_balances
+from generator_dataset.capex import generate_month_capex_activity, generate_opening_fixed_asset_records
 from generator_dataset.exporters import (
     EXCEL_MAX_TABLE_DATA_ROWS,
     export_csv_zip,
@@ -248,6 +249,7 @@ def _generate_phase2_master_data_and_planning(
         ("Synchronize phase 2 work-center capacity and calendars", synchronize_work_center_capacity_and_calendars),
         ("Generate phase 2 inventory policies", generate_inventory_policies),
         ("Generate phase 2 demand forecasts", generate_demand_forecasts),
+        ("Generate phase 2 fixed asset opening records", generate_opening_fixed_asset_records),
         ("Generate phase 2 opening balances", generate_opening_balances),
         ("Generate phase 2 budgets", generate_budgets),
     ]
@@ -881,6 +883,7 @@ def build_phase5(config_path: str | Path = "config/settings.yaml") -> Generation
     generate_month_sales_invoices(context, 2026, 1)
     generate_month_cash_receipts(context, 2026, 1)
     generate_month_purchase_invoices(context, 2026, 1)
+    generate_month_capex_activity(context, 2026, 1)
     generate_month_disbursements(context, 2026, 1)
     validate_phase5(context)
     export_validation_report(context)
@@ -974,6 +977,7 @@ def build_phase12(config_path: str | Path = "config/settings.yaml") -> Generatio
         generate_month_sales_returns(context, year, month)
         generate_month_customer_refunds(context, year, month)
         generate_month_purchase_invoices(context, year, month)
+        generate_month_capex_activity(context, year, month)
         generate_month_disbursements(context, year, month)
     generate_recurring_manual_journals(context)
     generate_accrued_service_settlements(context)
@@ -1005,6 +1009,7 @@ def build_phase13(config_path: str | Path = "config/settings.yaml") -> Generatio
         generate_month_sales_returns(context, year, month)
         generate_month_customer_refunds(context, year, month)
         generate_month_purchase_invoices(context, year, month)
+        generate_month_capex_activity(context, year, month)
         generate_month_disbursements(context, year, month)
     generate_recurring_manual_journals(context)
     generate_accrued_service_settlements(context)
@@ -1036,6 +1041,7 @@ def build_phase14(config_path: str | Path = "config/settings.yaml") -> Generatio
         generate_month_sales_returns(context, year, month)
         generate_month_customer_refunds(context, year, month)
         generate_month_purchase_invoices(context, year, month)
+        generate_month_capex_activity(context, year, month)
         generate_month_disbursements(context, year, month)
     generate_recurring_manual_journals(context)
     generate_accrued_service_settlements(context)
@@ -1067,6 +1073,7 @@ def build_phase15(config_path: str | Path = "config/settings.yaml") -> Generatio
         generate_month_sales_returns(context, year, month)
         generate_month_customer_refunds(context, year, month)
         generate_month_purchase_invoices(context, year, month)
+        generate_month_capex_activity(context, year, month)
         generate_month_disbursements(context, year, month)
     generate_recurring_manual_journals(context)
     generate_accrued_service_settlements(context)
@@ -1534,6 +1541,7 @@ def build_full_dataset(
                 generate_month_customer_refunds,
             )
             _run_month_step(context, year, month, "generate_month_purchase_invoices", generate_month_purchase_invoices)
+            _run_month_step(context, year, month, "generate_month_capex_activity", generate_month_capex_activity)
             _run_month_step(context, year, month, "generate_month_disbursements", generate_month_disbursements)
             requisitions_converted_after = int(context.tables["PurchaseRequisition"]["Status"].eq("Converted to PO").sum())
             new_shipment_lines = context.tables["ShipmentLine"].iloc[shipment_line_count_before:]

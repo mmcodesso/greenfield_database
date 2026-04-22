@@ -1,4 +1,5 @@
 from generator_dataset.accrual_catalog import ACCRUAL_SERVICE_ITEMS
+from generator_dataset.fixed_assets import capex_item_count
 from generator_dataset.manufacturing import generate_boms
 from generator_dataset.master_data import (
     backfill_cost_center_managers,
@@ -25,9 +26,9 @@ def test_load_accounts_uses_configured_chart() -> None:
 
     load_accounts(context, "config/accounts.csv")
 
-    assert len(context.tables["Account"]) == 98
+    assert len(context.tables["Account"]) == 100
     assert context.tables["Account"]["AccountNumber"].is_unique
-    assert context.counters["Account"] == 99
+    assert context.counters["Account"] == 101
 
 
 def test_generate_phase1_master_data() -> None:
@@ -59,7 +60,7 @@ def test_generate_phase2_master_data() -> None:
     generate_customers(context)
     generate_suppliers(context)
 
-    assert len(context.tables["Item"]) == context.settings.item_count + len(ACCRUAL_SERVICE_ITEMS)
+    assert len(context.tables["Item"]) == context.settings.item_count + len(ACCRUAL_SERVICE_ITEMS) + capex_item_count()
     assert len(context.tables["BillOfMaterial"]) > 0
     assert len(context.tables["BillOfMaterialLine"]) > 0
     assert len(context.tables["Customer"]) == context.settings.customer_count

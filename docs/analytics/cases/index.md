@@ -25,6 +25,7 @@ That makes the case library the most useful after the reader has already seen th
 |---|---|---|
 | [Working Capital and Cash Conversion Case](working-capital-and-cash-conversion-case.md) | core walkthrough | financial |
 | [Financial Statement Bridge Case](financial-statement-bridge-case.md) | core walkthrough | financial + audit |
+| [CAPEX and Fixed Asset Lifecycle Case](capex-fixed-asset-lifecycle-case.md) | core walkthrough | financial + manufacturing cost |
 | [Pricing and Margin Governance Case](pricing-and-margin-governance-case.md) | analytical comparison | financial + managerial |
 
 ## Managerial and Planning
