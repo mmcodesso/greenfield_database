@@ -70,19 +70,19 @@ The default package is a student-facing, anomaly-enriched teaching build. Separa
   ```
 - Dataset generation:
   ```bash
-  python generate_dataset.py
-  python generate_dataset.py config/settings_validation.yaml core
+  .venv\Scripts\python.exe generate_dataset.py
+  .venv\Scripts\python.exe generate_dataset.py config/settings_validation.yaml core
   ```
 - Report asset generation from an existing SQLite file:
   ```bash
-  python scripts/generate-site-reports.py --config config/settings.yaml --sqlite-path outputs/CharlesRiver.sqlite --report-output-dir static/reports
+  .venv\Scripts\python.exe scripts/generate-site-reports.py --config config/settings.yaml --sqlite-path outputs/CharlesRiver.sqlite --report-output-dir static/reports
   ```
 - Tests and Python syntax sanity:
   ```bash
-  pytest -q
-  python -B -m compileall -q src tests
+  .venv\Scripts\python.exe -m pytest -q
+  .venv\Scripts\python.exe -B -m compileall -q src tests
   ```
-- Any agent- or tool-driven test invocation must use a timeout of at least one hour (`3600000` ms). The test suite is known to run long enough that shorter defaults frequently fail due to timeout.
+- Any agent- or tool-driven test invocation must use a timeout that matches the scope. Use at least one hour (`3600000` ms) for small targeted slices, and at least two hours (`7200000` ms) for broad multi-module runs or full-suite validation.
 - Package deploy command:
   ```bash
   npm run deploy
@@ -143,12 +143,17 @@ Notes:
 
 - Before finishing, run the checks that match the touched area and report what actually ran.
 - For Python validation or dataset-generation commands, use the interpreter from the repo-local `.venv` so tests run against the project environment, not the system Python.
-- For any explicit test run (`pytest`, targeted pytest selections, or equivalent test commands), use a command timeout of at least one hour (`3600000` ms).
+- Do not default to one monolithic `pytest -q` run when the touched area can be validated in smaller slices. Prefer targeted module-level or feature-level pytest commands first, then add broader slices only when needed.
+- For explicit test runs, split validation into smaller commands whenever practical so failures surface sooner and long-running groups do not block the whole validation pass.
+- Use command timeouts that match the slice size:
+  - at least one hour (`3600000` ms) for small targeted pytest slices
+  - at least two hours (`7200000` ms) for broad multi-module slices, `pytest -q --durations=30`, or full-suite runs
 - Minimum for Python, SQL, config, schema, exporter, or generator changes:
   ```bash
-  .venv\Scripts\python.exe -m pytest -q
+  .venv\Scripts\python.exe -m pytest -q <smallest relevant test slice>
   .venv\Scripts\python.exe -B -m compileall -q src tests
   ```
+- If broad Python regression coverage is still required after targeted checks, run it as multiple pytest slices when possible, for example by affected module groups or test files, rather than assuming the entire suite should run in one command.
 - Minimum for docs, Docusaurus config, sidebar, component, query-catalog, report-catalog, or branding changes:
   ```bash
   npm run build

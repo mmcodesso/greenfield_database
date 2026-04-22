@@ -17,6 +17,8 @@ The company also runs a hybrid model. It buys some finished goods ready-made and
 
 The business sells home furnishings and related interior products to customers who need both design variety and dependable delivery. Some products are sourced from suppliers for resale. Others are built internally when the company wants more control over style, lead time, margin, or product mix.
 
+The company also sells hourly design services as a standalone operating line. The internal name for that activity is `Design Services`. Customers can engage the firm for consultation, planning, specification work, and project coordination. Those services are billed from approved monthly hours rather than from shipment quantity, which gives students a second revenue model inside the same company.
+
 That means the dataset is not built around a single narrow business model. Students can compare purchased products with manufactured products inside the same company and then see how those choices change planning, inventory, payroll, costing, and ledger results.
 
 ## Who the Company Serves
@@ -26,6 +28,7 @@ The customer base is intentionally broad enough to support several teaching ques
 - commercial buyers who place larger recurring orders
 - interior-design firms that care about collections, style consistency, and client-specific needs
 - repeat regional customers who create a stable local order base
+- customers who need dedicated design support before, beside, or instead of a product order
 
 This mix makes the revenue story more useful for analysis. Students can ask how pricing, fulfillment, returns, and collections differ by customer type rather than treating every sale as the same kind of transaction.
 
@@ -44,11 +47,11 @@ The company also organizes products into named collections and style families. T
 
 This company works as one connected operating system, not as a set of disconnected departments.
 
-Customer demand starts in order-to-cash. Sales orders, shipments, invoices, receipts, returns, credits, and refunds show how the business sells and settles customer activity. That demand then affects what inventory is available and what needs to be replenished.
+Customer demand starts in order-to-cash. Sales orders, shipments, invoices, receipts, returns, credits, and refunds show how the business sells and settles customer activity. Some of that demand is physical product demand. Some of it becomes design-service engagements that are staffed, approved in hours, and billed monthly. Both paths still end in customer invoicing and settlement.
 
 Replenishment flows into procure-to-pay and manufacturing. Purchasing supports both resale inventory and the raw materials or packaging needed for in-house production. Manufacturing turns selected products into finished goods through planning, work orders, material issue, labor support, production completion, and close.
 
-Payroll and time support the labor side of the same story. Approved time records, payroll registers, payments, remittances, and labor-time entries help students see how workforce activity connects to expense, liabilities, and product cost.
+Payroll and time support the labor side of the same story. Approved time records, payroll registers, payments, remittances, and labor-time entries help students see how workforce activity connects to expense, liabilities, and product cost. The new design-services line adds another bridge here: design employees support customer engagements, their payroll still runs through normal payroll expense, and their customer-facing margin is analyzed from approved service-time cost snapshots rather than from manufacturing inventory.
 
 Finance then closes the books after those operational cycles move. Manual journals, accruals, reclasses, and year-end close sit beside the document-driven processes and complete the accounting environment. The result is a company story where sales demand drives replenishment, replenishment supports fulfillment, labor supports manufacturing, and finance ties the whole model back to `GLEntry`.
 

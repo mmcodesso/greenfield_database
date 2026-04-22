@@ -50,6 +50,7 @@ AccountID,AccountNumber,AccountName,AccountType,AccountSubType,ParentAccountID,N
 46,4050,Freight Revenue,Revenue,Operating Revenue,41,Credit,1
 47,4060,Sales Returns and Allowances,Revenue,Contra Revenue,41,Debit,1
 48,4070,Sales Discounts,Revenue,Contra Revenue,41,Debit,0
+101,4080,Sales Revenue - Design Services,Revenue,Operating Revenue,41,Credit,1
 49,5000,Cost of Goods Sold,Expense,Header,,Debit,1
 50,5010,COGS - Furniture,Expense,COGS,49,Debit,1
 51,5020,COGS - Lighting,Expense,COGS,49,Debit,1
@@ -84,6 +85,7 @@ AccountID,AccountNumber,AccountName,AccountType,AccountSubType,ParentAccountID,N
 88,6230,Salaries Expense - Purchasing,Expense,Operating Expense,57,Debit,1
 89,6240,Salaries Expense - Marketing,Expense,Operating Expense,57,Debit,1
 90,6250,Salaries Expense - Research and Development,Expense,Operating Expense,57,Debit,1
+102,6280,Salaries Expense - Design Services,Expense,Operating Expense,57,Debit,1
 80,7000,Other Income and Expense,Revenue,Header,,Credit,0
 81,7010,Interest Income,Revenue,Other Income,80,Credit,0
 82,7020,Gain or Loss on Asset Disposal,Revenue,Other Income or Expense,80,Credit,1

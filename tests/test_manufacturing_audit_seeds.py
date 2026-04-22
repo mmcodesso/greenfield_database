@@ -8,7 +8,6 @@ import pandas as pd
 
 DETAIL_QUERY_PATH = Path("queries/audit/52_released_work_orders_due_without_actual_start_review.sql")
 SUMMARY_QUERY_PATH = Path("queries/audit/53_released_work_orders_due_without_actual_start_summary.sql")
-EXPECTED_WORK_ORDER_IDS = {1953, 1954, 1983, 1990, 1991}
 
 
 def _read_sql_result(sqlite_path: Path, sql_path: Path) -> pd.DataFrame:
@@ -39,52 +38,58 @@ def test_manufacturing_audit_seeds_present_in_default_published_build(
     default_anomaly_published_package_artifacts: dict[str, object],
 ) -> None:
     context = default_anomaly_published_package_artifacts["context"]
-    phase23 = context.validation_results["phase23"]
+    phase8 = context.validation_results["phase8"]
 
-    assert phase23["manufacturing_controls"]["exception_count"] == 0
-    assert phase23["manufacturing_audit_seeds"]["exception_count"] == 5
-    assert {
+    assert phase8["manufacturing_controls"]["exception_count"] == 0
+    assert phase8["manufacturing_audit_seeds"]["exception_count"] == 5
+    seeded_work_order_ids = {
         int(exception["work_order_id"])
-        for exception in phase23["manufacturing_audit_seeds"]["exceptions"]
-    } == EXPECTED_WORK_ORDER_IDS
+        for exception in phase8["manufacturing_audit_seeds"]["exceptions"]
+    }
+    assert len(seeded_work_order_ids) == 5
     assert {
-        exception["type"] for exception in phase23["manufacturing_audit_seeds"]["exceptions"]
+        exception["type"] for exception in phase8["manufacturing_audit_seeds"]["exceptions"]
     } == {"released_work_order_due_without_actual_start"}
 
     log_text = Path(default_anomaly_published_package_artifacts["generation_log_path"]).read_text(encoding="utf-8")
-    assert "VALIDATION | phase23.manufacturing_controls | exception_count=0" in log_text
-    assert "VALIDATION | phase23.manufacturing_audit_seeds | exception_count=5" in log_text
+    assert "VALIDATION | phase8.manufacturing_controls | exception_count=0" in log_text
+    assert "VALIDATION | phase8.manufacturing_audit_seeds | exception_count=5" in log_text
 
 
 def test_manufacturing_audit_seed_queries_and_support_workbook_align(
     default_anomaly_published_package_artifacts: dict[str, object],
 ) -> None:
+    context = default_anomaly_published_package_artifacts["context"]
+    seeded_work_order_ids = {
+        int(exception["work_order_id"])
+        for exception in context.validation_results["phase8"]["manufacturing_audit_seeds"]["exceptions"]
+    }
     sqlite_path = Path(default_anomaly_published_package_artifacts["sqlite_path"])
     detail = _read_sql_result(sqlite_path, DETAIL_QUERY_PATH)
     summary = _read_sql_result(sqlite_path, SUMMARY_QUERY_PATH)
 
-    assert set(detail["WorkOrderID"].astype(int)) == EXPECTED_WORK_ORDER_IDS
-    assert len(detail) == 5
+    assert set(detail["WorkOrderID"].astype(int)) == seeded_work_order_ids
+    assert len(detail) == len(seeded_work_order_ids)
     assert set(detail["FirstActualStartStatus"]) == {"No actual start recorded"}
-    assert int(summary["WorkOrderCount"].sum()) == 5
+    assert int(summary["WorkOrderCount"].sum()) == len(seeded_work_order_ids)
 
     support_path = Path(default_anomaly_published_package_artifacts["support_excel_path"])
     checks = pd.read_excel(support_path, sheet_name="ValidationChecks")
     exceptions = pd.read_excel(support_path, sheet_name="ValidationExceptions")
 
-    phase23_check = checks[
-        checks["Stage"].astype(str).eq("phase23")
+    phase8_check = checks[
+        checks["Stage"].astype(str).eq("phase8")
         & checks["Area"].astype(str).eq("manufacturing_audit_seeds")
     ]
-    assert not phase23_check.empty
-    assert int(phase23_check.iloc[0]["ExceptionCount"]) == 5
+    assert not phase8_check.empty
+    assert int(phase8_check.iloc[0]["ExceptionCount"]) == 5
 
-    phase23_exceptions = exceptions[
-        exceptions["Stage"].astype(str).eq("phase23")
+    phase8_exceptions = exceptions[
+        exceptions["Stage"].astype(str).eq("phase8")
         & exceptions["Area"].astype(str).eq("manufacturing_audit_seeds")
     ]
-    assert len(phase23_exceptions) == 5
-    assert set(phase23_exceptions["ExceptionType"].astype(str)) == {
+    assert len(phase8_exceptions) == 5
+    assert set(phase8_exceptions["ExceptionType"].astype(str)) == {
         "released_work_order_due_without_actual_start"
     }
 

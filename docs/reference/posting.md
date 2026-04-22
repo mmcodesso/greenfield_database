@@ -16,6 +16,10 @@ These documents are generated for process analysis but do **not** create `GLEntr
 
 - `SalesOrder`
 - `SalesOrderLine`
+- `ServiceEngagement`
+- `ServiceEngagementAssignment`
+- `ServiceTimeEntry`
+- `ServiceBillingLine`
 - `PurchaseRequisition`
 - `PurchaseOrder`
 - `PurchaseOrderLine`
@@ -57,6 +61,7 @@ These documents are generated for process analysis but do **not** create `GLEntr
 | Freight settlement | `JournalEntry` plus seeded GL rows | First business day of month | `2040` Accrued Expenses | `1010` Cash and Cash Equivalents |
 | Shipment | `Shipment`, `ShipmentLine` | `ShipmentDate` | Item COGS account and `5050` Freight-Out Expense | Item inventory account and `2040` Accrued Expenses for outbound freight |
 | Sales invoice | `SalesInvoice`, `SalesInvoiceLine` | `InvoiceDate` | Accounts receivable | Item revenue account, `4050` Freight Revenue, and sales tax payable |
+| Design-service invoice | `SalesInvoice`, `SalesInvoiceLine`, `ServiceBillingLine` | `InvoiceDate` | Accounts receivable | `4080` Sales Revenue - Design Services and sales tax payable |
 | Cash receipt | `CashReceipt` | `ReceiptDate` | Cash | `2060` Customer Deposits and Unapplied Cash |
 | Cash receipt application | `CashReceiptApplication` | `ApplicationDate` | `2060` Customer Deposits and Unapplied Cash | Accounts receivable |
 | Sales return | `SalesReturn`, `SalesReturnLine` | `ReturnDate` | Item inventory account | Item COGS account |
@@ -118,3 +123,5 @@ Each operational posting written to `GLEntry` includes:
 - `PostingDate`
 - `FiscalYear`
 - `FiscalPeriod`
+
+For design services, `SourceDocumentType = 'SalesInvoice'` and `SourceLineID = SalesInvoiceLineID` still hold the revenue trace. `ServiceBillingLine` is the extra bridge that explains which approved hours created that invoice line.

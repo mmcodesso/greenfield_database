@@ -43,6 +43,12 @@ def _values_match(left: object, right: object, *, numeric: bool = False) -> bool
         return True
     if numeric:
         return round(float(left), 4) == round(float(right), 4)
+    if isinstance(left, str) or isinstance(right, str):
+        return str(left) == str(right)
+    try:
+        return round(float(left), 4) == round(float(right), 4)
+    except (TypeError, ValueError):
+        pass
     return str(left) == str(right)
 
 
@@ -272,4 +278,4 @@ def test_phase23_docs_and_sidebar_entries_exist() -> None:
     assert "`RequisitionID`, `RequisitionNumber`" in schema_guide
     assert "`PILineID`, `PurchaseInvoiceID`" in schema_guide
     assert "`DisbursementID`, `PurchaseInvoiceID`" in schema_guide
-    assert "**69 tables**" in dataset_guide
+    assert "**73 tables**" in dataset_guide

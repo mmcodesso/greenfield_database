@@ -326,6 +326,22 @@ const reportPackManifest = {
         }
       },
       {
+        "reportSlug": "design-service-revenue-and-billed-hours",
+        "teachingRole": "drill-down",
+        "whyItMatters": "Use the service billing view to separate the hourly design-services line from the goods business and see how customer-month revenue converts from approved hours.",
+        "discussionQuestions": [
+          "Which customers generate the most billed design-service hours each month?",
+          "Does the service revenue mix stay concentrated in a small number of customers?",
+          "Where does realized hourly revenue look strongest or weakest?"
+        ],
+        "suggestedAnalysis": [
+          "Compare billed hours, invoice count, and service revenue by customer-month.",
+          "Look for months where service hours rise without a proportional revenue change.",
+          "Use the result to decide whether the next drill-down should be customer mix, engagement staffing, or collections timing."
+        ],
+        "relatedLink": null
+      },
+      {
         "reportSlug": "budget-vs-actual-revenue-price-volume-cost-bridge",
         "teachingRole": "drill-down",
         "whyItMatters": "The revenue price-volume-cost bridge shows whether plan variance comes from demand, realized selling price, or standard-cost consumption by portfolio slice.",

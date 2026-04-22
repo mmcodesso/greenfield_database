@@ -33,12 +33,12 @@ The dataset lets you move from business activity to source documents and from so
 
 ## What the Dataset Contains
 
-The current implementation contains **69 tables** across eight areas:
+The current implementation contains **73 tables** across eight areas:
 
 | Area | What it covers | Count |
 |---|---|---:|
 | Accounting core | Chart of accounts, journals, and posted ledger detail | 3 |
-| Order-to-cash | Customers, commercial pricing, orders, shipments, invoices, cash, returns, credits, and refunds | 18 |
+| Order-to-cash | Customers, commercial pricing, goods orders, service engagements, shipments, invoices, cash, returns, credits, and refunds | 22 |
 | Procure-to-pay | Requisitions, purchase orders, receipts, supplier invoices, and disbursements | 9 |
 | Manufacturing | BOMs, routings, work centers, work orders, issues, completions, and close | 14 |
 | Payroll and time | Shifts, rosters, absences, overtime approvals, punches, approved daily time, payroll, and remittances | 14 |
@@ -88,6 +88,8 @@ You do not need every key on day one. Start with the keys that anchor document c
 | `CustomerID` | Customer to orders, invoices, receipts, returns, credits, and refunds |
 | `SalesOrderID` | Sales order header to fulfillment and billing |
 | `SalesOrderLineID` | Order lines to shipment lines and invoice lines |
+| `ServiceEngagementID` | One service engagement across staffing, approved time, and billing |
+| `ServiceEngagementAssignmentID` | One employee assignment across approved service-time rows |
 | `ShipmentLineID` | Shipped lines to billed lines and returned lines |
 | `SupplierID` | Supplier to purchase orders, invoices, and payments |
 | `PurchaseOrderID` | Purchase order header to receipts and invoices |
@@ -114,6 +116,10 @@ These are the fastest ways to move through the model.
 ### O2C path
 
 `Customer -> SalesOrder -> SalesOrderLine -> Shipment -> ShipmentLine -> SalesInvoice -> SalesInvoiceLine`
+
+The design-services branch is:
+
+`Customer -> SalesOrder -> SalesOrderLine -> ServiceEngagement -> ServiceEngagementAssignment -> ServiceTimeEntry -> ServiceBillingLine -> SalesInvoiceLine`
 
 Cash settlement is tracked through:
 
@@ -197,6 +203,7 @@ Start with:
 
 - `GLEntry`
 - `Account`
+- `ServiceBillingLine`
 - `SalesInvoice`
 - `CashReceiptApplication`
 - `PurchaseInvoice`
@@ -213,6 +220,8 @@ Start with:
 - `PriceListLine`
 - `PromotionProgram`
 - `PriceOverrideApproval`
+- `ServiceEngagement`
+- `ServiceTimeEntry`
 - `Budget`
 - `BudgetLine`
 - `CostCenter`
@@ -238,6 +247,7 @@ Start with:
 ## Practical Starting Tips
 
 - `CashReceiptApplication` is the authoritative invoice-settlement link in O2C.
+- `ServiceBillingLine` is the authoritative hours-to-invoice bridge for design-service billing.
 - For P2P traceability, start with `PurchaseOrderLine.RequisitionID`, `PurchaseInvoiceLine.GoodsReceiptLineID`, and `PurchaseInvoiceLine.AccrualJournalEntryID`.
 - For manufacturing, start from `WorkOrderID` and then move outward to issues, completions, close, and labor.
 - For time and attendance, start from `EmployeeShiftRosterID`, `TimeClockEntryID`, or `ShiftDefinitionID`.

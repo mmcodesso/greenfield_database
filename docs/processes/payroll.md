@@ -19,6 +19,8 @@ That distinction matters. Raw punches are not the same thing as approved hours. 
 
 Payroll also connects to manufacturing. Approved time can flow into `LaborTimeEntry`, direct labor can be tied to a work-order operation, and payroll later supports direct-labor and manufacturing-overhead reclass activity without switching the dataset to full actual-cost inventory.
 
+Payroll now also connects to the customer-facing design-services line. Design employees still move through normal payroll registers, payments, and liabilities, but their engagement margin is analyzed through `ServiceTimeEntry` cost snapshots instead of through manufacturing costing.
+
 ## Normal Process Overview
 
 ```mermaid
@@ -85,6 +87,7 @@ Start with approved time and labor support, then move into payroll posting, cash
 - `PayrollRegister` is the main payroll accounting event. It creates the expense and liability picture for the period.
 - `PayrollPayment` and `PayrollLiabilityRemittance` are separate settlement paths. One clears employee net pay, and the other clears withholding and deduction liabilities later.
 - `AttendanceException` sits beside the normal flow as a control-review table rather than as a posting event.
+- Design-service labor stays in payroll expense under the `Design Services` cost center. Customer-engagement margin is analyzed through `ServiceTimeEntry`, not capitalized into inventory or manufacturing clearing.
 
 ## Analytical Subsections
 
@@ -245,6 +248,12 @@ flowchart LR
 -- Main join path: TimeClockEntry -> LaborTimeEntry -> WorkOrderOperation, plus PayrollRegisterLine and reclass journals.
 -- Suggested analysis: Group by work order, work center, item, or payroll period.
 ```
+
+### Design-Service Labor Support
+
+Not every labor-support question in the dataset ends in manufacturing. Design employees can support customer engagements directly. In that path, payroll still records the wages and liabilities in the normal way, but `ServiceTimeEntry` carries the approved billable and non-billable hours plus the labor-cost snapshot used for customer-engagement margin analysis.
+
+Students should keep the distinction clear. Manufacturing labor can be reclassed into production flows. Design-service labor remains period expense in payroll and becomes customer-margin analysis only through the service-time bridge.
 
 ### Attendance Exceptions and Control Review
 

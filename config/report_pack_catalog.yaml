@@ -229,6 +229,17 @@ packs:
         related_link:
           label: Pricing and Margin Governance Case
           href: /docs/analytics/cases/pricing-and-margin-governance-case
+      - report_slug: design-service-revenue-and-billed-hours
+        teaching_role: drill-down
+        why_it_matters: Use the service billing view to separate the hourly design-services line from the goods business and see how customer-month revenue converts from approved hours.
+        discussion_questions:
+          - Which customers generate the most billed design-service hours each month?
+          - Does the service revenue mix stay concentrated in a small number of customers?
+          - Where does realized hourly revenue look strongest or weakest?
+        suggested_analysis:
+          - Compare billed hours, invoice count, and service revenue by customer-month.
+          - Look for months where service hours rise without a proportional revenue change.
+          - Use the result to decide whether the next drill-down should be customer mix, engagement staffing, or collections timing.
       - report_slug: budget-vs-actual-revenue-price-volume-cost-bridge
         teaching_role: drill-down
         why_it_matters: The revenue price-volume-cost bridge shows whether plan variance comes from demand, realized selling price, or standard-cost consumption by portfolio slice.

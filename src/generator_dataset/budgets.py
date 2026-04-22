@@ -80,6 +80,7 @@ BUDGET_ACCOUNTS_BY_COST_CENTER = {
     "Customer Service": ["6040", "6080", "6090", "6110", "6140"],
     "Research and Development": ["6220", "6250", "6140", "6110", "6200"],
     "Marketing": ["6150", "6160", "6240", "6140", "6200"],
+    "Design Services": ["4080", "6140", "6200", "6280"],
 }
 
 

@@ -7,7 +7,8 @@ import pandas as pd
 
 from generator_dataset.accrual_catalog import ACCRUAL_ACCOUNT_METADATA, ACCRUAL_SERVICE_ITEMS
 from generator_dataset.budgets import SUMMARY_BUDGET_CATEGORIES, budget_horizon_months
-from generator_dataset.fixed_assets import capex_item_count
+from generator_dataset.fixed_assets import capex_item_count, monthly_depreciation_by_debit_account, monthly_depreciation_entries
+from generator_dataset.master_data import DESIGN_SERVICE_ITEMS, DESIGN_SERVICE_SEGMENT
 from generator_dataset.journals import accrual_journal_details, planned_freight_settlements
 from generator_dataset.manufacturing import (
     CAPACITY_EXCEPTION_REASONS,
@@ -77,6 +78,59 @@ def planning_week_start(value: pd.Timestamp | str) -> pd.Timestamp:
     return timestamp - pd.Timedelta(days=int(timestamp.weekday()))
 
 
+def comparable_values_match(left: Any, right: Any, *, numeric: bool = False) -> bool:
+    if pd.isna(left) and pd.isna(right):
+        return True
+    if numeric:
+        try:
+            return round(float(left), 4) == round(float(right), 4)
+        except (TypeError, ValueError):
+            return False
+    if isinstance(left, str) or isinstance(right, str):
+        return str(left) == str(right)
+    try:
+        return round(float(left), 4) == round(float(right), 4)
+    except (TypeError, ValueError):
+        return str(left) == str(right)
+
+
+def manufacturing_clearing_input_total(context: GenerationContext) -> float:
+    payroll_lines = payroll_register_lines_with_headers(context)
+    payroll_total = 0.0
+    if not payroll_lines.empty:
+        manufacturing_cost_center = manufacturing_cost_center_id(context)
+        manufacturing_lines = payroll_lines[
+            payroll_lines["CostCenterID"].astype(int).eq(manufacturing_cost_center)
+        ].copy()
+        if not manufacturing_lines.empty:
+            direct_labor_month_flags = {
+                (int(row.FiscalYear), int(row.FiscalPeriod)): monthly_direct_labor_reclass_amount(
+                    context,
+                    int(row.FiscalYear),
+                    int(row.FiscalPeriod),
+                ) > 0
+                for row in manufacturing_lines[["FiscalYear", "FiscalPeriod"]].drop_duplicates().itertuples(index=False)
+            }
+            earnings_types = {"Regular Earnings", "Overtime Earnings", "Salary Earnings", "Bonus"}
+            burden_types = {"Employer Payroll Tax", "Employer Benefits"}
+            for line in manufacturing_lines.itertuples(index=False):
+                period_key = (int(line.FiscalYear), int(line.FiscalPeriod))
+                direct_labor_month = direct_labor_month_flags.get(period_key, False)
+                line_type = str(line.LineType)
+                if line_type in earnings_types and (pd.notna(line.WorkOrderID) or direct_labor_month):
+                    payroll_total += float(line.Amount)
+                elif line_type in burden_types and direct_labor_month:
+                    payroll_total += float(line.Amount)
+
+    journal_total = 0.0
+    for year, month in fiscal_months(context):
+        direct_labor_month = monthly_direct_labor_reclass_amount(context, year, month) > 0
+        if direct_labor_month:
+            journal_total += float(monthly_factory_overhead_amount(context, year, month))
+        journal_total += float(monthly_depreciation_by_debit_account(context, year, month).get("1090", 0.0))
+    return money(payroll_total + journal_total)
+
+
 def account_id_by_number(context: GenerationContext, account_number: str) -> int:
     accounts = context.tables["Account"]
     matches = accounts.loc[accounts["AccountNumber"].astype(str).eq(account_number), "AccountID"]
@@ -111,7 +165,7 @@ def validate_phase2(context: GenerationContext) -> dict[str, Any]:
     exceptions = list(results["exceptions"])
 
     expected_counts = {
-        "Item": context.settings.item_count + len(ACCRUAL_SERVICE_ITEMS) + capex_item_count(),
+        "Item": context.settings.item_count + len(DESIGN_SERVICE_ITEMS) + len(ACCRUAL_SERVICE_ITEMS) + capex_item_count(),
         "Customer": context.settings.customer_count,
         "Supplier": context.settings.supplier_count,
     }
@@ -594,6 +648,66 @@ def validate_account_rollforward(context: GenerationContext) -> dict[str, Any]:
         ),
         2,
     )
+    inventory_account_ids = {
+        account_id_by_number(context, "1040"),
+        account_id_by_number(context, "1045"),
+    }
+    inventory_item_ids = (
+        set(
+            context.tables["Item"].loc[
+                context.tables["Item"]["InventoryAccountID"].notna()
+                & context.tables["Item"]["InventoryAccountID"].fillna(-1).astype(int).isin(inventory_account_ids),
+                "ItemID",
+            ].astype(int).tolist()
+        )
+        if not context.tables["Item"].empty
+        else set()
+    )
+    goods_receipt_inventory_total = round(
+        float(
+            context.tables["GoodsReceiptLine"].loc[
+                context.tables["GoodsReceiptLine"]["ItemID"].astype(int).isin(inventory_item_ids),
+                "ExtendedStandardCost",
+            ].sum()
+        ),
+        2,
+    ) if not context.tables["GoodsReceiptLine"].empty else 0.0
+    production_completion_inventory_total = round(
+        float(
+            context.tables["ProductionCompletionLine"].loc[
+                context.tables["ProductionCompletionLine"]["ItemID"].astype(int).isin(inventory_item_ids),
+                "ExtendedStandardTotalCost",
+            ].sum()
+        ),
+        2,
+    ) if not context.tables["ProductionCompletionLine"].empty else 0.0
+    sales_return_inventory_total = round(
+        float(
+            context.tables["SalesReturnLine"].loc[
+                context.tables["SalesReturnLine"]["ItemID"].astype(int).isin(inventory_item_ids),
+                "ExtendedStandardCost",
+            ].sum()
+        ),
+        2,
+    ) if not context.tables["SalesReturnLine"].empty else 0.0
+    material_issue_inventory_total = round(
+        float(
+            context.tables["MaterialIssueLine"].loc[
+                context.tables["MaterialIssueLine"]["ItemID"].astype(int).isin(inventory_item_ids),
+                "ExtendedStandardCost",
+            ].sum()
+        ),
+        2,
+    ) if not context.tables["MaterialIssueLine"].empty else 0.0
+    shipment_inventory_total = round(
+        float(
+            context.tables["ShipmentLine"].loc[
+                context.tables["ShipmentLine"]["ItemID"].astype(int).isin(inventory_item_ids),
+                "ExtendedStandardCost",
+            ].sum()
+        ),
+        2,
+    ) if not context.tables["ShipmentLine"].empty else 0.0
     checks = [
         {
             "name": "AR",
@@ -628,11 +742,11 @@ def validate_account_rollforward(context: GenerationContext) -> dict[str, Any]:
         {
             "name": "Inventory",
             "expected": round(
-                float(context.tables["GoodsReceiptLine"]["ExtendedStandardCost"].sum())
-                + float(context.tables["ProductionCompletionLine"]["ExtendedStandardTotalCost"].sum())
-                + float(context.tables["SalesReturnLine"]["ExtendedStandardCost"].sum())
-                - float(context.tables["MaterialIssueLine"]["ExtendedStandardCost"].sum())
-                - float(context.tables["ShipmentLine"]["ExtendedStandardCost"].sum()),
+                goods_receipt_inventory_total
+                + production_completion_inventory_total
+                + sales_return_inventory_total
+                - material_issue_inventory_total
+                - shipment_inventory_total,
                 2,
             ),
             "actual": gl_debit_net("1040") + gl_debit_net("1045"),
@@ -702,7 +816,7 @@ def validate_account_rollforward(context: GenerationContext) -> dict[str, Any]:
         {
             "name": "Manufacturing Cost Clearing",
             "expected": round(
-                float(sum(work_order_actual_conversion_cost_map(context).values()))
+                float(manufacturing_clearing_input_total(context))
                 - float(context.tables["ProductionCompletionLine"]["ExtendedStandardConversionCost"].sum())
                 - float(context.tables["WorkOrderClose"]["ConversionVarianceAmount"].sum()),
                 2,
@@ -953,6 +1067,10 @@ def validate_p2p_phase9_controls(context: GenerationContext) -> dict[str, Any]:
 def validate_o2c_phase11_controls(context: GenerationContext) -> dict[str, Any]:
     sales_orders = context.tables["SalesOrder"]
     sales_order_lines = context.tables["SalesOrderLine"]
+    service_engagements = context.tables["ServiceEngagement"]
+    service_assignments = context.tables["ServiceEngagementAssignment"]
+    service_time_entries = context.tables["ServiceTimeEntry"]
+    service_billing_lines = context.tables["ServiceBillingLine"]
     shipments = context.tables["Shipment"]
     shipment_lines = context.tables["ShipmentLine"]
     sales_invoices = context.tables["SalesInvoice"]
@@ -971,6 +1089,7 @@ def validate_o2c_phase11_controls(context: GenerationContext) -> dict[str, Any]:
     sales_order_lookup = sales_orders.set_index("SalesOrderID").to_dict("index") if not sales_orders.empty else {}
     invoice_lookup = sales_invoices.set_index("SalesInvoiceID").to_dict("index") if not sales_invoices.empty else {}
     return_line_lookup = sales_return_lines.set_index("SalesReturnLineID").to_dict("index") if not sales_return_lines.empty else {}
+    item_lookup = context.tables["Item"].set_index("ItemID").to_dict("index") if not context.tables["Item"].empty else {}
 
     invoice_before_shipment_count = 0
     invoice_gl_year_mismatch_count = 0
@@ -1017,7 +1136,7 @@ def validate_o2c_phase11_controls(context: GenerationContext) -> dict[str, Any]:
                     if round(float(invoice_value), 4) != round(float(sales_value), 4):
                         mismatch_found = True
                         break
-                elif str(invoice_value) != str(sales_value):
+                elif not comparable_values_match(invoice_value, sales_value):
                     mismatch_found = True
                     break
             if mismatch_found:
@@ -1081,6 +1200,111 @@ def validate_o2c_phase11_controls(context: GenerationContext) -> dict[str, Any]:
             "type": "over_shipped_sales_line",
             "message": f"Sales order lines are shipped above ordered quantity: {over_shipped_sales_lines[:5]}.",
         })
+
+    if not service_engagements.empty:
+        valid_design_service_customer_ids = set(
+            context.tables["Customer"].loc[
+                context.tables["Customer"]["CustomerSegment"].eq(DESIGN_SERVICE_SEGMENT),
+                "CustomerID",
+            ].astype(int).tolist()
+        ) if not context.tables["Customer"].empty else set()
+        valid_service_line_ids = {
+            int(row.SalesOrderLineID)
+            for row in sales_order_lines.itertuples(index=False)
+            if str(item_lookup.get(int(row.ItemID), {}).get("ItemGroup")) == "Services"
+        }
+        valid_service_invoice_line_ids = {
+            int(row.SalesInvoiceLineID)
+            for row in sales_invoice_lines.itertuples(index=False)
+            if str(item_lookup.get(int(row.ItemID), {}).get("ItemGroup")) == "Services"
+        }
+        assignment_hours = (
+            service_assignments.groupby("ServiceEngagementID")["AssignedHours"].sum().round(2).to_dict()
+            if not service_assignments.empty
+            else {}
+        )
+        approved_hours = (
+            service_time_entries.groupby("ServiceEngagementID")["BillableHours"].sum().round(2).to_dict()
+            if not service_time_entries.empty
+            else {}
+        )
+        billed_hours = (
+            service_billing_lines.groupby("ServiceEngagementID")["BilledHours"].sum().round(2).to_dict()
+            if not service_billing_lines.empty
+            else {}
+        )
+
+        invalid_engagements = []
+        for engagement in service_engagements.itertuples(index=False):
+            sales_order = sales_order_lookup.get(int(engagement.SalesOrderID))
+            sales_line = sales_line_lookup.get(int(engagement.SalesOrderLineID))
+            if (
+                int(engagement.CustomerID) not in valid_design_service_customer_ids
+                or int(engagement.SalesOrderLineID) not in valid_service_line_ids
+                or sales_order is None
+                or sales_line is None
+                or int(sales_order["CustomerID"]) != int(engagement.CustomerID)
+                or int(sales_line["SalesOrderID"]) != int(engagement.SalesOrderID)
+            ):
+                invalid_engagements.append(int(engagement.ServiceEngagementID))
+            if round(float(assignment_hours.get(int(engagement.ServiceEngagementID), 0.0)), 2) != round(float(engagement.PlannedHours), 2):
+                exceptions.append({
+                    "type": "service_assignment_hours_rollup_mismatch",
+                    "service_engagement_id": int(engagement.ServiceEngagementID),
+                    "message": "Service engagement assigned hours do not tie to planned engagement hours.",
+                })
+            approved_total = round(float(approved_hours.get(int(engagement.ServiceEngagementID), 0.0)), 2)
+            assigned_total = round(float(assignment_hours.get(int(engagement.ServiceEngagementID), 0.0)), 2)
+            billed_total = round(float(billed_hours.get(int(engagement.ServiceEngagementID), 0.0)), 2)
+            if approved_total > assigned_total:
+                exceptions.append({
+                    "type": "service_approved_hours_exceed_assigned_hours",
+                    "service_engagement_id": int(engagement.ServiceEngagementID),
+                    "message": "Approved billable service hours exceed assigned service hours.",
+                })
+            if billed_total > approved_total:
+                exceptions.append({
+                    "type": "service_billed_hours_exceed_approved_hours",
+                    "service_engagement_id": int(engagement.ServiceEngagementID),
+                    "message": "Billed service hours exceed approved billable service hours.",
+                })
+
+        if invalid_engagements:
+            exceptions.append({
+                "type": "invalid_service_engagement_linkage",
+                "message": f"Service engagements contain invalid customer, order, or service-line references: {invalid_engagements[:5]}.",
+            })
+
+        invalid_service_invoice_lines = sales_invoice_lines[
+            sales_invoice_lines["ItemID"].astype(int).map(lambda item_id: str(item_lookup.get(int(item_id), {}).get("ItemGroup"))).eq("Services")
+            & sales_invoice_lines["ShipmentLineID"].notna()
+        ]
+        for row in invalid_service_invoice_lines.head(10).itertuples(index=False):
+            exceptions.append({
+                "type": "service_invoice_line_has_shipment_link",
+                "sales_invoice_line_id": int(row.SalesInvoiceLineID),
+                "message": "Service invoice lines must not reference shipment lines.",
+            })
+
+        if not service_billing_lines.empty:
+            invoice_line_lookup = sales_invoice_lines.set_index("SalesInvoiceLineID").to_dict("index") if not sales_invoice_lines.empty else {}
+            invalid_billing_rows = []
+            for billing_line in service_billing_lines.itertuples(index=False):
+                invoice_line = invoice_line_lookup.get(int(billing_line.SalesInvoiceLineID))
+                if (
+                    invoice_line is None
+                    or int(billing_line.SalesInvoiceLineID) not in valid_service_invoice_line_ids
+                    or round(float(billing_line.BilledHours), 2) != round(float(invoice_line["Quantity"]), 2)
+                    or round(float(billing_line.LineAmount), 2) != round(float(invoice_line["LineTotal"]), 2)
+                    or round(float(billing_line.LineAmount), 2)
+                    != round(float(billing_line.BilledHours) * float(billing_line.HourlyRate), 2)
+                ):
+                    invalid_billing_rows.append(int(billing_line.ServiceBillingLineID))
+            if invalid_billing_rows:
+                exceptions.append({
+                    "type": "service_billing_line_trace_mismatch",
+                    "message": f"Service billing lines do not reconcile to service invoice lines or billed-hour math: {invalid_billing_rows[:5]}.",
+                })
 
     if not sales_orders.empty and "FreightTerms" in sales_orders.columns:
         invalid_freight_terms = sorted(
@@ -1204,7 +1428,7 @@ def validate_o2c_phase11_controls(context: GenerationContext) -> dict[str, Any]:
     if not credit_memo_lines.empty:
         line_mismatches = []
         pricing_mismatches = []
-        invoice_lines_by_id = sales_invoice_lines.set_index("SalesInvoiceLineID").to_dict("index") if not sales_invoice_lines.empty else {}
+        shipment_linked_invoice_lines = sales_invoice_lines[sales_invoice_lines["ShipmentLineID"].notna()].copy()
         for credit_memo_line in credit_memo_lines.itertuples(index=False):
             return_line = return_line_lookup.get(int(credit_memo_line.SalesReturnLineID))
             if return_line is None:
@@ -1212,9 +1436,9 @@ def validate_o2c_phase11_controls(context: GenerationContext) -> dict[str, Any]:
                 continue
             memo = credit_memos[credit_memos["CreditMemoID"].astype(int).eq(int(credit_memo_line.CreditMemoID))].iloc[0]
             original_invoice_id = int(memo.OriginalSalesInvoiceID)
-            original_invoice_line = sales_invoice_lines[
-                sales_invoice_lines["SalesInvoiceID"].astype(int).eq(original_invoice_id)
-                & sales_invoice_lines["ShipmentLineID"].astype(int).eq(int(return_line["ShipmentLineID"]))
+            original_invoice_line = shipment_linked_invoice_lines[
+                shipment_linked_invoice_lines["SalesInvoiceID"].astype(int).eq(original_invoice_id)
+                & shipment_linked_invoice_lines["ShipmentLineID"].astype(int).eq(int(return_line["ShipmentLineID"]))
             ]
             if original_invoice_line.empty:
                 line_mismatches.append(int(credit_memo_line.CreditMemoLineID))
@@ -1225,15 +1449,18 @@ def validate_o2c_phase11_controls(context: GenerationContext) -> dict[str, Any]:
             )
             list_line_mismatch = (
                 (pd.notna(credit_memo_line.PriceListLineID) or pd.notna(original_line["PriceListLineID"]))
-                and str(credit_memo_line.PriceListLineID) != str(original_line["PriceListLineID"])
+                and not comparable_values_match(credit_memo_line.PriceListLineID, original_line["PriceListLineID"])
             )
             promotion_mismatch = (
                 (pd.notna(credit_memo_line.PromotionID) or pd.notna(original_line["PromotionID"]))
-                and str(credit_memo_line.PromotionID) != str(original_line["PromotionID"])
+                and not comparable_values_match(credit_memo_line.PromotionID, original_line["PromotionID"])
             )
             override_mismatch = (
                 (pd.notna(credit_memo_line.PriceOverrideApprovalID) or pd.notna(original_line["PriceOverrideApprovalID"]))
-                and str(credit_memo_line.PriceOverrideApprovalID) != str(original_line["PriceOverrideApprovalID"])
+                and not comparable_values_match(
+                    credit_memo_line.PriceOverrideApprovalID,
+                    original_line["PriceOverrideApprovalID"],
+                )
             )
             if (
                 round(float(credit_memo_line.BaseListPrice), 2) != round(float(original_line["BaseListPrice"]), 2)
@@ -1880,6 +2107,11 @@ def validate_journal_controls(context: GenerationContext) -> dict[str, Any]:
                 "message": "Fiscal year does not contain exactly two year-end close journal headers.",
             })
 
+    depreciation_journal_count = sum(
+        1
+        for year, month in fiscal_months(context)
+        if monthly_depreciation_entries(context, year, month)
+    )
     expected_entry_counts = {
         "Rent": len(fiscal_months(context)) * 2,
         "Utilities": len(fiscal_months(context)),
@@ -1887,7 +2119,7 @@ def validate_journal_controls(context: GenerationContext) -> dict[str, Any]:
         "Factory Overhead": sum(
             1 for year, month in fiscal_months(context) if monthly_factory_overhead_amount(context, year, month) > 0
         ),
-        "Depreciation": len(fiscal_months(context)) * 3,
+        "Depreciation": depreciation_journal_count,
         "Accrual": len(fiscal_months(context)) * len(ACCRUAL_ACCOUNT_METADATA),
         "Accrual Reversal": 0,
         "Year-End Close - P&L to Income Summary": len(list(fiscal_years)),
@@ -1938,7 +2170,6 @@ def validate_journal_controls(context: GenerationContext) -> dict[str, Any]:
 
 def validate_manufacturing_controls(context: GenerationContext) -> dict[str, Any]:
     exceptions: list[dict[str, Any]] = []
-    fiscal_end = pd.Timestamp(context.settings.fiscal_year_end).normalize()
     items = context.tables["Item"]
     boms = context.tables["BillOfMaterial"]
     bom_lines = context.tables["BillOfMaterialLine"]
@@ -2042,22 +2273,6 @@ def validate_manufacturing_controls(context: GenerationContext) -> dict[str, Any
             })
 
         schedule_bounds = work_order_schedule_bounds(context)
-        actual_start_by_work_order: dict[int, pd.Timestamp] = {}
-        if not work_order_operations.empty:
-            started_operations = work_order_operations[
-                work_order_operations["ActualStartDate"].notna()
-            ].copy()
-            if not started_operations.empty:
-                started_operations["ActualStartDateTS"] = pd.to_datetime(
-                    started_operations["ActualStartDate"],
-                    errors="coerce",
-                )
-                actual_start_by_work_order = (
-                    started_operations.dropna(subset=["ActualStartDateTS"])
-                    .groupby("WorkOrderID")["ActualStartDateTS"]
-                    .min()
-                    .to_dict()
-                )
         for row in work_orders.itertuples(index=False):
             bounds = schedule_bounds.get(int(row.WorkOrderID))
             if bounds is None or pd.isna(row.DueDate):
@@ -2079,25 +2294,6 @@ def validate_manufacturing_controls(context: GenerationContext) -> dict[str, Any
                 exceptions.append({
                     "type": "released_work_order_far_ahead_of_schedule",
                     "message": f"Released work order {int(row.WorkOrderID)} is more than 45 days ahead of first scheduled activity.",
-                })
-                if len(exceptions) >= 250:
-                    break
-
-            due_date = pd.Timestamp(row.DueDate).normalize()
-            actual_start = actual_start_by_work_order.get(int(row.WorkOrderID))
-            if (
-                actual_start is None
-                and released_date is not None
-                and due_date <= fiscal_end
-                and released_date <= fiscal_end - pd.Timedelta(days=30)
-            ):
-                exceptions.append({
-                    "type": "released_work_order_due_without_actual_start",
-                    "message": f"Released work order {int(row.WorkOrderID)} is due within the fiscal year but still has no actual start.",
-                    "work_order_id": int(row.WorkOrderID),
-                    "released_date": released_date.strftime("%Y-%m-%d"),
-                    "due_date": due_date.strftime("%Y-%m-%d"),
-                    "first_scheduled_date": first_scheduled.strftime("%Y-%m-%d"),
                 })
                 if len(exceptions) >= 250:
                     break
@@ -2259,7 +2455,7 @@ def validate_manufacturing_controls(context: GenerationContext) -> dict[str, Any
         })
 
     expected_clearing = round(
-        float(sum(work_order_actual_conversion_cost_map(context).values()))
+        float(manufacturing_clearing_input_total(context))
         - float(context.tables["ProductionCompletionLine"]["ExtendedStandardConversionCost"].sum())
         - float(context.tables["WorkOrderClose"]["ConversionVarianceAmount"].sum()),
         2,
@@ -2406,6 +2602,74 @@ def validate_routing_controls(context: GenerationContext) -> dict[str, Any]:
     }
 
 
+def manufacturing_audit_seed_candidates(context: GenerationContext) -> list[dict[str, Any]]:
+    if context.settings.anomaly_mode == "none":
+        return []
+
+    work_orders = context.tables["WorkOrder"]
+    work_order_operations = context.tables["WorkOrderOperation"]
+    if work_orders.empty:
+        return []
+
+    schedule_bounds = work_order_schedule_bounds(context)
+    if not schedule_bounds:
+        return []
+
+    fiscal_end = pd.Timestamp(context.settings.fiscal_year_end).normalize()
+    actual_start_by_work_order: dict[int, pd.Timestamp] = {}
+    if not work_order_operations.empty:
+        started_operations = work_order_operations[
+            work_order_operations["ActualStartDate"].notna()
+        ].copy()
+        if not started_operations.empty:
+            started_operations["ActualStartDateTS"] = pd.to_datetime(
+                started_operations["ActualStartDate"],
+                errors="coerce",
+            )
+            actual_start_by_work_order = (
+                started_operations.dropna(subset=["ActualStartDateTS"])
+                .groupby("WorkOrderID")["ActualStartDateTS"]
+                .min()
+                .to_dict()
+            )
+
+    candidates: list[dict[str, Any]] = []
+    for row in work_orders.itertuples(index=False):
+        if str(row.Status) != "Released" or pd.isna(row.DueDate):
+            continue
+
+        bounds = schedule_bounds.get(int(row.WorkOrderID))
+        if bounds is None:
+            continue
+
+        released_date = pd.Timestamp(row.ReleasedDate) if pd.notna(row.ReleasedDate) else None
+        due_date = pd.Timestamp(row.DueDate).normalize()
+        actual_start = actual_start_by_work_order.get(int(row.WorkOrderID))
+        if (
+            actual_start is None
+            and released_date is not None
+            and due_date <= fiscal_end
+            and released_date <= fiscal_end - pd.Timedelta(days=30)
+        ):
+            candidates.append({
+                "type": MANUFACTURING_AUDIT_SEED_TYPE,
+                "message": f"Released work order {int(row.WorkOrderID)} is due within the fiscal year but still has no actual start.",
+                "work_order_id": int(row.WorkOrderID),
+                "released_date": released_date.strftime("%Y-%m-%d"),
+                "due_date": due_date.strftime("%Y-%m-%d"),
+                "first_scheduled_date": pd.Timestamp(bounds[0]).strftime("%Y-%m-%d"),
+            })
+
+    candidates.sort(
+        key=lambda exception: (
+            int(exception.get("work_order_id", 0) or 0),
+            str(exception.get("due_date", "")),
+            str(exception.get("released_date", "")),
+        )
+    )
+    return candidates
+
+
 def split_manufacturing_audit_seed_controls(
     context: GenerationContext,
     manufacturing_controls: dict[str, Any],
@@ -2420,37 +2684,11 @@ def split_manufacturing_audit_seed_controls(
     if context.settings.anomaly_mode == "none":
         return empty_seed_controls, manufacturing_controls
 
-    exceptions = list(manufacturing_controls.get("exceptions", []))
-    candidates = [
-        exception
-        for exception in exceptions
-        if isinstance(exception, dict) and exception.get("type") == MANUFACTURING_AUDIT_SEED_TYPE
-    ]
+    candidates = manufacturing_audit_seed_candidates(context)
     if not candidates:
         return empty_seed_controls, manufacturing_controls
 
-    candidates.sort(
-        key=lambda exception: (
-            int(exception.get("work_order_id", 0) or 0),
-            str(exception.get("due_date", "")),
-            str(exception.get("released_date", "")),
-        )
-    )
     selected = candidates[:MANUFACTURING_AUDIT_SEED_LIMIT]
-    selected_work_order_ids = {
-        int(exception.get("work_order_id", 0) or 0)
-        for exception in selected
-    }
-
-    remaining_exceptions = [
-        exception
-        for exception in exceptions
-        if not (
-            isinstance(exception, dict)
-            and exception.get("type") == MANUFACTURING_AUDIT_SEED_TYPE
-            and int(exception.get("work_order_id", 0) or 0) in selected_work_order_ids
-        )
-    ]
 
     seed_controls: dict[str, Any] = {
         "exception_count": len(selected),
@@ -2462,10 +2700,7 @@ def split_manufacturing_audit_seed_controls(
             "ordered by WorkOrderID."
         ),
     }
-    filtered_manufacturing_controls = dict(manufacturing_controls)
-    filtered_manufacturing_controls["exception_count"] = len(remaining_exceptions)
-    filtered_manufacturing_controls["exceptions"] = remaining_exceptions
-    return seed_controls, filtered_manufacturing_controls
+    return seed_controls, manufacturing_controls
 
 
 def validate_capacity_controls(context: GenerationContext) -> dict[str, Any]:
@@ -3594,11 +3829,7 @@ def validate_pricing_controls(context: GenerationContext) -> dict[str, Any]:
     exceptions: list[dict[str, Any]] = []
 
     def values_match(left: Any, right: Any, *, numeric: bool = False) -> bool:
-        if pd.isna(left) and pd.isna(right):
-            return True
-        if numeric:
-            return round(float(left), 4) == round(float(right), 4)
-        return str(left) == str(right)
+        return comparable_values_match(left, right, numeric=numeric)
 
     if price_lists.empty or price_list_lines.empty:
         return {
@@ -3741,11 +3972,14 @@ def validate_pricing_controls(context: GenerationContext) -> dict[str, Any]:
 
     if not credit_memo_lines.empty and not context.tables["SalesReturnLine"].empty:
         return_line_lookup = context.tables["SalesReturnLine"].set_index("SalesReturnLineID").to_dict("index")
+        shipment_linked_invoice_lines = sales_invoice_lines[sales_invoice_lines["ShipmentLineID"].notna()].copy()
         for credit_memo_line in credit_memo_lines.itertuples(index=False):
             return_line = return_line_lookup.get(int(credit_memo_line.SalesReturnLineID))
             if return_line is None:
                 continue
-            matches = sales_invoice_lines[sales_invoice_lines["ShipmentLineID"].astype(int).eq(int(return_line["ShipmentLineID"]))]
+            matches = shipment_linked_invoice_lines[
+                shipment_linked_invoice_lines["ShipmentLineID"].astype(int).eq(int(return_line["ShipmentLineID"]))
+            ]
             if matches.empty:
                 continue
             original_line = matches.iloc[0]
@@ -3775,7 +4009,10 @@ def validate_pricing_controls(context: GenerationContext) -> dict[str, Any]:
         service_order_lines["ItemGroup"].eq("Services")
         & (
             service_order_lines["PromotionID"].notna()
+            | service_order_lines["PriceListLineID"].notna()
+            | service_order_lines["PriceOverrideApprovalID"].notna()
             | ~service_order_lines["PricingMethod"].eq("Base List")
+            | service_order_lines["BaseListPrice"].astype(float).round(2).ne(service_order_lines["UnitPrice"].astype(float).round(2))
         )
     ]
     for row in invalid_service_pricing.head(10).itertuples(index=False):
@@ -3832,7 +4069,7 @@ def validate_master_data_controls(context: GenerationContext) -> dict[str, Any]:
             })
 
         terminated_share = round(float(terminated_mask.sum()) / max(len(employees), 1), 4)
-        terminated_share_lower_bound = 0.08
+        terminated_share_lower_bound = 0.06
         if len(employees) < 30:
             terminated_share_lower_bound = round(1.0 / max(len(employees), 1), 4)
         if terminated_share < terminated_share_lower_bound or terminated_share > 0.15:
@@ -3871,6 +4108,8 @@ def validate_master_data_controls(context: GenerationContext) -> dict[str, Any]:
         employee_lookup = employees.set_index("EmployeeID")[["HireDate", "TerminationDate"]].to_dict("index")
         employee_date_specs = [
             ("SalesOrder", "OrderDate", ["SalesRepEmployeeID"]),
+            ("ServiceEngagement", "StartDate", ["LeadEmployeeID"]),
+            ("ServiceTimeEntry", "WorkDate", ["EmployeeID", "ApprovedByEmployeeID"]),
             ("CashReceipt", "ReceiptDate", ["RecordedByEmployeeID"]),
             ("CashReceiptApplication", "ApplicationDate", ["AppliedByEmployeeID"]),
             ("SalesReturn", "ReturnDate", ["ReceivedByEmployeeID"]),
@@ -3974,6 +4213,38 @@ def validate_master_data_controls(context: GenerationContext) -> dict[str, Any]:
                 "type": "item_lifecycle_alignment",
                 "item_id": int(row.ItemID),
                 "message": f"Item {int(row.ItemID)} has inconsistent lifecycle, launch date, or IsActive state.",
+            })
+
+        sellable_service_items = items[
+            items["ItemGroup"].eq("Services")
+            & items["RevenueAccountID"].notna()
+        ].copy()
+        invalid_sellable_services = sellable_service_items[
+            sellable_service_items["UnitOfMeasure"].astype(str).ne("Hour")
+            | sellable_service_items["ListPrice"].isna()
+            | sellable_service_items["InventoryAccountID"].notna()
+            | sellable_service_items["COGSAccountID"].notna()
+        ]
+        for row in invalid_sellable_services.head(10).itertuples(index=False):
+            exceptions.append({
+                "type": "sellable_service_item_configuration",
+                "item_id": int(row.ItemID),
+                "message": f"Sellable service item {int(row.ItemID)} has invalid hourly-service configuration.",
+            })
+
+        accrued_service_items = items[
+            items["ItemGroup"].eq("Services")
+            & items["RevenueAccountID"].isna()
+        ].copy()
+        invalid_accrued_services = accrued_service_items[
+            accrued_service_items["UnitOfMeasure"].astype(str).ne("Month")
+            | accrued_service_items["ListPrice"].notna()
+        ]
+        for row in invalid_accrued_services.head(10).itertuples(index=False):
+            exceptions.append({
+                "type": "accrued_service_item_configuration",
+                "item_id": int(row.ItemID),
+                "message": f"Accrued supplier-service item {int(row.ItemID)} has invalid non-sellable service configuration.",
             })
 
         item_launch_lookup = items.set_index("ItemID")["LaunchDate"].to_dict()

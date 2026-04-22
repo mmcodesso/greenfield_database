@@ -259,6 +259,11 @@ const queryManifest = {
     "filename": "53_released_work_orders_due_without_actual_start_summary.sql",
     "publicPath": "/audit/53_released_work_orders_due_without_actual_start_summary.sql"
   },
+  "audit/54_design_service_approved_vs_billed_hours_review.sql": {
+    "category": "audit",
+    "filename": "54_design_service_approved_vs_billed_hours_review.sql",
+    "publicPath": "/audit/54_design_service_approved_vs_billed_hours_review.sql"
+  },
   "cases/01_o2c_line_trace_order_shipment_invoice.sql": {
     "category": "cases",
     "filename": "01_o2c_line_trace_order_shipment_invoice.sql",
@@ -569,6 +574,11 @@ const queryManifest = {
     "filename": "56_debt_amortization_and_cash_impact.sql",
     "publicPath": "/financial/56_debt_amortization_and_cash_impact.sql"
   },
+  "financial/57_design_service_revenue_and_billed_hours_by_customer_month.sql": {
+    "category": "financial",
+    "filename": "57_design_service_revenue_and_billed_hours_by_customer_month.sql",
+    "publicPath": "/financial/57_design_service_revenue_and_billed_hours_by_customer_month.sql"
+  },
   "managerial/01_budget_vs_actual_by_cost_center.sql": {
     "category": "managerial",
     "filename": "01_budget_vs_actual_by_cost_center.sql",
@@ -823,6 +833,11 @@ const queryManifest = {
     "category": "managerial",
     "filename": "51_budget_vs_actual_revenue_price_volume_cost_bridge.sql",
     "publicPath": "/managerial/51_budget_vs_actual_revenue_price_volume_cost_bridge.sql"
+  },
+  "managerial/52_design_service_engagement_utilization_and_labor_margin.sql": {
+    "category": "managerial",
+    "filename": "52_design_service_engagement_utilization_and_labor_margin.sql",
+    "publicPath": "/managerial/52_design_service_engagement_utilization_and_labor_margin.sql"
   }
 };
 

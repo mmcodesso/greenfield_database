@@ -19,6 +19,41 @@ from generator_dataset.settings import GenerationContext
 from generator_dataset.utils import money, next_id
 
 
+DESIGN_SERVICE_SEGMENT = "Design Services"
+DESIGN_SERVICE_COST_CENTER = "Design Services"
+DESIGN_SERVICE_JOB_TITLES = [
+    "Design Services Manager",
+    "Senior Designer",
+    "Designer",
+]
+DESIGN_SERVICE_ITEMS = (
+    {
+        "ItemCode": "DSV-CNS-0001",
+        "ItemName": "Design Consultation",
+        "StandardCost": 0.0,
+        "ListPrice": 165.0,
+    },
+    {
+        "ItemCode": "DSV-PLN-0001",
+        "ItemName": "Space Planning",
+        "StandardCost": 0.0,
+        "ListPrice": 185.0,
+    },
+    {
+        "ItemCode": "DSV-SPC-0001",
+        "ItemName": "Specification Development",
+        "StandardCost": 0.0,
+        "ListPrice": 210.0,
+    },
+    {
+        "ItemCode": "DSV-PRJ-0001",
+        "ItemName": "Project Coordination",
+        "StandardCost": 0.0,
+        "ListPrice": 145.0,
+    },
+)
+
+
 COST_CENTER_ROWS = [
     ("Executive", None, 1),
     ("Sales", None, 1),
@@ -29,6 +64,7 @@ COST_CENTER_ROWS = [
     ("Customer Service", None, 1),
     ("Research and Development", None, 1),
     ("Marketing", None, 1),
+    (DESIGN_SERVICE_COST_CENTER, None, 1),
 ]
 
 JOB_TITLES_BY_COST_CENTER = {
@@ -48,6 +84,7 @@ JOB_TITLES_BY_COST_CENTER = {
     "Customer Service": ["Customer Service Manager", "Customer Service Representative"],
     "Research and Development": ["Product Analyst", "Design Coordinator"],
     "Marketing": ["Marketing Manager", "Marketing Specialist"],
+    DESIGN_SERVICE_COST_CENTER: DESIGN_SERVICE_JOB_TITLES,
 }
 
 APPROVAL_LIMITS = {
@@ -74,6 +111,7 @@ COST_CENTER_SALARY_MULTIPLIERS = {
     "Customer Service": 0.88,
     "Research and Development": 1.10,
     "Marketing": 1.08,
+    DESIGN_SERVICE_COST_CENTER: 1.07,
 }
 
 HOURLY_TITLE_RANGES = {
@@ -192,6 +230,9 @@ CORE_ACTIVE_ROLE_SPECS = [
     ("Customer Service", "Customer Service Manager"),
     ("Marketing", "Marketing Manager"),
     ("Research and Development", "Product Analyst"),
+    (DESIGN_SERVICE_COST_CENTER, "Design Services Manager"),
+    (DESIGN_SERVICE_COST_CENTER, "Senior Designer"),
+    (DESIGN_SERVICE_COST_CENTER, "Designer"),
 ]
 
 REPEATABLE_ROLE_SEQUENCE = [
@@ -209,6 +250,8 @@ REPEATABLE_ROLE_SEQUENCE = [
     ("Customer Service", "Customer Service Representative"),
     ("Research and Development", "Design Coordinator"),
     ("Marketing", "Marketing Specialist"),
+    (DESIGN_SERVICE_COST_CENTER, "Senior Designer"),
+    (DESIGN_SERVICE_COST_CENTER, "Designer"),
 ]
 CAPACITY_ALIGNMENT_ACTIVE_ROLE_SPECS = [
     ("Manufacturing", "Assembler"),
@@ -297,10 +340,20 @@ ROLE_METADATA = {
         "JobFamily": "Marketing",
         "JobLevel": "Manager",
     },
+    "Design Services Manager": {
+        "AuthorizationLevel": "Manager",
+        "JobFamily": "Design Services",
+        "JobLevel": "Manager",
+    },
     "Product Analyst": {
         "AuthorizationLevel": "Staff",
         "JobFamily": "Research and Development",
         "JobLevel": "Professional",
+    },
+    "Senior Designer": {
+        "AuthorizationLevel": "Staff",
+        "JobFamily": "Design Services",
+        "JobLevel": "Senior Professional",
     },
     "Account Executive": {
         "AuthorizationLevel": "Staff",
@@ -367,6 +420,11 @@ ROLE_METADATA = {
         "JobFamily": "Research and Development",
         "JobLevel": "Professional",
     },
+    "Designer": {
+        "AuthorizationLevel": "Staff",
+        "JobFamily": "Design Services",
+        "JobLevel": "Professional",
+    },
     "Marketing Specialist": {
         "AuthorizationLevel": "Staff",
         "JobFamily": "Marketing",
@@ -384,6 +442,7 @@ WORK_LOCATION_BY_COST_CENTER = {
     "Customer Service": "Headquarters",
     "Research and Development": "Headquarters",
     "Marketing": "Headquarters",
+    DESIGN_SERVICE_COST_CENTER: "Headquarters",
 }
 
 WAREHOUSE_WORK_LOCATIONS = ["East Distribution Center", "West Distribution Center"]
@@ -1609,6 +1668,45 @@ def generate_items(context: GenerationContext) -> None:
             items.loc[row_index, "StandardFixedOverheadCost"] = float(cost_profile["StandardFixedOverheadCost"])
             items.loc[row_index, "StandardConversionCost"] = float(cost_profile["StandardConversionCost"])
 
+    design_service_rows = []
+    for service_item in DESIGN_SERVICE_ITEMS:
+        launch_date = launch_date_for_lifecycle(context, rng, "Core", allow_in_range_launch=False)
+        design_service_rows.append({
+            "ItemID": next_id(context, "Item"),
+            "ItemCode": str(service_item["ItemCode"]),
+            "ItemName": str(service_item["ItemName"]),
+            "ItemGroup": "Services",
+            "ItemType": "Service",
+            "StandardCost": money(float(service_item["StandardCost"])),
+            "ListPrice": money(float(service_item["ListPrice"])),
+            "UnitOfMeasure": "Hour",
+            "SupplyMode": "Purchased",
+            "ProductionLeadTimeDays": 0,
+            "StandardLaborHoursPerUnit": 0.0,
+            "StandardDirectLaborCost": 0.0,
+            "StandardVariableOverheadCost": 0.0,
+            "StandardFixedOverheadCost": 0.0,
+            "StandardConversionCost": 0.0,
+            "RoutingID": None,
+            "InventoryAccountID": None,
+            "RevenueAccountID": account_id_by_number(context, "4080"),
+            "COGSAccountID": None,
+            "PurchaseVarianceAccountID": account_id_by_number(context, "5060"),
+            "TaxCategory": "Taxable",
+            "CollectionName": None,
+            "StyleFamily": None,
+            "PrimaryMaterial": None,
+            "Finish": None,
+            "Color": None,
+            "SizeDescriptor": None,
+            "LifecycleStatus": "Core",
+            "LaunchDate": pd.Timestamp(launch_date).strftime("%Y-%m-%d"),
+            "IsActive": 1,
+        })
+
+    if design_service_rows:
+        items = pd.concat([items, pd.DataFrame(design_service_rows, columns=TABLE_COLUMNS["Item"])], ignore_index=True)
+
     service_rows = []
     for account_number, service_item in ACCRUAL_SERVICE_ITEMS.items():
         launch_date = launch_date_for_lifecycle(context, rng, "Core", allow_in_range_launch=False)
@@ -1710,8 +1808,8 @@ def generate_customers(context: GenerationContext) -> None:
         sales_reps = employees["EmployeeID"].tolist()
 
     rng = context.rng
-    segments = ["Strategic", "Wholesale", "Design Trade", "Small Business"]
-    segment_probabilities = [0.12, 0.38, 0.25, 0.25]
+    segments = ["Strategic", "Wholesale", "Design Trade", "Small Business", DESIGN_SERVICE_SEGMENT]
+    segment_probabilities = [0.11, 0.34, 0.23, 0.24, 0.08]
     industries = ["Hospitality", "Retail", "Office", "Real Estate", "Interior Design"]
     terms = ["Net 30", "Net 45", "Net 60", "Net 90"]
     term_probabilities = [0.45, 0.30, 0.20, 0.05]
@@ -1726,6 +1824,7 @@ def generate_customers(context: GenerationContext) -> None:
             "Wholesale": rng.uniform(50000, 175000),
             "Design Trade": rng.uniform(25000, 100000),
             "Small Business": rng.uniform(7500, 40000),
+            DESIGN_SERVICE_SEGMENT: rng.uniform(40000, 150000),
         }[segment]
         customer_id = next_id(context, "Customer")
         records.append({

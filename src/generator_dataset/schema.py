@@ -69,6 +69,20 @@ TABLE_COLUMNS = {
         "BaseListPrice", "UnitPrice", "Discount", "LineTotal", "PriceListLineID",
         "PromotionID", "PriceOverrideApprovalID", "PricingMethod",
     ],
+    "ServiceEngagement": [
+        "ServiceEngagementID", "EngagementNumber", "CustomerID", "SalesOrderID",
+        "SalesOrderLineID", "ItemID", "LeadEmployeeID", "StartDate", "EndDate",
+        "PlannedHours", "HourlyRate", "Status",
+    ],
+    "ServiceEngagementAssignment": [
+        "ServiceEngagementAssignmentID", "ServiceEngagementID", "EmployeeID",
+        "AssignedRole", "AssignedHours", "Status",
+    ],
+    "ServiceTimeEntry": [
+        "ServiceTimeEntryID", "ServiceEngagementID", "ServiceEngagementAssignmentID",
+        "EmployeeID", "WorkDate", "BillableHours", "NonBillableHours", "CostRateUsed",
+        "ExtendedCost", "ApprovedByEmployeeID", "ApprovedDate", "BillingStatus",
+    ],
     "Shipment": [
         "ShipmentID", "ShipmentNumber", "SalesOrderID", "ShipmentDate", "WarehouseID",
         "ShippedBy", "TrackingNumber", "Status", "DeliveryDate", "FreightCost",
@@ -88,6 +102,11 @@ TABLE_COLUMNS = {
         "LineNumber", "ItemID", "Quantity", "BaseListPrice", "UnitPrice", "Discount",
         "LineTotal", "PriceListLineID", "PromotionID", "PriceOverrideApprovalID",
         "PricingMethod",
+    ],
+    "ServiceBillingLine": [
+        "ServiceBillingLineID", "ServiceEngagementID", "SalesInvoiceLineID",
+        "BillingPeriodStartDate", "BillingPeriodEndDate", "BilledHours", "HourlyRate",
+        "LineAmount", "Status",
     ],
     "CashReceipt": [
         "CashReceiptID", "ReceiptNumber", "ReceiptDate", "CustomerID", "SalesInvoiceID",
@@ -391,6 +410,17 @@ SQLITE_INDEXES = {
     "SalesOrderLine": (
         _sqlite_index("ix_salesorderline_salesorderid", "SalesOrderID"),
     ),
+    "ServiceEngagement": (
+        _sqlite_index("ux_serviceengagement_engagementnumber", "EngagementNumber", unique=True),
+        _sqlite_index("ix_serviceengagement_customerid_salesorderlineid", "CustomerID", "SalesOrderLineID"),
+    ),
+    "ServiceEngagementAssignment": (
+        _sqlite_index("ix_serviceengagementassignment_engagementid_employeeid", "ServiceEngagementID", "EmployeeID"),
+    ),
+    "ServiceTimeEntry": (
+        _sqlite_index("ix_servicetimeentry_engagementid_workdate", "ServiceEngagementID", "WorkDate"),
+        _sqlite_index("ix_servicetimeentry_employeeid_workdate", "EmployeeID", "WorkDate"),
+    ),
     "Shipment": (
         _sqlite_index("ux_shipment_shipmentnumber", "ShipmentNumber", unique=True),
     ),
@@ -407,6 +437,19 @@ SQLITE_INDEXES = {
             "SalesInvoiceID",
             "SalesOrderLineID",
             "ItemID",
+        ),
+    ),
+    "ServiceBillingLine": (
+        _sqlite_index(
+            "ix_servicebillingline_engagementid_salesinvoicelineid",
+            "ServiceEngagementID",
+            "SalesInvoiceLineID",
+        ),
+        _sqlite_index(
+            "ix_servicebillingline_period_engagementid",
+            "BillingPeriodStartDate",
+            "BillingPeriodEndDate",
+            "ServiceEngagementID",
         ),
     ),
     "CashReceipt": (

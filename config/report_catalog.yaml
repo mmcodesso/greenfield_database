@@ -79,6 +79,16 @@ reports:
     preview_row_limit: 25
     excel_enabled: true
     csv_enabled: true
+  - slug: design-service-revenue-and-billed-hours
+    title: Design Service Revenue and Billed Hours
+    area: financial
+    process_group: revenue-and-working-capital
+    cadence: Monthly
+    description: Review billed design-service hours and posted service revenue by customer and invoice month.
+    query_path: queries/financial/57_design_service_revenue_and_billed_hours_by_customer_month.sql
+    preview_row_limit: 25
+    excel_enabled: true
+    csv_enabled: true
   - slug: ar-aging
     title: AR Aging
     area: financial

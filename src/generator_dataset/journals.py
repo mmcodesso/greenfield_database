@@ -57,6 +57,7 @@ SALARY_ACCOUNT_BY_COST_CENTER = {
     "Customer Service": "6040",
     "Research and Development": "6250",
     "Marketing": "6240",
+    "Design Services": "6280",
 }
 
 MANUFACTURING_CLEARING_ACCOUNT = "1090"

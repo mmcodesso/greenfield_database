@@ -8,11 +8,14 @@ import numpy as np
 import pandas as pd
 
 from generator_dataset.master_data import (
+    DESIGN_SERVICE_COST_CENTER,
+    DESIGN_SERVICE_SEGMENT,
     approver_employee_id,
     employee_active_mask,
     employee_ids_for_cost_center_as_of,
     eligible_item_mask,
 )
+from generator_dataset.payroll import implied_hourly_rate
 from generator_dataset.planning import monthly_forecast_targets, opening_inventory_map as planning_opening_inventory_map
 from generator_dataset.schema import TABLE_COLUMNS
 from generator_dataset.settings import GenerationContext
@@ -24,6 +27,7 @@ SEGMENT_ORDER_WEIGHTS = {
     "Wholesale": 2.5,
     "Design Trade": 1.7,
     "Small Business": 1.0,
+    DESIGN_SERVICE_SEGMENT: 0.7,
 }
 
 SEGMENT_LINE_RANGES = {
@@ -88,6 +92,7 @@ SEGMENT_COLLECTION_FACTORS = {
     "Wholesale": 0.92,
     "Design Trade": 1.02,
     "Small Business": 1.05,
+    DESIGN_SERVICE_SEGMENT: 0.97,
 }
 TERM_COLLECTION_FACTORS = {
     30: 1.00,
@@ -100,12 +105,14 @@ DEPOSIT_PROBABILITIES = {
     "Wholesale": 0.04,
     "Design Trade": 0.025,
     "Small Business": 0.02,
+    DESIGN_SERVICE_SEGMENT: 0.06,
 }
 DEPOSIT_FRACTION_RANGES = {
     "Strategic": (0.10, 0.20),
     "Wholesale": (0.09, 0.18),
     "Design Trade": (0.07, 0.15),
     "Small Business": (0.06, 0.12),
+    DESIGN_SERVICE_SEGMENT: (0.12, 0.22),
 }
 FREIGHT_TERMS_PASS_THROUGH_PROBABILITIES = {
     "Strategic": 0.30,
@@ -137,6 +144,12 @@ FREIGHT_PARTIAL_SHIPMENT_SURCHARGE = 1.15
 FREIGHT_BILLABLE_RATE_RANGE = (0.92, 1.08)
 FREIGHT_BILLABLE_CAP_RATE = 0.12
 FREIGHT_CREDIT_REASON_CODES = {"Damaged", "Wrong Item", "Quality Concern", "Late Delivery"}
+DESIGN_SERVICE_MONTHLY_ENGAGEMENT_RANGE = (4, 9)
+DESIGN_SERVICE_PLANNED_HOURS_RANGE = (24.0, 156.0)
+DESIGN_SERVICE_MONTH_SPAN_OPTIONS = ((1, 0.38), (2, 0.42), (3, 0.20))
+DESIGN_SERVICE_ASSIGNMENT_OPTIONS = ((1, 0.16), (2, 0.46), (3, 0.28), (4, 0.10))
+DESIGN_SERVICE_NONBILLABLE_SHARE_RANGE = (0.00, 0.10)
+DESIGN_SERVICE_WORKDAYS_PER_MONTH_RANGE = (2, 6)
 
 
 def stable_seed(context: GenerationContext, *parts: object) -> int:
@@ -735,6 +748,22 @@ def active_sellable_items(context: GenerationContext, event_date: pd.Timestamp |
     return sellable
 
 
+def active_goods_sellable_items(context: GenerationContext, event_date: pd.Timestamp | str | None = None) -> pd.DataFrame:
+    sellable = active_sellable_items(context, event_date)
+    goods = sellable[sellable["ItemGroup"].ne("Services")].copy()
+    if goods.empty:
+        raise ValueError("Generate active sellable goods before O2C transactions.")
+    return goods
+
+
+def active_design_service_items(context: GenerationContext, event_date: pd.Timestamp | str | None = None) -> pd.DataFrame:
+    sellable = active_sellable_items(context, event_date)
+    service_items = sellable[sellable["ItemGroup"].eq("Services")].copy()
+    if service_items.empty:
+        raise ValueError("Generate active sellable design-service items before service transactions.")
+    return service_items.sort_values("ItemID").reset_index(drop=True)
+
+
 def pricing_sellable_items(context: GenerationContext) -> pd.DataFrame:
     items = context.tables["Item"]
     sellable = items[
@@ -746,6 +775,25 @@ def pricing_sellable_items(context: GenerationContext) -> pd.DataFrame:
     if sellable.empty:
         raise ValueError("Generate active sellable items before pricing masters.")
     return sellable.sort_values("ItemID").reset_index(drop=True)
+
+
+def design_services_cost_center_id(context: GenerationContext) -> int:
+    cost_centers = context.tables["CostCenter"]
+    matches = cost_centers.loc[cost_centers["CostCenterName"].eq(DESIGN_SERVICE_COST_CENTER), "CostCenterID"]
+    if matches.empty:
+        raise ValueError("Design Services cost center is required for service generation.")
+    return int(matches.iloc[0])
+
+
+def active_design_service_customers(context: GenerationContext) -> pd.DataFrame:
+    customers = context.tables["Customer"]
+    active = customers[
+        customers["IsActive"].astype(int).eq(1)
+        & customers["CustomerSegment"].eq(DESIGN_SERVICE_SEGMENT)
+    ].copy()
+    if active.empty:
+        raise ValueError("Generate active design-service customers before service transactions.")
+    return active.sort_values("CustomerID").reset_index(drop=True)
 
 
 def sales_pricing_approver_id(context: GenerationContext, event_date: pd.Timestamp | str) -> int:
@@ -1186,9 +1234,15 @@ def sales_rep_employee_id(context: GenerationContext, customer: pd.Series, event
     return int(employees.sort_values("EmployeeID").iloc[0]["EmployeeID"])
 
 
-def select_customer(context: GenerationContext) -> pd.Series:
+def select_customer(
+    context: GenerationContext,
+    *,
+    eligible_segments: tuple[str, ...] | list[str] | None = None,
+) -> pd.Series:
     customers = context.tables["Customer"]
     active = customers[customers["IsActive"].eq(1)].copy()
+    if eligible_segments is not None:
+        active = active[active["CustomerSegment"].isin([str(segment) for segment in eligible_segments])].copy()
     if active.empty:
         raise ValueError("Generate active customers before O2C transactions.")
 
@@ -1210,6 +1264,13 @@ def select_sales_item(context: GenerationContext, sellable_items: pd.DataFrame, 
     weights = weights / weights.sum()
     selected_index = context.rng.choice(sellable_items.index.to_numpy(), p=weights.to_numpy())
     return sellable_items.loc[selected_index]
+
+
+def select_design_service_item(context: GenerationContext, service_items: pd.DataFrame) -> pd.Series:
+    weights = service_items["ListPrice"].astype(float)
+    weights = weights / weights.sum()
+    selected_index = context.rng.choice(service_items.index.to_numpy(), p=weights.to_numpy())
+    return service_items.loc[selected_index]
 
 
 def opening_inventory_map(context: GenerationContext) -> dict[tuple[int, int], float]:
@@ -1495,6 +1556,123 @@ def invoice_settled_amounts_as_of(
     return settled
 
 
+def weighted_option_value(
+    rng: np.random.Generator,
+    options: tuple[tuple[int, float], ...],
+) -> int:
+    values = np.array([int(value) for value, _ in options])
+    probabilities = np.array([float(probability) for _, probability in options], dtype=float)
+    probabilities = probabilities / probabilities.sum()
+    return int(rng.choice(values, p=probabilities))
+
+
+def inclusive_month_count(start_date: pd.Timestamp | str, end_date: pd.Timestamp | str) -> int:
+    start = pd.Timestamp(start_date).normalize().replace(day=1)
+    end = pd.Timestamp(end_date).normalize().replace(day=1)
+    return max(((int(end.year) - int(start.year)) * 12) + int(end.month) - int(start.month) + 1, 1)
+
+
+def design_service_employee_pool(context: GenerationContext, event_date: pd.Timestamp | str) -> pd.DataFrame:
+    employees = context.tables["Employee"].copy()
+    if employees.empty:
+        raise ValueError("Generate employees before design-service activity.")
+    cost_center_id = design_services_cost_center_id(context)
+    valid_mask = employee_active_mask(employees, event_date)
+    pool = employees[
+        valid_mask
+        & employees["CostCenterID"].astype(int).eq(int(cost_center_id))
+    ].copy()
+    if pool.empty:
+        raise ValueError("No active design-service employees are available for service generation.")
+    return pool.sort_values(["JobTitle", "EmployeeID"]).reset_index(drop=True)
+
+
+def design_service_approver_id(context: GenerationContext, event_date: pd.Timestamp | str) -> int:
+    return approver_employee_id(
+        context,
+        event_date,
+        preferred_titles=["Design Services Manager", "Chief Financial Officer"],
+        fallback_cost_center_name=DESIGN_SERVICE_COST_CENTER,
+    )
+
+
+def service_assignment_billable_hours(context: GenerationContext) -> dict[int, float]:
+    time_entries = context.tables["ServiceTimeEntry"]
+    if time_entries.empty:
+        return {}
+    return {
+        int(assignment_id): round(float(hours), 2)
+        for assignment_id, hours in time_entries.groupby("ServiceEngagementAssignmentID")["BillableHours"].sum().items()
+    }
+
+
+def service_engagement_billable_hours(context: GenerationContext) -> dict[int, float]:
+    time_entries = context.tables["ServiceTimeEntry"]
+    if time_entries.empty:
+        return {}
+    return {
+        int(engagement_id): round(float(hours), 2)
+        for engagement_id, hours in time_entries.groupby("ServiceEngagementID")["BillableHours"].sum().items()
+    }
+
+
+def service_billed_hours_by_engagement(context: GenerationContext) -> dict[int, float]:
+    billing_lines = context.tables["ServiceBillingLine"]
+    if billing_lines.empty:
+        return {}
+    return {
+        int(engagement_id): round(float(hours), 2)
+        for engagement_id, hours in billing_lines.groupby("ServiceEngagementID")["BilledHours"].sum().items()
+    }
+
+
+def refresh_service_engagement_statuses(context: GenerationContext) -> None:
+    engagements = context.tables["ServiceEngagement"]
+    assignments = context.tables["ServiceEngagementAssignment"]
+    if engagements.empty:
+        return
+
+    approved_hours = service_engagement_billable_hours(context)
+    billed_hours = service_billed_hours_by_engagement(context)
+    assignment_hours = service_assignment_billable_hours(context)
+
+    engagement_status_map: dict[int, str] = {}
+    for engagement in engagements.itertuples(index=False):
+        planned_hours = round(float(engagement.PlannedHours), 2)
+        approved = round(float(approved_hours.get(int(engagement.ServiceEngagementID), 0.0)), 2)
+        billed = round(float(billed_hours.get(int(engagement.ServiceEngagementID), 0.0)), 2)
+        if billed >= planned_hours and approved >= planned_hours:
+            status = "Billed"
+        elif approved >= planned_hours:
+            status = "Completed"
+        elif approved > 0:
+            status = "In Progress"
+        else:
+            status = "Scheduled"
+        engagement_status_map[int(engagement.ServiceEngagementID)] = status
+
+    engagement_ids = engagements["ServiceEngagementID"].astype(int)
+    context.tables["ServiceEngagement"]["Status"] = engagement_ids.map(engagement_status_map)
+
+    if assignments.empty:
+        return
+
+    assignment_status_map: dict[int, str] = {}
+    for assignment in assignments.itertuples(index=False):
+        planned_hours = round(float(assignment.AssignedHours), 2)
+        approved = round(float(assignment_hours.get(int(assignment.ServiceEngagementAssignmentID), 0.0)), 2)
+        if approved >= planned_hours:
+            status = "Completed"
+        elif approved > 0:
+            status = "In Progress"
+        else:
+            status = "Assigned"
+        assignment_status_map[int(assignment.ServiceEngagementAssignmentID)] = status
+
+    assignment_ids = assignments["ServiceEngagementAssignmentID"].astype(int)
+    context.tables["ServiceEngagementAssignment"]["Status"] = assignment_ids.map(assignment_status_map)
+
+
 def inventory_position_before_month(context: GenerationContext, year: int, month: int) -> dict[tuple[int, int], float]:
     start, _ = month_bounds(year, month)
     inventory = opening_inventory_map(context)
@@ -1568,6 +1746,7 @@ def refresh_cash_receipt_links(context: GenerationContext) -> None:
 
 
 def refresh_o2c_statuses(context: GenerationContext) -> None:
+    refresh_service_engagement_statuses(context)
     sales_orders = context.tables["SalesOrder"]
     sales_order_lines = context.tables["SalesOrderLine"]
     sales_invoices = context.tables["SalesInvoice"]
@@ -1575,25 +1754,26 @@ def refresh_o2c_statuses(context: GenerationContext) -> None:
     credit_memos = context.tables["CreditMemo"]
 
     shipped_by_sales_line = sales_order_line_shipped_quantities(context)
-    billed_by_shipment_line = shipment_line_billed_quantities(context)
     settled_by_invoice = invoice_settled_amounts(context)
     refunded_by_credit_memo = credit_memo_refunded_amounts(context)
-
+    item_groups = context.tables["Item"].set_index("ItemID")["ItemGroup"].astype(str).to_dict() if not context.tables["Item"].empty else {}
     billed_by_sales_line: dict[int, float] = defaultdict(float)
-    shipment_lines = context.tables["ShipmentLine"]
-    if not shipment_lines.empty:
-        shipment_sales_line_lookup = shipment_lines.set_index("ShipmentLineID")["SalesOrderLineID"].astype(int).to_dict()
-        for shipment_line_id, billed_quantity in billed_by_shipment_line.items():
-            sales_line_id = shipment_sales_line_lookup.get(int(shipment_line_id))
-            if sales_line_id is not None:
-                billed_by_sales_line[int(sales_line_id)] += float(billed_quantity)
+    if not context.tables["SalesInvoiceLine"].empty:
+        for sales_order_line_id, billed_quantity in (
+            context.tables["SalesInvoiceLine"].groupby("SalesOrderLineID")["Quantity"].sum().items()
+        ):
+            billed_by_sales_line[int(sales_order_line_id)] = round(float(billed_quantity), 2)
 
     if not sales_orders.empty and not sales_order_lines.empty:
+        sales_order_line_item_ids = sales_order_lines.set_index("SalesOrderLineID")["ItemID"].astype(int).to_dict()
         line_metrics = sales_order_lines[["SalesOrderID", "SalesOrderLineID", "Quantity"]].copy()
+        line_metrics["IsServiceLine"] = line_metrics["SalesOrderLineID"].astype(int).map(
+            lambda sales_order_line_id: str(item_groups.get(int(sales_order_line_item_ids.get(int(sales_order_line_id), 0)), "")) == "Services"
+        )
         line_metrics["ShippedQuantity"] = line_metrics["SalesOrderLineID"].astype(int).map(shipped_by_sales_line).fillna(0.0)
         line_metrics["BilledQuantity"] = line_metrics["SalesOrderLineID"].astype(int).map(billed_by_sales_line).fillna(0.0)
         order_summaries = (
-            line_metrics.groupby("SalesOrderID")[["Quantity", "ShippedQuantity", "BilledQuantity"]]
+            line_metrics.groupby("SalesOrderID")[["Quantity", "ShippedQuantity", "BilledQuantity", "IsServiceLine"]]
             .sum()
             .round(2)
             .to_dict("index")
@@ -1617,6 +1797,9 @@ def refresh_o2c_statuses(context: GenerationContext) -> None:
             ordered_qty = round(float(order_summary.get("Quantity", 0.0)), 2)
             shipped_qty = round(float(order_summary.get("ShippedQuantity", 0.0)), 2)
             billed_qty = round(float(order_summary.get("BilledQuantity", 0.0)), 2)
+            service_line_count = int(order_summary.get("IsServiceLine", 0.0) or 0)
+            line_count = int(sales_order_lines[sales_order_lines["SalesOrderID"].astype(int).eq(int(order.SalesOrderID))].shape[0])
+            is_service_order = line_count > 0 and service_line_count == line_count
             invoiced_amount = round(float(invoice_summary.get("GrandTotal", 0.0)), 2)
             settled_amount = round(float(invoice_summary.get("SettledAmount", 0.0)), 2)
 
@@ -1628,6 +1811,8 @@ def refresh_o2c_statuses(context: GenerationContext) -> None:
                 status = "Invoiced"
             elif billed_qty > 0:
                 status = "Partially Invoiced"
+            elif is_service_order:
+                status = "Open"
             elif shipped_qty >= ordered_qty:
                 status = "Shipped"
             elif shipped_qty > 0:
@@ -1700,9 +1885,12 @@ def o2c_open_state(
     as_of_date: pd.Timestamp | str | None = None,
 ) -> dict[str, float | int | str]:
     shipped_by_sales_line = sales_order_line_shipped_quantities(context)
+    item_groups = context.tables["Item"].set_index("ItemID")["ItemGroup"].astype(str).to_dict() if not context.tables["Item"].empty else {}
     open_order_quantity = 0.0
     backordered_quantity = 0.0
     for line in context.tables["SalesOrderLine"].itertuples(index=False):
+        if str(item_groups.get(int(line.ItemID), "")) == "Services":
+            continue
         shipped = float(shipped_by_sales_line.get(int(line.SalesOrderLineID), 0.0))
         remaining = max(0.0, round(float(line.Quantity) - shipped, 2))
         open_order_quantity += remaining
@@ -1779,10 +1967,13 @@ def generate_month_sales_orders(context: GenerationContext, year: int, month: in
     line_rows: list[dict] = []
     override_rows: list[dict] = []
     for _ in range(order_count):
-        customer = select_customer(context)
+        customer = select_customer(
+            context,
+            eligible_segments=("Strategic", "Wholesale", "Design Trade", "Small Business"),
+        )
         order_id = next_id(context, "SalesOrder")
         order_date = random_date_in_month(rng, year, month)
-        sellable_items = active_sellable_items(context, order_date)
+        sellable_items = active_goods_sellable_items(context, order_date)
         requested_delivery_date = order_date + pd.Timedelta(days=int(rng.integers(3, 15)))
         segment = str(customer["CustomerSegment"])
         sales_rep_id = sales_rep_employee_id(context, customer, order_date)
@@ -1893,6 +2084,297 @@ def generate_month_sales_orders(context: GenerationContext, year: int, month: in
     append_rows(context, "PriceOverrideApproval", override_rows)
 
 
+def generate_month_design_service_orders(context: GenerationContext, year: int, month: int) -> None:
+    customers = active_design_service_customers(context)
+    service_items = active_design_service_items(context, pd.Timestamp(year=year, month=month, day=1))
+    rng = context.rng
+    month_start, month_end = month_bounds(year, month)
+    fiscal_end = pd.Timestamp(context.settings.fiscal_year_end).normalize()
+    design_cost_center_id = design_services_cost_center_id(context)
+
+    desired_count = int(
+        np.clip(
+            round(len(customers) * rng.uniform(0.24, 0.42)),
+            DESIGN_SERVICE_MONTHLY_ENGAGEMENT_RANGE[0],
+            DESIGN_SERVICE_MONTHLY_ENGAGEMENT_RANGE[1],
+        )
+    )
+    engagement_count = min(max(desired_count, 1), len(customers))
+    if engagement_count <= 0:
+        return
+
+    selected_customer_indexes = np.atleast_1d(
+        rng.choice(customers.index.to_numpy(), size=engagement_count, replace=False)
+    )
+
+    order_rows: list[dict[str, Any]] = []
+    line_rows: list[dict[str, Any]] = []
+    engagement_rows: list[dict[str, Any]] = []
+    assignment_rows: list[dict[str, Any]] = []
+
+    for customer_index in selected_customer_indexes.tolist():
+        customer = customers.loc[int(customer_index)]
+        service_item = select_design_service_item(context, service_items)
+        start_date = random_date_in_month(rng, year, month).normalize()
+        duration_months = weighted_option_value(rng, DESIGN_SERVICE_MONTH_SPAN_OPTIONS)
+        projected_end = (
+            pd.Timestamp(start_date).replace(day=1)
+            + pd.DateOffset(months=duration_months - 1)
+            + pd.offsets.MonthEnd(1)
+        ).normalize()
+        end_date = min(projected_end, fiscal_end)
+        if end_date < start_date:
+            end_date = start_date
+
+        if duration_months == 1:
+            planned_hours = qty(rng.uniform(24.0, 72.0))
+        elif duration_months == 2:
+            planned_hours = qty(rng.uniform(60.0, 120.0))
+        else:
+            planned_hours = qty(rng.uniform(96.0, DESIGN_SERVICE_PLANNED_HOURS_RANGE[1]))
+
+        hourly_rate = money(float(service_item["ListPrice"]))
+        sales_order_id = next_id(context, "SalesOrder")
+        sales_order_line_id = next_id(context, "SalesOrderLine")
+        service_engagement_id = next_id(context, "ServiceEngagement")
+        order_date = max(month_start, start_date - pd.Timedelta(days=int(rng.integers(0, 8))))
+        sales_rep_id = sales_rep_employee_id(context, customer, order_date)
+        order_total = money(planned_hours * hourly_rate)
+
+        design_team = design_service_employee_pool(context, start_date)
+        lead_pool = design_team[
+            design_team["JobTitle"].isin(["Senior Designer", "Design Services Manager", "Designer"])
+        ].copy()
+        lead_weights = lead_pool["JobTitle"].map({
+            "Senior Designer": 0.50,
+            "Design Services Manager": 0.32,
+            "Designer": 0.18,
+        }).astype(float)
+        lead_weights = lead_weights / lead_weights.sum()
+        lead_index = int(rng.choice(lead_pool.index.to_numpy(), p=lead_weights.to_numpy()))
+        lead_employee = lead_pool.loc[lead_index]
+
+        assignment_target = min(
+            weighted_option_value(rng, DESIGN_SERVICE_ASSIGNMENT_OPTIONS),
+            len(design_team),
+        )
+        remaining_team = design_team[design_team["EmployeeID"].astype(int).ne(int(lead_employee["EmployeeID"]))].copy()
+        selected_team = [lead_employee]
+        if assignment_target > 1 and not remaining_team.empty:
+            sample_count = min(assignment_target - 1, len(remaining_team))
+            sample_weights = remaining_team["JobTitle"].map({
+                "Senior Designer": 0.36,
+                "Design Services Manager": 0.12,
+                "Designer": 0.52,
+            }).fillna(0.20).astype(float)
+            sample_weights = sample_weights / sample_weights.sum()
+            sampled_indexes = np.atleast_1d(
+                rng.choice(
+                    remaining_team.index.to_numpy(),
+                    size=sample_count,
+                    replace=False,
+                    p=sample_weights.to_numpy(),
+                )
+            )
+            for sampled_index in sampled_indexes.tolist():
+                selected_team.append(remaining_team.loc[int(sampled_index)])
+
+        alpha = np.array([
+            1.85 if int(member["EmployeeID"]) == int(lead_employee["EmployeeID"]) else (
+                1.45 if str(member["JobTitle"]) == "Senior Designer" else 1.10
+            )
+            for member in selected_team
+        ], dtype=float)
+        allocation_weights = rng.dirichlet(alpha)
+        assigned_hours = [qty(planned_hours * float(weight)) for weight in allocation_weights]
+        assigned_hours[-1] = qty(assigned_hours[-1] + money(planned_hours - sum(assigned_hours)))
+
+        order_rows.append({
+            "SalesOrderID": sales_order_id,
+            "OrderNumber": format_doc_number("SO", year, sales_order_id),
+            "OrderDate": order_date.strftime("%Y-%m-%d"),
+            "CustomerID": int(customer["CustomerID"]),
+            "RequestedDeliveryDate": start_date.strftime("%Y-%m-%d"),
+            "Status": "Open",
+            "SalesRepEmployeeID": sales_rep_id,
+            "CostCenterID": design_cost_center_id,
+            "OrderTotal": order_total,
+            "FreightTerms": "Prepaid",
+            "Notes": f"{service_item['ItemName']} engagement",
+        })
+        line_rows.append({
+            "SalesOrderLineID": sales_order_line_id,
+            "SalesOrderID": sales_order_id,
+            "LineNumber": 1,
+            "ItemID": int(service_item["ItemID"]),
+            "Quantity": planned_hours,
+            "BaseListPrice": hourly_rate,
+            "UnitPrice": hourly_rate,
+            "Discount": 0.0,
+            "LineTotal": order_total,
+            "PriceListLineID": None,
+            "PromotionID": None,
+            "PriceOverrideApprovalID": None,
+            "PricingMethod": "Base List",
+        })
+        engagement_rows.append({
+            "ServiceEngagementID": service_engagement_id,
+            "EngagementNumber": format_doc_number("SE", year, service_engagement_id),
+            "CustomerID": int(customer["CustomerID"]),
+            "SalesOrderID": sales_order_id,
+            "SalesOrderLineID": sales_order_line_id,
+            "ItemID": int(service_item["ItemID"]),
+            "LeadEmployeeID": int(lead_employee["EmployeeID"]),
+            "StartDate": start_date.strftime("%Y-%m-%d"),
+            "EndDate": end_date.strftime("%Y-%m-%d"),
+            "PlannedHours": planned_hours,
+            "HourlyRate": hourly_rate,
+            "Status": "Scheduled",
+        })
+
+        for team_member, member_hours in zip(selected_team, assigned_hours):
+            assignment_rows.append({
+                "ServiceEngagementAssignmentID": next_id(context, "ServiceEngagementAssignment"),
+                "ServiceEngagementID": service_engagement_id,
+                "EmployeeID": int(team_member["EmployeeID"]),
+                "AssignedRole": str(team_member["JobTitle"]),
+                "AssignedHours": member_hours,
+                "Status": "Assigned",
+            })
+
+    append_rows(context, "SalesOrder", order_rows)
+    append_rows(context, "SalesOrderLine", line_rows)
+    append_rows(context, "ServiceEngagement", engagement_rows)
+    append_rows(context, "ServiceEngagementAssignment", assignment_rows)
+
+
+def generate_month_service_time_entries(context: GenerationContext, year: int, month: int) -> None:
+    engagements = context.tables["ServiceEngagement"]
+    assignments = context.tables["ServiceEngagementAssignment"]
+    if engagements.empty or assignments.empty:
+        return
+
+    rng = context.rng
+    month_start, month_end = month_bounds(year, month)
+    employee_lookup = context.tables["Employee"].set_index("EmployeeID").to_dict("index") if not context.tables["Employee"].empty else {}
+    assignment_groups = {int(key): value.copy() for key, value in assignments.groupby("ServiceEngagementID")}
+    billable_by_assignment = service_assignment_billable_hours(context)
+    time_entry_rows: list[dict[str, Any]] = []
+
+    for engagement in engagements.itertuples(index=False):
+        engagement_start = pd.Timestamp(engagement.StartDate)
+        engagement_end = pd.Timestamp(engagement.EndDate)
+        if engagement_end < month_start or engagement_start > month_end:
+            continue
+
+        active_start = max(engagement_start, month_start)
+        active_end = min(engagement_end, month_end)
+        if active_end < active_start:
+            continue
+
+        assignment_rows = assignment_groups.get(int(engagement.ServiceEngagementID))
+        if assignment_rows is None or assignment_rows.empty:
+            continue
+
+        remaining_months = inclusive_month_count(month_start, engagement_end)
+        for assignment in assignment_rows.itertuples(index=False):
+            assigned_hours = round(float(assignment.AssignedHours), 2)
+            consumed_hours = round(float(billable_by_assignment.get(int(assignment.ServiceEngagementAssignmentID), 0.0)), 2)
+            remaining_hours = round(assigned_hours - consumed_hours, 2)
+            if remaining_hours <= 0:
+                continue
+
+            planned_month_hours = remaining_hours
+            if remaining_months > 1:
+                target_share = remaining_hours / float(remaining_months)
+                planned_month_hours = qty(
+                    min(
+                        remaining_hours,
+                        max(2.0, target_share * rng.uniform(0.88, 1.14)),
+                    )
+                )
+            planned_month_hours = min(qty(planned_month_hours), qty(remaining_hours))
+            if planned_month_hours <= 0:
+                continue
+
+            employee = employee_lookup.get(int(assignment.EmployeeID))
+            if employee is None:
+                continue
+            employee_hire_date = pd.Timestamp(employee["HireDate"])
+            employee_termination_date = (
+                pd.Timestamp(employee["TerminationDate"])
+                if pd.notna(employee.get("TerminationDate"))
+                else None
+            )
+            employee_active_start = max(active_start, employee_hire_date)
+            employee_active_end = active_end
+            if employee_termination_date is not None:
+                employee_active_end = min(employee_active_end, employee_termination_date)
+            if employee_active_end < employee_active_start:
+                continue
+
+            workdays = pd.date_range(start=employee_active_start, end=employee_active_end, freq="B")
+            if len(workdays) == 0:
+                workdays = pd.date_range(start=employee_active_start, end=employee_active_end, freq="D")
+            if len(workdays) == 0:
+                continue
+
+            desired_workdays = min(
+                len(workdays),
+                int(
+                    np.clip(
+                        round(planned_month_hours / 7.5),
+                        DESIGN_SERVICE_WORKDAYS_PER_MONTH_RANGE[0],
+                        DESIGN_SERVICE_WORKDAYS_PER_MONTH_RANGE[1],
+                    )
+                ),
+            )
+            selected_workdays = sorted(
+                pd.Timestamp(value).normalize()
+                for value in np.atleast_1d(
+                    rng.choice(workdays.to_numpy(), size=max(desired_workdays, 1), replace=False)
+                ).tolist()
+            )
+            billable_weights = rng.dirichlet(np.ones(len(selected_workdays)))
+            billable_parts = [qty(planned_month_hours * float(weight)) for weight in billable_weights]
+            billable_parts[-1] = qty(billable_parts[-1] + money(planned_month_hours - sum(billable_parts)))
+
+            nonbillable_total = qty(min(4.0, planned_month_hours * rng.uniform(*DESIGN_SERVICE_NONBILLABLE_SHARE_RANGE)))
+            if nonbillable_total > 0:
+                nonbillable_weights = rng.dirichlet(np.ones(len(selected_workdays)))
+                nonbillable_parts = [qty(nonbillable_total * float(weight)) for weight in nonbillable_weights]
+                nonbillable_parts[-1] = qty(nonbillable_parts[-1] + money(nonbillable_total - sum(nonbillable_parts)))
+            else:
+                nonbillable_parts = [0.0 for _ in selected_workdays]
+
+            cost_rate_used = implied_hourly_rate(employee, int(pd.Timestamp(employee_active_start).year))
+
+            for work_date, billable_hours, nonbillable_hours in zip(selected_workdays, billable_parts, nonbillable_parts):
+                approval_date = clamp_date_to_month(
+                    pd.Timestamp(work_date) + pd.Timedelta(days=int(rng.integers(0, 4))),
+                    year,
+                    month,
+                )
+                total_cost_hours = float(billable_hours) + float(nonbillable_hours)
+                time_entry_rows.append({
+                    "ServiceTimeEntryID": next_id(context, "ServiceTimeEntry"),
+                    "ServiceEngagementID": int(engagement.ServiceEngagementID),
+                    "ServiceEngagementAssignmentID": int(assignment.ServiceEngagementAssignmentID),
+                    "EmployeeID": int(assignment.EmployeeID),
+                    "WorkDate": pd.Timestamp(work_date).strftime("%Y-%m-%d"),
+                    "BillableHours": billable_hours,
+                    "NonBillableHours": nonbillable_hours,
+                    "CostRateUsed": cost_rate_used,
+                    "ExtendedCost": money(total_cost_hours * float(cost_rate_used)),
+                    "ApprovedByEmployeeID": design_service_approver_id(context, work_date),
+                    "ApprovedDate": approval_date.strftime("%Y-%m-%d"),
+                    "BillingStatus": "Unbilled",
+                })
+
+    append_rows(context, "ServiceTimeEntry", time_entry_rows)
+    refresh_service_engagement_statuses(context)
+
+
 def generate_month_shipments(context: GenerationContext, year: int, month: int) -> None:
     orders = context.tables["SalesOrder"]
     order_lines = context.tables["SalesOrderLine"]
@@ -1937,6 +2419,11 @@ def generate_month_shipments(context: GenerationContext, year: int, month: int) 
             availability_events[completion_date.normalize()].append((int(line.ItemID), int(completion["WarehouseID"]), float(line.QuantityCompleted)))
 
     open_order_lines = order_lines.copy()
+    if not context.tables["Item"].empty:
+        item_groups = context.tables["Item"].set_index("ItemID")["ItemGroup"].astype(str).to_dict()
+        open_order_lines = open_order_lines[
+            open_order_lines["ItemID"].astype(int).map(lambda item_id: item_groups.get(int(item_id), "")).ne("Services")
+        ].copy()
     open_order_lines["ShippedQuantity"] = open_order_lines["SalesOrderLineID"].map(shipped_quantities).fillna(0.0)
     open_order_lines["RemainingQuantity"] = (open_order_lines["Quantity"].astype(float) - open_order_lines["ShippedQuantity"].astype(float)).round(2)
     open_order_lines = open_order_lines[open_order_lines["RemainingQuantity"].gt(0)].copy()
@@ -2085,10 +2572,205 @@ def generate_month_shipments(context: GenerationContext, year: int, month: int) 
 def generate_month_sales_invoices(context: GenerationContext, year: int, month: int) -> None:
     shipments = context.tables["Shipment"]
     shipment_lines = context.tables["ShipmentLine"]
-    if shipments.empty or shipment_lines.empty:
+    rng = context.rng
+    month_start, month_end = month_bounds(year, month)
+    invoice_rows: list[dict[str, Any]] = []
+    invoice_line_rows: list[dict[str, Any]] = []
+    service_billing_rows: list[dict[str, Any]] = []
+
+    sales_orders = context.tables["SalesOrder"].set_index("SalesOrderID").to_dict("index") if not context.tables["SalesOrder"].empty else {}
+    sales_order_lines = context.tables["SalesOrderLine"].set_index("SalesOrderLineID").to_dict("index") if not context.tables["SalesOrderLine"].empty else {}
+    customers = context.tables["Customer"].set_index("CustomerID").to_dict("index") if not context.tables["Customer"].empty else {}
+
+    if not shipments.empty and not shipment_lines.empty:
+        billed_quantities = shipment_line_billed_quantities(context)
+        shipment_headers = shipments.set_index("ShipmentID").to_dict("index")
+        existing_invoice_lines = context.tables["SalesInvoiceLine"]
+        already_billed_shipment_ids: set[int] = set()
+        if not existing_invoice_lines.empty:
+            existing_shipment_links = existing_invoice_lines[existing_invoice_lines["ShipmentLineID"].notna()][
+                ["ShipmentLineID"]
+            ].merge(
+                shipment_lines[["ShipmentLineID", "ShipmentID"]],
+                on="ShipmentLineID",
+                how="left",
+            )
+            already_billed_shipment_ids = set(
+                existing_shipment_links["ShipmentID"].dropna().astype(int).tolist()
+            )
+
+        groups: dict[tuple[int, str], list[tuple[Any, float]]] = defaultdict(list)
+        for shipment_line in shipment_lines.itertuples(index=False):
+            billed_quantity = float(billed_quantities.get(int(shipment_line.ShipmentLineID), 0.0))
+            remaining_quantity = round(float(shipment_line.QuantityShipped) - billed_quantity, 2)
+            shipment = shipment_headers.get(int(shipment_line.ShipmentID))
+            if shipment is None or remaining_quantity <= 0:
+                continue
+            shipment_date = pd.Timestamp(shipment["ShipmentDate"])
+            if shipment_date > month_end:
+                continue
+            invoice_probability = 0.88 if shipment_date.year == year and shipment_date.month == month else 0.97
+            if rng.random() > invoice_probability:
+                continue
+            invoice_date = clamp_date_to_month(
+                (
+                    shipment_date + pd.Timedelta(days=int(rng.integers(0, 5)))
+                ) if shipment_date.year == year and shipment_date.month == month else (
+                    pd.Timestamp(year=year, month=month, day=1) + pd.Timedelta(days=int(rng.integers(0, 6)))
+                ),
+                year,
+                month,
+            )
+            groups[(int(shipment["SalesOrderID"]), invoice_date.strftime("%Y-%m-%d"))].append((shipment_line, remaining_quantity))
+
+        billed_shipment_ids = set(already_billed_shipment_ids)
+        for (sales_order_id, invoice_date_str), grouped_lines in sorted(groups.items(), key=lambda item: (item[0][1], item[0][0])):
+            invoice_date = pd.Timestamp(invoice_date_str)
+            sales_order = sales_orders[int(sales_order_id)]
+            customer = customers[int(sales_order["CustomerID"])]
+            invoice_id = next_id(context, "SalesInvoice")
+            due_date = invoice_date + pd.Timedelta(days=payment_term_days(str(customer["PaymentTerms"])))
+            subtotal = 0.0
+            freight_amount = 0.0
+            line_number = 1
+            for shipment_line, remaining_quantity in grouped_lines:
+                shipment = shipment_headers[int(shipment_line.ShipmentID)]
+                shipment_id = int(shipment_line.ShipmentID)
+                if shipment_id not in billed_shipment_ids:
+                    shipment_freight_amount = shipment.get("BillableFreightAmount")
+                    if pd.notna(shipment_freight_amount):
+                        freight_amount = money(freight_amount + float(shipment_freight_amount))
+                    billed_shipment_ids.add(shipment_id)
+
+                sales_line = sales_order_lines[int(shipment_line.SalesOrderLineID)]
+                quantity = qty(remaining_quantity)
+                line_total = money(quantity * float(sales_line["UnitPrice"]) * (1 - float(sales_line["Discount"])))
+                subtotal = money(subtotal + line_total)
+                invoice_line_rows.append({
+                    "SalesInvoiceLineID": next_id(context, "SalesInvoiceLine"),
+                    "SalesInvoiceID": invoice_id,
+                    "SalesOrderLineID": int(shipment_line.SalesOrderLineID),
+                    "ShipmentLineID": int(shipment_line.ShipmentLineID),
+                    "LineNumber": line_number,
+                    "ItemID": int(shipment_line.ItemID),
+                    "Quantity": quantity,
+                    "BaseListPrice": float(sales_line["BaseListPrice"]),
+                    "UnitPrice": float(sales_line["UnitPrice"]),
+                    "Discount": float(sales_line["Discount"]),
+                    "LineTotal": line_total,
+                    "PriceListLineID": None if pd.isna(sales_line["PriceListLineID"]) else int(sales_line["PriceListLineID"]),
+                    "PromotionID": None if pd.isna(sales_line["PromotionID"]) else int(sales_line["PromotionID"]),
+                    "PriceOverrideApprovalID": None if pd.isna(sales_line["PriceOverrideApprovalID"]) else int(sales_line["PriceOverrideApprovalID"]),
+                    "PricingMethod": str(sales_line["PricingMethod"]),
+                })
+                line_number += 1
+
+            tax_amount = money((subtotal + freight_amount) * context.settings.tax_rate)
+            invoice_rows.append({
+                "SalesInvoiceID": invoice_id,
+                "InvoiceNumber": format_doc_number("SI", year, invoice_id),
+                "InvoiceDate": invoice_date.strftime("%Y-%m-%d"),
+                "DueDate": due_date.strftime("%Y-%m-%d"),
+                "SalesOrderID": int(sales_order_id),
+                "CustomerID": int(sales_order["CustomerID"]),
+                "SubTotal": subtotal,
+                "FreightAmount": freight_amount,
+                "TaxAmount": tax_amount,
+                "GrandTotal": money(subtotal + freight_amount + tax_amount),
+                "Status": "Submitted",
+                "PaymentDate": None,
+            })
+
+    service_time_entries = context.tables["ServiceTimeEntry"]
+    service_engagements = context.tables["ServiceEngagement"]
+    if not service_time_entries.empty and not service_engagements.empty:
+        engagement_lookup = service_engagements.set_index("ServiceEngagementID").to_dict("index")
+        unbilled_entries = service_time_entries.copy()
+        unbilled_entries["WorkDateTS"] = pd.to_datetime(unbilled_entries["WorkDate"], errors="coerce")
+        unbilled_entries = unbilled_entries[
+            unbilled_entries["BillingStatus"].astype(str).ne("Billed")
+            & unbilled_entries["WorkDateTS"].between(month_start, month_end)
+            & unbilled_entries["BillableHours"].astype(float).gt(0.0)
+        ].copy()
+
+        billed_time_entry_ids: list[int] = []
+        for service_engagement_id, rows in unbilled_entries.groupby("ServiceEngagementID"):
+            engagement = engagement_lookup.get(int(service_engagement_id))
+            if engagement is None:
+                continue
+            sales_order = sales_orders.get(int(engagement["SalesOrderID"]))
+            sales_line = sales_order_lines.get(int(engagement["SalesOrderLineID"]))
+            customer = customers.get(int(engagement["CustomerID"]))
+            if sales_order is None or sales_line is None or customer is None:
+                continue
+
+            billed_hours = qty(float(rows["BillableHours"].astype(float).sum()))
+            if billed_hours <= 0:
+                continue
+
+            billing_period_start = pd.Timestamp(rows["WorkDateTS"].min()).normalize()
+            billing_period_end = pd.Timestamp(rows["WorkDateTS"].max()).normalize()
+            invoice_date = clamp_date_to_month(max(billing_period_end, month_end), year, month)
+            due_date = invoice_date + pd.Timedelta(days=payment_term_days(str(customer["PaymentTerms"])))
+            invoice_id = next_id(context, "SalesInvoice")
+            line_total = money(billed_hours * float(engagement["HourlyRate"]))
+            sales_invoice_line_id = next_id(context, "SalesInvoiceLine")
+
+            invoice_rows.append({
+                "SalesInvoiceID": invoice_id,
+                "InvoiceNumber": format_doc_number("SI", year, invoice_id),
+                "InvoiceDate": invoice_date.strftime("%Y-%m-%d"),
+                "DueDate": due_date.strftime("%Y-%m-%d"),
+                "SalesOrderID": int(engagement["SalesOrderID"]),
+                "CustomerID": int(engagement["CustomerID"]),
+                "SubTotal": line_total,
+                "FreightAmount": 0.0,
+                "TaxAmount": money(line_total * context.settings.tax_rate),
+                "GrandTotal": money(line_total + money(line_total * context.settings.tax_rate)),
+                "Status": "Submitted",
+                "PaymentDate": None,
+            })
+            invoice_line_rows.append({
+                "SalesInvoiceLineID": sales_invoice_line_id,
+                "SalesInvoiceID": invoice_id,
+                "SalesOrderLineID": int(engagement["SalesOrderLineID"]),
+                "ShipmentLineID": None,
+                "LineNumber": 1,
+                "ItemID": int(engagement["ItemID"]),
+                "Quantity": billed_hours,
+                "BaseListPrice": float(sales_line["BaseListPrice"]),
+                "UnitPrice": float(engagement["HourlyRate"]),
+                "Discount": 0.0,
+                "LineTotal": line_total,
+                "PriceListLineID": None,
+                "PromotionID": None,
+                "PriceOverrideApprovalID": None,
+                "PricingMethod": "Base List",
+            })
+            service_billing_rows.append({
+                "ServiceBillingLineID": next_id(context, "ServiceBillingLine"),
+                "ServiceEngagementID": int(service_engagement_id),
+                "SalesInvoiceLineID": sales_invoice_line_id,
+                "BillingPeriodStartDate": billing_period_start.strftime("%Y-%m-%d"),
+                "BillingPeriodEndDate": billing_period_end.strftime("%Y-%m-%d"),
+                "BilledHours": billed_hours,
+                "HourlyRate": float(engagement["HourlyRate"]),
+                "LineAmount": line_total,
+                "Status": "Invoiced",
+            })
+            billed_time_entry_ids.extend(rows["ServiceTimeEntryID"].astype(int).tolist())
+
+        if billed_time_entry_ids:
+            billed_mask = context.tables["ServiceTimeEntry"]["ServiceTimeEntryID"].astype(int).isin(billed_time_entry_ids)
+            context.tables["ServiceTimeEntry"].loc[billed_mask, "BillingStatus"] = "Billed"
+
+    if not invoice_rows and not invoice_line_rows and not service_billing_rows:
         return
 
-    rng = context.rng
+    append_rows(context, "SalesInvoice", invoice_rows)
+    append_rows(context, "SalesInvoiceLine", invoice_line_rows)
+    append_rows(context, "ServiceBillingLine", service_billing_rows)
+    refresh_service_engagement_statuses(context)
     _, month_end = month_bounds(year, month)
     billed_quantities = shipment_line_billed_quantities(context)
     shipment_headers = shipments.set_index("ShipmentID").to_dict("index")
@@ -2597,3 +3279,5 @@ def generate_month_customer_refunds(context: GenerationContext, year: int, month
 
 def generate_month_o2c(context: GenerationContext, year: int, month: int) -> None:
     generate_month_sales_orders(context, year, month)
+    generate_month_design_service_orders(context, year, month)
+    generate_month_service_time_entries(context, year, month)

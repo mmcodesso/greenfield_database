@@ -33,6 +33,9 @@ export const reportAreaCollections = {
       "items": [
         {
           "reportKey": "monthly-revenue-and-gross-margin"
+        },
+        {
+          "reportKey": "design-service-revenue-and-billed-hours"
         }
       ]
     },

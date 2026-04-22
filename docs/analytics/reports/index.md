@@ -17,6 +17,7 @@ This section keeps two reading levels together. `Business Perspectives` shows a 
 | Process backbone | Strongest report follow-through |
 |---|---|
 | `O2C` | [Commercial and Working Capital](commercial-and-working-capital.md), [Financial Reports](financial.md) |
+| `Design services` | [Commercial and Working Capital](commercial-and-working-capital.md), [Financial Reports](financial.md), [Managerial Reports](managerial.md) |
 | `P2P` | [Commercial and Working Capital](commercial-and-working-capital.md), [Financial Reports](financial.md) |
 | `Manufacturing` | [Operations and Risk](operations-and-risk.md), [Managerial Reports](managerial.md) |
 | `Payroll` | [Payroll and Workforce](payroll-perspective.md), [Financial Reports](financial.md), [Audit Reports](audit.md) |
@@ -27,7 +28,7 @@ This section keeps two reading levels together. `Business Perspectives` shows a 
 | Perspective | Best use | Go to |
 |---|---|---|
 | Executive Overview | Performance, position, cash, and working capital in one management storyline | [Business Perspectives Hub](lens-packs.md) |
-| Commercial and Working Capital | Revenue quality, pricing, receivables, payables, and settlement timing | [Commercial and Working Capital](commercial-and-working-capital.md) |
+| Commercial and Working Capital | Revenue quality, pricing, design-service billing, receivables, payables, and settlement timing | [Commercial and Working Capital](commercial-and-working-capital.md) |
 | Payroll and Workforce | People cost, gross-to-net pay, payroll cash, time support, and payroll-control interpretation | [Payroll and Workforce](payroll-perspective.md) |
 | Operations and Risk | Capacity, supply reliability, planning pressure, workforce context, and controls | [Operations and Risk](operations-and-risk.md) |
 

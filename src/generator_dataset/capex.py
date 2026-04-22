@@ -360,7 +360,7 @@ def generate_month_capex_activity(context: GenerationContext, year: int, month: 
             "PONumber": format_doc_number("PO", year, purchase_order_id),
             "OrderDate": dates["order_date"].strftime("%Y-%m-%d"),
             "SupplierID": supplier_id,
-            "RequisitionID": None,
+            "RequisitionID": requisition_id,
             "ExpectedDeliveryDate": dates["receipt_date"].strftime("%Y-%m-%d"),
             "Status": "Received" if financing_type == "Cash" else "Approved",
             "CreatedByEmployeeID": purchasing_creator_id,

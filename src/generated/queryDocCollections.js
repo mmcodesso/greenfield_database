@@ -207,6 +207,10 @@ export const starterQueryMaps = {
     {
       "label": "Debt amortization and cash impact",
       "queryKey": "financial/56_debt_amortization_and_cash_impact.sql"
+    },
+    {
+      "label": "Design-service revenue and billed hours",
+      "queryKey": "financial/57_design_service_revenue_and_billed_hours_by_customer_month.sql"
     }
   ],
   "managerial": [
@@ -413,6 +417,10 @@ export const starterQueryMaps = {
     {
       "label": "Budget vs actual revenue price-volume-cost bridge",
       "queryKey": "managerial/51_budget_vs_actual_revenue_price_volume_cost_bridge.sql"
+    },
+    {
+      "label": "Design-service engagement utilization and labor margin",
+      "queryKey": "managerial/52_design_service_engagement_utilization_and_labor_margin.sql"
     }
   ],
   "audit": [
@@ -623,6 +631,10 @@ export const starterQueryMaps = {
     {
       "label": "Released work orders due without actual start summary",
       "queryKey": "audit/53_released_work_orders_due_without_actual_start_summary.sql"
+    },
+    {
+      "label": "Design-service approved versus billed hours review",
+      "queryKey": "audit/54_design_service_approved_vs_billed_hours_review.sql"
     }
   ]
 };

@@ -3,7 +3,7 @@ from dataclasses import replace
 import pytest
 
 from generator_dataset.accrual_catalog import ACCRUAL_ACCOUNT_METADATA
-from generator_dataset.fixed_assets import fixed_asset_opening_profiles
+from generator_dataset.fixed_assets import monthly_depreciation_entries
 from generator_dataset.anomalies import inject_anomalies
 from generator_dataset.journals import (
     first_business_day_on_or_after,
@@ -119,6 +119,9 @@ def test_generate_recurring_manual_journals_counts_and_links(phase5_context) -> 
         1 for year, month in fiscal_months(context) if monthly_factory_overhead_amount(context, year, month) > 0
     )
     freight_settlement_count = len(planned_freight_settlements(context))
+    depreciation_journal_count = sum(
+        1 for year, month in fiscal_months(context) if monthly_depreciation_entries(context, year, month)
+    )
 
     assert int(entry_type_counts["Opening"]) == 1
     assert int(entry_type_counts["Rent"]) == fiscal_month_count * 2
@@ -127,7 +130,7 @@ def test_generate_recurring_manual_journals_counts_and_links(phase5_context) -> 
     assert int(entry_type_counts.get("Factory Overhead", 0)) == factory_overhead_month_count
     assert int(entry_type_counts.get("Direct Labor Reclass", 0)) == 0
     assert int(entry_type_counts.get("Manufacturing Overhead Reclass", 0)) == 0
-    assert int(entry_type_counts["Depreciation"]) == fiscal_month_count * 3
+    assert int(entry_type_counts["Depreciation"]) == depreciation_journal_count
     assert int(entry_type_counts["Accrual"]) == fiscal_month_count * len(ACCRUAL_ACCOUNT_METADATA)
     assert int(entry_type_counts.get("Accrual Reversal", 0)) == 0
     assert len(context.tables["JournalEntry"]) == sum(int(count) for count in entry_type_counts.values())
@@ -188,27 +191,38 @@ def test_fixed_assets_and_accumulated_depreciation_remain_realistic_over_five_ye
     post_all_transactions(context)
     generate_year_end_close_journals(context)
 
-    accounts = (
-        context.tables["Account"]
-        .assign(AccountNumber=context.tables["Account"]["AccountNumber"].astype(str))
-        .set_index("AccountNumber")["AccountID"]
-        .astype(int)
-        .to_dict()
-    )
     gl = context.tables["GLEntry"]
+    fixed_assets = context.tables["FixedAsset"]
 
-    for profile in fixed_asset_opening_profiles().values():
-        gross_account_id = accounts[profile.asset_account_number]
+    active_assets = fixed_assets[fixed_assets["Status"].astype(str).ne("Disposed")].copy()
+    expected_gross_by_account = (
+        active_assets.groupby("AssetAccountID")["OriginalCost"].sum().to_dict()
+        if not active_assets.empty
+        else {}
+    )
+    expected_gross_by_accum_account = (
+        active_assets.dropna(subset=["AccumulatedDepreciationAccountID"])
+        .groupby("AccumulatedDepreciationAccountID")["OriginalCost"]
+        .sum()
+        .to_dict()
+        if not active_assets.empty
+        else {}
+    )
+
+    for asset_account_id, expected_gross in expected_gross_by_account.items():
+        gross_account_id = int(asset_account_id)
         gross_rows = gl[gl["AccountID"].astype(int).eq(gross_account_id)]
         gross_balance = round(float(gross_rows["Debit"].astype(float).sum()) - float(gross_rows["Credit"].astype(float).sum()), 2)
-        assert gross_balance == round(float(profile.gross_opening_balance), 2)
-        if not profile.accumulated_depreciation_account_number:
-            continue
-        accumulated_account_id = accounts[profile.accumulated_depreciation_account_number]
+        assert gross_balance == round(float(expected_gross), 2)
+
+    for accumulated_account_id, related_gross in expected_gross_by_accum_account.items():
+        accumulated_account_id = int(accumulated_account_id)
         accumulated_rows = gl[gl["AccountID"].astype(int).eq(accumulated_account_id)]
         accumulated_balance = round(float(accumulated_rows["Credit"].astype(float).sum()) - float(accumulated_rows["Debit"].astype(float).sum()), 2)
-        assert accumulated_balance <= gross_balance + 0.01
-        assert round(gross_balance - accumulated_balance, 2) >= -0.01
+        if accumulated_balance == 0.0:
+            continue
+        assert accumulated_balance <= round(float(related_gross), 2) + 0.01
+        assert round(float(related_gross) - accumulated_balance, 2) >= -0.01
 
 
 def test_accrued_expense_settlement_uses_purchase_invoice_path(phase5_context) -> None:

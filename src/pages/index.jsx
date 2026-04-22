@@ -48,7 +48,7 @@ const adoptionPoints = [
 const includedAssets = [
   {
     title: "SQLite accounting database",
-    text: "Download a ready-to-query SQLite database with 69 tables for SQL practice, source-to-ledger tracing, and accounting analytics labs.",
+    text: "Download a ready-to-query SQLite database with 73 tables for SQL practice, source-to-ledger tracing, and accounting analytics labs.",
   },
   {
     title: "Excel workbook and CSV export",

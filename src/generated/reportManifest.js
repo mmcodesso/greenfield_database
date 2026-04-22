@@ -143,6 +143,24 @@ const reportManifest = {
     "excelPath": "/reports/financial/revenue-and-working-capital/monthly-revenue-and-gross-margin/monthly-revenue-and-gross-margin.xlsx",
     "csvPath": "/reports/financial/revenue-and-working-capital/monthly-revenue-and-gross-margin/monthly-revenue-and-gross-margin.csv"
   },
+  "design-service-revenue-and-billed-hours": {
+    "slug": "design-service-revenue-and-billed-hours",
+    "title": "Design Service Revenue and Billed Hours",
+    "area": "financial",
+    "areaLabel": "Financial",
+    "processGroup": "revenue-and-working-capital",
+    "processGroupLabel": "Revenue and Working Capital",
+    "cadence": "Monthly",
+    "description": "Review billed design-service hours and posted service revenue by customer and invoice month.",
+    "queryPath": "queries/financial/57_design_service_revenue_and_billed_hours_by_customer_month.sql",
+    "previewRowLimit": 25,
+    "excelEnabled": true,
+    "csvEnabled": true,
+    "assetBasePath": "/reports/financial/revenue-and-working-capital/design-service-revenue-and-billed-hours",
+    "previewPath": "/reports/financial/revenue-and-working-capital/design-service-revenue-and-billed-hours/preview.json",
+    "excelPath": "/reports/financial/revenue-and-working-capital/design-service-revenue-and-billed-hours/design-service-revenue-and-billed-hours.xlsx",
+    "csvPath": "/reports/financial/revenue-and-working-capital/design-service-revenue-and-billed-hours/design-service-revenue-and-billed-hours.csv"
+  },
   "ar-aging": {
     "slug": "ar-aging",
     "title": "AR Aging",

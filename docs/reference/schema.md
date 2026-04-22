@@ -1,6 +1,6 @@
 ---
 title: Schema Reference
-description: Student-friendly reference for the 73 implemented tables, key columns, and ER relationships.
+description: Student-friendly reference for the 77 implemented tables, key columns, and ER relationships.
 sidebar_label: Schema Reference
 ---
 
@@ -29,14 +29,14 @@ If you need the big-picture business story first, start with [Dataset Guide](../
 |---|---|---:|
 | Accounting core | Accounts, journals, and posted ledger detail | 3 |
 | Fixed assets and financing | Asset register, lifecycle events, and note schedules | 4 |
-| Order-to-cash | Customers, commercial pricing, orders, shipments, invoices, cash, returns, credits, and refunds | 18 |
+| Order-to-cash | Customers, commercial pricing, goods orders, service engagements, shipments, invoices, cash, returns, credits, and refunds | 22 |
 | Procure-to-pay | Requisitions, purchase orders, receipts, supplier invoices, and disbursements | 9 |
 | Manufacturing | BOMs, routings, work centers, work orders, issues, completions, and close | 14 |
 | Payroll and time | Shifts, rosters, absences, overtime approvals, punches, approved daily time, payroll, and remittances | 14 |
 | Master data | Item, warehouse, and employee records | 3 |
 | Organizational planning | Cost centers, budget summary, and budget detail | 3 |
 | Demand planning and MRP | Forecasting, inventory policy, recommendations, MRP, and rough-cut capacity | 5 |
-| Total |  | 73 |
+| Total |  | 77 |
 
 ## How to Read the ER Diagrams
 
@@ -58,6 +58,7 @@ These are the main keys students use to move across groups.
 | `SupplyPlanRecommendationID` | Demand planning into requisitions, work orders, MRP, and rough-cut capacity | Connects planning pressure to later purchasing or manufacturing execution |
 | `WorkOrderID` | Manufacturing into issues, completions, close, and labor support | Main manufacturing execution anchor |
 | `WorkOrderOperationID` | Manufacturing into operation schedules and labor traceability | Connects scheduling and labor detail to one operation |
+| `ServiceEngagementID` | O2C service delivery into staffing, approved time, and billing | Main design-services execution anchor |
 | `TimeClockEntryID` | Payroll and time into labor, attendance exceptions, and payroll support | Approved time bridge |
 | `PayrollRegisterID` | Payroll header into line detail and payment | Main payroll posting anchor |
 | `AccrualJournalEntryID` | Accounting core into accrued-service AP settlement | Bridges finance estimates to later AP activity |
@@ -115,7 +116,7 @@ erDiagram
 
 ## Order-to-Cash
 
-This group holds the full customer-side relationship map: pricing setup, order capture, fulfillment, billing, cash settlement, and the return-credit-refund branch.
+This group holds the full customer-side relationship map: pricing setup, goods and service order capture, service delivery, physical fulfillment, billing, cash settlement, and the return-credit-refund branch.
 
 ```mermaid
 erDiagram
@@ -129,11 +130,17 @@ erDiagram
     PriceListLine o|--o{ SalesOrderLine : prices
     PromotionProgram o|--o{ SalesOrderLine : discounts
     PriceOverrideApproval o|--o| SalesOrderLine : approves
+    SalesOrderLine ||--o| ServiceEngagement : opens
+    ServiceEngagement ||--|{ ServiceEngagementAssignment : staffs
+    ServiceEngagement ||--o{ ServiceTimeEntry : records
+    ServiceEngagementAssignment ||--o{ ServiceTimeEntry : performs
     SalesOrder ||--o{ Shipment : fulfills
     SalesOrderLine ||--o{ ShipmentLine : ships
     Shipment ||--|{ ShipmentLine : contains
     SalesInvoice ||--|{ SalesInvoiceLine : contains
     ShipmentLine ||--o{ SalesInvoiceLine : billed_on
+    ServiceEngagement ||--o{ ServiceBillingLine : billed_as
+    SalesInvoiceLine ||--o| ServiceBillingLine : traced_by
     CashReceipt ||--o{ CashReceiptApplication : applies
     SalesInvoice ||--o{ CashReceiptApplication : settled_by
     SalesReturn ||--|{ SalesReturnLine : contains
@@ -153,10 +160,14 @@ erDiagram
 | `PriceOverrideApproval` | Manual below-floor approval | `PriceOverrideApprovalID`, `SalesOrderLineID`, `RequestedByEmployeeID`, `ApprovedByEmployeeID`, `ApprovedUnitPrice`, `Status` |
 | `SalesOrder` | Order header | `SalesOrderID`, `OrderNumber`, `CustomerID`, `OrderDate`, `RequestedDeliveryDate`, `FreightTerms`, `Status` |
 | `SalesOrderLine` | Ordered line with pricing lineage | `SalesOrderLineID`, `SalesOrderID`, `ItemID`, `PriceListLineID`, `PromotionID`, `PriceOverrideApprovalID`, `PricingMethod` |
+| `ServiceEngagement` | Customer service engagement tied to one service order line | `ServiceEngagementID`, `EngagementNumber`, `CustomerID`, `SalesOrderLineID`, `LeadEmployeeID`, `StartDate`, `EndDate`, `PlannedHours`, `HourlyRate`, `Status` |
+| `ServiceEngagementAssignment` | One employee staffing row on one engagement | `ServiceEngagementAssignmentID`, `ServiceEngagementID`, `EmployeeID`, `AssignedRole`, `AssignedHours`, `Status` |
+| `ServiceTimeEntry` | Approved service hours and analytical labor cost | `ServiceTimeEntryID`, `ServiceEngagementID`, `ServiceEngagementAssignmentID`, `EmployeeID`, `WorkDate`, `BillableHours`, `NonBillableHours`, `CostRateUsed`, `ExtendedCost`, `BillingStatus` |
 | `Shipment` | Shipment header | `ShipmentID`, `SalesOrderID`, `ShipmentDate`, `WarehouseID`, `FreightCost`, `BillableFreightAmount`, `Status` |
 | `ShipmentLine` | Shipped line | `ShipmentLineID`, `ShipmentID`, `SalesOrderLineID`, `ItemID`, `QuantityShipped` |
 | `SalesInvoice` | Invoice header | `SalesInvoiceID`, `InvoiceNumber`, `CustomerID`, `InvoiceDate`, `DueDate`, `FreightAmount`, `Status` |
 | `SalesInvoiceLine` | Billed line | `SalesInvoiceLineID`, `SalesInvoiceID`, `SalesOrderLineID`, `ShipmentLineID`, `ItemID`, `PricingMethod` |
+| `ServiceBillingLine` | Monthly billed-hours rollup tied to one invoice line | `ServiceBillingLineID`, `ServiceEngagementID`, `SalesInvoiceLineID`, `BillingPeriodStartDate`, `BillingPeriodEndDate`, `BilledHours`, `HourlyRate`, `LineAmount`, `Status` |
 | `CashReceipt` | Customer cash event | `CashReceiptID`, `ReceiptNumber`, `CustomerID`, `ReceiptDate`, `Amount` |
 | `CashReceiptApplication` | Invoice settlement detail | `CashReceiptApplicationID`, `CashReceiptID`, `SalesInvoiceID`, `ApplicationDate`, `AppliedAmount` |
 | `SalesReturn` | Return header | `SalesReturnID`, `ReturnNumber`, `CustomerID`, `ReturnDate`, `Status` |
@@ -172,8 +183,12 @@ erDiagram
 - `SalesOrderLine.PromotionID -> PromotionProgram.PromotionID`
 - `SalesOrderLine.PriceOverrideApprovalID -> PriceOverrideApproval.PriceOverrideApprovalID`
 - `PriceOverrideApproval.SalesOrderLineID -> SalesOrderLine.SalesOrderLineID`
+- `ServiceEngagement.SalesOrderLineID -> SalesOrderLine.SalesOrderLineID`
+- `ServiceEngagementAssignment.ServiceEngagementID -> ServiceEngagement.ServiceEngagementID`
+- `ServiceTimeEntry.ServiceEngagementAssignmentID -> ServiceEngagementAssignment.ServiceEngagementAssignmentID`
 - `ShipmentLine.SalesOrderLineID -> SalesOrderLine.SalesOrderLineID`
 - `SalesInvoiceLine.ShipmentLineID -> ShipmentLine.ShipmentLineID`
+- `ServiceBillingLine.SalesInvoiceLineID -> SalesInvoiceLine.SalesInvoiceLineID`
 - `CashReceiptApplication.SalesInvoiceID -> SalesInvoice.SalesInvoiceID`
 - `SalesReturnLine.ShipmentLineID -> ShipmentLine.ShipmentLineID`
 - `CreditMemo.OriginalSalesInvoiceID -> SalesInvoice.SalesInvoiceID`
@@ -414,6 +429,7 @@ erDiagram
 ## Important Schema Notes
 
 - `CashReceipt.SalesInvoiceID` is compatibility metadata only. The authoritative O2C settlement link is `CashReceiptApplication`.
+- Service invoice lines stay in `SalesInvoiceLine`, but `ShipmentLineID` remains null on those rows and `ServiceBillingLine` becomes the authoritative hours-to-invoice bridge.
 - O2C freight remains header-level. `SalesOrder.FreightTerms` sets the policy, `Shipment.FreightCost` and `Shipment.BillableFreightAmount` capture the fulfillment result, `SalesInvoice.FreightAmount` carries billed freight, and `CreditMemo.FreightCreditAmount` shows any freight credit.
 - Price-list and promotion lineage live directly on `SalesOrderLine`, `SalesInvoiceLine`, and `CreditMemoLine`. Postings remain net revenue.
 - `PurchaseOrder.RequisitionID` is compatibility metadata when one PO batches multiple requisitions. Use `PurchaseOrderLine.RequisitionID` as the authoritative trace.
@@ -423,6 +439,7 @@ erDiagram
 - `FixedAssetEvent` preserves the bridge from capital purchases and disposals back to the source purchasing and journal documents.
 - `GoodsReceiptLine.ExtendedStandardCost` stores the receipt posting basis used for inventory and GRNI.
 - `EmployeeShiftRoster`, `EmployeeAbsence`, `TimeClockPunch`, and `OvertimeApproval` sit beneath the approved `TimeClockEntry` layer.
+- Design-service labor margin is analytical. `ServiceTimeEntry.ExtendedCost` supports customer-engagement analysis, but payroll expense stays in payroll and does not become manufacturing inventory cost.
 - Manufacturing uses single-level BOMs plus one active routing per manufactured item.
 - Manufacturing remains standard-cost based even though payroll and time provide operational labor detail.
 

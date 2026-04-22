@@ -19,6 +19,8 @@ That distinction matters. A customer order is not revenue. A shipment is not the
 
 Most sales follow the normal path of order, shipment, invoice, cash, and settlement. Some sales later move into the customer-side exception path of return, credit, and sometimes refund. That exception path is part of O2C, not a separate business cycle.
 
+The company now also uses O2C for hourly design services. Those sales still start from `SalesOrder` and `SalesOrderLine`, but they move into `ServiceEngagement`, `ServiceTimeEntry`, and monthly billing instead of shipment. Students should read that as a second customer-fulfillment path inside O2C, not as a separate receivables system.
+
 ## Normal Process Overview
 
 ```mermaid
@@ -55,6 +57,8 @@ Start with the business flow, then move into the subsection diagrams and tables 
 |---|---|---|---|
 | Pricing and commercial setup | `PriceList`, `PriceListLine`, `PromotionProgram`, `PriceOverrideApproval` | Pricing rules, promotions, and rare override approvals behind a sales line | Review commercial terms, pricing controls, and margin drivers |
 | Order capture | `SalesOrder`, `SalesOrderLine` | Customer order header and ordered line | See promised demand, ordered quantity, and freight terms before fulfillment |
+| Service delivery and staffing | `ServiceEngagement`, `ServiceEngagementAssignment`, `ServiceTimeEntry` | One customer engagement, the employees assigned to it, and approved daily service hours | Review service staffing, approved billable versus non-billable time, and labor-cost snapshots |
+| Service billing trace | `ServiceBillingLine` | Monthly billed-hours rollup tied to one invoice line | Trace approved service hours into billed revenue without using shipment logic |
 | Fulfillment | `Shipment`, `ShipmentLine` | Physical shipment event and shipped line | Measure what actually left the warehouse, carrier choice, and shipment-level freight accrual |
 | Billing | `SalesInvoice`, `SalesInvoiceLine` | Invoice header and billed line | Trace receivable creation, merchandise revenue, and billed freight back to shipment |
 | Cash receipt | `CashReceipt` | Cash arrival from the customer | Review collection timing, unapplied cash, and deposit behavior |
@@ -66,16 +70,19 @@ Start with the business flow, then move into the subsection diagrams and tables 
 |---|---|---|
 | Shipment | Goods physically leave inventory and customer fulfillment occurs | Debit COGS and freight-out expense, and credit inventory plus accrued expenses for outbound freight |
 | Sales invoice | Accounting bills shipped quantity and creates the customer receivable | Debit AR and credit merchandise revenue, freight revenue, and sales tax payable |
+| Service invoice | Accounting bills approved design-service hours for the month | Debit AR and credit `4080` Sales Revenue - Design Services plus sales tax payable, with no shipment-driven inventory or COGS entry |
 | Cash receipt | Customer money arrives, even if it is not yet matched to a specific invoice | Debit cash and credit customer deposits or unapplied cash |
 | Cash application | Accounting settles one or more open invoices with previously received cash | Debit customer deposits or unapplied cash and credit AR |
 
 ## Key Traceability and Data Notes
 
 - `SalesInvoiceLine.ShipmentLineID` is the main shipment-to-invoice traceability field in the normal O2C path.
+- Service invoice lines stay in `SalesInvoiceLine`, but `ShipmentLineID` stays null for those rows because no physical shipment occurred.
 - `SalesOrder.FreightTerms`, `Shipment.FreightCost`, `Shipment.BillableFreightAmount`, and `SalesInvoice.FreightAmount` show how outbound freight moves from commercial policy into operational cost and customer billing.
 - `CashReceiptApplication` is the true settlement table because it shows which invoices the cash actually cleared.
 - `CashReceipt.SalesInvoiceID` is compatibility metadata only and should not be treated as the authoritative settlement link.
 - `SalesOrderLine` carries pricing lineage through `BaseListPrice`, `PriceListLineID`, `PromotionID`, `PriceOverrideApprovalID`, and `PricingMethod`.
+- `ServiceBillingLine` is the authoritative hours-to-invoice bridge for design services, and `ServiceTimeEntry` is the approved-hours source behind that billing.
 - Some receipts remain unapplied for a period of time, which is useful for open-AR, unapplied-cash, and settlement-timing analysis.
 
 ## Analytical Subsections
@@ -184,7 +191,42 @@ Do not use `CashReceipt.SalesInvoiceID` as the main settlement link. The authori
 -- Suggested analysis: Compare receipt date, application date, and invoice due date for open-AR review.
 ```
 
-### 4. Backorder to Shipment Lag
+### 4. Design Services and Monthly Hour Billing
+
+The design-services branch shares the same customer, invoice, and cash backbone as the rest of O2C, but it does not use shipment. Instead, one service order line opens one engagement, multiple employees can be assigned to that engagement, approved service time accumulates through the month, and `ServiceBillingLine` ties the approved billed hours to the invoice line.
+
+```mermaid
+flowchart LR
+    SOL[Service Order Line]
+    ENG[Service Engagement]
+    ASG[Assignments]
+    TIME[Service Time Entry]
+    BILL[Service Billing Line]
+    SIL[Sales Invoice Line]
+
+    SOL --> ENG --> ASG --> TIME --> BILL --> SIL
+```
+
+**Tables involved**
+
+| Table | Role in the flow |
+|---|---|
+| `SalesOrderLine` | Carries the ordered service hours and fixed hourly rate |
+| `ServiceEngagement` | Defines the customer job, lead employee, planned hours, and status |
+| `ServiceEngagementAssignment` | Shows which employees worked on the engagement and how many hours were assigned |
+| `ServiceTimeEntry` | Stores approved billable and non-billable service hours plus analytical labor cost |
+| `ServiceBillingLine` | Stores the monthly billed-hours rollup tied to `SalesInvoiceLine` |
+| `SalesInvoiceLine` | Stores the billed service quantity and billed amount with null shipment linkage |
+
+**Starter analytical question:** Which customers or engagements show the biggest gap between approved service hours and billed service hours at month-end?
+
+```sql
+-- Teaching objective: Trace approved service hours into the monthly customer invoice.
+-- Main join path: SalesOrderLine -> ServiceEngagement -> ServiceTimeEntry -> ServiceBillingLine -> SalesInvoiceLine.
+-- Suggested analysis: Compare planned hours, approved billable hours, billed hours, and labor cost by customer or engagement.
+```
+
+### 5. Backorder to Shipment Lag
 
 Not every order ships immediately. This subsection helps students see why order date, shipment date, and invoice date can diverge when inventory is short. It is useful for fulfillment-lag analysis, billing-lag review, and period timing differences around month-end.
 
@@ -288,6 +330,7 @@ This local lineage view separates two outcomes that students often mix together.
 
 - Read [Commercial and Working Capital](../analytics/reports/commercial-and-working-capital.md) when you want the business perspective built around pricing, collections, receivables, payables, and settlement timing.
 - Read [Financial Reports](../analytics/reports/financial.md) when you want the broader reporting layer behind revenue, AR, working capital, and cash conversion.
+- Read [Design Services](design-services.md) when you want the full staffing, approved-hours, and monthly service-billing branch that now sits inside customer revenue.
 - Read [O2C Trace Case](../analytics/cases/o2c-trace-case.md) when you want a guided walkthrough from order through posting and settlement.
 - Jump to [Returns, Credits, and Refunds](#returns-credits-and-refunds) when you want the main O2C exception path.
 - Read [GLEntry Posting Reference](../reference/posting.md) and [Schema Reference](../reference/schema.md) when you need the detailed posting or join logic.

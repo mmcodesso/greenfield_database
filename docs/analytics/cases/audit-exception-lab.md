@@ -50,6 +50,7 @@ The audit team needs to decide which exception patterns are timing issues, which
 
 - Several audit starter queries are intentionally written to surface the same anomaly family from different angles.
 - The published dataset includes a moderate anomaly set that creates teachable results without turning the whole dataset into an exception dump.
+- The support workbook also includes a small validation-only manufacturing audit-seed area keyed as `manufacturing_audit_seeds`, separate from the broader anomaly log.
 
 ## Follow-Up Questions
 
