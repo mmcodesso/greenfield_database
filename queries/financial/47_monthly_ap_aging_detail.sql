@@ -8,9 +8,9 @@ WITH RECURSIVE activity_bounds AS (
         date(MIN(ActivityDate), 'start of month') AS StartMonth,
         date(MAX(ActivityDate), 'start of month') AS EndMonth
     FROM (
-        SELECT date(InvoiceDate) AS ActivityDate FROM PurchaseInvoice
+        SELECT InvoiceDate AS ActivityDate FROM PurchaseInvoice
         UNION ALL
-        SELECT date(PaymentDate) AS ActivityDate FROM DisbursementPayment
+        SELECT PaymentDate AS ActivityDate FROM DisbursementPayment
     )
 ),
 month_starts AS (
@@ -37,32 +37,46 @@ cash_paid_by_month AS (
         ROUND(SUM(dp.Amount), 2) AS CashPaidAsOfMonthEnd
     FROM month_ends AS me
     JOIN DisbursementPayment AS dp
-        ON date(dp.PaymentDate) <= me.MonthEndDate
+        ON dp.PaymentDate <= me.MonthEndDate
     GROUP BY me.MonthEndDate, dp.PurchaseInvoiceID
 ),
-open_invoice_positions AS (
+open_invoice_amounts AS (
     SELECT
         me.MonthEndDate,
-        strftime('%Y-%m', pi.InvoiceDate) AS InvoiceMonth,
+        pi.PurchaseInvoiceID,
         pi.InvoiceNumber,
-        s.SupplierName,
-        s.SupplierCategory,
-        s.SupplierRiskRating,
-        date(pi.InvoiceDate) AS InvoiceDate,
-        date(pi.DueDate) AS DueDate,
+        pi.SupplierID,
+        pi.InvoiceDate,
+        pi.DueDate,
         CAST(julianday(me.MonthEndDate) - julianday(pi.DueDate) AS INTEGER) AS DaysFromDueAtMonthEnd,
         ROUND(pi.GrandTotal, 2) AS InvoiceAmount,
         ROUND(COALESCE(cpm.CashPaidAsOfMonthEnd, 0), 2) AS CashPaidAsOfMonthEnd,
         ROUND(pi.GrandTotal - COALESCE(cpm.CashPaidAsOfMonthEnd, 0), 2) AS OpenAmountAsOfMonthEnd
     FROM month_ends AS me
     JOIN PurchaseInvoice AS pi
-        ON date(pi.InvoiceDate) <= me.MonthEndDate
-    JOIN Supplier AS s
-        ON s.SupplierID = pi.SupplierID
+        ON pi.InvoiceDate <= me.MonthEndDate
     LEFT JOIN cash_paid_by_month AS cpm
         ON cpm.MonthEndDate = me.MonthEndDate
        AND cpm.PurchaseInvoiceID = pi.PurchaseInvoiceID
     WHERE ROUND(pi.GrandTotal - COALESCE(cpm.CashPaidAsOfMonthEnd, 0), 2) > 0
+),
+open_invoice_positions AS (
+    SELECT
+        oia.MonthEndDate,
+        strftime('%Y-%m', oia.InvoiceDate) AS InvoiceMonth,
+        oia.InvoiceNumber,
+        s.SupplierName,
+        s.SupplierCategory,
+        s.SupplierRiskRating,
+        oia.InvoiceDate AS InvoiceDate,
+        oia.DueDate AS DueDate,
+        oia.DaysFromDueAtMonthEnd,
+        oia.InvoiceAmount,
+        oia.CashPaidAsOfMonthEnd,
+        oia.OpenAmountAsOfMonthEnd
+    FROM open_invoice_amounts AS oia
+    JOIN Supplier AS s
+        ON s.SupplierID = oia.SupplierID
 )
 SELECT
     MonthEndDate,

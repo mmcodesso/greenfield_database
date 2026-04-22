@@ -8,11 +8,11 @@ WITH RECURSIVE activity_bounds AS (
         date(MIN(ActivityDate), 'start of month') AS StartMonth,
         date(MAX(ActivityDate), 'start of month') AS EndMonth
     FROM (
-        SELECT date(InvoiceDate) AS ActivityDate FROM SalesInvoice
+        SELECT InvoiceDate AS ActivityDate FROM SalesInvoice
         UNION ALL
-        SELECT date(ApplicationDate) AS ActivityDate FROM CashReceiptApplication
+        SELECT ApplicationDate AS ActivityDate FROM CashReceiptApplication
         UNION ALL
-        SELECT date(CreditMemoDate) AS ActivityDate FROM CreditMemo
+        SELECT CreditMemoDate AS ActivityDate FROM CreditMemo
     )
 ),
 month_starts AS (
@@ -39,7 +39,7 @@ cash_applications_by_month AS (
         ROUND(SUM(cra.AppliedAmount), 2) AS CashAppliedAsOfMonthEnd
     FROM month_ends AS me
     JOIN CashReceiptApplication AS cra
-        ON date(cra.ApplicationDate) <= me.MonthEndDate
+        ON cra.ApplicationDate <= me.MonthEndDate
     GROUP BY me.MonthEndDate, cra.SalesInvoiceID
 ),
 credit_memos_by_month AS (
@@ -54,7 +54,7 @@ credit_memos_by_month AS (
             COALESCE(
                 SUM(cm.GrandTotal) OVER (
                     PARTITION BY me.MonthEndDate, cm.OriginalSalesInvoiceID
-                    ORDER BY date(cm.CreditMemoDate), cm.CreditMemoID
+                    ORDER BY cm.CreditMemoDate, cm.CreditMemoID
                     ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
                 ),
                 0
@@ -63,7 +63,7 @@ credit_memos_by_month AS (
         ) AS PriorCreditAmount
     FROM month_ends AS me
     JOIN CreditMemo AS cm
-        ON date(cm.CreditMemoDate) <= me.MonthEndDate
+        ON cm.CreditMemoDate <= me.MonthEndDate
     JOIN SalesInvoice AS si
         ON si.SalesInvoiceID = cm.OriginalSalesInvoiceID
     LEFT JOIN cash_applications_by_month AS cam
@@ -94,30 +94,37 @@ credit_memo_totals_by_month AS (
 ),
 detail_rows AS (
     SELECT
-        me.MonthEndDate,
+        oia.MonthEndDate,
         c.CustomerName,
         c.Region,
         c.CustomerSegment,
-        CAST(julianday(me.MonthEndDate) - julianday(si.DueDate) AS INTEGER) AS DaysFromDueAtMonthEnd,
-        ROUND(
+        oia.DaysFromDueAtMonthEnd,
+        oia.OpenAmountAsOfMonthEnd
+    FROM (
+        SELECT
+            me.MonthEndDate,
+            si.CustomerID,
+            CAST(julianday(me.MonthEndDate) - julianday(si.DueDate) AS INTEGER) AS DaysFromDueAtMonthEnd,
+            ROUND(
+                si.GrandTotal - COALESCE(cam.CashAppliedAsOfMonthEnd, 0) - COALESCE(cmt.CreditMemoAppliedAsOfMonthEnd, 0),
+                2
+            ) AS OpenAmountAsOfMonthEnd
+        FROM month_ends AS me
+        JOIN SalesInvoice AS si
+            ON si.InvoiceDate <= me.MonthEndDate
+        LEFT JOIN cash_applications_by_month AS cam
+            ON cam.MonthEndDate = me.MonthEndDate
+           AND cam.SalesInvoiceID = si.SalesInvoiceID
+        LEFT JOIN credit_memo_totals_by_month AS cmt
+            ON cmt.MonthEndDate = me.MonthEndDate
+           AND cmt.SalesInvoiceID = si.SalesInvoiceID
+        WHERE ROUND(
             si.GrandTotal - COALESCE(cam.CashAppliedAsOfMonthEnd, 0) - COALESCE(cmt.CreditMemoAppliedAsOfMonthEnd, 0),
             2
-        ) AS OpenAmountAsOfMonthEnd
-    FROM month_ends AS me
-    JOIN SalesInvoice AS si
-        ON date(si.InvoiceDate) <= me.MonthEndDate
+        ) > 0
+    ) AS oia
     JOIN Customer AS c
-        ON c.CustomerID = si.CustomerID
-    LEFT JOIN cash_applications_by_month AS cam
-        ON cam.MonthEndDate = me.MonthEndDate
-       AND cam.SalesInvoiceID = si.SalesInvoiceID
-    LEFT JOIN credit_memo_totals_by_month AS cmt
-        ON cmt.MonthEndDate = me.MonthEndDate
-       AND cmt.SalesInvoiceID = si.SalesInvoiceID
-    WHERE ROUND(
-        si.GrandTotal - COALESCE(cam.CashAppliedAsOfMonthEnd, 0) - COALESCE(cmt.CreditMemoAppliedAsOfMonthEnd, 0),
-        2
-    ) > 0
+        ON c.CustomerID = oia.CustomerID
 )
 SELECT
     MonthEndDate,

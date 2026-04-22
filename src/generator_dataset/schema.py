@@ -377,10 +377,12 @@ SQLITE_INDEXES = {
     ),
     "JournalEntry": (
         _sqlite_index("ux_journalentry_entrynumber", "EntryNumber", unique=True),
+        _sqlite_index("ix_journalentry_entrytype_postingdate", "EntryType", "PostingDate"),
     ),
     "GLEntry": (
         _sqlite_index("ix_glentry_accountid_fiscalyear_fiscalperiod", "AccountID", "FiscalYear", "FiscalPeriod"),
         _sqlite_index("ix_glentry_fiscalyear_fiscalperiod_accountid", "FiscalYear", "FiscalPeriod", "AccountID"),
+        _sqlite_index("ix_glentry_fiscalperiod_voucher_lookup", "FiscalYear", "FiscalPeriod", "VoucherType", "VoucherNumber", "AccountID"),
         _sqlite_index("ix_glentry_sourcedocument_trace", "SourceDocumentType", "SourceDocumentID", "SourceLineID"),
     ),
     "SalesOrder": (
@@ -397,6 +399,7 @@ SQLITE_INDEXES = {
     ),
     "SalesInvoice": (
         _sqlite_index("ux_salesinvoice_invoicenumber", "InvoiceNumber", unique=True),
+        _sqlite_index("ix_salesinvoice_invoicedate_customerid", "InvoiceDate", "CustomerID"),
     ),
     "SalesInvoiceLine": (
         _sqlite_index(
@@ -411,6 +414,7 @@ SQLITE_INDEXES = {
     ),
     "CashReceiptApplication": (
         _sqlite_index("ix_cashreceiptapplication_salesinvoiceid", "SalesInvoiceID"),
+        _sqlite_index("ix_cashreceiptapplication_applicationdate_salesinvoiceid", "ApplicationDate", "SalesInvoiceID"),
     ),
     "SalesReturn": (
         _sqlite_index("ux_salesreturn_returnnumber", "ReturnNumber", unique=True),
@@ -420,6 +424,7 @@ SQLITE_INDEXES = {
     ),
     "CreditMemo": (
         _sqlite_index("ix_creditmemo_salesreturnid", "SalesReturnID"),
+        _sqlite_index("ix_creditmemo_creditmemodate_invoiceid", "CreditMemoDate", "OriginalSalesInvoiceID", "CreditMemoID"),
         _sqlite_index("ux_creditmemo_creditmemonumber", "CreditMemoNumber", unique=True),
     ),
     "CustomerRefund": (
@@ -440,6 +445,9 @@ SQLITE_INDEXES = {
     "GoodsReceiptLine": (
         _sqlite_index("ix_goodsreceiptline_goodsreceiptid_polineid", "GoodsReceiptID", "POLineID"),
     ),
+    "PurchaseInvoice": (
+        _sqlite_index("ix_purchaseinvoice_invoicedate_supplierid", "InvoiceDate", "SupplierID"),
+    ),
     "PurchaseInvoiceLine": (
         _sqlite_index(
             "ix_purchaseinvoiceline_piid_polid_grid_accrualjeid",
@@ -451,6 +459,7 @@ SQLITE_INDEXES = {
     ),
     "DisbursementPayment": (
         _sqlite_index("ix_disbursementpayment_purchaseinvoiceid_supplierid", "PurchaseInvoiceID", "SupplierID"),
+        _sqlite_index("ix_disbursementpayment_paymentdate_purchaseinvoiceid", "PaymentDate", "PurchaseInvoiceID"),
         _sqlite_index("ux_disbursementpayment_paymentnumber", "PaymentNumber", unique=True),
     ),
     "FixedAsset": (

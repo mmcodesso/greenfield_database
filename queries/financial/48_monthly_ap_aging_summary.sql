@@ -8,9 +8,9 @@ WITH RECURSIVE activity_bounds AS (
         date(MIN(ActivityDate), 'start of month') AS StartMonth,
         date(MAX(ActivityDate), 'start of month') AS EndMonth
     FROM (
-        SELECT date(InvoiceDate) AS ActivityDate FROM PurchaseInvoice
+        SELECT InvoiceDate AS ActivityDate FROM PurchaseInvoice
         UNION ALL
-        SELECT date(PaymentDate) AS ActivityDate FROM DisbursementPayment
+        SELECT PaymentDate AS ActivityDate FROM DisbursementPayment
     )
 ),
 month_starts AS (
@@ -37,26 +37,33 @@ cash_paid_by_month AS (
         ROUND(SUM(dp.Amount), 2) AS CashPaidAsOfMonthEnd
     FROM month_ends AS me
     JOIN DisbursementPayment AS dp
-        ON date(dp.PaymentDate) <= me.MonthEndDate
+        ON dp.PaymentDate <= me.MonthEndDate
     GROUP BY me.MonthEndDate, dp.PurchaseInvoiceID
 ),
 detail_rows AS (
     SELECT
-        me.MonthEndDate,
+        oia.MonthEndDate,
         s.SupplierName,
         s.SupplierCategory,
         s.SupplierRiskRating,
-        CAST(julianday(me.MonthEndDate) - julianday(pi.DueDate) AS INTEGER) AS DaysFromDueAtMonthEnd,
-        ROUND(pi.GrandTotal - COALESCE(cpm.CashPaidAsOfMonthEnd, 0), 2) AS OpenAmountAsOfMonthEnd
-    FROM month_ends AS me
-    JOIN PurchaseInvoice AS pi
-        ON date(pi.InvoiceDate) <= me.MonthEndDate
+        oia.DaysFromDueAtMonthEnd,
+        oia.OpenAmountAsOfMonthEnd
+    FROM (
+        SELECT
+            me.MonthEndDate,
+            pi.SupplierID,
+            CAST(julianday(me.MonthEndDate) - julianday(pi.DueDate) AS INTEGER) AS DaysFromDueAtMonthEnd,
+            ROUND(pi.GrandTotal - COALESCE(cpm.CashPaidAsOfMonthEnd, 0), 2) AS OpenAmountAsOfMonthEnd
+        FROM month_ends AS me
+        JOIN PurchaseInvoice AS pi
+            ON pi.InvoiceDate <= me.MonthEndDate
+        LEFT JOIN cash_paid_by_month AS cpm
+            ON cpm.MonthEndDate = me.MonthEndDate
+           AND cpm.PurchaseInvoiceID = pi.PurchaseInvoiceID
+        WHERE ROUND(pi.GrandTotal - COALESCE(cpm.CashPaidAsOfMonthEnd, 0), 2) > 0
+    ) AS oia
     JOIN Supplier AS s
-        ON s.SupplierID = pi.SupplierID
-    LEFT JOIN cash_paid_by_month AS cpm
-        ON cpm.MonthEndDate = me.MonthEndDate
-       AND cpm.PurchaseInvoiceID = pi.PurchaseInvoiceID
-    WHERE ROUND(pi.GrandTotal - COALESCE(cpm.CashPaidAsOfMonthEnd, 0), 2) > 0
+        ON s.SupplierID = oia.SupplierID
 )
 SELECT
     MonthEndDate,
