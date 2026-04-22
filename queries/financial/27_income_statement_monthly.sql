@@ -123,6 +123,7 @@ statement_accounts AS (
         p.FiscalPeriod,
         al.StatementSection,
         al.LineLabel,
+        al.AccountNumber,
         al.LineType,
         al.DisplayOrder,
         al.AccountType,
@@ -165,6 +166,7 @@ subtotal_lines AS (
         FiscalPeriod,
         'Operating Revenue' AS StatementSection,
         'Operating Revenue' AS LineLabel,
+        NULL AS AccountNumber,
         'subtotal' AS LineType,
         190 AS DisplayOrder,
         ROUND(OperatingRevenue, 2) AS Amount
@@ -177,6 +179,7 @@ subtotal_lines AS (
         FiscalPeriod,
         'Contra Revenue' AS StatementSection,
         'Contra Revenue' AS LineLabel,
+        NULL AS AccountNumber,
         'subtotal' AS LineType,
         290 AS DisplayOrder,
         ROUND(ContraRevenue, 2) AS Amount
@@ -189,6 +192,7 @@ subtotal_lines AS (
         FiscalPeriod,
         'Net Revenue' AS StatementSection,
         'Net Revenue' AS LineLabel,
+        NULL AS AccountNumber,
         'subtotal' AS LineType,
         300 AS DisplayOrder,
         ROUND(OperatingRevenue + ContraRevenue, 2) AS Amount
@@ -201,6 +205,7 @@ subtotal_lines AS (
         FiscalPeriod,
         'Cost of Goods Sold' AS StatementSection,
         'Cost of Goods Sold' AS LineLabel,
+        NULL AS AccountNumber,
         'subtotal' AS LineType,
         490 AS DisplayOrder,
         ROUND(CostOfGoodsSold, 2) AS Amount
@@ -213,6 +218,7 @@ subtotal_lines AS (
         FiscalPeriod,
         'Gross Profit' AS StatementSection,
         'Gross Profit' AS LineLabel,
+        NULL AS AccountNumber,
         'subtotal' AS LineType,
         500 AS DisplayOrder,
         ROUND((OperatingRevenue + ContraRevenue) - CostOfGoodsSold, 2) AS Amount
@@ -225,6 +231,7 @@ subtotal_lines AS (
         FiscalPeriod,
         'Operating Expenses' AS StatementSection,
         'Operating Expenses' AS LineLabel,
+        NULL AS AccountNumber,
         'subtotal' AS LineType,
         690 AS DisplayOrder,
         ROUND(OperatingExpenses, 2) AS Amount
@@ -237,6 +244,7 @@ subtotal_lines AS (
         FiscalPeriod,
         'Operating Income' AS StatementSection,
         'Operating Income' AS LineLabel,
+        NULL AS AccountNumber,
         'subtotal' AS LineType,
         700 AS DisplayOrder,
         ROUND(((OperatingRevenue + ContraRevenue) - CostOfGoodsSold) - OperatingExpenses, 2) AS Amount
@@ -249,6 +257,7 @@ subtotal_lines AS (
         FiscalPeriod,
         'Other Income and Expense' AS StatementSection,
         'Other Income and Expense' AS LineLabel,
+        NULL AS AccountNumber,
         'subtotal' AS LineType,
         890 AS DisplayOrder,
         ROUND(OtherIncome - OtherExpense, 2) AS Amount
@@ -261,6 +270,7 @@ subtotal_lines AS (
         FiscalPeriod,
         'Net Income' AS StatementSection,
         'Net Income' AS LineLabel,
+        NULL AS AccountNumber,
         'subtotal' AS LineType,
         900 AS DisplayOrder,
         ROUND(
@@ -275,6 +285,7 @@ SELECT
     FiscalPeriod,
     StatementSection,
     LineLabel,
+    AccountNumber,
     LineType,
     DisplayOrder,
     Amount
@@ -284,6 +295,7 @@ FROM (
         FiscalPeriod,
         StatementSection,
         LineLabel,
+        AccountNumber,
         LineType,
         DisplayOrder,
         Amount
@@ -296,6 +308,7 @@ FROM (
         FiscalPeriod,
         StatementSection,
         LineLabel,
+        AccountNumber,
         LineType,
         DisplayOrder,
         Amount

@@ -95,6 +95,7 @@ running_account_balances AS (
         p.FiscalPeriod,
         al.StatementSection,
         al.LineLabel,
+        al.AccountNumber,
         al.LineType,
         al.DisplayOrder,
         ROUND(COALESCE(eba.Amount, 0), 2) AS Amount
@@ -130,6 +131,7 @@ derived_current_year_earnings AS (
         p.FiscalPeriod,
         'Equity' AS StatementSection,
         'Current Year Earnings' AS LineLabel,
+        3050 AS AccountNumber,
         'account' AS LineType,
         980 AS DisplayOrder,
         ROUND(
@@ -151,6 +153,7 @@ statement_accounts AS (
         FiscalPeriod,
         StatementSection,
         LineLabel,
+        AccountNumber,
         LineType,
         DisplayOrder,
         Amount
@@ -163,6 +166,7 @@ statement_accounts AS (
         FiscalPeriod,
         StatementSection,
         LineLabel,
+        AccountNumber,
         LineType,
         DisplayOrder,
         Amount
@@ -181,28 +185,28 @@ section_summary AS (
     GROUP BY FiscalYear, FiscalPeriod
 ),
 subtotal_lines AS (
-    SELECT FiscalYear, FiscalPeriod, 'Current Assets' AS StatementSection, 'Total Current Assets' AS LineLabel, 'subtotal' AS LineType, 190 AS DisplayOrder, ROUND(CurrentAssets, 2) AS Amount
+    SELECT FiscalYear, FiscalPeriod, 'Current Assets' AS StatementSection, 'Total Current Assets' AS LineLabel, NULL AS AccountNumber, 'subtotal' AS LineType, 190 AS DisplayOrder, ROUND(CurrentAssets, 2) AS Amount
     FROM section_summary
     UNION ALL
-    SELECT FiscalYear, FiscalPeriod, 'Noncurrent Assets', 'Total Noncurrent Assets', 'subtotal', 390, ROUND(NoncurrentAssets, 2)
+    SELECT FiscalYear, FiscalPeriod, 'Noncurrent Assets', 'Total Noncurrent Assets', NULL, 'subtotal', 390, ROUND(NoncurrentAssets, 2)
     FROM section_summary
     UNION ALL
-    SELECT FiscalYear, FiscalPeriod, 'Total Assets', 'Total Assets', 'subtotal', 400, ROUND(CurrentAssets + NoncurrentAssets, 2)
+    SELECT FiscalYear, FiscalPeriod, 'Total Assets', 'Total Assets', NULL, 'subtotal', 400, ROUND(CurrentAssets + NoncurrentAssets, 2)
     FROM section_summary
     UNION ALL
-    SELECT FiscalYear, FiscalPeriod, 'Current Liabilities', 'Total Current Liabilities', 'subtotal', 590, ROUND(CurrentLiabilities, 2)
+    SELECT FiscalYear, FiscalPeriod, 'Current Liabilities', 'Total Current Liabilities', NULL, 'subtotal', 590, ROUND(CurrentLiabilities, 2)
     FROM section_summary
     UNION ALL
-    SELECT FiscalYear, FiscalPeriod, 'Long-Term Liabilities', 'Total Long-Term Liabilities', 'subtotal', 790, ROUND(LongTermLiabilities, 2)
+    SELECT FiscalYear, FiscalPeriod, 'Long-Term Liabilities', 'Total Long-Term Liabilities', NULL, 'subtotal', 790, ROUND(LongTermLiabilities, 2)
     FROM section_summary
     UNION ALL
-    SELECT FiscalYear, FiscalPeriod, 'Total Liabilities', 'Total Liabilities', 'subtotal', 800, ROUND(CurrentLiabilities + LongTermLiabilities, 2)
+    SELECT FiscalYear, FiscalPeriod, 'Total Liabilities', 'Total Liabilities', NULL, 'subtotal', 800, ROUND(CurrentLiabilities + LongTermLiabilities, 2)
     FROM section_summary
     UNION ALL
-    SELECT FiscalYear, FiscalPeriod, 'Equity', 'Total Equity', 'subtotal', 990, ROUND(EquityAmount, 2)
+    SELECT FiscalYear, FiscalPeriod, 'Equity', 'Total Equity', NULL, 'subtotal', 990, ROUND(EquityAmount, 2)
     FROM section_summary
     UNION ALL
-    SELECT FiscalYear, FiscalPeriod, 'Total Liabilities and Equity', 'Total Liabilities and Equity', 'subtotal', 1000, ROUND(CurrentLiabilities + LongTermLiabilities + EquityAmount, 2)
+    SELECT FiscalYear, FiscalPeriod, 'Total Liabilities and Equity', 'Total Liabilities and Equity', NULL, 'subtotal', 1000, ROUND(CurrentLiabilities + LongTermLiabilities + EquityAmount, 2)
     FROM section_summary
 )
 SELECT
@@ -210,6 +214,7 @@ SELECT
     FiscalPeriod,
     StatementSection,
     LineLabel,
+    AccountNumber,
     LineType,
     DisplayOrder,
     Amount
@@ -219,6 +224,7 @@ FROM (
         FiscalPeriod,
         StatementSection,
         LineLabel,
+        AccountNumber,
         LineType,
         DisplayOrder,
         Amount
@@ -231,6 +237,7 @@ FROM (
         FiscalPeriod,
         StatementSection,
         LineLabel,
+        AccountNumber,
         LineType,
         DisplayOrder,
         Amount

@@ -286,24 +286,24 @@ detail_amounts AS (
     FROM financing_cash
 ),
 line_layout AS (
-    SELECT 'Operating Activities' AS StatementSection, 'Net Income' AS LineLabel, 'account' AS LineType, 100 AS DisplayOrder
-    UNION ALL SELECT 'Operating Activities', 'Depreciation and Amortization', 'account', 110
-    UNION ALL SELECT 'Operating Activities', 'Change in Accounts Receivable', 'account', 120
-    UNION ALL SELECT 'Operating Activities', 'Change in Inventory', 'account', 130
-    UNION ALL SELECT 'Operating Activities', 'Change in Prepaids and Other Current Assets', 'account', 140
-    UNION ALL SELECT 'Operating Activities', 'Change in Accounts Payable', 'account', 150
-    UNION ALL SELECT 'Operating Activities', 'Change in Accrued Expenses', 'account', 160
-    UNION ALL SELECT 'Operating Activities', 'Change in Payroll Liabilities', 'account', 170
-    UNION ALL SELECT 'Operating Activities', 'Change in Unearned Revenue / Customer Advances', 'account', 180
-    UNION ALL SELECT 'Operating Activities', 'Other Operating Adjustments', 'account', 189
-    UNION ALL SELECT 'Net Cash from Operating Activities', 'Net Cash from Operating Activities', 'subtotal', 190
-    UNION ALL SELECT 'Investing Activities', 'Capital Expenditures and Asset Transactions', 'account', 300
-    UNION ALL SELECT 'Net Cash from Investing Activities', 'Net Cash from Investing Activities', 'subtotal', 390
-    UNION ALL SELECT 'Financing Activities', 'Debt and Equity Cash', 'account', 500
-    UNION ALL SELECT 'Net Cash from Financing Activities', 'Net Cash from Financing Activities', 'subtotal', 590
-    UNION ALL SELECT 'Net Change in Cash', 'Net Change in Cash', 'subtotal', 700
-    UNION ALL SELECT 'Beginning Cash', 'Beginning Cash', 'subtotal', 800
-    UNION ALL SELECT 'Ending Cash', 'Ending Cash', 'subtotal', 900
+    SELECT 'Operating Activities' AS StatementSection, 'Net Income' AS LineLabel, NULL AS AccountNumber, 'account' AS LineType, 100 AS DisplayOrder
+    UNION ALL SELECT 'Operating Activities', 'Depreciation and Amortization', 6130, 'account', 110
+    UNION ALL SELECT 'Operating Activities', 'Change in Accounts Receivable', 1020, 'account', 120
+    UNION ALL SELECT 'Operating Activities', 'Change in Inventory', NULL, 'account', 130
+    UNION ALL SELECT 'Operating Activities', 'Change in Prepaids and Other Current Assets', NULL, 'account', 140
+    UNION ALL SELECT 'Operating Activities', 'Change in Accounts Payable', 2010, 'account', 150
+    UNION ALL SELECT 'Operating Activities', 'Change in Accrued Expenses', 2040, 'account', 160
+    UNION ALL SELECT 'Operating Activities', 'Change in Payroll Liabilities', NULL, 'account', 170
+    UNION ALL SELECT 'Operating Activities', 'Change in Unearned Revenue / Customer Advances', NULL, 'account', 180
+    UNION ALL SELECT 'Operating Activities', 'Other Operating Adjustments', NULL, 'account', 189
+    UNION ALL SELECT 'Net Cash from Operating Activities', 'Net Cash from Operating Activities', NULL, 'subtotal', 190
+    UNION ALL SELECT 'Investing Activities', 'Capital Expenditures and Asset Transactions', NULL, 'account', 300
+    UNION ALL SELECT 'Net Cash from Investing Activities', 'Net Cash from Investing Activities', NULL, 'subtotal', 390
+    UNION ALL SELECT 'Financing Activities', 'Debt and Equity Cash', NULL, 'account', 500
+    UNION ALL SELECT 'Net Cash from Financing Activities', 'Net Cash from Financing Activities', NULL, 'subtotal', 590
+    UNION ALL SELECT 'Net Change in Cash', 'Net Change in Cash', 1010, 'subtotal', 700
+    UNION ALL SELECT 'Beginning Cash', 'Beginning Cash', 1010, 'subtotal', 800
+    UNION ALL SELECT 'Ending Cash', 'Ending Cash', 1010, 'subtotal', 900
 ),
 subtotal_amounts AS (
     SELECT
@@ -387,6 +387,7 @@ statement_output AS (
         rp.FiscalPeriod,
         ll.StatementSection,
         ll.LineLabel,
+        ll.AccountNumber,
         ll.LineType,
         ll.DisplayOrder,
         ROUND(COALESCE(sa.Amount, 0), 2) AS Amount
@@ -403,6 +404,7 @@ SELECT
     FiscalPeriod,
     StatementSection,
     LineLabel,
+    AccountNumber,
     LineType,
     DisplayOrder,
     Amount

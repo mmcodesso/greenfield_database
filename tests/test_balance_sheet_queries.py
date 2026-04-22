@@ -62,7 +62,15 @@ def _published_sqlite_path() -> Path:
 
 
 def _sort_columns(frame: pd.DataFrame, period_columns: list[str]) -> pd.DataFrame:
-    order_columns = [*period_columns, "DisplayOrder", "StatementSection", "LineLabel", "LineType", "Amount"]
+    order_columns = [
+        *period_columns,
+        "DisplayOrder",
+        "StatementSection",
+        "LineLabel",
+        "AccountNumber",
+        "LineType",
+        "Amount",
+    ]
     return frame[order_columns].sort_values(order_columns[:-1]).reset_index(drop=True)
 
 
@@ -198,6 +206,7 @@ def test_balance_sheet_queries_return_rows_on_clean_build(
         "FiscalPeriod",
         "StatementSection",
         "LineLabel",
+        "AccountNumber",
         "LineType",
         "DisplayOrder",
         "Amount",
@@ -207,6 +216,7 @@ def test_balance_sheet_queries_return_rows_on_clean_build(
         "FiscalQuarter",
         "StatementSection",
         "LineLabel",
+        "AccountNumber",
         "LineType",
         "DisplayOrder",
         "Amount",
@@ -215,6 +225,7 @@ def test_balance_sheet_queries_return_rows_on_clean_build(
         "FiscalYear",
         "StatementSection",
         "LineLabel",
+        "AccountNumber",
         "LineType",
         "DisplayOrder",
         "Amount",

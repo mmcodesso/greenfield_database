@@ -65,7 +65,15 @@ def _statement_math_assertions(frame: pd.DataFrame, period_columns: list[str]) -
 
 
 def _sort_columns(frame: pd.DataFrame, period_columns: list[str]) -> pd.DataFrame:
-    order_columns = [*period_columns, "DisplayOrder", "StatementSection", "LineLabel", "LineType", "Amount"]
+    order_columns = [
+        *period_columns,
+        "DisplayOrder",
+        "StatementSection",
+        "LineLabel",
+        "AccountNumber",
+        "LineType",
+        "Amount",
+    ]
     return frame[order_columns].sort_values(order_columns[:-1]).reset_index(drop=True)
 
 
@@ -125,6 +133,7 @@ def test_income_statement_queries_return_rows_on_clean_build(
         "FiscalPeriod",
         "StatementSection",
         "LineLabel",
+        "AccountNumber",
         "LineType",
         "DisplayOrder",
         "Amount",
@@ -134,6 +143,7 @@ def test_income_statement_queries_return_rows_on_clean_build(
         "FiscalQuarter",
         "StatementSection",
         "LineLabel",
+        "AccountNumber",
         "LineType",
         "DisplayOrder",
         "Amount",
@@ -142,6 +152,7 @@ def test_income_statement_queries_return_rows_on_clean_build(
         "FiscalYear",
         "StatementSection",
         "LineLabel",
+        "AccountNumber",
         "LineType",
         "DisplayOrder",
         "Amount",
@@ -195,10 +206,12 @@ def test_quarterly_income_statement_matches_monthly_rollup(
                 "FiscalQuarter",
                 "StatementSection",
                 "LineLabel",
+                "AccountNumber",
                 "LineType",
                 "DisplayOrder",
             ],
             as_index=False,
+            dropna=False,
         )["Amount"]
         .sum()
     )
@@ -223,10 +236,12 @@ def test_annual_income_statement_matches_monthly_rollup(
                 "FiscalYear",
                 "StatementSection",
                 "LineLabel",
+                "AccountNumber",
                 "LineType",
                 "DisplayOrder",
             ],
             as_index=False,
+            dropna=False,
         )["Amount"]
         .sum()
     )

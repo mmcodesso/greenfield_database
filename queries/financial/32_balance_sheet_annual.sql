@@ -122,6 +122,7 @@ running_account_balances AS (
         rp.FiscalPeriod,
         al.StatementSection,
         al.LineLabel,
+        al.AccountNumber,
         al.LineType,
         al.DisplayOrder,
         ROUND(
@@ -193,6 +194,7 @@ derived_current_year_earnings AS (
         rp.FiscalPeriod,
         'Equity' AS StatementSection,
         'Current Year Earnings' AS LineLabel,
+        3050 AS AccountNumber,
         'account' AS LineType,
         980 AS DisplayOrder,
         ROUND(
@@ -238,6 +240,7 @@ statement_accounts AS (
         FiscalPeriod,
         StatementSection,
         LineLabel,
+        AccountNumber,
         LineType,
         DisplayOrder,
         Amount
@@ -250,6 +253,7 @@ statement_accounts AS (
         FiscalPeriod,
         StatementSection,
         LineLabel,
+        AccountNumber,
         LineType,
         DisplayOrder,
         Amount
@@ -273,6 +277,7 @@ subtotal_lines AS (
         FiscalPeriod,
         'Current Assets' AS StatementSection,
         'Total Current Assets' AS LineLabel,
+        NULL AS AccountNumber,
         'subtotal' AS LineType,
         190 AS DisplayOrder,
         ROUND(CurrentAssets, 2) AS Amount
@@ -285,6 +290,7 @@ subtotal_lines AS (
         FiscalPeriod,
         'Noncurrent Assets' AS StatementSection,
         'Total Noncurrent Assets' AS LineLabel,
+        NULL AS AccountNumber,
         'subtotal' AS LineType,
         390 AS DisplayOrder,
         ROUND(NoncurrentAssets, 2) AS Amount
@@ -297,6 +303,7 @@ subtotal_lines AS (
         FiscalPeriod,
         'Total Assets' AS StatementSection,
         'Total Assets' AS LineLabel,
+        NULL AS AccountNumber,
         'subtotal' AS LineType,
         400 AS DisplayOrder,
         ROUND(CurrentAssets + NoncurrentAssets, 2) AS Amount
@@ -309,6 +316,7 @@ subtotal_lines AS (
         FiscalPeriod,
         'Current Liabilities' AS StatementSection,
         'Total Current Liabilities' AS LineLabel,
+        NULL AS AccountNumber,
         'subtotal' AS LineType,
         590 AS DisplayOrder,
         ROUND(CurrentLiabilities, 2) AS Amount
@@ -321,6 +329,7 @@ subtotal_lines AS (
         FiscalPeriod,
         'Long-Term Liabilities' AS StatementSection,
         'Total Long-Term Liabilities' AS LineLabel,
+        NULL AS AccountNumber,
         'subtotal' AS LineType,
         790 AS DisplayOrder,
         ROUND(LongTermLiabilities, 2) AS Amount
@@ -333,6 +342,7 @@ subtotal_lines AS (
         FiscalPeriod,
         'Total Liabilities' AS StatementSection,
         'Total Liabilities' AS LineLabel,
+        NULL AS AccountNumber,
         'subtotal' AS LineType,
         800 AS DisplayOrder,
         ROUND(CurrentLiabilities + LongTermLiabilities, 2) AS Amount
@@ -345,6 +355,7 @@ subtotal_lines AS (
         FiscalPeriod,
         'Equity' AS StatementSection,
         'Total Equity' AS LineLabel,
+        NULL AS AccountNumber,
         'subtotal' AS LineType,
         990 AS DisplayOrder,
         ROUND(EquityAmount, 2) AS Amount
@@ -357,6 +368,7 @@ subtotal_lines AS (
         FiscalPeriod,
         'Total Liabilities and Equity' AS StatementSection,
         'Total Liabilities and Equity' AS LineLabel,
+        NULL AS AccountNumber,
         'subtotal' AS LineType,
         1000 AS DisplayOrder,
         ROUND(CurrentLiabilities + LongTermLiabilities + EquityAmount, 2) AS Amount
@@ -368,6 +380,7 @@ statement_output AS (
         FiscalPeriod,
         StatementSection,
         LineLabel,
+        AccountNumber,
         LineType,
         DisplayOrder,
         Amount
@@ -380,6 +393,7 @@ statement_output AS (
         FiscalPeriod,
         StatementSection,
         LineLabel,
+        AccountNumber,
         LineType,
         DisplayOrder,
         Amount
@@ -389,6 +403,7 @@ SELECT
     FiscalYear,
     StatementSection,
     LineLabel,
+    AccountNumber,
     LineType,
     DisplayOrder,
     Amount

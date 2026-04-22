@@ -122,6 +122,7 @@ statement_accounts AS (
         p.FiscalPeriod,
         al.StatementSection,
         al.LineLabel,
+        al.AccountNumber,
         al.LineType,
         al.DisplayOrder,
         al.AccountType,
@@ -159,31 +160,31 @@ section_summary AS (
         FiscalPeriod
 ),
 subtotal_lines AS (
-    SELECT FiscalYear, FiscalPeriod, 'Operating Revenue' AS StatementSection, 'Operating Revenue' AS LineLabel, 'subtotal' AS LineType, 190 AS DisplayOrder, ROUND(OperatingRevenue, 2) AS Amount
+    SELECT FiscalYear, FiscalPeriod, 'Operating Revenue' AS StatementSection, 'Operating Revenue' AS LineLabel, NULL AS AccountNumber, 'subtotal' AS LineType, 190 AS DisplayOrder, ROUND(OperatingRevenue, 2) AS Amount
     FROM section_summary
     UNION ALL
-    SELECT FiscalYear, FiscalPeriod, 'Contra Revenue', 'Contra Revenue', 'subtotal', 290, ROUND(ContraRevenue, 2)
+    SELECT FiscalYear, FiscalPeriod, 'Contra Revenue', 'Contra Revenue', NULL, 'subtotal', 290, ROUND(ContraRevenue, 2)
     FROM section_summary
     UNION ALL
-    SELECT FiscalYear, FiscalPeriod, 'Net Revenue', 'Net Revenue', 'subtotal', 300, ROUND(OperatingRevenue + ContraRevenue, 2)
+    SELECT FiscalYear, FiscalPeriod, 'Net Revenue', 'Net Revenue', NULL, 'subtotal', 300, ROUND(OperatingRevenue + ContraRevenue, 2)
     FROM section_summary
     UNION ALL
-    SELECT FiscalYear, FiscalPeriod, 'Cost of Goods Sold', 'Cost of Goods Sold', 'subtotal', 490, ROUND(CostOfGoodsSold, 2)
+    SELECT FiscalYear, FiscalPeriod, 'Cost of Goods Sold', 'Cost of Goods Sold', NULL, 'subtotal', 490, ROUND(CostOfGoodsSold, 2)
     FROM section_summary
     UNION ALL
-    SELECT FiscalYear, FiscalPeriod, 'Gross Profit', 'Gross Profit', 'subtotal', 500, ROUND((OperatingRevenue + ContraRevenue) - CostOfGoodsSold, 2)
+    SELECT FiscalYear, FiscalPeriod, 'Gross Profit', 'Gross Profit', NULL, 'subtotal', 500, ROUND((OperatingRevenue + ContraRevenue) - CostOfGoodsSold, 2)
     FROM section_summary
     UNION ALL
-    SELECT FiscalYear, FiscalPeriod, 'Operating Expenses', 'Operating Expenses', 'subtotal', 690, ROUND(OperatingExpenses, 2)
+    SELECT FiscalYear, FiscalPeriod, 'Operating Expenses', 'Operating Expenses', NULL, 'subtotal', 690, ROUND(OperatingExpenses, 2)
     FROM section_summary
     UNION ALL
-    SELECT FiscalYear, FiscalPeriod, 'Operating Income', 'Operating Income', 'subtotal', 700, ROUND(((OperatingRevenue + ContraRevenue) - CostOfGoodsSold) - OperatingExpenses, 2)
+    SELECT FiscalYear, FiscalPeriod, 'Operating Income', 'Operating Income', NULL, 'subtotal', 700, ROUND(((OperatingRevenue + ContraRevenue) - CostOfGoodsSold) - OperatingExpenses, 2)
     FROM section_summary
     UNION ALL
-    SELECT FiscalYear, FiscalPeriod, 'Other Income and Expense', 'Other Income and Expense', 'subtotal', 890, ROUND(OtherIncome - OtherExpense, 2)
+    SELECT FiscalYear, FiscalPeriod, 'Other Income and Expense', 'Other Income and Expense', NULL, 'subtotal', 890, ROUND(OtherIncome - OtherExpense, 2)
     FROM section_summary
     UNION ALL
-    SELECT FiscalYear, FiscalPeriod, 'Net Income', 'Net Income', 'subtotal', 900, ROUND((((OperatingRevenue + ContraRevenue) - CostOfGoodsSold) - OperatingExpenses) + (OtherIncome - OtherExpense), 2)
+    SELECT FiscalYear, FiscalPeriod, 'Net Income', 'Net Income', NULL, 'subtotal', 900, ROUND((((OperatingRevenue + ContraRevenue) - CostOfGoodsSold) - OperatingExpenses) + (OtherIncome - OtherExpense), 2)
     FROM section_summary
 )
 SELECT
@@ -191,6 +192,7 @@ SELECT
     FiscalPeriod,
     StatementSection,
     LineLabel,
+    AccountNumber,
     LineType,
     DisplayOrder,
     Amount
@@ -200,6 +202,7 @@ FROM (
         FiscalPeriod,
         StatementSection,
         LineLabel,
+        AccountNumber,
         LineType,
         DisplayOrder,
         Amount
@@ -212,6 +215,7 @@ FROM (
         FiscalPeriod,
         StatementSection,
         LineLabel,
+        AccountNumber,
         LineType,
         DisplayOrder,
         Amount
