@@ -70,6 +70,14 @@ const config = {
             from: ["/docs/quick-start"],
           },
           {
+            to: "/docs/",
+            from: ["/docs/accounting-analytics-dataset"],
+          },
+          {
+            to: "/docs/",
+            from: ["/docs/accounting-sql-practice-database"],
+          },
+          {
             to: "/docs/processes/o2c#returns-credits-and-refunds",
             from: ["/docs/processes/o2c-returns-credits-refunds"],
           },
@@ -112,6 +120,7 @@ const config = {
       title: branding.displayName,
       items: [
         { to: "/docs/", label: "Start Here", position: "left" },
+        { to: "/docs/downloads", label: "Downloads", position: "left" },
         { to: "/docs/analytics", label: "Analytics", position: "left" },
         {
           to: "/docs/teach-with-data/instructor-adoption",

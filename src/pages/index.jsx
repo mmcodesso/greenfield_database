@@ -94,9 +94,9 @@ const nextSteps = [
     href: "/docs/",
   },
   {
-    title: "See Process Flows",
-    text: "Go straight to the business cycles if you want to understand documents, process logic, and ledger touchpoints.",
-    href: "/docs/process-flows",
+    title: "Download",
+    text: "Open the published file package when you want the SQLite database, Excel workbook, and CSV export for class use.",
+    href: "/docs/downloads",
   },
   {
     title: "Adopt in a Course",
@@ -134,8 +134,8 @@ export default function Home() {
               <Link className="button button--primary button--lg" to="/docs/">
                 Start Here
               </Link>
-              <Link className="button button--secondary button--lg" to="/docs/process-flows">
-                See Process Flows
+              <Link className="button button--secondary button--lg" to="/docs/downloads">
+                Download
               </Link>
               <Link className="button button--secondary button--lg" to="/docs/teach-with-data/instructor-adoption">
                 Adopt in a Course
@@ -269,8 +269,8 @@ export default function Home() {
               <Link className="button button--primary" to="/docs/">
                 Start Here
               </Link>
-              <Link className="button button--secondary" to="/docs/process-flows">
-                See Process Flows
+              <Link className="button button--secondary" to="/docs/downloads">
+                Download
               </Link>
               <Link className="button button--secondary" to="/docs/teach-with-data/instructor-adoption">
                 Adopt in a Course

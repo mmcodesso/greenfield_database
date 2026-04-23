@@ -5,36 +5,78 @@ slug: /company-story
 sidebar_label: Company Story
 ---
 
-# The Company
+import CompanyStoryHero from "@site/src/components/CompanyStoryHero";
 
-<CompanyName /> is the fictional business behind this dataset. In the story, the company is situated around the Charles River in the greater Boston area and operates as a design-oriented regional home-furnishings brand rather than as a national mass-market chain.
+<CompanyStoryHero
+  title="The Company"
+  lead={
+    <>
+      Along the Charles River in the greater Boston area, <CompanyName /> serves
+      customers who want a regional home-furnishings partner with design
+      judgment, dependable delivery, and an operating model students can follow
+      from demand to GLEntry.
+    </>
+  }
+  anchors={[
+    {
+      label: "Place",
+      value: "Charles River and the greater Boston area",
+    },
+    {
+      label: "Promise",
+      value: "Curated furnishings, dependable delivery, and Design Services support",
+    },
+    {
+      label: "Model",
+      value: "Sourced goods, in-house manufacturing, and monthly billed service work",
+    },
+  ]}
+  snapshotTitle="Students meet a business with a steady operating rhythm."
+  snapshotText="The company serves regional buyers who care about style, timing, and follow-through. Each cycle on the site grows out of that daily mix of customer demand, service work, inventory support, labor, and finance."
+  panels={[
+    {
+      title: "Customers",
+      text: "Commercial buyers, interior-design firms, and repeat regional customers place orders that reward both taste and operational discipline.",
+    },
+    {
+      title: "Offer Mix",
+      text: "The catalog combines curated product families with hourly Design Services so students can follow two revenue paths inside one company.",
+    },
+    {
+      title: "Operating Rhythm",
+      text: "Orders, engagements, receipts, production, payroll, and close activities move on a cadence that feels connected from week to week and month to month.",
+    },
+  ]}
+/>
 
-That setting matters because it gives the company a believable operating identity. The business serves commercial buyers, interior-design firms, and repeat regional customers who expect curated product lines, reliable fulfillment, and enough operational discipline to support both design work and repeat purchasing. Students should read the company as a realistic mid-sized business with regional depth, not as a startup and not as a giant retailer.
+<CompanyName /> is the fictional business behind this dataset. In the story, the company is situated around the Charles River in the greater Boston area and runs as a design-oriented regional home-furnishings business with enough scale to coordinate purchasing, production, service work, and finance inside one teaching environment.
 
-The company also runs a hybrid model. It buys some finished goods ready-made and manufactures a selected subset in-house from raw materials and packaging. That structure is one of the strongest teaching features in the dataset because it connects demand, purchasing, production, labor, inventory, and finance inside one company story.
+Students can picture a company with a believable operating identity. Commercial buyers, interior-design firms, and repeat regional customers expect curated product lines, reliable fulfillment, and thoughtful service. That expectation gives the company a daily rhythm that feels concrete before students ever open a table or a query.
+
+The business also runs a hybrid model. It buys some finished goods ready-made and manufactures a selected subset in-house from raw materials and packaging. That structure gives students one company story that connects demand, purchasing, production, labor, inventory, service delivery, and finance.
 
 ## What the Company Does
 
-The business sells home furnishings and related interior products to customers who need both design variety and dependable delivery. Some products are sourced from suppliers for resale. Others are built internally when the company wants more control over style, lead time, margin, or product mix.
+The business sells home furnishings and related interior products to customers who value both design variety and dependable delivery. Sales teams guide buyers through collections, sourcing options, and delivery timing, while operations decides which orders flow through supplier resale channels and which orders move into in-house production.
 
-The company also sells hourly design services as a standalone operating line. The internal name for that activity is `Design Services`. Customers can engage the firm for consultation, planning, specification work, and project coordination. Those services are billed from approved monthly hours rather than from shipment quantity, which gives students a second revenue model inside the same company.
+The company also sells hourly design services as a standalone operating line. The internal name for that activity is `Design Services`. Customers can engage the firm for consultation, planning, specification work, and project coordination. Those services are billed from approved monthly hours, which gives students a second revenue model inside the same company.
 
-That means the dataset is not built around a single narrow business model. Students can compare purchased products with manufactured products inside the same company and then see how those choices change planning, inventory, payroll, costing, and ledger results.
+Students can compare purchased products with manufactured products inside the same company and then see how those choices shape planning, inventory, payroll, costing, service margin, and ledger results.
 
 ## Who the Company Serves
 
-The customer base is intentionally broad enough to support several teaching questions without becoming unrealistic.
+The customer base creates a believable mix of order patterns, service expectations, and analytical questions:
 
 - commercial buyers who place larger recurring orders
 - interior-design firms that care about collections, style consistency, and client-specific needs
 - repeat regional customers who create a stable local order base
-- customers who need dedicated design support before, beside, or instead of a product order
+- customers who need dedicated design support before or alongside a product order
 
-This mix makes the revenue story more useful for analysis. Students can ask how pricing, fulfillment, returns, and collections differ by customer type rather than treating every sale as the same kind of transaction.
+This mix makes the revenue story more useful for analysis. Students can ask how pricing, fulfillment, service work, returns, and collections differ by customer type and buying pattern.
 
 ## What the Company Sells
 
-The catalog centers on product families that are easy to visualize and easy to compare analytically:
+The catalog centers on product families that students can visualize quickly and compare analytically:
 
 - furniture
 - lighting
@@ -45,26 +87,26 @@ The company also organizes products into named collections and style families. T
 
 ## How the Business Actually Works
 
-This company works as one connected operating system, not as a set of disconnected departments.
+This company works as one connected operating system. Customer demand begins in order-to-cash. Sales orders, shipments, invoices, receipts, returns, credits, and refunds show how the business sells and settles customer activity. Goods demand moves through fulfillment and invoicing in the O2C path.
 
-Customer demand starts in order-to-cash. Sales orders, shipments, invoices, receipts, returns, credits, and refunds show how the business sells and settles customer activity. Some of that demand is physical product demand. Some of it becomes design-service engagements that are staffed, approved in hours, and billed monthly. Both paths still end in customer invoicing and settlement.
+Some customer demand becomes design-service engagements that are staffed, approved in hours, and billed monthly. That branch keeps the same customer relationship in view while adding a second revenue path built around time, billing cadence, and service-margin interpretation.
 
 Replenishment flows into procure-to-pay and manufacturing. Purchasing supports both resale inventory and the raw materials or packaging needed for in-house production. Manufacturing turns selected products into finished goods through planning, work orders, material issue, labor support, production completion, and close.
 
-Payroll and time support the labor side of the same story. Approved time records, payroll registers, payments, remittances, and labor-time entries help students see how workforce activity connects to expense, liabilities, and product cost. The new design-services line adds another bridge here: design employees support customer engagements, their payroll still runs through normal payroll expense, and their customer-facing margin is analyzed from approved service-time cost snapshots rather than from manufacturing inventory.
+Payroll and time support both operations and services. Approved time records, payroll registers, payments, remittances, and labor-time entries help students see how workforce activity connects to expense, liabilities, and product cost. Design employees support customer engagements, their payroll still runs through normal payroll expense, and their customer-facing margin is analyzed from approved service-time cost snapshots.
 
-Finance then closes the books after those operational cycles move. Manual journals, accruals, reclasses, and year-end close sit beside the document-driven processes and complete the accounting environment. The result is a company story where sales demand drives replenishment, replenishment supports fulfillment, labor supports manufacturing, and finance ties the whole model back to `GLEntry`.
+Finance closes the books after those operational cycles move. Manual journals, accruals, reclasses, and year-end close sit beside the document-driven processes and complete the accounting environment. The result is a company story where sales demand drives replenishment, replenishment supports fulfillment, labor supports operations and services, and finance ties the whole model back to `GLEntry`.
 
 ## Why This Company Works for Students
 
-The company is realistic enough to feel connected, but structured enough to be teachable.
+The company gives students a believable setting, a clear operating rhythm, and strong analytical bridges.
 
-Students can move from business story to process flow to tables to ledger without losing the thread of what the business is actually doing. Purchased versus manufactured products create useful comparison. Payroll and labor create cost-accounting depth. Finance-controlled journals complete the accounting picture instead of leaving the environment at the subledger level.
+Students can move from business story to process flow to tables to ledger without losing the thread of what the business is actually doing. Purchased versus manufactured products create useful comparison. Design services add a second customer-revenue path. Payroll and labor create cost-accounting depth. Finance-controlled journals complete the accounting picture at the ledger level.
 
 That combination makes the dataset useful across AIS, accounting analytics, auditing, financial accounting, managerial accounting, and business-process work. Students can ask what happened operationally, when accounting recognized it, which documents mattered, and which ledger accounts moved, all inside one coherent company context.
 
 ## Next Steps
 
 1. Read [Process Flows](process-flows.md) to see how the company story becomes the main business cycles.
-2. Open one process page such as [O2C](../processes/o2c.md), [P2P](../processes/p2p.md), [Manufacturing](../processes/manufacturing.md), or [Payroll](../processes/payroll.md).
+2. Open one process page such as [O2C](../processes/o2c.md), [Design Services](../processes/design-services.md), [P2P](../processes/p2p.md), [Manufacturing](../processes/manufacturing.md), or [Payroll](../processes/payroll.md).
 3. Then move into [Analytics Guides](../analytics/index.md) or [Reports Hub](../analytics/reports/index.md) when you are ready to interpret the business results.

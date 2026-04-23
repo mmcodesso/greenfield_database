@@ -13,9 +13,9 @@ sidebar_label: Dataset Guide
   description="Guide to the synthetic accounting database, table families, key joins, and source-to-ledger paths in the published SQLite dataset."
 />
 
-This page provides the mental model for the dataset: what is in it, how the table families fit together, which paths matter most, and how operational activity reaches `GLEntry`.
+This page gives the mental model for the dataset: what is in it, how the table families fit together, which paths matter most, and how operational activity reaches `GLEntry`.
 
-If you need field-level lookup, use [Schema Reference](../reference/schema.md). If you need business narrative, use [Company Story](../learn-the-business/company-story.md) and [Process Flows](../learn-the-business/process-flows.md).
+Use [Schema Reference](../reference/schema.md) when you need field-level lookup. Use [Company Story](../learn-the-business/company-story.md) and [Process Flows](../learn-the-business/process-flows.md) when you need the business narrative first.
 
 ## What the Dataset Is
 
@@ -29,7 +29,7 @@ It connects:
 - subledger logic
 - posted GLEntry records
 
-The dataset lets you move from business activity to source documents and from source documents to ledger impact.
+The dataset supports a clean move from business activity to source documents and from source documents to ledger impact.
 
 ## What the Dataset Contains
 
@@ -38,7 +38,7 @@ The current implementation contains **73 tables** across eight areas:
 | Area | What it covers | Count |
 |---|---|---:|
 | Accounting core | Chart of accounts, journals, and posted ledger detail | 3 |
-| Order-to-cash | Customers, commercial pricing, goods orders, service engagements, shipments, invoices, cash, returns, credits, and refunds | 22 |
+| Order-to-cash | Customers, commercial pricing, goods orders, service engagements, approved service billing, shipments, invoices, cash, returns, credits, and refunds | 22 |
 | Procure-to-pay | Requisitions, purchase orders, receipts, supplier invoices, and disbursements | 9 |
 | Manufacturing | BOMs, routings, work centers, work orders, issues, completions, and close | 14 |
 | Payroll and time | Shifts, rosters, absences, overtime approvals, punches, approved daily time, payroll, and remittances | 14 |
@@ -56,22 +56,22 @@ Download them from [Downloads](downloads.md) or use the copies already shared fo
 
 ## How the Data Is Organized
 
-The easiest way to think about the model is in layers:
+Students usually understand the model fastest when they read it in layers:
 
 | Layer | What belongs here | What it adds |
 |---|---|---|
 | Business master data | `Customer`, `Supplier`, `Item`, `Employee`, `Warehouse`, `CostCenter` | Defines who, what, and where |
 | Planning and setup | BOMs, routings, shifts, rosters, forecasts, inventory policies | Explains what should happen before execution starts |
-| Execution documents | Orders, shipments, receipts, invoices, work orders, labor records, payroll records | Shows what actually happened |
+| Execution documents | Orders, service engagements, approved service time, shipments, receipts, invoices, work orders, labor records, payroll records | Shows what actually happened |
 | Ledger and control | `JournalEntry`, `GLEntry`, budgets, remittances | Shows the accounting effect and reporting layer |
 
 Many document families also use a header-line pattern:
 
 | Header table | Line table | Meaning |
 |---|---|---|
-| `SalesOrder` | `SalesOrderLine` | One customer order can contain many item lines |
+| `SalesOrder` | `SalesOrderLine` | One customer order can contain many goods lines or service lines |
 | `Shipment` | `ShipmentLine` | One shipment can contain many shipped lines |
-| `SalesInvoice` | `SalesInvoiceLine` | One invoice can contain many billed lines |
+| `SalesInvoice` | `SalesInvoiceLine` | One invoice can contain many shipment-based lines or service-billing lines |
 | `PurchaseOrder` | `PurchaseOrderLine` | One PO can contain many ordered lines |
 | `GoodsReceipt` | `GoodsReceiptLine` | One receipt can contain many received lines |
 | `PurchaseInvoice` | `PurchaseInvoiceLine` | One supplier invoice can contain many billed lines |
@@ -86,10 +86,11 @@ You do not need every key on day one. Start with the keys that anchor document c
 | Key | Use it to connect |
 |---|---|
 | `CustomerID` | Customer to orders, invoices, receipts, returns, credits, and refunds |
-| `SalesOrderID` | Sales order header to fulfillment and billing |
-| `SalesOrderLineID` | Order lines to shipment lines and invoice lines |
+| `SalesOrderID` | Sales order header to goods fulfillment and service-billing branches |
+| `SalesOrderLineID` | Order lines to shipment lines, service engagements, and invoice lines |
 | `ServiceEngagementID` | One service engagement across staffing, approved time, and billing |
 | `ServiceEngagementAssignmentID` | One employee assignment across approved service-time rows |
+| `ServiceBillingLineID` | One billed-hours record back to its engagement and invoice line |
 | `ShipmentLineID` | Shipped lines to billed lines and returned lines |
 | `SupplierID` | Supplier to purchase orders, invoices, and payments |
 | `PurchaseOrderID` | Purchase order header to receipts and invoices |
@@ -115,9 +116,13 @@ These are the fastest ways to move through the model.
 
 ### O2C path
 
+The customer-demand flow splits into a goods path and a design-services path.
+
+Goods path:
+
 `Customer -> SalesOrder -> SalesOrderLine -> Shipment -> ShipmentLine -> SalesInvoice -> SalesInvoiceLine`
 
-The design-services branch is:
+Design-services path:
 
 `Customer -> SalesOrder -> SalesOrderLine -> ServiceEngagement -> ServiceEngagementAssignment -> ServiceTimeEntry -> ServiceBillingLine -> SalesInvoiceLine`
 
@@ -183,7 +188,7 @@ to move back to the originating event.
 
 ## How Operational Activity Reaches the Ledger
 
-The most important mental rule is simple: planning and setup tables usually do **not** post; execution and finance events often do.
+The most important mental rule is simple: planning and setup tables usually stay outside the posting flow, while execution and finance events often reach the ledger.
 
 | Type of activity | Usually posts to GL? | Examples |
 |---|---|---|
@@ -193,7 +198,7 @@ The most important mental rule is simple: planning and setup tables usually do *
 | Settlements and clearances | Yes | `CashReceipt`, `CashReceiptApplication`, `DisbursementPayment`, `PayrollPayment`, `PayrollLiabilityRemittance`, `CustomerRefund` |
 | Finance-controlled entries | Yes | `JournalEntry`, `WorkOrderClose`, accruals, reclasses, year-end close |
 
-When you want the exact posting rules behind one event, use [GLEntry Posting Reference](../reference/posting.md).
+Use [GLEntry Posting Reference](../reference/posting.md) when you want the exact posting rules behind one event.
 
 ## How to Start Navigating by Topic
 
@@ -238,6 +243,7 @@ Start with:
 Start with:
 
 - O2C chain tables
+- design-services tables
 - P2P chain tables
 - manufacturing chain tables
 - payroll and time chain tables

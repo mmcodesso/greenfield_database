@@ -24,26 +24,6 @@ FLAGSHIP_DOCS: dict[Path, tuple[str, ...]] = {
         "business process first, accounting second, analysis third",
         "## Next Steps",
     ),
-    Path("docs/analytics/index.md"): (
-        "From Process to Analysis",
-        "The goal is not to leave the process behind.",
-        "## Next Steps",
-    ),
-    Path("docs/analytics/reports/index.md"): (
-        "How Process Becomes Report",
-        "Business Perspectives",
-        "## Next Steps",
-    ),
-    Path("docs/analytics/reports/lens-packs.md"): (
-        "How the Perspectives Grow Out of the Business",
-        "Available Business Perspectives",
-        "## Next Steps",
-    ),
-    Path("docs/analytics/cases/index.md"): (
-        "How Cases Fit the Learning Path",
-        "structured follow-through from the company story and the process pages",
-        "## Next Steps",
-    ),
 }
 
 
@@ -133,6 +113,7 @@ def test_start_here_and_process_flows_point_into_the_same_learning_sequence() ->
     for snippet in (
         "../learn-the-business/company-story.md",
         "../learn-the-business/process-flows.md",
+        "../processes/design-services.md",
         "../analytics/index.md",
         "../analytics/reports/index.md",
         "../analytics/cases/index.md",
@@ -149,6 +130,26 @@ def test_start_here_and_process_flows_point_into_the_same_learning_sequence() ->
         "../analytics/cases/index.md",
     ):
         assert snippet in process_flows
+
+
+def test_company_story_keeps_required_story_anchors_and_links() -> None:
+    company_story = _read(Path("docs/learn-the-business/company-story.md"))
+
+    for snippet in (
+        "Charles River",
+        "greater Boston area",
+        "buys some finished goods",
+        "manufactures a selected subset",
+        "Design Services",
+        "connected operating system",
+        "## How the Business Actually Works",
+        "## Next Steps",
+        "process-flows.md",
+        "../processes/design-services.md",
+        "../analytics/index.md",
+        "../analytics/reports/index.md",
+    ):
+        assert snippet in company_story
 
 
 def test_analytics_sidebar_uses_guides_label_and_keeps_cases_above_it() -> None:

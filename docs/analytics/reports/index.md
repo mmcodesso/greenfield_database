@@ -12,17 +12,6 @@ That is why reports belong after the process pages. A report should feel like a 
 
 This section keeps two reading levels together. `Business Perspectives` shows a guided storyline across related reports. `Report Library` keeps the broader financial, managerial, and audit report inventory available when students want to browse by area.
 
-## How Process Becomes Report
-
-| Process backbone | Strongest report follow-through |
-|---|---|
-| `O2C` | [Commercial and Working Capital](commercial-and-working-capital.md), [Financial Reports](financial.md) |
-| `Design services` | [Commercial and Working Capital](commercial-and-working-capital.md), [Financial Reports](financial.md), [Managerial Reports](managerial.md) |
-| `P2P` | [Commercial and Working Capital](commercial-and-working-capital.md), [Financial Reports](financial.md) |
-| `Manufacturing` | [Operations and Risk](operations-and-risk.md), [Managerial Reports](managerial.md) |
-| `Payroll` | [Payroll and Workforce](payroll-perspective.md), [Financial Reports](financial.md), [Audit Reports](audit.md) |
-| `Close` | [Executive Overview](executive-overview.md), [Financial Reports](financial.md) |
-
 ## Business Perspectives
 
 | Perspective | Best use | Go to |
