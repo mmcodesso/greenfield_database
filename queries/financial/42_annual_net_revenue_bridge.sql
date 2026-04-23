@@ -83,14 +83,12 @@ pre_close_gl_revenue AS (
         ROUND(SUM(CASE
             WHEN a.AccountType = 'Revenue'
              AND a.AccountSubType = 'Operating Revenue'
-             AND CAST(a.AccountNumber AS INTEGER) BETWEEN 4000 AND 4059
                 THEN gl.Credit - gl.Debit
             ELSE 0
         END), 2) AS PreCloseGlGrossRevenue,
         ROUND(SUM(CASE
             WHEN a.AccountType = 'Revenue'
              AND a.AccountSubType = 'Contra Revenue'
-             AND CAST(a.AccountNumber AS INTEGER) BETWEEN 4060 AND 4099
                 THEN gl.Credit - gl.Debit
             ELSE 0
         END), 2) AS PreCloseGlContraRevenue
@@ -109,12 +107,10 @@ pre_close_gl_revenue AS (
             (
                 a.AccountType = 'Revenue'
                 AND a.AccountSubType = 'Operating Revenue'
-                AND CAST(a.AccountNumber AS INTEGER) BETWEEN 4000 AND 4059
             )
             OR (
                 a.AccountType = 'Revenue'
                 AND a.AccountSubType = 'Contra Revenue'
-                AND CAST(a.AccountNumber AS INTEGER) BETWEEN 4060 AND 4099
             )
       )
     GROUP BY gl.FiscalYear
@@ -125,11 +121,9 @@ income_statement_net_revenue AS (
         ROUND(SUM(CASE
             WHEN a.AccountType = 'Revenue'
              AND a.AccountSubType = 'Operating Revenue'
-             AND CAST(a.AccountNumber AS INTEGER) BETWEEN 4000 AND 4059
                 THEN gl.Credit - gl.Debit
             WHEN a.AccountType = 'Revenue'
              AND a.AccountSubType = 'Contra Revenue'
-             AND CAST(a.AccountNumber AS INTEGER) BETWEEN 4060 AND 4099
                 THEN gl.Credit - gl.Debit
             ELSE 0
         END), 2) AS IncomeStatementNetRevenue
@@ -148,12 +142,10 @@ income_statement_net_revenue AS (
             (
                 a.AccountType = 'Revenue'
                 AND a.AccountSubType = 'Operating Revenue'
-                AND CAST(a.AccountNumber AS INTEGER) BETWEEN 4000 AND 4059
             )
             OR (
                 a.AccountType = 'Revenue'
                 AND a.AccountSubType = 'Contra Revenue'
-                AND CAST(a.AccountNumber AS INTEGER) BETWEEN 4060 AND 4099
             )
     )
     GROUP BY gl.FiscalYear

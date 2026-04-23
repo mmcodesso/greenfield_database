@@ -56,12 +56,10 @@ income_statement_scope AS (
             (
                 a.AccountType = 'Revenue'
                 AND a.AccountSubType = 'Operating Revenue'
-                AND CAST(a.AccountNumber AS INTEGER) BETWEEN 4000 AND 4059
             )
             OR (
                 a.AccountType = 'Revenue'
                 AND a.AccountSubType = 'Contra Revenue'
-                AND CAST(a.AccountNumber AS INTEGER) BETWEEN 4060 AND 4099
             )
             OR (
                 a.AccountType = 'Expense'

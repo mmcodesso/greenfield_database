@@ -169,10 +169,12 @@ def test_invoice_revenue_cutoff_trace_is_empty_on_clean_full_build(
 def test_invoice_revenue_cutoff_summary_explains_anomaly_year_mismatch_population(
     default_anomaly_dataset_artifacts: dict[str, object],
 ) -> None:
+    context = default_anomaly_dataset_artifacts["context"]
     sqlite_path = Path(default_anomaly_dataset_artifacts["sqlite_path"])
     frame = _read_sql_result(sqlite_path, INVOICE_REVENUE_CUTOFF_SUMMARY_QUERY_PATH)
+    o2c_controls = context.validation_results["phase8"]["o2c_controls"]
 
-    assert len(frame) == 13
+    assert len(frame) == int(o2c_controls["invoice_gl_year_mismatch_count"])
     assert frame["InvoiceBeforeShipmentFlag"].astype(int).eq(1).all()
     assert frame["InvoiceYearVsGlYearFlag"].astype(int).eq(1).all()
     assert frame["RevenueGlIncompleteFlag"].astype(int).eq(0).all()
@@ -189,13 +191,15 @@ def test_invoice_revenue_cutoff_summary_explains_anomaly_year_mismatch_populatio
     )
     grouped["RevenueAmount"] = grouped["RevenueAmount"].round(2)
 
-    expected = pd.DataFrame([
-        {"InvoiceYear": 2025, "RevenueGlFiscalYear": 2026, "InvoiceCount": 1, "RevenueAmount": 1858.96},
-        {"InvoiceYear": 2026, "RevenueGlFiscalYear": 2027, "InvoiceCount": 3, "RevenueAmount": 11915.23},
-        {"InvoiceYear": 2027, "RevenueGlFiscalYear": 2028, "InvoiceCount": 3, "RevenueAmount": 2544.87},
-        {"InvoiceYear": 2028, "RevenueGlFiscalYear": 2029, "InvoiceCount": 3, "RevenueAmount": 3521.75},
-        {"InvoiceYear": 2029, "RevenueGlFiscalYear": 2030, "InvoiceCount": 3, "RevenueAmount": 3051.83},
-    ])
+    expected = pd.DataFrame(o2c_controls["invoice_gl_year_mismatch_by_pair"]).rename(
+        columns={
+            "invoice_year": "InvoiceYear",
+            "revenue_gl_fiscal_year": "RevenueGlFiscalYear",
+            "invoice_count": "InvoiceCount",
+            "revenue_amount": "RevenueAmount",
+        }
+    )
+    expected["RevenueAmount"] = expected["RevenueAmount"].round(2)
 
     pd.testing.assert_frame_equal(grouped.reset_index(drop=True), expected, check_dtype=False)
 

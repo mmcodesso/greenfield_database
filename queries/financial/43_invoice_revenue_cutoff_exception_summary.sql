@@ -9,14 +9,21 @@ WITH invoice_shipment_bounds AS (
         sil.SalesInvoiceID,
         MIN(date(sh.ShipmentDate)) AS FirstShipmentDate,
         MAX(date(sh.ShipmentDate)) AS LastShipmentDate,
-        COUNT(DISTINCT sil.SalesInvoiceLineID) AS InvoiceLineCount,
-        ROUND(SUM(sil.LineTotal), 2) AS InvoiceSubTotal
+        COUNT(DISTINCT sil.SalesInvoiceLineID) AS ShipmentBackedLineCount
     FROM SalesInvoiceLine AS sil
     JOIN ShipmentLine AS shl
         ON shl.ShipmentLineID = sil.ShipmentLineID
     JOIN Shipment AS sh
         ON sh.ShipmentID = shl.ShipmentID
     GROUP BY sil.SalesInvoiceID
+),
+invoice_line_rollup AS (
+    SELECT
+        SalesInvoiceID,
+        COUNT(DISTINCT SalesInvoiceLineID) AS InvoiceLineCount,
+        ROUND(SUM(LineTotal), 2) AS InvoiceSubTotal
+    FROM SalesInvoiceLine
+    GROUP BY SalesInvoiceID
 ),
 invoice_revenue_gl AS (
     SELECT
@@ -40,7 +47,6 @@ invoice_revenue_gl AS (
       AND gl.SourceLineID IS NOT NULL
       AND a.AccountType = 'Revenue'
       AND a.AccountSubType = 'Operating Revenue'
-      AND CAST(a.AccountNumber AS INTEGER) BETWEEN 4000 AND 4059
     GROUP BY gl.SourceDocumentID
 ),
 invoice_ar_gl AS (
@@ -73,6 +79,8 @@ invoice_exception_base AS (
         ROUND(COALESCE(rg.RevenueAmount, 0), 2) AS RevenueAmount,
         ROUND(COALESCE(ar.ArHeaderAmount, 0), 2) AS ArHeaderAmount,
         CAST(julianday(si.InvoiceDate) - julianday(sb.FirstShipmentDate) AS INTEGER) AS ShipmentToInvoiceDayGap,
+        COALESCE(ilr.InvoiceLineCount, 0) AS InvoiceLineCount,
+        COALESCE(sb.ShipmentBackedLineCount, 0) AS ShipmentBackedLineCount,
         CASE
             WHEN sb.FirstShipmentDate IS NOT NULL
              AND date(si.InvoiceDate) < date(sb.FirstShipmentDate)
@@ -88,23 +96,24 @@ invoice_exception_base AS (
                 THEN 1
             ELSE 0
         END AS InvoiceYearVsGlYearFlag,
-        ROUND(COALESCE(sb.InvoiceSubTotal, 0), 2) AS InvoiceSubTotal,
+        ROUND(COALESCE(ilr.InvoiceSubTotal, 0), 2) AS InvoiceSubTotal,
         ROUND(si.GrandTotal, 2) AS InvoiceGrandTotal,
-        COALESCE(sb.InvoiceLineCount, 0) AS InvoiceLineCount,
         COALESCE(rg.RevenueGlLineCount, 0) AS RevenueGlLineCount,
         CASE
             WHEN rg.SalesInvoiceID IS NULL THEN 1
-            WHEN COALESCE(rg.RevenueGlLineCount, 0) <> COALESCE(sb.InvoiceLineCount, 0) THEN 1
-            WHEN ABS(COALESCE(rg.RevenueAmount, 0) - COALESCE(sb.InvoiceSubTotal, 0)) > 0.005 THEN 1
+            WHEN COALESCE(rg.RevenueGlLineCount, 0) <> COALESCE(ilr.InvoiceLineCount, 0) THEN 1
+            WHEN ABS(COALESCE(rg.RevenueAmount, 0) - COALESCE(ilr.InvoiceSubTotal, 0)) > 0.005 THEN 1
             ELSE 0
         END AS RevenueGlIncompleteFlag,
-        ROUND(COALESCE(rg.RevenueAmount, 0) - COALESCE(sb.InvoiceSubTotal, 0), 2) AS RevenueAmountLessInvoiceSubTotalVariance,
+        ROUND(COALESCE(rg.RevenueAmount, 0) - COALESCE(ilr.InvoiceSubTotal, 0), 2) AS RevenueAmountLessInvoiceSubTotalVariance,
         ROUND(COALESCE(ar.ArHeaderAmount, 0) - ROUND(si.GrandTotal, 2), 2) AS ArHeaderLessInvoiceGrandTotalVariance
     FROM SalesInvoice AS si
     JOIN SalesOrder AS so
         ON so.SalesOrderID = si.SalesOrderID
     JOIN Customer AS c
         ON c.CustomerID = si.CustomerID
+    LEFT JOIN invoice_line_rollup AS ilr
+        ON ilr.SalesInvoiceID = si.SalesInvoiceID
     LEFT JOIN invoice_shipment_bounds AS sb
         ON sb.SalesInvoiceID = si.SalesInvoiceID
     LEFT JOIN invoice_revenue_gl AS rg

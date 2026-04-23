@@ -9,14 +9,21 @@ WITH invoice_shipment_bounds AS (
         sil.SalesInvoiceID,
         MIN(date(sh.ShipmentDate)) AS FirstShipmentDate,
         MAX(date(sh.ShipmentDate)) AS LastShipmentDate,
-        COUNT(DISTINCT sil.SalesInvoiceLineID) AS InvoiceLineCount,
-        ROUND(SUM(sil.LineTotal), 2) AS InvoiceSubTotal
+        COUNT(DISTINCT sil.SalesInvoiceLineID) AS ShipmentBackedLineCount
     FROM SalesInvoiceLine AS sil
     JOIN ShipmentLine AS shl
         ON shl.ShipmentLineID = sil.ShipmentLineID
     JOIN Shipment AS sh
         ON sh.ShipmentID = shl.ShipmentID
     GROUP BY sil.SalesInvoiceID
+),
+invoice_line_rollup AS (
+    SELECT
+        SalesInvoiceID,
+        COUNT(DISTINCT SalesInvoiceLineID) AS InvoiceLineCount,
+        ROUND(SUM(LineTotal), 2) AS InvoiceSubTotal
+    FROM SalesInvoiceLine
+    GROUP BY SalesInvoiceID
 ),
 invoice_revenue_gl AS (
     SELECT
@@ -40,7 +47,6 @@ invoice_revenue_gl AS (
       AND gl.SourceLineID IS NOT NULL
       AND a.AccountType = 'Revenue'
       AND a.AccountSubType = 'Operating Revenue'
-      AND CAST(a.AccountNumber AS INTEGER) BETWEEN 4000 AND 4059
     GROUP BY gl.SourceDocumentID
 ),
 exception_invoices AS (
@@ -74,14 +80,14 @@ exception_invoices AS (
         END AS InvoiceYearVsGlYearFlag,
         CASE
             WHEN rg.SalesInvoiceID IS NULL THEN 1
-            WHEN COALESCE(rg.RevenueGlLineCount, 0) <> COALESCE(sb.InvoiceLineCount, 0) THEN 1
-            WHEN ABS(COALESCE(rg.RevenueAmount, 0) - COALESCE(sb.InvoiceSubTotal, 0)) > 0.005 THEN 1
+            WHEN COALESCE(rg.RevenueGlLineCount, 0) <> COALESCE(ilr.InvoiceLineCount, 0) THEN 1
+            WHEN ABS(COALESCE(rg.RevenueAmount, 0) - COALESCE(ilr.InvoiceSubTotal, 0)) > 0.005 THEN 1
             ELSE 0
         END AS RevenueGlIncompleteFlag,
         CASE
             WHEN rg.SalesInvoiceID IS NULL THEN 'posting defect'
-            WHEN COALESCE(rg.RevenueGlLineCount, 0) <> COALESCE(sb.InvoiceLineCount, 0) THEN 'posting defect'
-            WHEN ABS(COALESCE(rg.RevenueAmount, 0) - COALESCE(sb.InvoiceSubTotal, 0)) > 0.005 THEN 'posting defect'
+            WHEN COALESCE(rg.RevenueGlLineCount, 0) <> COALESCE(ilr.InvoiceLineCount, 0) THEN 'posting defect'
+            WHEN ABS(COALESCE(rg.RevenueAmount, 0) - COALESCE(ilr.InvoiceSubTotal, 0)) > 0.005 THEN 'posting defect'
             WHEN sb.FirstShipmentDate IS NOT NULL
              AND date(si.InvoiceDate) < date(sb.FirstShipmentDate)
              AND rg.RevenueGlFiscalYear IS NOT NULL
@@ -100,6 +106,8 @@ exception_invoices AS (
         ON so.SalesOrderID = si.SalesOrderID
     JOIN Customer AS c
         ON c.CustomerID = si.CustomerID
+    LEFT JOIN invoice_line_rollup AS ilr
+        ON ilr.SalesInvoiceID = si.SalesInvoiceID
     LEFT JOIN invoice_shipment_bounds AS sb
         ON sb.SalesInvoiceID = si.SalesInvoiceID
     LEFT JOIN invoice_revenue_gl AS rg
@@ -118,8 +126,8 @@ exception_invoices AS (
        OR (
             CASE
                 WHEN rg.SalesInvoiceID IS NULL THEN 1
-                WHEN COALESCE(rg.RevenueGlLineCount, 0) <> COALESCE(sb.InvoiceLineCount, 0) THEN 1
-                WHEN ABS(COALESCE(rg.RevenueAmount, 0) - COALESCE(sb.InvoiceSubTotal, 0)) > 0.005 THEN 1
+                WHEN COALESCE(rg.RevenueGlLineCount, 0) <> COALESCE(ilr.InvoiceLineCount, 0) THEN 1
+                WHEN ABS(COALESCE(rg.RevenueAmount, 0) - COALESCE(ilr.InvoiceSubTotal, 0)) > 0.005 THEN 1
                 ELSE 0
             END
        ) = 1
@@ -174,9 +182,9 @@ line_trace AS (
         ON sol.SalesOrderLineID = sil.SalesOrderLineID
     JOIN SalesOrder AS so
         ON so.SalesOrderID = ex.SalesOrderID
-    JOIN ShipmentLine AS shl
+    LEFT JOIN ShipmentLine AS shl
         ON shl.ShipmentLineID = sil.ShipmentLineID
-    JOIN Shipment AS sh
+    LEFT JOIN Shipment AS sh
         ON sh.ShipmentID = shl.ShipmentID
     JOIN Item AS i
         ON i.ItemID = sil.ItemID
@@ -188,7 +196,6 @@ line_trace AS (
         ON a.AccountID = gl.AccountID
        AND a.AccountType = 'Revenue'
        AND a.AccountSubType = 'Operating Revenue'
-       AND CAST(a.AccountNumber AS INTEGER) BETWEEN 4000 AND 4059
     WHERE gl.GLEntryID IS NULL
        OR a.AccountID IS NOT NULL
 )

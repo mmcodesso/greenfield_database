@@ -43,11 +43,9 @@ account_layout AS (
         CASE
             WHEN AccountType = 'Revenue'
              AND AccountSubType = 'Operating Revenue'
-             AND CAST(AccountNumber AS INTEGER) BETWEEN 4000 AND 4059
                 THEN 'Operating Revenue'
             WHEN AccountType = 'Revenue'
              AND AccountSubType = 'Contra Revenue'
-             AND CAST(AccountNumber AS INTEGER) BETWEEN 4060 AND 4099
                 THEN 'Contra Revenue'
             WHEN AccountType = 'Expense'
              AND AccountSubType = 'COGS'
@@ -65,11 +63,9 @@ account_layout AS (
         CASE
             WHEN AccountType = 'Revenue'
              AND AccountSubType = 'Operating Revenue'
-             AND CAST(AccountNumber AS INTEGER) BETWEEN 4000 AND 4059
                 THEN 100
             WHEN AccountType = 'Revenue'
              AND AccountSubType = 'Contra Revenue'
-             AND CAST(AccountNumber AS INTEGER) BETWEEN 4060 AND 4099
                 THEN 200
             WHEN AccountType = 'Expense'
              AND AccountSubType = 'COGS'

@@ -32,6 +32,7 @@ WAREHOUSE_OPERATING_EXPENSE_LABELS = {
 }
 FREIGHT_REVENUE_LABEL = "Freight Revenue"
 FREIGHT_COGS_LABEL = "Freight-Out Expense"
+DESIGN_SERVICE_REVENUE_LABEL = "Sales Revenue - Design Services"
 
 
 def _read_sql_result(sqlite_path: Path, sql_path: Path) -> pd.DataFrame:
@@ -107,6 +108,14 @@ def _freight_account_assertions(frame: pd.DataFrame) -> None:
     assert freight_cogs["StatementSection"].eq("Cost of Goods Sold").all()
 
 
+def _design_service_revenue_assertions(frame: pd.DataFrame) -> None:
+    account_lines = frame[frame["LineType"].eq("account")].copy()
+    service_revenue = account_lines[account_lines["LineLabel"].eq(DESIGN_SERVICE_REVENUE_LABEL)].copy()
+    assert not service_revenue.empty
+    assert service_revenue["StatementSection"].eq("Operating Revenue").all()
+    assert service_revenue["Amount"].round(2).abs().sum() > 0
+
+
 def test_income_statement_queries_return_rows_on_clean_build(
     clean_validation_dataset_artifacts: dict[str, object],
 ) -> None:
@@ -175,6 +184,56 @@ def test_income_statement_queries_return_rows_on_clean_build(
     _freight_account_assertions(monthly)
     _freight_account_assertions(quarterly)
     _freight_account_assertions(annual)
+    _design_service_revenue_assertions(monthly)
+    _design_service_revenue_assertions(quarterly)
+    _design_service_revenue_assertions(annual)
+
+
+def test_income_statement_includes_design_service_revenue_gl_activity(
+    clean_validation_dataset_artifacts: dict[str, object],
+) -> None:
+    sqlite_path = Path(clean_validation_dataset_artifacts["sqlite_path"])
+    monthly = _read_sql_result(sqlite_path, MONTHLY_QUERY_PATH)
+
+    statement_service_revenue = (
+        monthly[
+            monthly["LineType"].eq("account")
+            & monthly["LineLabel"].eq(DESIGN_SERVICE_REVENUE_LABEL)
+        ][["FiscalYear", "FiscalPeriod", "Amount"]]
+        .sort_values(["FiscalYear", "FiscalPeriod"])
+        .reset_index(drop=True)
+    )
+
+    gl_service_revenue = _read_sql_text_result(
+        sqlite_path,
+        f"""
+        SELECT
+            gl.FiscalYear,
+            gl.FiscalPeriod,
+            ROUND(SUM(gl.Credit - gl.Debit), 2) AS Amount
+        FROM GLEntry AS gl
+        JOIN Account AS a
+            ON a.AccountID = gl.AccountID
+        LEFT JOIN JournalEntry AS je
+            ON je.JournalEntryID = gl.SourceDocumentID
+           AND gl.SourceDocumentType = 'JournalEntry'
+        WHERE a.AccountNumber = '4080'
+          AND {CLOSE_ENTRY_FILTER}
+        GROUP BY gl.FiscalYear, gl.FiscalPeriod
+        ORDER BY gl.FiscalYear, gl.FiscalPeriod
+        """,
+    )
+
+    merged = statement_service_revenue.merge(
+        gl_service_revenue,
+        on=["FiscalYear", "FiscalPeriod"],
+        how="left",
+        suffixes=("_statement", "_gl"),
+    ).fillna({"Amount_gl": 0.0})
+    merged["Amount_gl"] = merged["Amount_gl"].round(2)
+
+    assert (merged["Amount_statement"].round(2) == merged["Amount_gl"]).all()
+    assert merged["Amount_statement"].abs().sum() > 0
 
 
 def test_income_statement_statement_math_ties_for_each_period(
