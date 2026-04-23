@@ -41,8 +41,8 @@ This sequence works well for most first-time adoptions:
 3. Assign [Company Story](../learn-the-business/company-story.md).
 4. Review [Process Flows](../learn-the-business/process-flows.md).
 5. Assign [Dataset Guide](../start-here/dataset-overview.md).
-6. Choose the first analytics track in [Analytics Guides](../analytics/index.md).
-7. Use [Analytics Cases](../analytics/cases/index.md) once students understand the basic document and table flow.
+6. Choose the first analytics track in [Analysis Tracks](../analytics/analysis-tracks.md).
+7. Use [Cases](../analytics/cases/index.md) once students understand the basic document and table flow.
 
 This order helps students understand the business and the process logic before they move into SQL, Excel, or open-ended analysis.
 
@@ -63,7 +63,7 @@ The published default build also carries a small intentional manufacturing audit
 Start with guided work and then widen the analytical scope.
 
 - Use topic guides and starter queries to establish the first analytical pattern.
-- Move next into [Analytics Cases](../analytics/cases/index.md) when students need structured interpretation prompts and business context.
+- Move next into [Cases](../analytics/cases/index.md) when students need structured interpretation prompts and business context.
 - Use open-ended analysis only after students can explain the source documents, process flow, and ledger effect behind the result.
 - Use [Schema Reference](../reference/schema.md) and [GLEntry Posting Reference](../reference/posting.md) as supporting references during assignments, not as the first reading.
 
@@ -86,7 +86,7 @@ Most instructors can adopt <DisplayName /> successfully with the published teach
 ## Next Steps
 
 - Use [Start Here](../start-here/index.md) as the primary student launch page.
-- Use [Analytics Guides](../analytics/index.md) to choose the first topic pack.
-- Use [Analytics Cases](../analytics/cases/index.md) for guided assignments.
+- Use [Analysis Tracks](../analytics/analysis-tracks.md) to choose the first topic pack.
+- Use [Cases](../analytics/cases/index.md) for guided assignments.
 - Use [Schema Reference](../reference/schema.md) and [GLEntry Posting Reference](../reference/posting.md) as assignment support references.
 - Use [Customize](../technical/dataset-delivery.md) only when you need a locally generated variant.

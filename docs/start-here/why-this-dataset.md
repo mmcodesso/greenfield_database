@@ -71,8 +71,8 @@ Those fields make the ledger a strong teaching asset. An instructor can ask stud
 - [GLEntry Posting Reference](../reference/posting.md): explains what posts and which accounts move
 - [SQL Guide](../analytics/sql-guide.md): gives a structured path into query-based work
 - [Excel Guide](../analytics/excel-guide.md): gives a parallel path for workbook-based analysis
-- [Analytics Guides](../analytics/index.md): organizes the main financial, managerial, and audit topics
-- [Analytics Cases](../analytics/cases/index.md): provides guided walkthroughs that connect business context, starter SQL, and interpretation
+- [Analyze the Data](../analytics/index.md): introduces the SQL, Excel, reports, cases, and topic-track paths
+- [Cases](../analytics/cases/index.md): provides guided walkthroughs that connect business context, starter SQL, and interpretation
 - [Instructor Adoption Guide](../teach-with-data/instructor-guide.md): helps instructors sequence the material and choose assignment paths
 
 These materials give students and instructors a coherent path from orientation to analysis.
@@ -101,7 +101,7 @@ Use this reading path when you want to move from orientation to adoption quickly
 - [Dataset Guide](dataset-overview.md): understand the table families and navigation paths
 - [SQL Guide](../analytics/sql-guide.md): start the query-based path
 - [Excel Guide](../analytics/excel-guide.md): start the workbook-based path
-- [Analytics Cases](../analytics/cases/index.md): use guided assignments before open-ended analysis
+- [Cases](../analytics/cases/index.md): use guided assignments before open-ended analysis
 - [Instructor Adoption Guide](../teach-with-data/instructor-guide.md): plan course sequencing and adoption
 
 <DisplayName /> works best when readers start with the business model, move through the process pages, and then open the data. That sequence keeps the joins meaningful and keeps the ledger tied to business reasoning.

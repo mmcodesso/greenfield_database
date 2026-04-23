@@ -152,16 +152,34 @@ def test_company_story_keeps_required_story_anchors_and_links() -> None:
         assert snippet in company_story
 
 
-def test_analytics_sidebar_uses_guides_label_and_keeps_cases_above_it() -> None:
+def test_analyze_data_sidebar_uses_new_labels_and_keeps_cases_above_tracks() -> None:
     sidebar_text = _read(Path("sidebars.js"))
     analytics_page = _read(Path("docs/analytics/index.md"))
+    tracks_page = _read(Path("docs/analytics/analysis-tracks.md"))
+    cases_page = _read(Path("docs/analytics/cases/index.md"))
 
-    assert 'label: "Analytics Guides"' in sidebar_text
-    assert 'title: Analytics Guides' in analytics_page
-    assert 'sidebar_label: Analytics Guides' in analytics_page
+    assert 'label: "Analyze the Data"' in sidebar_text
+    assert 'label: "Cases"' in sidebar_text
+    assert 'label: "Analysis Tracks"' in sidebar_text
+    assert 'title: Analyze the Data' in analytics_page
+    assert 'sidebar_label: Analyze the Data' in analytics_page
+    assert 'title: Analysis Tracks' in tracks_page
+    assert 'sidebar_label: Analysis Tracks' in tracks_page
+    assert 'title: Cases' in cases_page
+    assert 'sidebar_label: Cases' in cases_page
+    for snippet in (
+        "sql-guide.md",
+        "excel-guide.md",
+        "reports/index.md",
+        "cases/index.md",
+        "analysis-tracks.md",
+    ):
+        assert snippet in analytics_page
+    assert "How Cases Fit the Learning Path" in cases_page
+    assert "## Next Steps" in cases_page
 
-    cases_position = sidebar_text.index('label: "Analytics Cases"')
-    guides_position = sidebar_text.index('label: "Analytics Guides"')
+    cases_position = sidebar_text.index('label: "Cases"')
+    guides_position = sidebar_text.index('label: "Analysis Tracks"')
     assert cases_position < guides_position
 
 

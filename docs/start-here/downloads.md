@@ -48,4 +48,4 @@ The files support the learning path in a clear order:
 1. Read [Start Here](index.md).
 2. Read [Company Story](../learn-the-business/company-story.md).
 3. Read [Process Flows](../learn-the-business/process-flows.md).
-4. Then open [SQL Guide](../analytics/sql-guide.md), [Excel Guide](../analytics/excel-guide.md), [Analytics Guides](../analytics/index.md), or [Reports Hub](../analytics/reports/index.md).
+4. Then open [SQL Guide](../analytics/sql-guide.md), [Excel Guide](../analytics/excel-guide.md), [Analyze the Data](../analytics/index.md), or [Reports Hub](../analytics/reports/index.md).

@@ -257,7 +257,7 @@ def test_phase23_docs_and_sidebar_entries_exist() -> None:
     assert "commercial policy, promotion effect, override concentration" in managerial_guide
     assert "sales below floor without approval" in audit_guide
     assert "override approval completeness review" in audit_guide
-    assert "[Analytics Cases](cases/index.md)" in sql_guide
+    assert "[Cases](cases/index.md)" in sql_guide
     assert "## Recommended teaching sequence" in instructor_guide
     assert "PriceList" in o2c_guide
     assert "CreditMemoLine` preserves the original pricing lineage" in o2c_guide

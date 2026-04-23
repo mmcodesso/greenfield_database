@@ -279,4 +279,4 @@ Start with:
 - Read [Schema Reference](../reference/schema.md) for table-level lookup and high-value fields.
 - Read [Process Flows](../learn-the-business/process-flows.md) for the business-cycle reading path.
 - Read [GLEntry Posting Reference](../reference/posting.md) when you need event-to-ledger rules.
-- Read [Analytics Guides](../analytics/index.md) when you are ready to move into the analysis layer.
+- Read [Analyze the Data](../analytics/index.md) when you are ready to move into the analysis layer.

@@ -60,7 +60,7 @@ Students who begin with SQL can move quickly without losing the business context
 2. Read [Company Story](../learn-the-business/company-story.md) and [Process Flows](../learn-the-business/process-flows.md).
 3. Keep [Dataset Guide](dataset-overview.md) and [Schema Reference](../reference/schema.md) open while you query.
 4. Use [SQL Guide](../analytics/sql-guide.md) for the starter workflow and query-running sequence.
-5. Move into [Analytics Guides](../analytics/index.md) or [Analytics Cases](../analytics/cases/index.md) when you want topic-based or assignment-based follow-through.
+5. Move into [Analysis Tracks](../analytics/analysis-tracks.md) or [Cases](../analytics/cases/index.md) when you want topic-based or assignment-based follow-through.
 
 ## The Published Teaching Files
 
@@ -75,5 +75,5 @@ The downloaded files present the same business in different formats:
 1. Read [Company Story](../learn-the-business/company-story.md).
 2. Read [Process Flows](../learn-the-business/process-flows.md).
 3. Open the process page that matches the business question you want to follow first.
-4. Then move into [Analytics Guides](../analytics/index.md), [Reports Hub](../analytics/reports/index.md), or [Analytics Cases](../analytics/cases/index.md).
+4. Then move into [Analyze the Data](../analytics/index.md), [Reports Hub](../analytics/reports/index.md), or [Cases](../analytics/cases/index.md).
 5. Use [Instructor Adoption Guide](../teach-with-data/instructor-guide.md) when you are planning course rollout, labs, or assignments.

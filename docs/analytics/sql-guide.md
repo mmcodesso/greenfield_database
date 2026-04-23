@@ -65,7 +65,7 @@ After your first query runs, check four things before you write another one:
 Then move to the next layer:
 
 1. stay on the topic page and run a second query in the same area
-2. open the paired case in [Analytics Cases](cases/index.md)
+2. open the paired case in [Cases](cases/index.md)
 3. use [Schema Reference](../reference/schema.md) when you need table and key help
 4. use [GLEntry Posting Reference](../reference/posting.md) when the question reaches the ledger
 
@@ -123,5 +123,5 @@ Then paste a starter query copied from the docs into the prompt and run it direc
 ## Next Steps
 
 - Use [Financial Analytics](financial.md), [Managerial Analytics](managerial.md), or [Audit Analytics](audit.md) to choose your next topic.
-- Use [Analytics Cases](cases/index.md) when you want a guided business question after the first query.
+- Use [Cases](cases/index.md) when you want a guided business question after the first query.
 - Use [Excel Guide](excel-guide.md) when you want to recreate a SQL result in the workbook.

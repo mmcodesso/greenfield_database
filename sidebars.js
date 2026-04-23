@@ -32,6 +32,7 @@ const sidebars = {
     {
       type: "category",
       label: "Analyze the Data",
+      link: { type: "doc", id: "analytics/index" },
       items: [
         "analytics/sql-guide",
         "analytics/excel-guide",
@@ -67,7 +68,7 @@ const sidebars = {
         },
         {
           type: "category",
-          label: "Analytics Cases",
+          label: "Cases",
           link: { type: "doc", id: "analytics/cases/index" },
           collapsed: true,
           items: [
@@ -121,10 +122,11 @@ const sidebars = {
         },
         {
           type: "category",
-          label: "Analytics Guides",
-          link: { type: "doc", id: "analytics/index" },
+          label: "Analysis Tracks",
+          link: { type: "doc", id: "analytics/analysis-tracks" },
           collapsed: true,
           items: [
+            "analytics/analysis-tracks",
             "analytics/financial",
             "analytics/managerial",
             "analytics/audit",

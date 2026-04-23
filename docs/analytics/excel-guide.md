@@ -254,5 +254,5 @@ Suggested outputs:
 ## Next Steps
 
 - Read [SQL Guide](sql-guide.md) for the matching query workflow.
-- Read [Analytics Cases](cases/index.md) for guided walkthroughs.
+- Read [Cases](cases/index.md) for guided walkthroughs.
 - Read [Instructor Adoption Guide](../teach-with-data/instructor-guide.md) for classroom sequencing.

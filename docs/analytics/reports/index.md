@@ -33,4 +33,4 @@ This section keeps two reading levels together. `Business Perspectives` shows a 
 
 1. Start with the perspective or report area that matches the business cycle you just studied.
 2. Use the in-site preview to read the report as a business summary before downloading the full artifact.
-3. Then move into [SQL Guide](../sql-guide.md) or [Analytics Cases](../cases/index.md) when you want to explain how the reported result was produced.
+3. Then move into [SQL Guide](../sql-guide.md) or [Cases](../cases/index.md) when you want to explain how the reported result was produced.

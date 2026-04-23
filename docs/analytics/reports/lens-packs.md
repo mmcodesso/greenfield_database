@@ -32,4 +32,4 @@ Each perspective still grows out of the process layer underneath. Commercial and
 
 1. Open the perspective that matches the business cycle or business question you just studied.
 2. Move to the matching area in the `Report Library` when you want a broader inventory beyond the guided sequence.
-3. Then use [SQL Guide](../sql-guide.md) or [Analytics Cases](../cases/index.md) when the next step is explaining the process logic behind the reports.
+3. Then use [SQL Guide](../sql-guide.md) or [Cases](../cases/index.md) when the next step is explaining the process logic behind the reports.

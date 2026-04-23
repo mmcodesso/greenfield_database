@@ -1,12 +1,12 @@
 ---
-title: Analytics Cases
+title: Cases
 description: Guided walkthroughs that connect business context, starter SQL, and classroom interpretation.
-sidebar_label: Analytics Cases
+sidebar_label: Cases
 ---
 
-# Analytics Walkthrough Cases
+# Cases
 
-Analytics Cases turns the business processes and analytical layers into guided investigation. A case should feel like a structured follow-through from the company story and the process pages, not like a separate assignment universe. Students should already know the business cycle they are entering; the case then gives them a focused question, a sequence of evidence, and a path toward interpretation.
+Cases turns the business processes and analytical layers into guided investigation. A case should feel like a structured follow-through from the company story and the process pages, not like a separate assignment universe. Students should already know the business cycle they are entering; the case then gives them a focused question, a sequence of evidence, and a path toward interpretation.
 
 That makes the case library the most useful after the reader has already seen the process flow or the matching business perspective. The cases are where business context, query work, and analytical explanation come together.
 
@@ -79,6 +79,6 @@ When the class is ready for pricing and margin governance, extend the sequence w
 
 ## Next Steps
 
-1. Start from [Analytics Guides](../index.md) or [Reports Hub](../reports/index.md) when you need the broader business context first.
+1. Start from [Analyze the Data](../index.md), [Analysis Tracks](../analysis-tracks.md), or [Reports Hub](../reports/index.md) when you need the broader business context first.
 2. Pick the case that matches the process you want to investigate.
 3. Use [SQL Guide](../sql-guide.md) for query-running workflow and [Excel Guide](../excel-guide.md) for workbook-side reconstruction.

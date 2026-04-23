@@ -90,10 +90,12 @@ def test_phase19_case_docs_and_sidebar_entries_exist() -> None:
 
 def test_phase19_docs_reference_new_query_and_case_flow() -> None:
     analytics_hub = Path("docs/analytics/index.md").read_text(encoding="utf-8")
+    analysis_tracks = Path("docs/analytics/analysis-tracks.md").read_text(encoding="utf-8")
     instructor_guide = Path("docs/teach-with-data/instructor-guide.md").read_text(encoding="utf-8")
     sql_guide = Path("docs/analytics/sql-guide.md").read_text(encoding="utf-8")
 
-    assert "Working Capital and Cash Conversion Case" in analytics_hub
-    assert "Product Portfolio Profitability Case" in analytics_hub
-    assert "Recommended Phase 19 Classroom Sequence" in instructor_guide
+    assert "Analysis Tracks" in analytics_hub
+    assert "Financial Analytics" in analysis_tracks
+    assert "Product Portfolio Profitability Case" not in analytics_hub
+    assert "## Recommended teaching sequence" in instructor_guide
     assert "working-capital bridge by month" in sql_guide.lower()
