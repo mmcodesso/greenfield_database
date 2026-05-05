@@ -68,15 +68,19 @@ CASE_DOCS_WITH_KEY_DATA_SOURCES = (
     Path("docs/analytics/cases/audit-exception-lab.md"),
     Path("docs/analytics/cases/audit-review-pack-case.md"),
     Path("docs/analytics/cases/demand-planning-and-replenishment-case.md"),
-    Path("docs/analytics/cases/financial-statement-bridge-case.md"),
     Path("docs/analytics/cases/master-data-and-workforce-audit-case.md"),
-    Path("docs/analytics/cases/pricing-and-margin-governance-case.md"),
     Path("docs/analytics/cases/pricing-governance-audit-case.md"),
     Path("docs/analytics/cases/product-portfolio-profitability-case.md"),
     Path("docs/analytics/cases/replenishment-support-audit-case.md"),
     Path("docs/analytics/cases/workforce-cost-and-org-control-case.md"),
     Path("docs/analytics/cases/workforce-coverage-and-attendance-case.md"),
+)
+
+CASE_DOCS_WITH_BEFORE_YOU_START = (
     Path("docs/analytics/cases/working-capital-and-cash-conversion-case.md"),
+    Path("docs/analytics/cases/financial-statement-bridge-case.md"),
+    Path("docs/analytics/cases/capex-fixed-asset-lifecycle-case.md"),
+    Path("docs/analytics/cases/pricing-and-margin-governance-case.md"),
 )
 
 
@@ -205,3 +209,12 @@ def test_remaining_case_pages_use_key_data_sources_and_next_steps() -> None:
         assert "## Main Tables" not in text, f"Old Main Tables label still present in {path}"
         assert "## Main Tables and Worksheets" not in text, f"Old Main Tables and Worksheets label still present in {path}"
         assert "## Query Sequence" not in text, f"Old Query Sequence label still present in {path}"
+
+
+def test_upgraded_financial_walkthroughs_use_before_you_start_instead_of_old_financial_case_sections() -> None:
+    for path in CASE_DOCS_WITH_BEFORE_YOU_START:
+        text = _read(path)
+        assert "## Before You Start" in text, f"Missing Before You Start in {path}"
+        assert "## Next Steps" in text, f"Missing Next Steps in {path}"
+        assert "## Key Data Sources" not in text, f"Old Key Data Sources label still present in {path}"
+        assert "## Recommended Query Sequence" not in text, f"Old Recommended Query Sequence label still present in {path}"

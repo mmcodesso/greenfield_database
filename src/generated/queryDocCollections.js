@@ -798,66 +798,58 @@ export const caseQuerySequences = {
       "queryKey": "financial/04_trial_balance_by_period.sql"
     },
     {
-      "lead": "Run",
-      "queryKey": "financial/05_journal_and_close_cycle_review.sql"
-    },
-    {
-      "lead": "Run",
+      "lead": "Then test control-account trust with",
       "queryKey": "financial/06_control_account_reconciliation.sql"
     },
     {
-      "lead": "Run",
+      "lead": "Then separate finance-controlled journals from operating history with",
+      "queryKey": "financial/05_journal_and_close_cycle_review.sql"
+    },
+    {
+      "lead": "Then isolate retained-earnings close impact with",
       "queryKey": "financial/16_retained_earnings_and_close_entry_impact.sql"
     },
     {
-      "lead": "Run",
-      "queryKey": "financial/17_manufacturing_cost_component_bridge.sql"
+      "lead": "Then validate the annual close with",
+      "queryKey": "financial/39_annual_income_to_equity_bridge.sql"
     },
-      {
-        "lead": "Run",
-        "queryKey": "financial/19_working_capital_bridge_by_month.sql"
-      },
-      {
-        "lead": "Then run",
-        "queryKey": "financial/49_pro_forma_income_statement_monthly.sql"
-      },
-      {
-        "lead": "Then run",
-        "queryKey": "financial/50_pro_forma_balance_sheet_monthly.sql"
-      },
-      {
-        "lead": "Then run",
-        "queryKey": "financial/51_pro_forma_cash_flow_indirect_monthly.sql"
-      },
-      {
-        "lead": "Bridge plan to actual with",
-        "queryKey": "financial/52_budget_vs_actual_statement_bridge_monthly.sql"
-      }
-    ],
+    {
+      "lead": "If balances still leak after close, run",
+      "queryKey": "financial/40_post_close_profit_and_loss_leakage_review.sql"
+    },
+    {
+      "lead": "If the statement variance narrows into revenue, run",
+      "queryKey": "financial/42_annual_net_revenue_bridge.sql"
+    },
+    {
+      "lead": "Then isolate the invoice-level cutoff population with",
+      "queryKey": "financial/43_invoice_revenue_cutoff_exception_summary.sql"
+    },
+    {
+      "lead": "Then trace the affected invoices and revenue GL rows with",
+      "queryKey": "financial/44_invoice_revenue_cutoff_exception_trace.sql"
+    }
+  ],
   "capex-fixed-asset-lifecycle-case": [
     {
-      "lead": "Run",
+      "lead": "Start with the behavior-group rollforward using",
       "queryKey": "financial/54_fixed_asset_rollforward_by_behavior_group.sql"
     },
     {
-      "lead": "Run",
+      "lead": "Then trace acquisitions, financing choices, improvements, and disposals with",
       "queryKey": "financial/55_capex_acquisitions_financing_and_disposals.sql"
     },
     {
-      "lead": "Run",
+      "lead": "Then isolate the note-financed lifecycle through",
       "queryKey": "financial/56_debt_amortization_and_cash_impact.sql"
     },
     {
-      "lead": "Then connect plant depreciation into manufacturing cost with",
+      "lead": "Then connect plant depreciation back into manufacturing cost with",
       "queryKey": "financial/17_manufacturing_cost_component_bridge.sql"
     },
     {
-      "lead": "Then show the statement and cash impact with",
+      "lead": "Finish with the real statement and cash impact through",
       "queryKey": "financial/33_cash_flow_statement_indirect_monthly.sql"
-    },
-    {
-      "lead": "Then compare the plan to the budget roll-forward with",
-      "queryKey": "financial/51_pro_forma_cash_flow_indirect_monthly.sql"
     }
   ],
   "manufacturing-labor-cost-case": [
@@ -958,30 +950,30 @@ export const caseQuerySequences = {
       "queryKey": "financial/25_price_realization_vs_list_by_segment_customer_region_collection_style.sql"
     },
     {
-      "lead": "Run",
+      "lead": "Then separate promotion strategy from the broader pricing picture with",
       "queryKey": "financial/26_gross_margin_impact_of_promotions_vs_nonpromotion_sales.sql"
     },
     {
-      "lead": "Run",
-      "queryKey": "managerial/47_sales_rep_override_rate_and_discount_dispersion.sql"
-    },
-    {
-      "lead": "Run",
+      "lead": "Then isolate the collection-level revenue and margin effect through",
       "queryKey": "managerial/48_collection_revenue_margin_before_after_promotions.sql"
     },
     {
-      "lead": "Run",
+      "lead": "Then show where customer-specific pricing is concentrated with",
       "queryKey": "managerial/49_customer_specific_pricing_concentration_and_dependency.sql"
     },
-      {
-        "lead": "Run",
-        "queryKey": "managerial/50_monthly_price_floor_pressure_and_override_concentration.sql"
-      },
-      {
-        "lead": "Then bridge budget to actual with",
-        "queryKey": "managerial/51_budget_vs_actual_revenue_price_volume_cost_bridge.sql"
-      }
-    ],
+    {
+      "lead": "Then compare override concentration and discount dispersion using",
+      "queryKey": "managerial/47_sales_rep_override_rate_and_discount_dispersion.sql"
+    },
+    {
+      "lead": "Then measure monthly price-floor pressure through",
+      "queryKey": "managerial/50_monthly_price_floor_pressure_and_override_concentration.sql"
+    },
+    {
+      "lead": "If the pricing story needs governance follow-up, run",
+      "queryKey": "audit/51_override_approval_completeness_review.sql"
+    }
+  ],
   "pricing-governance-audit-case": [
     {
       "lead": "Run",
@@ -1117,11 +1109,11 @@ export const caseQuerySequences = {
     },
     {
       "lead": "Run",
-      "queryKey": "financial/20_cash_conversion_timing_review.sql"
+      "queryKey": "financial/02_ar_aging_open_invoices.sql"
     },
     {
       "lead": "Run",
-      "queryKey": "financial/02_ar_aging_open_invoices.sql"
+      "queryKey": "financial/15_customer_deposits_and_unapplied_cash_aging.sql"
     },
     {
       "lead": "Run",
@@ -1129,17 +1121,37 @@ export const caseQuerySequences = {
     },
     {
       "lead": "Run",
+      "queryKey": "financial/20_cash_conversion_timing_review.sql"
+    },
+    {
+      "lead": "Run",
+      "queryKey": "financial/09_payroll_liability_rollforward.sql"
+    },
+    {
+      "lead": "Run",
+      "queryKey": "financial/11_payroll_cash_payments_and_remittances.sql"
+    },
+    {
+      "lead": "Run",
       "queryKey": "financial/12_accrued_expense_rollforward.sql"
     },
-      {
-        "lead": "Run",
-        "queryKey": "financial/15_customer_deposits_and_unapplied_cash_aging.sql"
-      },
-      {
-        "lead": "Then compare plan to actual with",
-        "queryKey": "financial/53_budget_vs_actual_working_capital_and_cash_bridge.sql"
-      }
-    ]
+    {
+      "lead": "Run",
+      "queryKey": "financial/13_accrued_vs_invoiced_vs_paid_timing.sql"
+    },
+    {
+      "lead": "Then compare plan to actual with",
+      "queryKey": "financial/53_budget_vs_actual_working_capital_and_cash_bridge.sql"
+    },
+    {
+      "lead": "If customer cash timing still needs follow-up, run",
+      "queryKey": "audit/24_customer_deposits_and_unapplied_cash_exception_review.sql"
+    },
+    {
+      "lead": "If accrual estimate accuracy still needs follow-up, run",
+      "queryKey": "audit/13_over_under_accrual_review.sql"
+    }
+  ]
 };
 
 export const auditAnomalyCoverage = [

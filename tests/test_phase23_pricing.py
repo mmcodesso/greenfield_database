@@ -279,3 +279,27 @@ def test_phase23_docs_and_sidebar_entries_exist() -> None:
     assert "`PILineID`, `PurchaseInvoiceID`" in schema_guide
     assert "`DisbursementID`, `PurchaseInvoiceID`" in schema_guide
     assert "**73 tables**" in dataset_guide
+
+
+def test_phase23_pricing_case_uses_upgraded_walkthrough_shell() -> None:
+    pricing_case = Path("docs/analytics/cases/pricing-and-margin-governance-case.md").read_text(encoding="utf-8")
+
+    for snippet in (
+        "## Before You Start",
+        "## Step-by-Step Walkthrough",
+        "## Optional Excel Follow-Through",
+        "## Wrap-Up Questions",
+        "## Next Steps",
+        "financial/25_price_realization_vs_list_by_segment_customer_region_collection_style.sql",
+        "financial/26_gross_margin_impact_of_promotions_vs_nonpromotion_sales.sql",
+        "managerial/48_collection_revenue_margin_before_after_promotions.sql",
+        "managerial/49_customer_specific_pricing_concentration_and_dependency.sql",
+        "managerial/47_sales_rep_override_rate_and_discount_dispersion.sql",
+        "managerial/50_monthly_price_floor_pressure_and_override_concentration.sql",
+        "audit/51_override_approval_completeness_review.sql",
+        "pricing-governance-audit-case.md",
+    ):
+        assert snippet in pricing_case
+
+    assert "## Key Data Sources" not in pricing_case
+    assert "## Recommended Query Sequence" not in pricing_case

@@ -1,6 +1,6 @@
 ---
 title: Financial Statement Bridge Case
-description: Inquiry-led walkthrough for tying posted ledger activity into the financial statements and year-end close.
+description: Inquiry-led walkthrough for tracing statement-level balances from posted ledger structure through close logic and into source-level cutoff evidence.
 sidebar_label: Statement Bridge Case
 ---
 
@@ -28,31 +28,19 @@ You need to prove how posted operational and finance-controlled activity builds 
 - An annual net-income to retained-earnings explanation.
 - One drill-down path from statement variance into revenue cutoff evidence.
 
-## Key Data Sources
+## Before You Start
 
 - Main tables: `GLEntry`, `Account`, `JournalEntry`, `SalesInvoice`, `SalesInvoiceLine`, `CreditMemo`, `CreditMemoLine`, `PurchaseInvoice`, `DisbursementPayment`, `GoodsReceiptLine`, `ShipmentLine`, `PayrollRegister`, `WorkOrderClose`
 - Related guides: [Financial Analytics](../financial.md), [Executive Overview](../reports/executive-overview.md)
 - Related process pages: [Manual Journals and Close Cycle](../../processes/manual-journals-and-close.md), [Order-to-Cash Process](../../processes/o2c.md), [Procure-to-Pay Process](../../processes/p2p.md), [Manufacturing Process](../../processes/manufacturing.md), [Payroll Process](../../processes/payroll.md)
 - Supporting references: [Schema Reference](../../reference/schema.md), [GLEntry Posting Reference](../../reference/posting.md), [Dataset Guide](../../start-here/dataset-overview.md)
-- This case focuses on statement tie, control accounts, and close. Use the working-capital case when you need settlement timing and current-liability pressure.
-
-## Recommended Query Sequence
-
-1. `financial/04_trial_balance_by_period.sql`
-2. `financial/06_control_account_reconciliation.sql`
-3. `financial/05_journal_and_close_cycle_review.sql`
-4. `financial/16_retained_earnings_and_close_entry_impact.sql`
-5. `financial/39_annual_income_to_equity_bridge.sql`
-6. `financial/40_post_close_profit_and_loss_leakage_review.sql`
-7. `financial/42_annual_net_revenue_bridge.sql`
-8. `financial/43_invoice_revenue_cutoff_exception_summary.sql`
-9. `financial/44_invoice_revenue_cutoff_exception_trace.sql`
+- This case starts at the posted-ledger and presentation layer rather than tracing one operating document chain. Use the working-capital case when you need settlement timing and current-liability pressure instead of statement tie-out.
 
 ## Step-by-Step Walkthrough
 
 ### Step 1. Define the statement scaffold from the trial balance
 
-Start with the posted ledger structure. Before you reconcile anything, you need to see the period-by-period account scaffold that supports the statements.
+Start with the posted ledger structure. Before you reconcile anything, you need to see the period-by-period account scaffold that supports the statements and where the largest balances already sit.
 
 **What we are trying to achieve**
 
@@ -120,7 +108,7 @@ The query builds expected balances from operational tables, builds actual balanc
 
 ### Step 3. Separate recurring journals, finance-controlled activity, and close-cycle volume
 
-Now move from control accounts to finance activity. The ledger carries both operating history and finance-controlled journals. They must be separated.
+Now move from control accounts to finance activity. The ledger carries both operating history and finance-controlled journals, and those layers have to stay separate if the statement bridge is going to hold.
 
 **What we are trying to achieve**
 
@@ -159,7 +147,7 @@ The journal review reads `JournalEntry` directly and groups volume by posting mo
 
 ### Step 4. Tie annual net income into retained earnings and test the close
 
-This is the core statement-bridge step. You are now validating the annual close itself.
+This is the core statement-bridge step. You are now validating the annual close itself rather than only describing the ledger.
 
 **What we are trying to achieve**
 
@@ -198,7 +186,7 @@ The income-to-equity bridge computes pre-close income, statement income, retaine
 
 ### Step 5. Drill from statement variance into annual net revenue and cutoff exceptions
 
-Finish the case by taking one statement-level variance path into source-level evidence. Revenue is the cleanest drill-down path because the repo already provides a summary and trace pair.
+Finish the case by taking one statement-level variance path into source-level evidence. Revenue is the cleanest drill-down path because the repo already provides a summary-and-trace pair that forces you to decide when summary evidence is enough and when line-level proof is required.
 
 **What we are trying to achieve**
 
@@ -243,16 +231,16 @@ The annual bridge compares invoice-line and credit-memo totals with pre-close re
 ## Optional Excel Follow-Through
 
 1. Build a period-by-period trial-balance pivot by `FiscalYear`, `FiscalPeriod`, `AccountType`, and `AccountSubType`.
-2. Add a lookup from `GLEntry` into `JournalEntry[EntryType]` where the source row is journal-driven.
-3. Build one annual bridge that compares pre-close net income, retained-earnings close, and post-close leakage.
-4. Add one narrow revenue drill-down tab for annual net revenue and cutoff exceptions.
-5. Keep the workbook focused on the statement bridge instead of turning it into a broad process workbook.
+2. Add a control-account support tab that compares source-derived expectations with posted balances.
+3. Add a journal-and-close tab that separates recurring or manual finance activity from retained-earnings close impact.
+4. Build one annual-close tab that compares pre-close income, retained-earnings close, and post-close leakage.
+5. Finish with one narrow revenue drill-down tab for annual net revenue and cutoff exceptions instead of turning the workbook into a broad process workbook.
 
 ## Wrap-Up Questions
 
-- Which control account is easiest to reconcile and why?
+- Where does the statement bridge break first: control-account support, finance presentation, annual close, or source timing?
+- Which control account is easiest to reconcile cleanly, and which one needs the most follow-up?
 - Where does the close process change presentation without changing operating history?
-- Which variance belongs to statement logic and which variance belongs to source-document logic?
 - Why is retained earnings the decisive tie point for annual close validation?
 - When should you stop at the summary query and when should you open the line-level cutoff trace?
 

@@ -28,29 +28,19 @@ You need to prove where price realization falls below base list pricing, how muc
 - An override and price-floor pressure explanation tied to commercial concentration rather than audit exception testing.
 - A short management-facing conclusion on where pricing governance deserves follow-up first.
 
-## Key Data Sources
+## Before You Start
 
 - Main tables: `PriceList`, `PriceListLine`, `PromotionProgram`, `PriceOverrideApproval`, `SalesOrder`, `SalesOrderLine`, `SalesInvoice`, `SalesInvoiceLine`, `Customer`, `Item`
 - Related guides: [Financial Analytics](../financial.md), [Managerial Analytics](../managerial.md), [Commercial and Working Capital](../reports/commercial-and-working-capital.md)
 - Related process page: [Order-to-Cash Process](../../processes/o2c.md)
 - Supporting references: [Schema Reference](../../reference/schema.md), [GLEntry Posting Reference](../../reference/posting.md), [Dataset Guide](../../start-here/dataset-overview.md)
-- This case stays on commercial interpretation. Use the pricing audit case when you need full control-exception review.
-
-## Recommended Query Sequence
-
-1. `financial/25_price_realization_vs_list_by_segment_customer_region_collection_style.sql`
-2. `financial/26_gross_margin_impact_of_promotions_vs_nonpromotion_sales.sql`
-3. `managerial/48_collection_revenue_margin_before_after_promotions.sql`
-4. `managerial/49_customer_specific_pricing_concentration_and_dependency.sql`
-5. `managerial/47_sales_rep_override_rate_and_discount_dispersion.sql`
-6. `managerial/50_monthly_price_floor_pressure_and_override_concentration.sql`
-7. `audit/51_override_approval_completeness_review.sql`
+- This case starts from realized pricing outcomes, then explains the policy layers beneath them rather than tracing one operational document chain. Use the pricing audit case when you need full control-exception review.
 
 ## Step-by-Step Walkthrough
 
 ### Step 1. Define realized pricing against list price
 
-Start with realized pricing. You need to see where billed revenue diverges from base list revenue before you explain the policy layers beneath it.
+Start with realized pricing. Before you explain the policy stack, you need to know where billed revenue already diverges from base list revenue and which parts of the commercial book carry the biggest dilution.
 
 **What we are trying to achieve**
 
@@ -84,7 +74,7 @@ The query starts from `SalesInvoiceLine`, joins the billed lines back to `SalesI
 
 ### Step 2. Explain the promotion effect on revenue and gross margin
 
-Once realized pricing is visible, separate the promotion effect from the broader pricing picture.
+Once realized pricing is visible, separate deliberate promotion strategy from the rest of the pricing picture.
 
 **What we are trying to achieve**
 
@@ -92,7 +82,7 @@ Show how promotions reduce revenue and change gross margin by month and collecti
 
 **Why this step changes the diagnosis**
 
-Promotion strategy is a deliberate commercial choice. Students need to show when lower realized pricing reflects planned promotional activity rather than uncontrolled discounting.
+Promotion strategy is a deliberate commercial choice. This step shows when lower realized pricing reflects planned promotional activity rather than uncontrolled discounting.
 
 **Suggested query**
 
@@ -123,7 +113,7 @@ These queries group billed sales by promotion flag and collection, compare reven
 
 ### Step 3. Show where customer-specific pricing is concentrated
 
-Promotions are only one policy path. Next, isolate customer-specific pricing and see where commercial dependency is highest.
+Promotions are only one policy path. Next, isolate customer-specific pricing and see where realized pricing depends on a narrower set of negotiated relationships.
 
 **What we are trying to achieve**
 
@@ -142,7 +132,7 @@ Customer-specific pricing can be commercially justified, but concentration chang
 
 **What this query does**
 
-It measures how much of each customer’s sales-order-line population uses `Customer Price List` pricing and how much order value sits behind that dependence.
+It measures how much of each customer's sales-order-line population uses `Customer Price List` pricing and how much order value sits behind that dependence.
 
 **How it works**
 
@@ -157,7 +147,7 @@ The query starts from `SalesOrderLine`, joins back to `SalesOrder` and `Customer
 
 ### Step 4. Measure override concentration and price-floor pressure
 
-Now isolate override behavior. This is where commercial pressure becomes visible before it turns into a formal control issue.
+Now isolate override behavior. This is where negotiation pressure becomes visible before it turns into a formal control issue.
 
 **What we are trying to achieve**
 
@@ -165,7 +155,7 @@ Show where override behavior and floor pressure concentrate by sales rep, custom
 
 **Why this step changes the diagnosis**
 
-Override pressure reveals negotiation intensity and pricing discipline. This step stays on commercial concentration and pressure, not on formal exception testing.
+Override pressure reveals negotiation intensity and pricing discipline. This step stays on commercial concentration and pressure rather than formal exception testing.
 
 **Suggested query**
 
@@ -196,7 +186,7 @@ These queries start from `SalesOrderLine`, join to `SalesOrder`, `Employee`, `Cu
 
 ### Step 5. Extend the case into governance follow-up
 
-Finish by taking one controlled step into governance risk. This is where commercial interpretation starts handing the issue off to a control review.
+Finish by taking one controlled step into governance risk. This is the handoff point where commercial interpretation becomes control follow-up.
 
 **What we are trying to achieve**
 
@@ -204,7 +194,7 @@ Identify where the pricing story moves from commercial interpretation into gover
 
 **Why this step changes the diagnosis**
 
-The case should end with a decision about where leadership needs stronger review. That does not turn this page into the audit case, but it should show where governance attention becomes necessary.
+The case should end with a decision about where leadership needs stronger review. It does not turn this page into the audit case, but it should show when governance attention becomes necessary.
 
 **Suggested query**
 
@@ -230,19 +220,19 @@ The query reads `PriceOverrideApproval`, `SalesOrderLine`, `SalesOrder`, `Custom
 
 ## Optional Excel Follow-Through
 
-1. Start with one customer segment or one collection.
-2. Compare `BaseListRevenue`, `NetRevenue`, realized price, promotion effect, and override concentration.
-3. Build one pivot by customer or segment and one pivot by collection.
-4. Keep price-floor and override detail on a narrower follow-up tab.
-5. Keep the workbook focused on commercial interpretation rather than turning it into a full anomaly log.
+1. Start with one customer segment or one collection and compare `BaseListRevenue`, `NetRevenue`, and realized price.
+2. Add a promotion tab that shows the revenue and gross-margin effect before and after promotions.
+3. Build one customer-specific pricing pivot that shows dependency by customer and order value.
+4. Add a narrower override tab with sales-rep concentration, price-floor pressure, and monthly spikes.
+5. Keep a final governance tab for only the approval gaps that deserve handoff into the audit case.
 
 ## Wrap-Up Questions
 
-- Which customer or segment shows the lowest price realization?
-- Do promotions or customer-specific pricing explain more of the dilution?
+- Which customer, segment, or collection shows the lowest realized price versus list?
+- Do promotions or customer-specific pricing explain more of that dilution first?
 - Where does override concentration look commercially justified versus operationally heavy?
-- Which collection appears most dependent on promotions?
-- Which pricing pattern should move into the audit case next?
+- Which month or sales team shows the clearest price-floor pressure spike?
+- Which pricing pattern should stay in commercial follow-up, and which one should move into the audit case next?
 
 ## Next Steps
 

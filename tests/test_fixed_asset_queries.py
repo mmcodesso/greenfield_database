@@ -156,6 +156,19 @@ def test_fixed_asset_docs_and_catalog_entries_exist() -> None:
     assert "CAPEX and Fixed Asset Path" in financial_guide
     assert "CAPEX and Fixed Asset Lifecycle Case" in case_index
     assert "CAPEX and Fixed Asset Lifecycle Case" in case_doc
+    assert "## The Problem to Solve" in case_doc
+    assert "## What You Need to Develop" in case_doc
+    assert "## Before You Start" in case_doc
+    assert "## Step-by-Step Walkthrough" in case_doc
+    assert "## Optional Excel Follow-Through" in case_doc
+    assert "## Wrap-Up Questions" in case_doc
+    assert "financial/54_fixed_asset_rollforward_by_behavior_group.sql" in case_doc
+    assert "financial/55_capex_acquisitions_financing_and_disposals.sql" in case_doc
+    assert "financial/56_debt_amortization_and_cash_impact.sql" in case_doc
+    assert "financial/17_manufacturing_cost_component_bridge.sql" in case_doc
+    assert "financial/33_cash_flow_statement_indirect_monthly.sql" in case_doc
+    assert "## Recommended Query Sequence" not in case_doc
+    assert "Then compare the plan to the budget roll-forward with" not in query_doc_collections
     assert "analytics/cases/capex-fixed-asset-lifecycle-case" in sidebar_text
     assert "Debt reclass" in posting_reference
     assert "Fixed Assets and Financing" in schema_reference
