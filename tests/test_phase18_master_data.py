@@ -208,3 +208,29 @@ def test_phase18_cases_and_sidebar_entries_exist() -> None:
     sidebar_text = Path("sidebars.js").read_text(encoding="utf-8")
     assert "analytics/cases/master-data-and-workforce-audit-case" in sidebar_text
     assert "analytics/cases/product-portfolio-and-lifecycle-case" in sidebar_text
+
+
+def test_phase18_master_data_workforce_audit_case_uses_upgraded_walkthrough_shell() -> None:
+    workforce_case = Path("docs/analytics/cases/master-data-and-workforce-audit-case.md").read_text(encoding="utf-8")
+
+    for snippet in (
+        "## Before You Start",
+        "## Step-by-Step Walkthrough",
+        "## Optional Excel Follow-Through",
+        "## Wrap-Up Questions",
+        "## Next Steps",
+        "managerial/29_headcount_by_cost_center_job_family_status.sql",
+        "audit/27_terminated_employee_activity_review.sql",
+        "audit/34_current_state_employee_assignment_review.sql",
+        "audit/28_approval_role_review_by_org_position.sql",
+        "audit/35_approval_authority_limit_review.sql",
+        "audit/41_roster_after_termination_review.sql",
+        "audit/38_overtime_without_approval_review.sql",
+        "workforce-cost-and-org-control-case.md",
+        "../../processes/payroll.md",
+        "../audit.md",
+    ):
+        assert snippet in workforce_case
+
+    assert "## Key Data Sources" not in workforce_case
+    assert "## Recommended Query Sequence" not in workforce_case

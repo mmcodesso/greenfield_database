@@ -122,3 +122,27 @@ def test_phase19_profitability_case_uses_upgraded_walkthrough_shell() -> None:
 
     assert "## Key Data Sources" not in profitability_case
     assert "## Recommended Query Sequence" not in profitability_case
+
+
+def test_phase19_workforce_cost_case_uses_upgraded_walkthrough_shell() -> None:
+    workforce_case = Path("docs/analytics/cases/workforce-cost-and-org-control-case.md").read_text(encoding="utf-8")
+
+    for snippet in (
+        "## Before You Start",
+        "## Step-by-Step Walkthrough",
+        "## Optional Excel Follow-Through",
+        "## Wrap-Up Questions",
+        "## Next Steps",
+        "financial/22_payroll_and_people_cost_mix_by_cost_center_job_family_level.sql",
+        "managerial/34_labor_and_headcount_by_work_location_job_family_cost_center.sql",
+        "audit/29_executive_role_uniqueness_and_control_assignment_review.sql",
+        "audit/32_approval_authority_review_by_expected_role_family.sql",
+        "audit/28_approval_role_review_by_org_position.sql",
+        "../reports/payroll-perspective.md",
+        "../../processes/payroll.md",
+        "master-data-and-workforce-audit-case.md",
+    ):
+        assert snippet in workforce_case
+
+    assert "## Key Data Sources" not in workforce_case
+    assert "## Recommended Query Sequence" not in workforce_case

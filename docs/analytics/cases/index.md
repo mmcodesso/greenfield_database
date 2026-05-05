@@ -46,7 +46,6 @@ That makes the case library the most useful after the reader has already seen th
 | [Attendance Control Audit Case](attendance-control-audit-case.md) | exception review | audit + source-table review |
 | [Replenishment Support Audit Case](replenishment-support-audit-case.md) | exception review | audit + source-table review |
 | [Pricing Governance Audit Case](pricing-governance-audit-case.md) | exception review | audit + source-table review |
-| [Audit Exception Lab](audit-exception-lab.md) | exception review | audit |
 
 ## How Cases Fit the Learning Path
 

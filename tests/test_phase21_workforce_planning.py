@@ -186,3 +186,28 @@ def test_phase21_workforce_coverage_case_uses_upgraded_walkthrough_shell() -> No
 
     assert "## Key Data Sources" not in workforce_case
     assert "## Recommended Query Sequence" not in workforce_case
+
+
+def test_phase21_attendance_control_audit_case_uses_upgraded_walkthrough_shell() -> None:
+    attendance_case = Path("docs/analytics/cases/attendance-control-audit-case.md").read_text(encoding="utf-8")
+
+    for snippet in (
+        "## Before You Start",
+        "## Step-by-Step Walkthrough",
+        "## Optional Excel Follow-Through",
+        "## Wrap-Up Questions",
+        "## Next Steps",
+        "audit/37_scheduled_without_punch_and_punch_without_schedule_review.sql",
+        "audit/40_overlapping_or_incomplete_punch_review.sql",
+        "audit/39_absence_with_worked_time_review.sql",
+        "audit/38_overtime_without_approval_review.sql",
+        "audit/41_roster_after_termination_review.sql",
+        "../../processes/payroll.md",
+        "../reports/payroll-perspective.md",
+        "../audit.md",
+        "workforce-coverage-and-attendance-case.md",
+    ):
+        assert snippet in attendance_case
+
+    assert "## Key Data Sources" not in attendance_case
+    assert "## Recommended Query Sequence" not in attendance_case

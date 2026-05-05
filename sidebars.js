@@ -115,7 +115,6 @@ const sidebars = {
                 "analytics/cases/attendance-control-audit-case",
                 "analytics/cases/replenishment-support-audit-case",
                 "analytics/cases/pricing-governance-audit-case",
-                "analytics/cases/audit-exception-lab",
               ],
             },
           ],

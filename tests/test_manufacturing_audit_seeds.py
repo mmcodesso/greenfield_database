@@ -98,7 +98,7 @@ def test_manufacturing_audit_seed_docs_and_catalog_entries_exist() -> None:
     query_manifest = Path("src/generated/queryManifest.js").read_text(encoding="utf-8")
     query_doc_collections = Path("src/generated/queryDocCollections.js").read_text(encoding="utf-8")
     audit_guide = Path("docs/analytics/audit.md").read_text(encoding="utf-8")
-    audit_lab = Path("docs/analytics/cases/audit-exception-lab.md").read_text(encoding="utf-8")
+    audit_case = Path("docs/analytics/cases/audit-review-pack-case.md").read_text(encoding="utf-8")
     instructor_guide = Path("docs/teach-with-data/instructor-guide.md").read_text(encoding="utf-8")
 
     assert "audit/52_released_work_orders_due_without_actual_start_review.sql" in query_manifest
@@ -107,5 +107,5 @@ def test_manufacturing_audit_seed_docs_and_catalog_entries_exist() -> None:
     assert "audit/53_released_work_orders_due_without_actual_start_summary.sql" in query_doc_collections
     assert "released work orders due without actual start review" in audit_guide
     assert "released work orders due without actual start summary" in audit_guide
-    assert "manufacturing_audit_seeds" in audit_lab
+    assert "manufacturing_audit_seeds" in audit_case
     assert "manufacturing audit-seed" in instructor_guide

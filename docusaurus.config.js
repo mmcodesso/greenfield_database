@@ -85,6 +85,10 @@ const config = {
             to: "/docs/processes/payroll#time-attendance-and-approved-hours",
             from: ["/docs/processes/time-clocks"],
           },
+          {
+            to: "/docs/analytics/cases/audit-review-pack-case",
+            from: ["/docs/analytics/cases/audit-exception-lab"],
+          },
         ],
       },
     ],

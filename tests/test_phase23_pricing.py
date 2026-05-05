@@ -303,3 +303,27 @@ def test_phase23_pricing_case_uses_upgraded_walkthrough_shell() -> None:
 
     assert "## Key Data Sources" not in pricing_case
     assert "## Recommended Query Sequence" not in pricing_case
+
+
+def test_phase23_pricing_governance_audit_case_uses_upgraded_walkthrough_shell() -> None:
+    audit_case = Path("docs/analytics/cases/pricing-governance-audit-case.md").read_text(encoding="utf-8")
+
+    for snippet in (
+        "## Before You Start",
+        "## Step-by-Step Walkthrough",
+        "## Optional Excel Follow-Through",
+        "## Wrap-Up Questions",
+        "## Next Steps",
+        "audit/48_expired_or_overlapping_price_list_review.sql",
+        "audit/49_promotion_scope_and_date_mismatch_review.sql",
+        "audit/50_customer_specific_price_list_bypass_review.sql",
+        "audit/47_sales_below_floor_without_approval.sql",
+        "audit/51_override_approval_completeness_review.sql",
+        "pricing-and-margin-governance-case.md",
+        "../audit.md",
+        "../reports/commercial-and-working-capital.md",
+    ):
+        assert snippet in audit_case
+
+    assert "## Key Data Sources" not in audit_case
+    assert "## Recommended Query Sequence" not in audit_case

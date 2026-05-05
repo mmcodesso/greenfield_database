@@ -214,7 +214,7 @@ def test_phase17_docs_include_cases_matrix_and_subprocess_diagrams() -> None:
         Path("docs/analytics/cases/working-capital-and-cash-conversion-case.md"),
         Path("docs/analytics/cases/financial-statement-bridge-case.md"),
         Path("docs/analytics/cases/pricing-and-margin-governance-case.md"),
-        Path("docs/analytics/cases/audit-exception-lab.md"),
+        Path("docs/analytics/cases/audit-review-pack-case.md"),
     ]:
         assert path.exists(), f"Missing Phase 17 case doc: {path}"
 

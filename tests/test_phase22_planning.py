@@ -237,3 +237,27 @@ def test_phase22_demand_planning_case_uses_upgraded_walkthrough_shell() -> None:
 
     assert "## Key Data Sources" not in demand_case
     assert "## Recommended Query Sequence" not in demand_case
+
+
+def test_phase22_replenishment_support_audit_case_uses_upgraded_walkthrough_shell() -> None:
+    replenishment_case = Path("docs/analytics/cases/replenishment-support-audit-case.md").read_text(encoding="utf-8")
+
+    for snippet in (
+        "## Before You Start",
+        "## Step-by-Step Walkthrough",
+        "## Optional Excel Follow-Through",
+        "## Wrap-Up Questions",
+        "## Next Steps",
+        "audit/42_forecast_approval_and_override_review.sql",
+        "audit/43_inactive_or_stale_inventory_policy_review.sql",
+        "audit/44_requisitions_and_work_orders_without_planning_support.sql",
+        "audit/45_recommendation_converted_after_need_by_date_review.sql",
+        "audit/46_discontinued_or_prelaunch_planning_activity_review.sql",
+        "demand-planning-and-replenishment-case.md",
+        "../audit.md",
+        "../reports/operations-and-risk.md",
+    ):
+        assert snippet in replenishment_case
+
+    assert "## Key Data Sources" not in replenishment_case
+    assert "## Recommended Query Sequence" not in replenishment_case
