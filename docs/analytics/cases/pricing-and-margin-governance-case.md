@@ -218,6 +218,15 @@ The query reads `PriceOverrideApproval`, `SalesOrderLine`, `SalesOrder`, `Custom
 - whether the governance issue is isolated or recurring
 - which patterns should move into the full [Pricing Governance Audit Case](pricing-governance-audit-case.md)
 
+## Required Student Output
+
+Submit a short case memo or notebook note with these four artifacts:
+
+- Evidence summary: identify the key result rows, metrics, timing patterns, or exception families that changed your diagnosis.
+- Accounting or business interpretation: explain what the evidence means for the process, accounting treatment, managerial decision, or control risk.
+- Database explanation: name the source tables, row grain, join keys, or trace path that make the evidence defensible.
+- Management or audit conclusion: state which driver, document path, or exception family should be followed up first and why.
+
 ## Optional Excel Follow-Through
 
 1. Start with one customer segment or one collection and compare `BaseListRevenue`, `NetRevenue`, and realized price.
@@ -228,11 +237,10 @@ The query reads `PriceOverrideApproval`, `SalesOrderLine`, `SalesOrder`, `Custom
 
 ## Wrap-Up Questions
 
-- Which customer, segment, or collection shows the lowest realized price versus list?
-- Do promotions or customer-specific pricing explain more of that dilution first?
-- Where does override concentration look commercially justified versus operationally heavy?
-- Which month or sales team shows the clearest price-floor pressure spike?
-- Which pricing pattern should stay in commercial follow-up, and which one should move into the audit case next?
+- Accounting/process: Which pricing layer most changes realized margin: list realization, promotion, customer-specific pricing, or override behavior?
+- Database/source evidence: Which customer, segment, collection, sales-order, or price-list grain supports the margin explanation?
+- Analytics judgment: Where does discounting look commercially justified, and where does it look like governance pressure?
+- Escalation/next step: Which pattern should stay in commercial follow-up, and which should move into the pricing audit case?
 
 ## Next Steps
 

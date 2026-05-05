@@ -206,6 +206,15 @@ The query aggregates shipments and billings by order line, then overlays return 
 - credited amounts that change the final economic result of the original sale
 - how customer-service interpretation and financial interpretation can diverge
 
+## Required Student Output
+
+Submit a short case memo or notebook note with these four artifacts:
+
+- Evidence summary: identify the key result rows, metrics, timing patterns, or exception families that changed your diagnosis.
+- Accounting or business interpretation: explain what the evidence means for the process, accounting treatment, managerial decision, or control risk.
+- Database explanation: name the source tables, row grain, join keys, or trace path that make the evidence defensible.
+- Management or audit conclusion: state which driver, document path, or exception family should be followed up first and why.
+
 ## Optional Excel Follow-Through
 
 1. Filter `SalesOrder` to one customer, one month, or one order number range.
@@ -216,11 +225,10 @@ The query aggregates shipments and billings by order line, then overlays return 
 
 ## Wrap-Up Questions
 
-- Which event creates revenue, and which event relieves inventory?
-- Where in the trace can customer-service timing and accounting timing diverge without creating an error?
-- Why is `CashReceiptApplication` more reliable than `CashReceipt` for invoice settlement analysis?
-- Which part of the trace is most important for cutoff testing?
-- How does a later return or credit change the interpretation of the original sale?
+- Accounting/process: Which event creates revenue, which event relieves inventory, and where can timing diverge without an error?
+- Database/source evidence: Which order, shipment, invoice, cash-application, return, or GL key proves the trace?
+- Analytics judgment: Which part of the order-to-cash chain carries the greatest cutoff or settlement risk?
+- Escalation/next step: How should a later return or credit change the conclusion about the original sale?
 
 ## Next Steps
 

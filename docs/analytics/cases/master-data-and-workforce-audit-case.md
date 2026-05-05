@@ -217,6 +217,15 @@ The roster query joins `EmployeeShiftRoster` to `Employee`, then adds time-clock
 - overtime entries where approved hours are below recorded overtime
 - whether the next follow-up should move into the attendance-control audit case
 
+## Required Student Output
+
+Submit a short case memo or notebook note with these four artifacts:
+
+- Evidence summary: identify the key result rows, metrics, timing patterns, or exception families that changed your diagnosis.
+- Accounting or business interpretation: explain what the evidence means for the process, accounting treatment, managerial decision, or control risk.
+- Database explanation: name the source tables, row grain, join keys, or trace path that make the evidence defensible.
+- Management or audit conclusion: state which driver, document path, or exception family should be followed up first and why.
+
 ## Optional Excel Follow-Through
 
 1. Build one workforce baseline pivot by cost center, job family, job level, and employment status.
@@ -227,11 +236,10 @@ The roster query joins `EmployeeShiftRoster` to `Employee`, then adds time-clock
 
 ## Wrap-Up Questions
 
-- Which finding is the strongest evidence that the employee master is no longer trustworthy?
-- Which issues are historical traceability concerns, and which require current master-data cleanup?
-- Are approval exceptions driven more by role design, authority limits, or employee lifecycle problems?
-- Do roster and overtime exceptions point to the same control owner as the master-data findings?
-- Should the next action go to employee-master cleanup, approval authority review, attendance-control audit, or workforce-cost interpretation?
+- Accounting/process: Which finding most weakens trust in employee-master or approval-control design?
+- Database/source evidence: Which employee status, assignment, approval, roster, or overtime source path proves the issue?
+- Analytics judgment: Are exceptions driven more by lifecycle status, stale ownership, authority limits, or workforce-control behavior?
+- Escalation/next step: Should the next action go to employee-master cleanup, approval review, attendance audit, or workforce-cost interpretation?
 
 ## Next Steps
 

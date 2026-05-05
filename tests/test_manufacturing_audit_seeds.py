@@ -108,4 +108,5 @@ def test_manufacturing_audit_seed_docs_and_catalog_entries_exist() -> None:
     assert "released work orders due without actual start review" in audit_guide
     assert "released work orders due without actual start summary" in audit_guide
     assert "manufacturing_audit_seeds" in audit_case
+    assert "## Required Student Output" in audit_case
     assert "manufacturing audit-seed" in instructor_guide

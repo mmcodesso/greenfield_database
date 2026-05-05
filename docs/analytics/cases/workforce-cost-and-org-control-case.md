@@ -207,6 +207,15 @@ The query unions approval events across purchasing, credit, refund, journal, and
 - high same-person approval percentages
 - whether approval concentration is efficient ownership or a governance risk
 
+## Required Student Output
+
+Submit a short case memo or notebook note with these four artifacts:
+
+- Evidence summary: identify the key result rows, metrics, timing patterns, or exception families that changed your diagnosis.
+- Accounting or business interpretation: explain what the evidence means for the process, accounting treatment, managerial decision, or control risk.
+- Database explanation: name the source tables, row grain, join keys, or trace path that make the evidence defensible.
+- Management or audit conclusion: state which driver, document path, or exception family should be followed up first and why.
+
 ## Optional Excel Follow-Through
 
 1. Build one payroll-cost pivot by cost center, job family, job level, and pay class.
@@ -217,11 +226,10 @@ The query unions approval events across purchasing, credit, refund, journal, and
 
 ## Wrap-Up Questions
 
-- Which cost center or job family drives the clearest payroll-cost concentration?
-- Does the work-location labor view support or challenge the payroll-cost ranking?
-- Are key executive and control-owner roles unique, active, and visibly tied to assignments or approvals?
-- Which document families rely on approver role families outside the expected design?
-- Should management act first on cost concentration, labor utilization, executive/control-owner design, or approval concentration?
+- Accounting/process: Which cost center, job family, or control-owner pattern changes the workforce-cost diagnosis most?
+- Database/source evidence: Which payroll, headcount, work-location, executive-role, or approval-source grain supports the conclusion?
+- Analytics judgment: Does labor utilization support the payroll-cost ranking, or does control design change the priority?
+- Escalation/next step: Should management act first on cost concentration, labor utilization, executive-role design, or approval concentration?
 
 ## Next Steps
 

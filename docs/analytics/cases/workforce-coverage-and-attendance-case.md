@@ -208,6 +208,15 @@ The query compares scheduled start and end times from `EmployeeShiftRoster` to a
 - whether attendance drift appears in the same areas that already show coverage or overtime strain
 - which area should move next into [Attendance Control Audit Case](attendance-control-audit-case.md) for formal exception review
 
+## Required Student Output
+
+Submit a short case memo or notebook note with these four artifacts:
+
+- Evidence summary: identify the key result rows, metrics, timing patterns, or exception families that changed your diagnosis.
+- Accounting or business interpretation: explain what the evidence means for the process, accounting treatment, managerial decision, or control risk.
+- Database explanation: name the source tables, row grain, join keys, or trace path that make the evidence defensible.
+- Management or audit conclusion: state which driver, document path, or exception family should be followed up first and why.
+
 ## Optional Excel Follow-Through
 
 1. Build one coverage pivot by month and work center for planned load, rostered hours, and coverage gap.
@@ -218,11 +227,10 @@ The query compares scheduled start and end times from `EmployeeShiftRoster` to a
 
 ## Wrap-Up Questions
 
-- Which work center has the most persistent negative planned-coverage gap?
-- Does worked-hour shortfall or absence concentration explain more of that pressure?
-- Where does overtime act like a temporary response, and where does it look like recurring dependency?
-- Which shift or department shows the clearest attendance drift?
-- Should the next action sit with planners, supervisors, or the attendance-control audit case?
+- Accounting/process: Which staffing or attendance pressure best explains the coverage gap?
+- Database/source evidence: Which work-center, roster, worked-hour, absence, overtime, or shift grain supports the diagnosis?
+- Analytics judgment: Where does overtime look like a temporary response versus recurring dependency?
+- Escalation/next step: Should the next action sit with planners, supervisors, or the attendance-control audit case?
 
 ## Next Steps
 

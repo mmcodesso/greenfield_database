@@ -220,6 +220,7 @@ def test_phase22_demand_planning_case_uses_upgraded_walkthrough_shell() -> None:
     for snippet in (
         "## Before You Start",
         "## Step-by-Step Walkthrough",
+        "## Required Student Output",
         "## Optional Excel Follow-Through",
         "## Wrap-Up Questions",
         "## Next Steps",
@@ -245,6 +246,7 @@ def test_phase22_replenishment_support_audit_case_uses_upgraded_walkthrough_shel
     for snippet in (
         "## Before You Start",
         "## Step-by-Step Walkthrough",
+        "## Required Student Output",
         "## Optional Excel Follow-Through",
         "## Wrap-Up Questions",
         "## Next Steps",

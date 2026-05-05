@@ -208,6 +208,15 @@ The query starts from `SalesInvoiceLine`, offsets the billed base with `CreditMe
 - whether return pressure confirms or contradicts the earlier ranking
 - which portfolio families management should protect, repair, or reconsider first
 
+## Required Student Output
+
+Submit a short case memo or notebook note with these four artifacts:
+
+- Evidence summary: identify the key result rows, metrics, timing patterns, or exception families that changed your diagnosis.
+- Accounting or business interpretation: explain what the evidence means for the process, accounting treatment, managerial decision, or control risk.
+- Database explanation: name the source tables, row grain, join keys, or trace path that make the evidence defensible.
+- Management or audit conclusion: state which driver, document path, or exception family should be followed up first and why.
+
 ## Optional Excel Follow-Through
 
 1. Start with one portfolio mix pivot by collection, lifecycle status, and supply mode.
@@ -218,11 +227,10 @@ The query starts from `SalesInvoiceLine`, offsets the billed base with `CreditMe
 
 ## Wrap-Up Questions
 
-- Which collection or lifecycle group looks strongest on gross margin before contribution logic is applied?
-- Does contribution margin change that ranking materially, and why?
-- Which family combines weak service with weak economics?
-- Does return and refund pressure confirm or overturn the earlier ranking?
-- Which portfolio family should management protect, invest in, repair, or reconsider first once all four lenses are combined?
+- Accounting/process: Which portfolio family changes most when the view moves from gross margin to contribution and after-sale pressure?
+- Database/source evidence: Which collection, lifecycle, service, return, or refund grain supports the portfolio ranking?
+- Analytics judgment: Which family combines strong economics with weak service, or weak economics with high return pressure?
+- Escalation/next step: Which portfolio family should management protect, invest in, repair, or reconsider first?
 
 ## Next Steps
 

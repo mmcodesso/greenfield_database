@@ -228,6 +228,15 @@ The annual bridge compares invoice-line and credit-memo totals with pre-close re
 - invoices whose revenue GL fiscal year differs from the invoice year
 - whether the root cause is a seeded timing anomaly, a posting defect, or a broader statement-query issue
 
+## Required Student Output
+
+Submit a short case memo or notebook note with these four artifacts:
+
+- Evidence summary: identify the key result rows, metrics, timing patterns, or exception families that changed your diagnosis.
+- Accounting or business interpretation: explain what the evidence means for the process, accounting treatment, managerial decision, or control risk.
+- Database explanation: name the source tables, row grain, join keys, or trace path that make the evidence defensible.
+- Management or audit conclusion: state which driver, document path, or exception family should be followed up first and why.
+
 ## Optional Excel Follow-Through
 
 1. Build a period-by-period trial-balance pivot by `FiscalYear`, `FiscalPeriod`, `AccountType`, and `AccountSubType`.
@@ -238,11 +247,10 @@ The annual bridge compares invoice-line and credit-memo totals with pre-close re
 
 ## Wrap-Up Questions
 
-- Where does the statement bridge break first: control-account support, finance presentation, annual close, or source timing?
-- Which control account is easiest to reconcile cleanly, and which one needs the most follow-up?
-- Where does the close process change presentation without changing operating history?
-- Why is retained earnings the decisive tie point for annual close validation?
-- When should you stop at the summary query and when should you open the line-level cutoff trace?
+- Accounting/process: Where does the statement bridge break first: control-account support, finance presentation, annual close, or source timing?
+- Database/source evidence: Which account, journal, retained-earnings, invoice, or GL trace path proves the break?
+- Analytics judgment: Which bridge issue changes management confidence in the statements most?
+- Escalation/next step: When should you stop at summary evidence, and when should you open the line-level cutoff trace?
 
 ## Next Steps
 

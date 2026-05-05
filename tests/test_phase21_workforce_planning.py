@@ -171,6 +171,7 @@ def test_phase21_workforce_coverage_case_uses_upgraded_walkthrough_shell() -> No
     for snippet in (
         "## Before You Start",
         "## Step-by-Step Walkthrough",
+        "## Required Student Output",
         "## Optional Excel Follow-Through",
         "## Wrap-Up Questions",
         "## Next Steps",
@@ -194,6 +195,7 @@ def test_phase21_attendance_control_audit_case_uses_upgraded_walkthrough_shell()
     for snippet in (
         "## Before You Start",
         "## Step-by-Step Walkthrough",
+        "## Required Student Output",
         "## Optional Excel Follow-Through",
         "## Wrap-Up Questions",
         "## Next Steps",

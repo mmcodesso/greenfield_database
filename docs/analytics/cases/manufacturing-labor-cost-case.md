@@ -222,6 +222,15 @@ The labor-window review compares `LaborTimeEntry.WorkDate` to the scheduled or a
 - hourly payroll that lacks time support
 - which issues reflect process timing and which issues require control follow-up
 
+## Required Student Output
+
+Submit a short case memo or notebook note with these four artifacts:
+
+- Evidence summary: identify the key result rows, metrics, timing patterns, or exception families that changed your diagnosis.
+- Accounting or business interpretation: explain what the evidence means for the process, accounting treatment, managerial decision, or control risk.
+- Database explanation: name the source tables, row grain, join keys, or trace path that make the evidence defensible.
+- Management or audit conclusion: state which driver, document path, or exception family should be followed up first and why.
+
 ## Optional Excel Follow-Through
 
 1. Filter `Item` to one manufactured finished good and review its standard cost structure.
@@ -232,11 +241,10 @@ The labor-window review compares `LaborTimeEntry.WorkDate` to the scheduled or a
 
 ## Wrap-Up Questions
 
-- Which fields define the standard cost baseline for the manufactured item?
-- Where does approved time become direct labor support on the work order?
-- Why can approved clock hours and allocated direct labor hours differ?
-- Which event moves finished goods into inventory, and which event resolves residual variance?
-- What timing pattern would make labor support or work-order close worth audit follow-up?
+- Accounting/process: Which event moves finished goods into inventory, and which event resolves residual variance?
+- Database/source evidence: Which work-order, operation, clock, labor-allocation, or GL key proves the labor-cost path?
+- Analytics judgment: Where do standard cost, approved time, direct labor allocation, and close variance diverge?
+- Escalation/next step: What timing or support pattern would make labor cost or work-order close worth audit follow-up?
 
 ## Next Steps
 

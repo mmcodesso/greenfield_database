@@ -216,6 +216,7 @@ def test_phase18_master_data_workforce_audit_case_uses_upgraded_walkthrough_shel
     for snippet in (
         "## Before You Start",
         "## Step-by-Step Walkthrough",
+        "## Required Student Output",
         "## Optional Excel Follow-Through",
         "## Wrap-Up Questions",
         "## Next Steps",

@@ -208,6 +208,15 @@ The query starts with accrual headers, joins to `PurchaseInvoiceLine` where `Acc
 - accrued-service invoices that remain unpaid well after invoice date
 - whether the exception still has a reasonable explanation or needs deeper follow-up
 
+## Required Student Output
+
+Submit a short case memo or notebook note with these four artifacts:
+
+- Evidence summary: identify the key result rows, metrics, timing patterns, or exception families that changed your diagnosis.
+- Accounting or business interpretation: explain what the evidence means for the process, accounting treatment, managerial decision, or control risk.
+- Database explanation: name the source tables, row grain, join keys, or trace path that make the evidence defensible.
+- Management or audit conclusion: state which driver, document path, or exception family should be followed up first and why.
+
 ## Optional Excel Follow-Through
 
 1. Filter `PurchaseRequisition` to one month, cost center, or item group to define the normal purchasing population.
@@ -218,11 +227,10 @@ The query starts with accrual headers, joins to `PurchaseInvoiceLine` where `Acc
 
 ## Wrap-Up Questions
 
-- Which fields distinguish receipt-matched supplier invoicing from accrual-linked service settlement?
-- When does a missing goods receipt support a valid accrual settlement?
-- Which event creates AP, and which event only estimates a liability before AP exists?
-- Why do `2020` GRNI and `2040` accrued expenses need to stay conceptually separate?
-- What kind of timing or amount pattern would make an accrued-service settlement worth audit follow-up?
+- Accounting/process: Which event creates AP, and which event only estimates a liability before AP exists?
+- Database/source evidence: Which receipt, invoice-line, accrual-journal, payment, or GL key distinguishes the settlement path?
+- Analytics judgment: When is a missing goods receipt valid accrual settlement evidence rather than a process break?
+- Escalation/next step: What timing or amount pattern would make an accrued-service settlement worth audit follow-up?
 
 ## Next Steps
 

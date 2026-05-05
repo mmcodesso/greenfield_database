@@ -301,6 +301,15 @@ The queries connect planning master data and recommendations to requisitions, wo
 - late conversions that create timing-control risk
 - whether the next review should move to the dedicated replenishment support audit case
 
+## Required Student Output
+
+Submit a short case memo or notebook note with these four artifacts:
+
+- Evidence summary: identify the key result rows, metrics, timing patterns, or exception families that changed your diagnosis.
+- Accounting or business interpretation: explain what the evidence means for the process, accounting treatment, managerial decision, or control risk.
+- Database explanation: name the source tables, row grain, join keys, or trace path that make the evidence defensible.
+- Management or audit conclusion: state which driver, document path, or exception family should be followed up first and why.
+
 ## Optional Excel Follow-Through
 
 1. Pick one AP, payroll, or manufacturing starter exception and trace it back to the source document keys.
@@ -312,11 +321,10 @@ The queries connect planning master data and recommendations to requisitions, wo
 
 ## Wrap-Up Questions
 
-- Which exception family would you escalate first, and why?
-- Which query gives the best starting point, and which query gives the best source-level detail?
-- Which planted anomalies represent timing issues versus approval issues versus linkage issues?
-- How does a validation-only `manufacturing_audit_seeds` pattern differ from a broader anomaly-log family?
-- Which issues belong in a specialized follow-up case instead of the broad audit review pack?
+- Accounting/process: Which exception family changes the business or control diagnosis most materially?
+- Database/source evidence: Which starter query gives the best source keys, and which detail query gives the strongest trace evidence?
+- Analytics judgment: Which findings are timing issues, approval failures, linkage failures, master-data issues, or validation-only seeds?
+- Escalation/next step: Which issue should stay in the broad review pack, and which should move to a specialized audit case?
 
 ## Next Steps
 

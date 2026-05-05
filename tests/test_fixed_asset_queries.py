@@ -160,6 +160,7 @@ def test_fixed_asset_docs_and_catalog_entries_exist() -> None:
     assert "## What You Need to Develop" in case_doc
     assert "## Before You Start" in case_doc
     assert "## Step-by-Step Walkthrough" in case_doc
+    assert "## Required Student Output" in case_doc
     assert "## Optional Excel Follow-Through" in case_doc
     assert "## Wrap-Up Questions" in case_doc
     assert "financial/54_fixed_asset_rollforward_by_behavior_group.sql" in case_doc

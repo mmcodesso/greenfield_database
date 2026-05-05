@@ -107,6 +107,7 @@ def test_phase19_profitability_case_uses_upgraded_walkthrough_shell() -> None:
     for snippet in (
         "## Before You Start",
         "## Step-by-Step Walkthrough",
+        "## Required Student Output",
         "## Optional Excel Follow-Through",
         "## Wrap-Up Questions",
         "## Next Steps",
@@ -130,6 +131,7 @@ def test_phase19_workforce_cost_case_uses_upgraded_walkthrough_shell() -> None:
     for snippet in (
         "## Before You Start",
         "## Step-by-Step Walkthrough",
+        "## Required Student Output",
         "## Optional Excel Follow-Through",
         "## Wrap-Up Questions",
         "## Next Steps",

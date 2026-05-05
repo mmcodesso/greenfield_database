@@ -218,6 +218,15 @@ The query starts from `RoughCutCapacityPlan`, joins `WorkCenter`, aggregates pla
 - whether manufactured planning pressure concentrates in a narrow set of centers
 - which issue should move next into [Manufacturing Process](../../processes/manufacturing.md) for execution follow-through or [Replenishment Support Audit Case](replenishment-support-audit-case.md) for planning-control follow-up
 
+## Required Student Output
+
+Submit a short case memo or notebook note with these four artifacts:
+
+- Evidence summary: identify the key result rows, metrics, timing patterns, or exception families that changed your diagnosis.
+- Accounting or business interpretation: explain what the evidence means for the process, accounting treatment, managerial decision, or control risk.
+- Database explanation: name the source tables, row grain, join keys, or trace path that make the evidence defensible.
+- Management or audit conclusion: state which driver, document path, or exception family should be followed up first and why.
+
 ## Optional Excel Follow-Through
 
 1. Build one weekly pivot for forecast quantity versus actual order quantity by item family or collection.
@@ -228,11 +237,10 @@ The query starts from `RoughCutCapacityPlan`, joins `WorkCenter`, aggregates pla
 
 ## Wrap-Up Questions
 
-- Which item-family or portfolio slices show the strongest systematic forecast error?
-- Is the recommendation pool driven more by forecast, backlog, safety stock, or component demand?
-- Where do projected stockout risk and expedite pressure overlap?
-- Which work centers tighten first when manufactured demand rises?
-- Should the next action stay in planning, move into manufacturing execution follow-through, or move into the replenishment audit case?
+- Accounting/process: Which planning signal best explains replenishment pressure before execution begins?
+- Database/source evidence: Which item, week, warehouse, recommendation, or work-center grain supports your conclusion?
+- Analytics judgment: Where do forecast bias, projected stockout risk, expedite pressure, and capacity tightness overlap?
+- Escalation/next step: Should the next action stay in planning, move to manufacturing execution, or move into the replenishment audit case?
 
 ## Next Steps
 

@@ -207,6 +207,15 @@ The query builds one set from `PriceOverrideApproval` joined to sales lines and 
 - below-floor lines where approval documentation is absent or not approved
 - whether the final issue is floor discipline, approval completeness, or both
 
+## Required Student Output
+
+Submit a short case memo or notebook note with these four artifacts:
+
+- Evidence summary: identify the key result rows, metrics, timing patterns, or exception families that changed your diagnosis.
+- Accounting or business interpretation: explain what the evidence means for the process, accounting treatment, managerial decision, or control risk.
+- Database explanation: name the source tables, row grain, join keys, or trace path that make the evidence defensible.
+- Management or audit conclusion: state which driver, document path, or exception family should be followed up first and why.
+
 ## Optional Excel Follow-Through
 
 1. Build one price-list tab for expired use and overlapping active lists by scope.
@@ -217,11 +226,10 @@ The query builds one set from `PriceOverrideApproval` joined to sales lines and 
 
 ## Wrap-Up Questions
 
-- Is the strongest issue price-list master data, promotion governance, customer-specific bypass, floor discipline, or override documentation?
-- Which exceptions are master-data failures versus transaction-execution failures?
-- Which pricing exceptions require immediate remediation before the next sales cycle?
-- Which controls should sales leadership own, and which should finance leadership own?
-- Which source table would you open first to support the audit conclusion?
+- Accounting/process: Which pricing-control failure most weakens commercial governance or margin discipline?
+- Database/source evidence: Which price-list, promotion, customer-specific, floor, or override source row proves the exception?
+- Analytics judgment: Is the strongest issue master data, promotion compliance, bypass behavior, floor discipline, or approval documentation?
+- Escalation/next step: Which controls should sales leadership own, and which should finance or audit review first?
 
 ## Next Steps
 

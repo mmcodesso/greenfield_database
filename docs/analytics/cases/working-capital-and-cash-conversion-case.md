@@ -243,6 +243,15 @@ The budget bridge combines `BudgetLine` with running actual balances from `GLEnt
 - whether unapplied cash or deposit aging needs the next follow-up step
 - whether accrual estimate accuracy or stale accrued balances deserve the first escalation
 
+## Required Student Output
+
+Submit a short case memo or notebook note with these four artifacts:
+
+- Evidence summary: identify the key result rows, metrics, timing patterns, or exception families that changed your diagnosis.
+- Accounting or business interpretation: explain what the evidence means for the process, accounting treatment, managerial decision, or control risk.
+- Database explanation: name the source tables, row grain, join keys, or trace path that make the evidence defensible.
+- Management or audit conclusion: state which driver, document path, or exception family should be followed up first and why.
+
 ## Optional Excel Follow-Through
 
 1. Build a month-by-month bridge tab from `GLEntry` and `Account` for the main working-capital buckets.
@@ -253,11 +262,10 @@ The budget bridge combines `BudgetLine` with running actual balances from `GLEnt
 
 ## Wrap-Up Questions
 
-- Which working-capital bucket or liability layer moved the most across the modeled range?
-- Which timing pattern best explains the pressure: customer settlement, supplier settlement, payroll remittance, or accrual settlement?
-- Where can cash tighten even while top-line activity remains strong?
-- Which follow-up path should open first: unapplied customer cash, supplier settlement timing, payroll liabilities, or accrual estimate accuracy?
-- Which driver should management investigate first, and why?
+- Accounting/process: Which working-capital bucket or liability layer best explains cash pressure across the modeled range?
+- Database/source evidence: Which customer, supplier, payroll, accrual, budget, or GL grain supports that pressure map?
+- Analytics judgment: Where can cash tighten even while top-line activity remains strong?
+- Escalation/next step: Which follow-up path should open first: unapplied customer cash, supplier timing, payroll liabilities, or accrual accuracy?
 
 ## Next Steps
 

@@ -107,6 +107,8 @@ def test_phase20_docs_reference_new_audit_queries() -> None:
     assert "36_item_status_alignment_review.sql" in audit_guide
     assert "34_current_state_employee_assignment_review.sql" in audit_case
     assert "35_approval_authority_limit_review.sql" in audit_case
+    assert "## Required Student Output" in audit_case
     assert "34_current_state_employee_assignment_review.sql" in workforce_case
     assert "35_approval_authority_limit_review.sql" in workforce_case
+    assert "## Required Student Output" in workforce_case
     assert "Phase 19 and Phase 20 Classroom Sequence" in instructor_guide

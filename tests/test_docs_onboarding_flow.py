@@ -63,7 +63,11 @@ FORBIDDEN_PUBLIC_COPY = (
     "This page matters because",
 )
 
-CASE_DOCS_WITH_BEFORE_YOU_START = (
+CASE_DETAIL_DOCS = (
+    Path("docs/analytics/cases/o2c-trace-case.md"),
+    Path("docs/analytics/cases/p2p-accrual-settlement-case.md"),
+    Path("docs/analytics/cases/manufacturing-labor-cost-case.md"),
+    Path("docs/analytics/cases/product-portfolio-and-lifecycle-case.md"),
     Path("docs/analytics/cases/working-capital-and-cash-conversion-case.md"),
     Path("docs/analytics/cases/financial-statement-bridge-case.md"),
     Path("docs/analytics/cases/capex-fixed-asset-lifecycle-case.md"),
@@ -176,6 +180,10 @@ def test_analyze_data_sidebar_uses_new_labels_and_keeps_cases_above_tracks() -> 
     ):
         assert snippet in analytics_page
     assert "How Cases Fit the Learning Path" in cases_page
+    assert "## Case Matrix" in cases_page
+    assert "Foundation process tracing" in cases_page
+    assert "Advanced synthesis" in cases_page
+    assert "Capstone" in cases_page
     assert "## Next Steps" in cases_page
 
     cases_position = sidebar_text.index('label: "Cases"')
@@ -208,10 +216,31 @@ def test_case_detail_pages_no_longer_use_old_case_shell_sections() -> None:
         assert "## Query Sequence" not in text, f"Old Query Sequence label still present in {path}"
 
 
-def test_upgraded_case_walkthroughs_use_before_you_start_instead_of_old_case_sections() -> None:
-    for path in CASE_DOCS_WITH_BEFORE_YOU_START:
+def test_case_detail_pages_use_guided_assignment_shell() -> None:
+    for path in CASE_DETAIL_DOCS:
         text = _read(path)
-        assert "## Before You Start" in text, f"Missing Before You Start in {path}"
-        assert "## Next Steps" in text, f"Missing Next Steps in {path}"
+        for heading in (
+            "## Business Scenario",
+            "## The Problem to Solve",
+            "## What You Need to Develop",
+            "## Before You Start",
+            "## Step-by-Step Walkthrough",
+            "## Required Student Output",
+            "## Optional Excel Follow-Through",
+            "## Wrap-Up Questions",
+            "## Next Steps",
+        ):
+            assert heading in text, f"Missing {heading} in {path}"
+        for snippet in (
+            "Evidence summary:",
+            "Accounting or business interpretation:",
+            "Database explanation:",
+            "Management or audit conclusion:",
+            "Accounting/process:",
+            "Database/source evidence:",
+            "Analytics judgment:",
+            "Escalation/next step:",
+        ):
+            assert snippet in text, f"Missing guided-assignment snippet in {path}: {snippet}"
         assert "## Key Data Sources" not in text, f"Old Key Data Sources label still present in {path}"
         assert "## Recommended Query Sequence" not in text, f"Old Recommended Query Sequence label still present in {path}"

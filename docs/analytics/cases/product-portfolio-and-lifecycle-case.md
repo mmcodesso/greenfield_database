@@ -208,6 +208,15 @@ The audit query overlays item lifecycle fields with transaction dates from sales
 - collections with heavier return or refund pressure by lifecycle group
 - whether lifecycle status changes the interpretation of the portfolio story
 
+## Required Student Output
+
+Submit a short case memo or notebook note with these four artifacts:
+
+- Evidence summary: identify the key result rows, metrics, timing patterns, or exception families that changed your diagnosis.
+- Accounting or business interpretation: explain what the evidence means for the process, accounting treatment, managerial decision, or control risk.
+- Database explanation: name the source tables, row grain, join keys, or trace path that make the evidence defensible.
+- Management or audit conclusion: state which driver, document path, or exception family should be followed up first and why.
+
 ## Optional Excel Follow-Through
 
 1. Filter `Item` to one collection or one style family.
@@ -218,10 +227,10 @@ The audit query overlays item lifecycle fields with transaction dates from sales
 
 ## Wrap-Up Questions
 
-- Which item attributes create the strongest portfolio segmentation in this dataset?
-- How does lifecycle status change the way you interpret item activity?
-- Which item-master quality issue would most weaken management reporting?
-- Which portfolio dimension should management carry into the profitability case next?
+- Accounting/process: How does lifecycle status change the way item activity should be interpreted?
+- Database/source evidence: Which item attribute, lifecycle field, activity row, or status-alignment key supports the portfolio segmentation?
+- Analytics judgment: Which item-master quality issue would most weaken management reporting?
+- Escalation/next step: Which portfolio dimension should management carry into the profitability case next?
 
 ## Next Steps
 

@@ -238,6 +238,7 @@ def test_phase17_docs_include_cases_matrix_and_subprocess_diagrams() -> None:
     assert "## The Problem to Solve" in o2c_case_text
     assert "## What You Need to Develop" in o2c_case_text
     assert "## Step-by-Step Walkthrough" in o2c_case_text
+    assert "## Required Student Output" in o2c_case_text
     assert "## Optional Excel Follow-Through" in o2c_case_text
     assert "## Wrap-Up Questions" in o2c_case_text
     assert "cases/01_o2c_line_trace_order_shipment_invoice.sql" in o2c_case_text
@@ -248,6 +249,7 @@ def test_phase17_docs_include_cases_matrix_and_subprocess_diagrams() -> None:
     assert "## The Problem to Solve" in p2p_case_text
     assert "## What You Need to Develop" in p2p_case_text
     assert "## Step-by-Step Walkthrough" in p2p_case_text
+    assert "## Required Student Output" in p2p_case_text
     assert "## Optional Excel Follow-Through" in p2p_case_text
     assert "## Wrap-Up Questions" in p2p_case_text
     assert "cases/03_p2p_invoice_line_trace_receipt_vs_accrual.sql" in p2p_case_text
@@ -261,6 +263,7 @@ def test_phase17_docs_include_cases_matrix_and_subprocess_diagrams() -> None:
     assert "## The Problem to Solve" in manufacturing_case_text
     assert "## What You Need to Develop" in manufacturing_case_text
     assert "## Step-by-Step Walkthrough" in manufacturing_case_text
+    assert "## Required Student Output" in manufacturing_case_text
     assert "## Optional Excel Follow-Through" in manufacturing_case_text
     assert "## Wrap-Up Questions" in manufacturing_case_text
     assert "cases/05_manufacturing_work_order_operation_trace.sql" in manufacturing_case_text
@@ -275,6 +278,7 @@ def test_phase17_docs_include_cases_matrix_and_subprocess_diagrams() -> None:
     assert "## The Problem to Solve" in demand_planning_case_text
     assert "## What You Need to Develop" in demand_planning_case_text
     assert "## Step-by-Step Walkthrough" in demand_planning_case_text
+    assert "## Required Student Output" in demand_planning_case_text
     assert "## Optional Excel Follow-Through" in demand_planning_case_text
     assert "## Wrap-Up Questions" in demand_planning_case_text
     assert "financial/23_forecast_vs_actual_demand_by_week_item_group_collection_lifecycle.sql" in demand_planning_case_text
@@ -290,6 +294,7 @@ def test_phase17_docs_include_cases_matrix_and_subprocess_diagrams() -> None:
     assert "## The Problem to Solve" in product_portfolio_case_text
     assert "## What You Need to Develop" in product_portfolio_case_text
     assert "## Step-by-Step Walkthrough" in product_portfolio_case_text
+    assert "## Required Student Output" in product_portfolio_case_text
     assert "## Optional Excel Follow-Through" in product_portfolio_case_text
     assert "## Wrap-Up Questions" in product_portfolio_case_text
     assert "managerial/31_product_portfolio_mix_by_collection_style_lifecycle_supply_mode.sql" in product_portfolio_case_text
@@ -303,6 +308,7 @@ def test_phase17_docs_include_cases_matrix_and_subprocess_diagrams() -> None:
     assert "## The Problem to Solve" in product_portfolio_profitability_case_text
     assert "## What You Need to Develop" in product_portfolio_profitability_case_text
     assert "## Step-by-Step Walkthrough" in product_portfolio_profitability_case_text
+    assert "## Required Student Output" in product_portfolio_profitability_case_text
     assert "## Optional Excel Follow-Through" in product_portfolio_profitability_case_text
     assert "## Wrap-Up Questions" in product_portfolio_profitability_case_text
     assert "managerial/31_product_portfolio_mix_by_collection_style_lifecycle_supply_mode.sql" in product_portfolio_profitability_case_text
@@ -316,6 +322,7 @@ def test_phase17_docs_include_cases_matrix_and_subprocess_diagrams() -> None:
     assert "## The Problem to Solve" in workforce_coverage_case_text
     assert "## What You Need to Develop" in workforce_coverage_case_text
     assert "## Step-by-Step Walkthrough" in workforce_coverage_case_text
+    assert "## Required Student Output" in workforce_coverage_case_text
     assert "## Optional Excel Follow-Through" in workforce_coverage_case_text
     assert "## Wrap-Up Questions" in workforce_coverage_case_text
     assert "managerial/36_staffing_coverage_vs_work_center_planned_load.sql" in workforce_coverage_case_text
@@ -329,6 +336,7 @@ def test_phase17_docs_include_cases_matrix_and_subprocess_diagrams() -> None:
     assert "## The Problem to Solve" in working_capital_case_text
     assert "## What You Need to Develop" in working_capital_case_text
     assert "## Step-by-Step Walkthrough" in working_capital_case_text
+    assert "## Required Student Output" in working_capital_case_text
     assert "## Optional Excel Follow-Through" in working_capital_case_text
     assert "## Wrap-Up Questions" in working_capital_case_text
     assert "financial/19_working_capital_bridge_by_month.sql" in working_capital_case_text
@@ -345,6 +353,7 @@ def test_phase17_docs_include_cases_matrix_and_subprocess_diagrams() -> None:
     assert "## The Problem to Solve" in statement_bridge_case_text
     assert "## What You Need to Develop" in statement_bridge_case_text
     assert "## Step-by-Step Walkthrough" in statement_bridge_case_text
+    assert "## Required Student Output" in statement_bridge_case_text
     assert "## Optional Excel Follow-Through" in statement_bridge_case_text
     assert "## Wrap-Up Questions" in statement_bridge_case_text
     assert "financial/04_trial_balance_by_period.sql" in statement_bridge_case_text
@@ -362,6 +371,7 @@ def test_phase17_docs_include_cases_matrix_and_subprocess_diagrams() -> None:
     assert "## The Problem to Solve" in pricing_case_text
     assert "## What You Need to Develop" in pricing_case_text
     assert "## Step-by-Step Walkthrough" in pricing_case_text
+    assert "## Required Student Output" in pricing_case_text
     assert "## Optional Excel Follow-Through" in pricing_case_text
     assert "## Wrap-Up Questions" in pricing_case_text
     assert "financial/25_price_realization_vs_list_by_segment_customer_region_collection_style.sql" in pricing_case_text

@@ -208,6 +208,15 @@ The query starts from `GLEntry`, `Account`, and `JournalEntry`, builds the close
 - where interest or non-manufacturing expense effects remain in operating interpretation
 - when the lifecycle story is complete enough to move into broader financial statement analysis
 
+## Required Student Output
+
+Submit a short case memo or notebook note with these four artifacts:
+
+- Evidence summary: identify the key result rows, metrics, timing patterns, or exception families that changed your diagnosis.
+- Accounting or business interpretation: explain what the evidence means for the process, accounting treatment, managerial decision, or control risk.
+- Database explanation: name the source tables, row grain, join keys, or trace path that make the evidence defensible.
+- Management or audit conclusion: state which driver, document path, or exception family should be followed up first and why.
+
 ## Optional Excel Follow-Through
 
 1. Build a monthly rollforward tab for gross cost, accumulated depreciation, and net book value by behavior group.
@@ -218,11 +227,10 @@ The query starts from `GLEntry`, `Account`, and `JournalEntry`, builds the close
 
 ## Wrap-Up Questions
 
-- Which additions were paid in cash and which were financed through notes payable?
-- Which behavior group carries the most important difference in depreciation interpretation, and why?
-- Where does the financing lifecycle continue long after the acquisition event is complete?
-- Which disposal or improvement event changes the lifecycle story most materially?
-- When is the asset-level lifecycle summary enough, and when should you open the broader cash-flow or financial statement pages?
+- Accounting/process: Which asset events change capitalization, depreciation, disposal, financing, or cash-flow interpretation?
+- Database/source evidence: Which asset code, event row, financing key, or GL trace makes the lifecycle conclusion defensible?
+- Analytics judgment: Which behavior group or financing path changes the CAPEX story most materially?
+- Escalation/next step: When is the asset-level lifecycle summary enough, and when should the analyst open broader statement or cash-flow pages?
 
 ## Next Steps
 

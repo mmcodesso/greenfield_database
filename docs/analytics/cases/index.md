@@ -6,75 +6,56 @@ sidebar_label: Cases
 
 # Cases
 
-Cases turns the business processes and analytical layers into guided investigation. A case should feel like a structured follow-through from the company story and the process pages, not like a separate assignment universe. Students should already know the business cycle they are entering; the case then gives them a focused question, a sequence of evidence, and a path toward interpretation.
+Cases are guided accounting analytics assignments. Each one connects business context, SQL evidence, source-table reasoning, and a short management or audit conclusion. Students should enter a case after reading the matching process page, report perspective, or analytics guide; the case then turns that context into a structured investigation.
 
-That makes the case library the most useful after the reader has already seen the process flow or the matching business perspective. The cases are where business context, query work, and analytical explanation come together.
+Every case now expects a required student output: evidence summary, accounting or business interpretation, database explanation, and a follow-up conclusion. The SQL sequence is still inquiry-led, but the deliverable is no longer open-ended.
 
-## Core Walkthroughs
+## Learning Arcs
 
-| Case | Recommended use | Best paired query packs |
-|---|---|---|
-| [O2C Trace Case](o2c-trace-case.md) | core walkthrough | financial + audit |
-| [P2P Accrual Case](p2p-accrual-settlement-case.md) | core walkthrough | financial + audit |
-| [Manufacturing Labor Case](manufacturing-labor-cost-case.md) | core walkthrough | managerial + financial |
-| [Product Portfolio Case](product-portfolio-and-lifecycle-case.md) | core walkthrough | managerial + cost accounting |
+- Foundation process tracing: [O2C Trace Case](o2c-trace-case.md), [P2P Accrual Case](p2p-accrual-settlement-case.md), [Manufacturing Labor Case](manufacturing-labor-cost-case.md), and [Product Portfolio Case](product-portfolio-and-lifecycle-case.md)
+- Financial interpretation: [Working Capital and Cash Conversion Case](working-capital-and-cash-conversion-case.md), [Financial Statement Bridge Case](financial-statement-bridge-case.md), [CAPEX and Fixed Asset Lifecycle Case](capex-fixed-asset-lifecycle-case.md), and [Pricing and Margin Governance Case](pricing-and-margin-governance-case.md)
+- Managerial planning and performance: [Product Portfolio Profitability Case](product-portfolio-profitability-case.md), [Workforce Coverage and Attendance Case](workforce-coverage-and-attendance-case.md), and [Demand Planning and Replenishment Case](demand-planning-and-replenishment-case.md)
+- Audit and controls: [Audit Review Pack Case](audit-review-pack-case.md) plus the specialized workforce, attendance, replenishment, and pricing audit cases
 
-## Financial
+## Case Matrix
 
-| Case | Recommended use | Best paired query packs |
-|---|---|---|
-| [Working Capital and Cash Conversion Case](working-capital-and-cash-conversion-case.md) | core walkthrough | financial |
-| [Financial Statement Bridge Case](financial-statement-bridge-case.md) | core walkthrough | financial + audit |
-| [CAPEX and Fixed Asset Lifecycle Case](capex-fixed-asset-lifecycle-case.md) | core walkthrough | financial + manufacturing cost |
-| [Pricing and Margin Governance Case](pricing-and-margin-governance-case.md) | analytical comparison | financial + managerial |
-
-## Managerial and Planning
-
-| Case | Recommended use | Best paired query packs |
-|---|---|---|
-| [Product Portfolio Profitability Case](product-portfolio-profitability-case.md) | analytical comparison | managerial + financial |
-| [Workforce Coverage and Attendance Case](workforce-coverage-and-attendance-case.md) | analytical comparison | managerial + audit |
-| [Demand Planning and Replenishment Case](demand-planning-and-replenishment-case.md) | analytical comparison | managerial + financial + cost accounting |
-
-## Audit and Controls
-
-| Case | Recommended use | Best paired query packs |
-|---|---|---|
-| [Workforce Audit Case](master-data-and-workforce-audit-case.md) | exception review | audit + managerial |
-| [Workforce Cost and Org-Control Case](workforce-cost-and-org-control-case.md) | exception review | managerial + audit + financial |
-| [Audit Review Pack Case](audit-review-pack-case.md) | exception review | audit + source-table review |
-| [Attendance Control Audit Case](attendance-control-audit-case.md) | exception review | audit + source-table review |
-| [Replenishment Support Audit Case](replenishment-support-audit-case.md) | exception review | audit + source-table review |
-| [Pricing Governance Audit Case](pricing-governance-audit-case.md) | exception review | audit + source-table review |
+| Seq. | Case | Level | Primary accounting concept | Primary database skill | Best prerequisite |
+|---:|---|---|---|---|---|
+| 1 | [O2C Trace Case](o2c-trace-case.md) | Foundation | revenue, inventory relief, AR settlement | document-chain joins from order to cash | [Order-to-Cash Process](../../processes/o2c.md) |
+| 2 | [P2P Accrual Case](p2p-accrual-settlement-case.md) | Foundation | AP, GRNI, accrued-service settlement | receipt-matched versus accrual-linked trace paths | [Procure-to-Pay Process](../../processes/p2p.md) |
+| 3 | [Manufacturing Labor Case](manufacturing-labor-cost-case.md) | Foundation | standard cost, direct labor, WIP close | work-order operation and labor-support tracing | [Manufacturing Process](../../processes/manufacturing.md) |
+| 4 | [Product Portfolio Case](product-portfolio-and-lifecycle-case.md) | Foundation | item lifecycle and portfolio activity | item-master attributes joined to operating activity | [Managerial Analytics](../managerial.md) |
+| 5 | [Working Capital and Cash Conversion Case](working-capital-and-cash-conversion-case.md) | Advanced synthesis | AR, AP, payroll, accruals, and cash pressure | monthly timing synthesis across multiple systems | [Commercial and Working Capital](../reports/commercial-and-working-capital.md) |
+| 6 | [Financial Statement Bridge Case](financial-statement-bridge-case.md) | Advanced | trial balance, control accounts, close, cutoff | ledger-to-statement bridge with source drilldown | [Executive Overview](../reports/executive-overview.md) |
+| 7 | [CAPEX and Fixed Asset Lifecycle Case](capex-fixed-asset-lifecycle-case.md) | Intermediate | capitalization, depreciation, financing, disposal | asset event trace to financing, GL, and cash flow | [Financial Analytics](../financial.md) |
+| 8 | [Pricing and Margin Governance Case](pricing-and-margin-governance-case.md) | Intermediate | price realization and margin dilution | pricing outcome aggregation by customer and portfolio | [Commercial and Working Capital](../reports/commercial-and-working-capital.md) |
+| 9 | [Product Portfolio Profitability Case](product-portfolio-profitability-case.md) | Intermediate | gross margin, contribution, service, returns | comparing portfolio grains across performance lenses | [Operations and Risk](../reports/operations-and-risk.md) |
+| 10 | [Workforce Coverage and Attendance Case](workforce-coverage-and-attendance-case.md) | Intermediate | labor coverage, absence, overtime response | roster, worked-hour, absence, and shift grains | [Payroll Perspective](../reports/payroll-perspective.md) |
+| 11 | [Demand Planning and Replenishment Case](demand-planning-and-replenishment-case.md) | Intermediate | forecast quality, replenishment, capacity pressure | weekly item, recommendation, and work-center joins | [Operations and Risk](../reports/operations-and-risk.md) |
+| 12 | [Workforce Audit Case](master-data-and-workforce-audit-case.md) | Advanced | employee lifecycle and approval-control trust | employee status, assignment, approval, and roster traces | [Payroll Process](../../processes/payroll.md) |
+| 13 | [Workforce Cost and Org-Control Case](workforce-cost-and-org-control-case.md) | Advanced | payroll cost, labor utilization, control ownership | payroll, headcount, location, and approval grains | [Payroll Perspective](../reports/payroll-perspective.md) |
+| 14 | [Audit Review Pack Case](audit-review-pack-case.md) | Capstone | cross-process exception triage | branch-choice source evidence across audit families | [Audit Analytics](../audit.md) |
+| 15 | [Attendance Control Audit Case](attendance-control-audit-case.md) | Advanced | attendance and payroll-control exceptions | employee-date exception tracing | [Payroll Process](../../processes/payroll.md) |
+| 16 | [Replenishment Support Audit Case](replenishment-support-audit-case.md) | Advanced | planning-support control evidence | forecast, policy, recommendation, and document trace | [Audit Analytics](../audit.md) |
+| 17 | [Pricing Governance Audit Case](pricing-governance-audit-case.md) | Advanced | price-list, promotion, floor, and override controls | price-list, promotion, and approval source tracing | [Audit Analytics](../audit.md) |
 
 ## How Cases Fit the Learning Path
 
-Read the case library as a deeper layer beneath the process and report pages:
+Read the case library as a deeper layer beneath the process, report, and analytics-guide pages:
 
-1. start with the process page or business perspective
-2. move into the matching report or topic guide
-3. use the case when you want a guided investigation of the same business cycle
-4. recreate part of the result in SQL or Excel
+1. Start with the company story and the process page for the cycle.
+2. Move into the matching report perspective or topic guide.
+3. Run the case SQL in sequence and keep notes on what each step changes.
+4. Submit the required student output: evidence, interpretation, database explanation, and conclusion.
+5. Recreate one part of the evidence in Excel when the class needs workbook-side reinforcement.
 
 ## Suggested Case Sequence
 
-1. start with the topic page in [Financial Analytics](../financial.md), [Managerial Analytics](../managerial.md), or [Audit Analytics](../audit.md)
-2. run the paired SQL files in order
-3. open the grouped case section that matches the topic you are teaching
-4. recreate one result in Excel
-5. answer the follow-up questions without using an answer key
+Start with the foundation cases when students are still learning the database and business process flow. Move to the financial and managerial cases when they can explain source rows and ledgers together. Use the specialized audit cases after students understand the related business process, because those pages assume they can tell the difference between operational pressure and control failure.
 
-When the class is ready for planning and replenishment work, extend the sequence with:
+The [Audit Review Pack Case](audit-review-pack-case.md) is a capstone and branch-choice assignment. It has many query references by design, so instructors should assign one or two exception families unless the class is ready for a broad review.
 
-6. trace weekly forecasts into supply recommendations and replenishment documents
-7. use the demand-planning case for managerial and cost-accounting discussion
-8. use the replenishment-support audit case for planning-governance controls
-
-When the class is ready for pricing and margin governance, extend the sequence with:
-
-9. trace list price into resolved price-list pricing, promotions, and net realized revenue
-10. use the pricing and margin case for financial and managerial pricing analysis
-11. use the pricing-governance audit case for expired pricing, promotion misuse, and override-completeness review
+The [Working Capital and Cash Conversion Case](working-capital-and-cash-conversion-case.md) is an advanced synthesis assignment. It intentionally combines customer, supplier, payroll, accrual, and budget timing rather than tracing one document chain.
 
 ## Next Steps
 

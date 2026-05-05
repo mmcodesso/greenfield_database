@@ -287,6 +287,7 @@ def test_phase23_pricing_case_uses_upgraded_walkthrough_shell() -> None:
     for snippet in (
         "## Before You Start",
         "## Step-by-Step Walkthrough",
+        "## Required Student Output",
         "## Optional Excel Follow-Through",
         "## Wrap-Up Questions",
         "## Next Steps",
@@ -311,6 +312,7 @@ def test_phase23_pricing_governance_audit_case_uses_upgraded_walkthrough_shell()
     for snippet in (
         "## Before You Start",
         "## Step-by-Step Walkthrough",
+        "## Required Student Output",
         "## Optional Excel Follow-Through",
         "## Wrap-Up Questions",
         "## Next Steps",
