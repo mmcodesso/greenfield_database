@@ -6,6 +6,7 @@ from pathlib import Path
 FLAGSHIP_DOCS: dict[Path, tuple[str, ...]] = {
     Path("docs/start-here/index.md"): (
         "business cycles",
+        "Students should not start by browsing every table or every query",
         "How the Business Reaches Analysis",
         "## Next Steps",
     ),
@@ -170,10 +171,13 @@ def test_analyze_data_sidebar_uses_query_library_label_and_keeps_cases_above_it(
     assert 'sidebar_label: Analyze the Data' in analytics_page
     assert 'title: Query Library' in query_library_page
     assert 'sidebar_label: Query Library' in query_library_page
+    assert "not the easiest first reading page" in _read(Path("docs/start-here/index.md"))
+    assert "not the first reading page for beginners" in query_library_page
     assert "Financial Queries" in query_library_page
     assert "Managerial Queries" in query_library_page
     assert "Audit Queries" in query_library_page
     assert "Case-Support Trace Queries" in query_library_page
+    assert "read a report first as a business summary" in _read(Path("docs/analytics/reports/index.md"))
     assert 'title: Cases' in cases_page
     assert 'sidebar_label: Cases' in cases_page
     for snippet in (
@@ -186,6 +190,8 @@ def test_analyze_data_sidebar_uses_query_library_label_and_keeps_cases_above_it(
         assert snippet in analytics_page
     assert "How Cases Fit the Learning Path" in cases_page
     assert "## Case Matrix" in cases_page
+    assert "## Difficulty Labels" in cases_page
+    assert "For first undergraduate assignments, start with the Foundation cases" in cases_page
     assert "Foundation process tracing" in cases_page
     assert "Advanced synthesis" in cases_page
     assert "Capstone" in cases_page

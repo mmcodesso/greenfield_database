@@ -8,9 +8,9 @@ sidebar_label: Reports Hub
 
 The reports section is where the business cycles begin to look like management review. Instead of reading one document or one transaction at a time, students can step back and see how sales, purchasing, payroll, production, and close accumulate into performance, liquidity, working capital, operational pressure, and control signals.
 
-That is why reports belong after the process pages. A report should feel like a business perspective on the same company activity students already understand, not like a disconnected export.
+That is why reports belong after the process pages. Students should read a report first as a business summary: what changed, which area looks unusual, and what question management would ask next. Only after that should they use SQL or a case to explain how the reported result was produced.
 
-This section keeps two reading levels together. `Business Perspectives` shows a guided storyline across related reports. `Report Library` keeps the broader financial, managerial, and audit report inventory available when students want to browse by area.
+This section keeps two reading levels together. `Business Perspectives` is the better first stop because it gives a guided storyline across related reports. `Report Library` is the broader inventory for students who already know the area they want to inspect.
 
 ## Business Perspectives
 
@@ -33,4 +33,5 @@ This section keeps two reading levels together. `Business Perspectives` shows a 
 
 1. Start with the perspective or report area that matches the business cycle you just studied.
 2. Use the in-site preview to read the report as a business summary before downloading the full artifact.
-3. Then move into [SQL Guide](../sql-guide.md) or [Cases](../cases/index.md) when you want to explain how the reported result was produced.
+3. Write down the business question the report raises before opening SQL.
+4. Then move into [SQL Guide](../sql-guide.md) or [Cases](../cases/index.md) when you want to explain how the reported result was produced.

@@ -6,9 +6,20 @@ sidebar_label: Cases
 
 # Cases
 
-Cases are guided accounting analytics assignments. Each one connects business context, SQL evidence, source-table reasoning, and a short management or audit conclusion. Students should enter a case after reading the matching process page, report perspective, or analytics guide; the case then turns that context into a structured investigation.
+Cases are guided accounting analytics assignments. Each one connects business context, SQL evidence, source-table reasoning, and a short management or audit conclusion. Students should enter a case after reading the matching process page or report perspective; the case then turns that context into a structured investigation.
 
 Every case now expects a required student output: evidence summary, accounting or business interpretation, database explanation, and a follow-up conclusion. The SQL sequence is still inquiry-led, but the deliverable is no longer open-ended.
+
+For first undergraduate assignments, start with the Foundation cases. Intermediate cases work well after students can read source tables and interpret a report. Advanced and Capstone cases should usually come later because they combine more processes, more controls, or more query paths.
+
+## Difficulty Labels
+
+| Level | What it means for students |
+|---|---|
+| Foundation | Good first case after one process page; the trace is narrow and the expected output is concrete. |
+| Intermediate | Requires comparing several measures or business lenses, but still stays inside one main topic. |
+| Advanced | Requires synthesis across accounting, process timing, controls, or multiple source-table paths. |
+| Capstone | Best for branch-choice review after students already know how to trace evidence and classify findings. |
 
 ## Learning Arcs
 

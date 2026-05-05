@@ -9,7 +9,7 @@ sidebar_label: Start Here
 
 <DatasetName /> teaches accounting analytics through one company and a connected set of business cycles. Sales demand becomes shipment, service delivery, invoicing, and cash collection. Purchasing supports inventory and operating needs. Manufacturing turns materials and labor into finished goods. Payroll supports wages, liabilities, and cash settlement. Finance closes the whole picture in the ledger.
 
-Students learn fastest when they begin with the business, then move into the processes, and then open reports, SQL, Excel, or cases. The published files give them the working dataset. The company story and process pages give those files a clear purpose.
+Students should not start by browsing every table or every query. The easiest path is: download the files, learn the company, read one process, then choose a first working mode such as SQL, Excel, reports, or a foundation case. The published files give students the working dataset. The company story and process pages give those files a clear purpose.
 
 ## What Comes With the Teaching Package
 
@@ -32,12 +32,13 @@ Students and instructors receive one integrated package:
 
 ## Start With the Company and the Cycles
 
-Read the first pages as one sequence:
+Read the first pages as one sequence before opening a large query set:
 
 1. [Downloads](downloads.md) to get the published teaching package
 2. [Company Story](../learn-the-business/company-story.md) to understand the business model
 3. [Process Flows](../learn-the-business/process-flows.md) to see how the major cycles connect
 4. One process page such as [O2C](../processes/o2c.md), [Design Services](../processes/design-services.md), [P2P](../processes/p2p.md), [Manufacturing](../processes/manufacturing.md), or [Payroll](../processes/payroll.md)
+5. One first analysis path from [Analyze the Data](../analytics/index.md): [SQL Guide](../analytics/sql-guide.md), [Excel Guide](../analytics/excel-guide.md), [Reports Hub](../analytics/reports/index.md), or a foundation case in [Cases](../analytics/cases/index.md)
 
 This sequence keeps the business logic in front of the data. By the time students open a table or query, they already know what the company is doing and where the accounting evidence comes from.
 
@@ -60,7 +61,7 @@ Students who begin with SQL can move quickly without losing the business context
 2. Read [Company Story](../learn-the-business/company-story.md) and [Process Flows](../learn-the-business/process-flows.md).
 3. Keep [Dataset Guide](dataset-overview.md) and [Schema Reference](../reference/schema.md) open while you query.
 4. Use [SQL Guide](../analytics/sql-guide.md) for the starter workflow and query-running sequence.
-5. Move into [Query Library](../analytics/analysis-tracks.md) or [Cases](../analytics/cases/index.md) when you want reusable SQL or assignment-based follow-through.
+5. Move into [Query Library](../analytics/analysis-tracks.md) after you know the first business question. It is a repository, not the easiest first reading page.
 
 ## The Published Teaching Files
 
@@ -72,8 +73,8 @@ The downloaded files present the same business in different formats:
 
 ## Next Steps
 
-1. Read [Company Story](../learn-the-business/company-story.md).
-2. Read [Process Flows](../learn-the-business/process-flows.md).
-3. Open the process page that matches the business question you want to follow first.
-4. Then move into [Analyze the Data](../analytics/index.md), [Reports Hub](../analytics/reports/index.md), or [Cases](../analytics/cases/index.md).
-5. Use [Instructor Adoption Guide](../teach-with-data/instructor-guide.md) when you are planning course rollout, labs, or assignments.
+1. Get the files from [Downloads](downloads.md).
+2. Read [Company Story](../learn-the-business/company-story.md) and [Process Flows](../learn-the-business/process-flows.md).
+3. Open one process page that matches the business question you want to follow first.
+4. Then use [Analyze the Data](../analytics/index.md) to choose [SQL Guide](../analytics/sql-guide.md), [Excel Guide](../analytics/excel-guide.md), [Reports Hub](../analytics/reports/index.md), or [Cases](../analytics/cases/index.md).
+5. Use [Instructor Adoption Guide](../teach-with-data/instructor-guide.md) only when you are planning course rollout, labs, or assignments.

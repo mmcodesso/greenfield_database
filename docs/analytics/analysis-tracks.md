@@ -9,9 +9,9 @@ import { caseSupportTraceQueries } from "@site/src/generated/queryDocCollections
 
 # Query Library
 
-The Query Library is the reusable SQL repository for this section. Use it when students need to find a query, understand what the query is trying to prove, inspect the source tables, or copy SQL into SQLite for their own analysis.
+The Query Library is the reusable SQL repository for this section. It is best after students know the business question they are working on. If students are still learning how to run SQL or read the company story, start with [SQL Guide](sql-guide.md), [Reports Hub](reports/index.md), or [Cases](cases/index.md) first.
 
-Reports and cases answer different teaching needs. Reports give students finished perspective-led outputs. Cases give students a guided assignment flow. The Query Library sits underneath both: it exposes the SQL building blocks and the source-table logic behind the learning path.
+Reports and cases answer different teaching needs. Reports show finished outputs. Cases give students a guided assignment flow. The Query Library sits underneath both: it exposes the SQL building blocks and the source-table logic behind the learning path.
 
 ## Query Domains
 
@@ -23,10 +23,10 @@ Reports and cases answer different teaching needs. Reports give students finishe
 
 ## When to Use the Query Library
 
-Open the Query Library when the class needs the SQL inventory rather than a finished report or a guided case:
+Open the Query Library when the class needs the SQL inventory rather than a finished report or a guided case. It is not the first reading page for beginners:
 
 1. start with [SQL Guide](sql-guide.md) when students need the mechanics of running SQL
-2. open the query domain that matches the accounting or business question
+2. open the query domain that matches the accounting or business question after the process is clear
 3. use the compact query cards to read the objective, output grain, and main tables
 4. expand the SQL only when students are ready to inspect joins, filters, or calculations
 5. move into [Reports](reports/index.md) or [Cases](cases/index.md) when students need interpretation or a structured assignment
