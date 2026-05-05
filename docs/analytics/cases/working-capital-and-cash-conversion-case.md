@@ -31,7 +31,7 @@ You need to prove which working-capital buckets moved the most by month, which t
 ## Before You Start
 
 - Main tables: `GLEntry`, `Account`, `SalesInvoice`, `CashReceipt`, `CashReceiptApplication`, `PurchaseInvoice`, `PurchaseInvoiceLine`, `DisbursementPayment`, `GoodsReceipt`, `PayrollRegister`, `PayrollPayment`, `PayrollLiabilityRemittance`, `JournalEntry`
-- Related guides: [Financial Analytics](../financial.md), [Commercial and Working Capital](../reports/commercial-and-working-capital.md)
+- Related guides: [Financial Queries](../financial.md), [Commercial and Working Capital](../reports/commercial-and-working-capital.md)
 - Related process pages: [Order-to-Cash Process](../../processes/o2c.md), [Procure-to-Pay Process](../../processes/p2p.md), [Payroll Process](../../processes/payroll.md), [Manual Journals and Close Cycle](../../processes/manual-journals-and-close.md)
 - Supporting references: [Schema Reference](../../reference/schema.md), [GLEntry Posting Reference](../../reference/posting.md), [Dataset Guide](../../start-here/dataset-overview.md)
 - This case does not trace one document chain. It synthesizes customer, supplier, payroll, and finance-controlled timing into one cash-pressure diagnosis.
@@ -270,5 +270,5 @@ Submit a short case memo or notebook note with these four artifacts:
 ## Next Steps
 
 - Use [Commercial and Working Capital](../reports/commercial-and-working-capital.md) when you want the report-level interpretation after the bridge is clear.
-- Use [Financial Analytics](../financial.md) for the broader financial query set behind this case.
+- Use [Financial Queries](../financial.md) for the broader financial query set behind this case.
 - Use [Financial Statement Bridge Case](financial-statement-bridge-case.md) when you want to move from working-capital balances into full statement and close-cycle interpretation.

@@ -73,6 +73,56 @@
   line-height: 1.45;
 }
 
+.metadata {
+  margin-top: 0.7rem;
+}
+
+.metadataObjective {
+  margin: 0;
+  color: var(--ifm-color-emphasis-800);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.metadataList {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 0.25rem 0.75rem;
+  margin: 0.7rem 0 0;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
+.metadataList dt {
+  font-weight: 700;
+}
+
+.metadataList dd {
+  margin: 0;
+}
+
+.groupList {
+  display: grid;
+  gap: 1.75rem;
+  margin: 1.5rem 0;
+}
+
+.group {
+  min-width: 0;
+}
+
+.group h3 {
+  margin-bottom: 0.35rem;
+}
+
+.groupDescription {
+  margin: 0 0 0.9rem;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
 .toggle {
   display: inline-flex;
   align-items: center;
@@ -161,6 +211,15 @@
 
 :global(html[data-theme="dark"]) .referenceHelper {
   color: rgba(236, 244, 239, 0.8);
+}
+
+:global(html[data-theme="dark"]) .metadataObjective {
+  color: rgba(236, 244, 239, 0.88);
+}
+
+:global(html[data-theme="dark"]) .metadataList,
+:global(html[data-theme="dark"]) .groupDescription {
+  color: rgba(236, 244, 239, 0.75);
 }
 
 :global(html[data-theme="dark"]) .codePanel {

@@ -29,7 +29,7 @@ The review team needs to determine whether employee lifecycle, active-status own
 ## Before You Start
 
 - Main tables: `Employee`, `CostCenter`, `PayrollRegister`, `TimeClockEntry`, `LaborTimeEntry`, `EmployeeShiftRoster`, `TimeClockPunch`, `OvertimeApproval`, `PurchaseOrder`, `JournalEntry`
-- Related guide: [Audit Analytics](../audit.md)
+- Related guide: [Audit Queries](../audit.md)
 - Related process page: [Payroll](../../processes/payroll.md)
 - Related case: [Workforce Cost and Org-Control Case](workforce-cost-and-org-control-case.md)
 - Supporting references: [Schema Reference](../../reference/schema.md), [Dataset Guide](../../start-here/dataset-overview.md)
@@ -246,4 +246,4 @@ Submit a short case memo or notebook note with these four artifacts:
 - Read [Workforce Cost and Org-Control Case](workforce-cost-and-org-control-case.md) when you want the managerial and approval-concentration follow-through.
 - Read [Attendance Control Audit Case](attendance-control-audit-case.md) when you want a deeper punch, absence, and overtime exception review.
 - Read [Payroll](../../processes/payroll.md) when you want the operational and accounting path behind the same employee-control questions.
-- Read [Audit Analytics](../audit.md) for the wider workforce-control query set.
+- Read [Audit Queries](../audit.md) for the wider workforce-control query set.

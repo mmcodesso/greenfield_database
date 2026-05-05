@@ -24,20 +24,20 @@ Every case now expects a required student output: evidence summary, accounting o
 | 1 | [O2C Trace Case](o2c-trace-case.md) | Foundation | revenue, inventory relief, AR settlement | document-chain joins from order to cash | [Order-to-Cash Process](../../processes/o2c.md) |
 | 2 | [P2P Accrual Case](p2p-accrual-settlement-case.md) | Foundation | AP, GRNI, accrued-service settlement | receipt-matched versus accrual-linked trace paths | [Procure-to-Pay Process](../../processes/p2p.md) |
 | 3 | [Manufacturing Labor Case](manufacturing-labor-cost-case.md) | Foundation | standard cost, direct labor, WIP close | work-order operation and labor-support tracing | [Manufacturing Process](../../processes/manufacturing.md) |
-| 4 | [Product Portfolio Case](product-portfolio-and-lifecycle-case.md) | Foundation | item lifecycle and portfolio activity | item-master attributes joined to operating activity | [Managerial Analytics](../managerial.md) |
+| 4 | [Product Portfolio Case](product-portfolio-and-lifecycle-case.md) | Foundation | item lifecycle and portfolio activity | item-master attributes joined to operating activity | [Managerial Queries](../managerial.md) |
 | 5 | [Working Capital and Cash Conversion Case](working-capital-and-cash-conversion-case.md) | Advanced synthesis | AR, AP, payroll, accruals, and cash pressure | monthly timing synthesis across multiple systems | [Commercial and Working Capital](../reports/commercial-and-working-capital.md) |
 | 6 | [Financial Statement Bridge Case](financial-statement-bridge-case.md) | Advanced | trial balance, control accounts, close, cutoff | ledger-to-statement bridge with source drilldown | [Executive Overview](../reports/executive-overview.md) |
-| 7 | [CAPEX and Fixed Asset Lifecycle Case](capex-fixed-asset-lifecycle-case.md) | Intermediate | capitalization, depreciation, financing, disposal | asset event trace to financing, GL, and cash flow | [Financial Analytics](../financial.md) |
+| 7 | [CAPEX and Fixed Asset Lifecycle Case](capex-fixed-asset-lifecycle-case.md) | Intermediate | capitalization, depreciation, financing, disposal | asset event trace to financing, GL, and cash flow | [Financial Queries](../financial.md) |
 | 8 | [Pricing and Margin Governance Case](pricing-and-margin-governance-case.md) | Intermediate | price realization and margin dilution | pricing outcome aggregation by customer and portfolio | [Commercial and Working Capital](../reports/commercial-and-working-capital.md) |
 | 9 | [Product Portfolio Profitability Case](product-portfolio-profitability-case.md) | Intermediate | gross margin, contribution, service, returns | comparing portfolio grains across performance lenses | [Operations and Risk](../reports/operations-and-risk.md) |
 | 10 | [Workforce Coverage and Attendance Case](workforce-coverage-and-attendance-case.md) | Intermediate | labor coverage, absence, overtime response | roster, worked-hour, absence, and shift grains | [Payroll Perspective](../reports/payroll-perspective.md) |
 | 11 | [Demand Planning and Replenishment Case](demand-planning-and-replenishment-case.md) | Intermediate | forecast quality, replenishment, capacity pressure | weekly item, recommendation, and work-center joins | [Operations and Risk](../reports/operations-and-risk.md) |
 | 12 | [Workforce Audit Case](master-data-and-workforce-audit-case.md) | Advanced | employee lifecycle and approval-control trust | employee status, assignment, approval, and roster traces | [Payroll Process](../../processes/payroll.md) |
 | 13 | [Workforce Cost and Org-Control Case](workforce-cost-and-org-control-case.md) | Advanced | payroll cost, labor utilization, control ownership | payroll, headcount, location, and approval grains | [Payroll Perspective](../reports/payroll-perspective.md) |
-| 14 | [Audit Review Pack Case](audit-review-pack-case.md) | Capstone | cross-process exception triage | branch-choice source evidence across audit families | [Audit Analytics](../audit.md) |
+| 14 | [Audit Review Pack Case](audit-review-pack-case.md) | Capstone | cross-process exception triage | branch-choice source evidence across audit families | [Audit Queries](../audit.md) |
 | 15 | [Attendance Control Audit Case](attendance-control-audit-case.md) | Advanced | attendance and payroll-control exceptions | employee-date exception tracing | [Payroll Process](../../processes/payroll.md) |
-| 16 | [Replenishment Support Audit Case](replenishment-support-audit-case.md) | Advanced | planning-support control evidence | forecast, policy, recommendation, and document trace | [Audit Analytics](../audit.md) |
-| 17 | [Pricing Governance Audit Case](pricing-governance-audit-case.md) | Advanced | price-list, promotion, floor, and override controls | price-list, promotion, and approval source tracing | [Audit Analytics](../audit.md) |
+| 16 | [Replenishment Support Audit Case](replenishment-support-audit-case.md) | Advanced | planning-support control evidence | forecast, policy, recommendation, and document trace | [Audit Queries](../audit.md) |
+| 17 | [Pricing Governance Audit Case](pricing-governance-audit-case.md) | Advanced | price-list, promotion, floor, and override controls | price-list, promotion, and approval source tracing | [Audit Queries](../audit.md) |
 
 ## How Cases Fit the Learning Path
 
@@ -59,6 +59,6 @@ The [Working Capital and Cash Conversion Case](working-capital-and-cash-conversi
 
 ## Next Steps
 
-1. Start from [Analyze the Data](../index.md), [Analysis Tracks](../analysis-tracks.md), or [Reports Hub](../reports/index.md) when you need the broader business context first.
+1. Start from [Analyze the Data](../index.md), [Query Library](../analysis-tracks.md), or [Reports Hub](../reports/index.md) when you need the broader business context first.
 2. Pick the case that matches the process you want to investigate.
 3. Use [SQL Guide](../sql-guide.md) for query-running workflow and [Excel Guide](../excel-guide.md) for workbook-side reconstruction.

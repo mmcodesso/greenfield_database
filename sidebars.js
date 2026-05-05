@@ -121,11 +121,10 @@ const sidebars = {
         },
         {
           type: "category",
-          label: "Analysis Tracks",
+          label: "Query Library",
           link: { type: "doc", id: "analytics/analysis-tracks" },
           collapsed: true,
           items: [
-            "analytics/analysis-tracks",
             "analytics/financial",
             "analytics/managerial",
             "analytics/audit",

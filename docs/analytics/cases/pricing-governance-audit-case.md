@@ -30,7 +30,7 @@ The review team needs to identify where transaction pricing breaks from the appr
 
 - Main tables: `PriceList`, `PriceListLine`, `PromotionProgram`, `PriceOverrideApproval`, `SalesOrder`, `SalesOrderLine`, `Customer`, `Item`
 - Related case: [Pricing and Margin Governance Case](pricing-and-margin-governance-case.md)
-- Related guide: [Audit Analytics](../audit.md)
+- Related guide: [Audit Queries](../audit.md)
 - Related report: [Commercial and Working Capital](../reports/commercial-and-working-capital.md)
 - Supporting references: [Schema Reference](../../reference/schema.md), [Dataset Guide](../../start-here/dataset-overview.md)
 - This case is the formal commercial-control audit follow-through. Use the pricing-and-margin case when you want to explain realized pricing and margin effects before audit escalation.
@@ -234,5 +234,5 @@ Submit a short case memo or notebook note with these four artifacts:
 ## Next Steps
 
 - Read [Pricing and Margin Governance Case](pricing-and-margin-governance-case.md) when you want the commercial interpretation beside the audit interpretation.
-- Read [Audit Analytics](../audit.md) for the broader control-review query library.
+- Read [Audit Queries](../audit.md) for the broader control-review query library.
 - Read [Commercial and Working Capital](../reports/commercial-and-working-capital.md) when you want the business perspective that sits above the control issues.

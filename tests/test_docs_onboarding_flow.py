@@ -156,19 +156,24 @@ def test_company_story_keeps_required_story_anchors_and_links() -> None:
         assert snippet in company_story
 
 
-def test_analyze_data_sidebar_uses_new_labels_and_keeps_cases_above_tracks() -> None:
+def test_analyze_data_sidebar_uses_query_library_label_and_keeps_cases_above_it() -> None:
     sidebar_text = _read(Path("sidebars.js"))
     analytics_page = _read(Path("docs/analytics/index.md"))
-    tracks_page = _read(Path("docs/analytics/analysis-tracks.md"))
+    query_library_page = _read(Path("docs/analytics/analysis-tracks.md"))
     cases_page = _read(Path("docs/analytics/cases/index.md"))
 
     assert 'label: "Analyze the Data"' in sidebar_text
     assert 'label: "Cases"' in sidebar_text
-    assert 'label: "Analysis Tracks"' in sidebar_text
+    assert 'label: "Query Library"' in sidebar_text
+    assert sidebar_text.count('"analytics/analysis-tracks"') == 1
     assert 'title: Analyze the Data' in analytics_page
     assert 'sidebar_label: Analyze the Data' in analytics_page
-    assert 'title: Analysis Tracks' in tracks_page
-    assert 'sidebar_label: Analysis Tracks' in tracks_page
+    assert 'title: Query Library' in query_library_page
+    assert 'sidebar_label: Query Library' in query_library_page
+    assert "Financial Queries" in query_library_page
+    assert "Managerial Queries" in query_library_page
+    assert "Audit Queries" in query_library_page
+    assert "Case-Support Trace Queries" in query_library_page
     assert 'title: Cases' in cases_page
     assert 'sidebar_label: Cases' in cases_page
     for snippet in (
@@ -187,8 +192,38 @@ def test_analyze_data_sidebar_uses_new_labels_and_keeps_cases_above_tracks() -> 
     assert "## Next Steps" in cases_page
 
     cases_position = sidebar_text.index('label: "Cases"')
-    guides_position = sidebar_text.index('label: "Analysis Tracks"')
-    assert cases_position < guides_position
+    query_library_position = sidebar_text.index('label: "Query Library"')
+    assert cases_position < query_library_position
+
+
+def test_query_library_pages_use_grouped_catalogs_and_manifest_metadata() -> None:
+    query_library_page = _read(Path("docs/analytics/analysis-tracks.md"))
+    financial_page = _read(Path("docs/analytics/financial.md"))
+    managerial_page = _read(Path("docs/analytics/managerial.md"))
+    audit_page = _read(Path("docs/analytics/audit.md"))
+    query_collections = _read(Path("src/generated/queryDocCollections.js"))
+    query_manifest = _read(Path("src/generated/queryManifest.js"))
+
+    assert "caseSupportTraceQueries" in query_library_page
+    assert "cases/01_o2c_line_trace_order_shipment_invoice.sql" in query_collections
+    assert "financial/45_monthly_ar_aging_detail.sql" in query_collections
+    assert "financial/48_monthly_ap_aging_summary.sql" in query_collections
+
+    for page, expected in (
+        (financial_page, "queryLibraryGroups.financial"),
+        (managerial_page, "queryLibraryGroups.managerial"),
+        (audit_page, "queryLibraryGroups.audit"),
+    ):
+        assert "<QueryGroupCatalog" in page
+        assert expected in page
+        assert "Starter SQL Map" not in page
+
+    for snippet in (
+        '"teachingObjective"',
+        '"mainTables"',
+        '"outputShape"',
+    ):
+        assert snippet in query_manifest
 
 
 def test_public_docs_and_generated_manifest_drop_template_style_phrasing() -> None:

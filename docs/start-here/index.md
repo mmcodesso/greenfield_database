@@ -60,7 +60,7 @@ Students who begin with SQL can move quickly without losing the business context
 2. Read [Company Story](../learn-the-business/company-story.md) and [Process Flows](../learn-the-business/process-flows.md).
 3. Keep [Dataset Guide](dataset-overview.md) and [Schema Reference](../reference/schema.md) open while you query.
 4. Use [SQL Guide](../analytics/sql-guide.md) for the starter workflow and query-running sequence.
-5. Move into [Analysis Tracks](../analytics/analysis-tracks.md) or [Cases](../analytics/cases/index.md) when you want topic-based or assignment-based follow-through.
+5. Move into [Query Library](../analytics/analysis-tracks.md) or [Cases](../analytics/cases/index.md) when you want reusable SQL or assignment-based follow-through.
 
 ## The Published Teaching Files
 

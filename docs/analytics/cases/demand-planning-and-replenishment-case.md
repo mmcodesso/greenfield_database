@@ -31,7 +31,7 @@ You need to prove where forecast demand diverges from actual order demand, what 
 ## Before You Start
 
 - Main tables: `DemandForecast`, `InventoryPolicy`, `SupplyPlanRecommendation`, `MaterialRequirementPlan`, `RoughCutCapacityPlan`, `PurchaseRequisition`, `WorkOrder`, `Item`
-- Related guides: [Operations and Risk](../reports/operations-and-risk.md), [Managerial Analytics](../managerial.md)
+- Related guides: [Operations and Risk](../reports/operations-and-risk.md), [Managerial Queries](../managerial.md)
 - Related process pages: [Manufacturing Process](../../processes/manufacturing.md), [Procure-to-Pay Process](../../processes/p2p.md)
 - Supporting references: [Schema Reference](../../reference/schema.md), [Dataset Guide](../../start-here/dataset-overview.md)
 - This case stays at the planning-signal layer before execution and audit follow-up. Use the replenishment audit case for planning-governance failures and the manufacturing process page when you need execution follow-through.
@@ -247,4 +247,4 @@ Submit a short case memo or notebook note with these four artifacts:
 - Use [Replenishment Support Audit Case](replenishment-support-audit-case.md) when you want to test forecast approval, policy coverage, unsupported planning documents, and late recommendation conversion.
 - Use [Manufacturing Process](../../processes/manufacturing.md) when you want to trace rough-cut pressure into released work orders and detailed operation schedules.
 - Use [Operations and Risk](../reports/operations-and-risk.md) when you want the broader report-level interpretation of the same planning signals.
-- Use [Managerial Analytics](../managerial.md) for the wider planning, capacity, and supply-risk query set.
+- Use [Managerial Queries](../managerial.md) for the wider planning, capacity, and supply-risk query set.

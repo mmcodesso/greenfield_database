@@ -98,17 +98,20 @@ def test_phase20_default_build_preserves_export_and_balance_contract(
 
 def test_phase20_docs_reference_new_audit_queries() -> None:
     audit_guide = Path("docs/analytics/audit.md").read_text(encoding="utf-8")
+    query_doc_collections = Path("src/generated/queryDocCollections.js").read_text(encoding="utf-8")
     audit_case = Path("docs/analytics/cases/audit-review-pack-case.md").read_text(encoding="utf-8")
     workforce_case = Path("docs/analytics/cases/master-data-and-workforce-audit-case.md").read_text(encoding="utf-8")
     instructor_guide = Path("docs/teach-with-data/instructor-guide.md").read_text(encoding="utf-8")
 
-    assert "34_current_state_employee_assignment_review.sql" in audit_guide
-    assert "35_approval_authority_limit_review.sql" in audit_guide
-    assert "36_item_status_alignment_review.sql" in audit_guide
+    assert "## Audit Query Groups" in audit_guide
+    assert "Master data, approvals, role design, and authority limits" in query_doc_collections
+    assert "34_current_state_employee_assignment_review.sql" in query_doc_collections
+    assert "35_approval_authority_limit_review.sql" in query_doc_collections
+    assert "36_item_status_alignment_review.sql" in query_doc_collections
     assert "34_current_state_employee_assignment_review.sql" in audit_case
     assert "35_approval_authority_limit_review.sql" in audit_case
     assert "## Required Student Output" in audit_case
     assert "34_current_state_employee_assignment_review.sql" in workforce_case
     assert "35_approval_authority_limit_review.sql" in workforce_case
     assert "## Required Student Output" in workforce_case
-    assert "Phase 19 and Phase 20 Classroom Sequence" in instructor_guide
+    assert "## Recommended teaching sequence" in instructor_guide

@@ -1,15 +1,21 @@
 ---
-title: Managerial Analytics
-description: Starter managerial and cost-accounting analysis paths using the published dataset.
-sidebar_label: Managerial Analytics
+title: Managerial Queries
+description: Managerial and cost-accounting query library for portfolio, labor, manufacturing, planning, replenishment, pricing, and operating performance.
+sidebar_label: Managerial Queries
 ---
 
-import { QueryCatalog } from "@site/src/components/QueryReference";
-import { starterQueryMaps } from "@site/src/generated/queryDocCollections";
+import { QueryGroupCatalog } from "@site/src/components/QueryReference";
+import { queryLibraryGroups } from "@site/src/generated/queryDocCollections";
 
-# Managerial Analytics Starter Guide
+# Managerial Queries
 
-## Relevant Tables
+Use this page as the managerial and cost-accounting query library. The groups below organize reusable SQL around cost management, portfolio performance, inventory and supplier behavior, manufacturing operations, workforce coverage, planning, replenishment, and design-service utilization.
+
+## Managerial Query Groups
+
+<QueryGroupCatalog groups={queryLibraryGroups.managerial} />
+
+## Main Table Families
 
 | Topic | Main tables |
 |---|---|
@@ -19,10 +25,6 @@ import { starterQueryMaps } from "@site/src/generated/queryDocCollections";
 | BOM, routing, and work-center planning | `BillOfMaterial`, `BillOfMaterialLine`, `Routing`, `RoutingOperation`, `WorkCenter`, `WorkCenterCalendar`, `Item` |
 | Work-order throughput and variance | `WorkOrder`, `WorkOrderOperation`, `WorkOrderOperationSchedule`, `MaterialIssueLine`, `ProductionCompletionLine`, `WorkOrderClose` |
 | Labor, headcount, payroll mix, and workforce planning | `Employee`, `EmployeeShiftRoster`, `EmployeeAbsence`, `OvertimeApproval`, `TimeClockPunch`, `TimeClockEntry`, `LaborTimeEntry`, `PayrollRegister`, `WorkCenter`, `CostCenter` |
-
-## Starter SQL Map
-
-<QueryCatalog items={starterQueryMaps.managerial} />
 
 ## Recommended Case Pairings
 

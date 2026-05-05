@@ -245,5 +245,5 @@ flowchart LR
 - Read [CAPEX and Fixed Asset Lifecycle Case](../analytics/cases/capex-fixed-asset-lifecycle-case.md) when you want the fixed-asset subledger, note schedule, and manual journal layer in one walkthrough.
 - Read [Payroll](payroll.md) for the operational payroll cycle that sits outside this finance-controlled journal family.
 - Read [GLEntry Posting Reference](../reference/posting.md) for the detailed posting logic behind recurring journals, accruals, and close.
-- Read [Financial Analytics](../analytics/financial.md) for journal, accrual, and close-cycle analysis examples.
+- Read [Financial Queries](../analytics/financial.md) for journal, accrual, and close-cycle analysis examples.
 - Read [Schema Reference for full table relationships](../reference/schema.md) when you need the broader process-level table map.

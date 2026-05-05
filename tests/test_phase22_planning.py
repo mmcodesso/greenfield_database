@@ -203,15 +203,18 @@ def test_phase22_docs_and_sidebar_entries_exist() -> None:
 
     audit_guide = Path("docs/analytics/audit.md").read_text(encoding="utf-8")
     managerial_guide = Path("docs/analytics/managerial.md").read_text(encoding="utf-8")
+    query_doc_collections = Path("src/generated/queryDocCollections.js").read_text(encoding="utf-8")
     sql_guide = Path("docs/analytics/sql-guide.md").read_text(encoding="utf-8")
     instructor_guide = Path("docs/teach-with-data/instructor-guide.md").read_text(encoding="utf-8")
 
-    assert "42_forecast_approval_and_override_review.sql" in audit_guide
-    assert "43_inactive_or_stale_inventory_policy_review.sql" in audit_guide
-    assert "46_discontinued_or_prelaunch_planning_activity_review.sql" in audit_guide
+    assert "## Audit Query Groups" in audit_guide
+    assert "Planning-support, pricing-governance, and design-service controls" in query_doc_collections
+    assert "42_forecast_approval_and_override_review.sql" in query_doc_collections
+    assert "43_inactive_or_stale_inventory_policy_review.sql" in query_doc_collections
+    assert "46_discontinued_or_prelaunch_planning_activity_review.sql" in query_doc_collections
     assert "Demand Planning and Replenishment Case" in managerial_guide
-    assert "inventory coverage and projected stockout risk" in sql_guide.lower()
-    assert "Recommended Phase 19 to Phase 23 Classroom Sequence" in instructor_guide
+    assert "inventory coverage and projected stockout risk" in query_doc_collections.lower()
+    assert "## Recommended teaching sequence" in instructor_guide
 
 
 def test_phase22_demand_planning_case_uses_upgraded_walkthrough_shell() -> None:

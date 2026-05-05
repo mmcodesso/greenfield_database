@@ -1,15 +1,21 @@
 ---
-title: Financial Analytics
-description: Starter financial-accounting analysis paths using the published dataset.
-sidebar_label: Financial Analytics
+title: Financial Queries
+description: Financial-accounting query library for statements, settlement timing, working capital, close, CAPEX, and commercial performance.
+sidebar_label: Financial Queries
 ---
 
-import { QueryCatalog, QuerySequence } from "@site/src/components/QueryReference";
-import { starterQueryMaps } from "@site/src/generated/queryDocCollections";
+import { QueryGroupCatalog, QuerySequence } from "@site/src/components/QueryReference";
+import { queryLibraryGroups } from "@site/src/generated/queryDocCollections";
 
-# Financial Analytics Starter Guide
+# Financial Queries
 
-## Relevant Tables
+Use this page as the financial-accounting query library. The groups below organize reusable SQL by the question students are trying to answer: statement tie-out, settlement timing, working capital, payroll liabilities, manufacturing cost, CAPEX, budget, and commercial performance.
+
+## Financial Query Groups
+
+<QueryGroupCatalog groups={queryLibraryGroups.financial} />
+
+## Main Table Families
 
 | Topic | Main tables |
 |---|---|
@@ -25,10 +31,6 @@ import { starterQueryMaps } from "@site/src/generated/queryDocCollections";
 | Payroll liabilities and support | `PayrollPeriod`, `TimeClockEntry`, `LaborTimeEntry`, `PayrollRegister`, `PayrollRegisterLine`, `PayrollPayment`, `PayrollLiabilityRemittance`, `Employee` |
 | Manufacturing balances | `WorkOrderClose`, `ProductionCompletionLine`, `MaterialIssueLine`, `JournalEntry`, `GLEntry`, `Account` |
 | Trial balance and close cycle | `GLEntry`, `JournalEntry`, `Account` |
-
-## Starter SQL Map
-
-<QueryCatalog items={starterQueryMaps.financial} />
 
 ## Financial Statement Reconciliation Path
 
@@ -98,7 +100,7 @@ This sequence starts in the fixed-asset subledger, then ties the asset lifecycle
   helperText="This is the fastest path for teaching the asset register, depreciation routing, financing cash, and disposal effects as one connected story."
 />
 
-- Keep the broader timing scan in view through [Audit Analytics](audit.md), especially `Cutoff and timing analysis` and `Potential anomaly review`. Those queries show the wider timing population, while the reconciliation sequence narrows the investigation to the invoices that actually affect annual net-revenue tie-out.
+- Keep the broader timing scan in view through [Audit Queries](audit.md), especially `Cutoff and timing analysis` and `Potential anomaly review`. Those queries show the wider timing population, while the reconciliation sequence narrows the investigation to the invoices that actually affect annual net-revenue tie-out.
 - If the cutoff summary shows invoices with `InvoiceBeforeShipmentFlag = 1` and `InvoiceYearVsGlYearFlag = 1`, treat that pattern as seeded anomaly behavior inside the published teaching dataset rather than a defect in the statement logic.
 - After net revenue, repeat the same source-to-GL-to-statement-to-close pattern for COGS, manufacturing variance, labor, overhead, operating expenses, other income and expense, and retained earnings.
 

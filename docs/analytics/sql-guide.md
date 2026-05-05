@@ -44,7 +44,7 @@ At this point, you are ready to copy SQL from the analytics pages in the docs an
 
 Start with this first-pass workflow:
 
-1. Open [Financial Analytics](financial.md).
+1. Open [Financial Queries](financial.md).
 2. In the starter SQL list, expand `Working-capital bridge by month`.
 3. Copy the SQL from the code block.
 4. Paste it into the `Execute SQL` tab in DB Browser.
@@ -73,9 +73,9 @@ The starter SQL is organized into three compact topic groups:
 
 | Topic page | What it covers |
 |---|---|
-| [Financial Analytics](financial.md) | revenue, margin, working capital, accruals, payroll, close-cycle, and pricing review |
-| [Managerial Analytics](managerial.md) | budget, portfolio mix, labor, service levels, planning, replenishment, and pricing governance |
-| [Audit Analytics](audit.md) | document-chain review, approvals, workforce controls, planning support, pricing governance, and anomaly review |
+| [Financial Queries](financial.md) | revenue, margin, working capital, accruals, payroll, close-cycle, and pricing review |
+| [Managerial Queries](managerial.md) | budget, portfolio mix, labor, service levels, planning, replenishment, and pricing governance |
+| [Audit Queries](audit.md) | document-chain review, approvals, workforce controls, planning support, pricing governance, and anomaly review |
 
 The topic pages surface these queries directly in the docs, so most students can work from the website without opening any repository folders.
 
@@ -122,6 +122,6 @@ Then paste a starter query copied from the docs into the prompt and run it direc
 
 ## Next Steps
 
-- Use [Financial Analytics](financial.md), [Managerial Analytics](managerial.md), or [Audit Analytics](audit.md) to choose your next topic.
+- Use [Financial Queries](financial.md), [Managerial Queries](managerial.md), or [Audit Queries](audit.md) to choose your next query set.
 - Use [Cases](cases/index.md) when you want a guided business question after the first query.
 - Use [Excel Guide](excel-guide.md) when you want to recreate a SQL result in the workbook.

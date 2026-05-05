@@ -75,6 +75,7 @@ export function QueryReference({
   label,
   variant = "catalog",
   helperText,
+  showMetadata = false,
 }) {
   const entry = getQueryEntry(queryKey);
   const queryUrl = useBaseUrl(entry.publicPath);
@@ -122,6 +123,29 @@ export function QueryReference({
         <div className={styles.referenceText}>
           <div className={styles.referenceLabel}>{displayLabel}</div>
           {helperText ? <p className={styles.referenceHelper}>{helperText}</p> : null}
+          {showMetadata ? (
+            <div className={styles.metadata}>
+              {entry.teachingObjective ? (
+                <p className={styles.metadataObjective}>{entry.teachingObjective}</p>
+              ) : null}
+              {entry.outputShape || entry.mainTables ? (
+                <dl className={styles.metadataList}>
+                  {entry.outputShape ? (
+                    <>
+                      <dt>Output</dt>
+                      <dd>{entry.outputShape}</dd>
+                    </>
+                  ) : null}
+                  {entry.mainTables ? (
+                    <>
+                      <dt>Main tables</dt>
+                      <dd>{entry.mainTables}</dd>
+                    </>
+                  ) : null}
+                </dl>
+              ) : null}
+            </div>
+          ) : null}
         </div>
         <button
           className={styles.toggle}
@@ -168,9 +192,27 @@ export function QueryCatalog({ items, helperText }) {
             label={item.label}
             queryKey={item.queryKey}
             variant="catalog"
+            showMetadata
           />
         ))}
       </div>
+    </div>
+  );
+}
+
+export function QueryGroupCatalog({ groups }) {
+  return (
+    <div className={styles.groupList}>
+      {groups.map((group) => (
+        <section key={group.title} className={styles.group}>
+          <h3>{group.title}</h3>
+          {group.description ? <p className={styles.groupDescription}>{group.description}</p> : null}
+          <QueryCatalog
+            items={group.items}
+            helperText="Open a query when you want to inspect the SQL, copy it into SQLite, or trace the source-table logic."
+          />
+        </section>
+      ))}
     </div>
   );
 }

@@ -30,7 +30,7 @@ The review team needs to separate timing issues, approval failures, linkage fail
 ## Before You Start
 
 - Main tables: `Employee`, `Item`, `PurchaseInvoice`, `DisbursementPayment`, `PayrollRegister`, `PayrollPayment`, `WorkOrder`, `WorkOrderOperation`, `WorkOrderOperationSchedule`, `WorkCenter`, `LaborTimeEntry`, `TimeClockEntry`
-- Related guide: [Audit Analytics](../audit.md)
+- Related guide: [Audit Queries](../audit.md)
 - Supporting references: [Schema Reference](../../reference/schema.md), [Dataset Guide](../../start-here/dataset-overview.md)
 - This case is the broad audit triage and source-tracing case. Use the specialized audit cases when you need deeper follow-through for workforce validity, attendance controls, replenishment support, or pricing governance.
 
@@ -328,6 +328,6 @@ Submit a short case memo or notebook note with these four artifacts:
 
 ## Next Steps
 
-- Read [Audit Analytics](../audit.md) when you want the broader audit query library around these anomaly families.
+- Read [Audit Queries](../audit.md) when you want the broader audit query library around these anomaly families.
 - Read [Schema Reference](../../reference/schema.md) when you need the table bridges behind a flagged exception.
 - Read [Attendance Control Audit Case](attendance-control-audit-case.md), [Replenishment Support Audit Case](replenishment-support-audit-case.md), or [Pricing Governance Audit Case](pricing-governance-audit-case.md) when the broad triage points to a specialized control area.

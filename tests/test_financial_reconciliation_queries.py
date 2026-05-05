@@ -256,7 +256,8 @@ def test_reconciliation_queries_are_in_catalog_and_docs() -> None:
     assert "Annual net revenue bridge" in query_doc_collections
     assert "Invoice revenue cutoff exception summary" in query_doc_collections
     assert "Invoice revenue cutoff exception trace" in query_doc_collections
-    assert 'import { QueryCatalog, QuerySequence } from "@site/src/components/QueryReference";' in financial_guide
+    assert 'import { QueryGroupCatalog, QuerySequence } from "@site/src/components/QueryReference";' in financial_guide
+    assert "<QueryGroupCatalog groups={queryLibraryGroups.financial} />" in financial_guide
     assert "<QuerySequence" in financial_guide
     assert "items={[" in financial_guide
     assert "financial/39_annual_income_to_equity_bridge.sql" in financial_guide

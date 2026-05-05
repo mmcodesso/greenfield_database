@@ -1,18 +1,24 @@
 ---
-title: Audit Analytics
-description: Starter auditing and controls analytics paths using the published dataset.
-sidebar_label: Audit Analytics
+title: Audit Queries
+description: Audit and controls query library for document completeness, approvals, master data, workforce controls, planning support, pricing governance, and anomaly review.
+sidebar_label: Audit Queries
 ---
 
-import { QueryCatalog } from "@site/src/components/QueryReference";
+import { QueryCatalog, QueryGroupCatalog } from "@site/src/components/QueryReference";
 import {
   auditAnomalyQueryCards,
-  starterQueryMaps,
+  queryLibraryGroups,
 } from "@site/src/generated/queryDocCollections";
 
-# Audit Analytics Starter Guide
+# Audit Queries
 
-## Relevant Tables
+Use this page as the audit and controls query library. The groups below organize reusable SQL by control question: process completeness, manufacturing controls, workforce and attendance, master data, financial timing, planning support, pricing governance, and design-service billing support.
+
+## Audit Query Groups
+
+<QueryGroupCatalog groups={queryLibraryGroups.audit} />
+
+## Main Table Families
 
 | Topic | Main tables |
 |---|---|
@@ -22,10 +28,6 @@ import {
 | Payroll and time controls | `ShiftDefinition`, `EmployeeShiftAssignment`, `EmployeeShiftRoster`, `EmployeeAbsence`, `OvertimeApproval`, `TimeClockPunch`, `TimeClockEntry`, `AttendanceException`, `LaborTimeEntry`, `PayrollRegister`, `PayrollRegisterLine`, `PayrollPayment`, `PayrollLiabilityRemittance`, `Employee` |
 | Master-data controls | `Employee`, `Item`, `PriceList`, `PriceListLine`, `PromotionProgram`, `PriceOverrideApproval`, plus operational tables that reuse those masters |
 | Cross-process control review | Combine query output with source-table tracing across the affected process tables |
-
-## Starter SQL Map
-
-<QueryCatalog items={starterQueryMaps.audit} />
 
 ## Baseline Control Queries
 

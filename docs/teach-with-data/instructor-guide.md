@@ -29,8 +29,8 @@ For most courses, start students with the published teaching files and the teach
 | AIS and business processes | [Company Story](../learn-the-business/company-story.md), [Process Flows](../learn-the-business/process-flows.md) | source-document tracing, process mapping, and source-to-ledger explanation |
 | SQL and accounting analytics | [Start Here](../start-here/index.md), [Dataset Guide](../start-here/dataset-overview.md), [SQL Guide](../analytics/sql-guide.md) | starter SQL packs, guided cases, and topic-based analysis |
 | Excel analytics | [Start Here](../start-here/index.md), [Company Story](../learn-the-business/company-story.md), [Excel Guide](../analytics/excel-guide.md) | workbook-based pivots, charts, and interpretation exercises |
-| Auditing and controls | [Process Flows](../learn-the-business/process-flows.md), [Audit Analytics](../analytics/audit.md) | support-workbook review, control testing, and exception-focused cases |
-| Managerial and cost accounting | [Dataset Guide](../start-here/dataset-overview.md), [Managerial Analytics](../analytics/managerial.md) | portfolio, labor, variance, planning, and capacity analysis |
+| Auditing and controls | [Process Flows](../learn-the-business/process-flows.md), [Audit Queries](../analytics/audit.md) | support-workbook review, control testing, and exception-focused cases |
+| Managerial and cost accounting | [Dataset Guide](../start-here/dataset-overview.md), [Managerial Queries](../analytics/managerial.md) | portfolio, labor, variance, planning, and capacity analysis |
 
 ## Recommended teaching sequence
 
@@ -41,7 +41,7 @@ This sequence works well for most first-time adoptions:
 3. Assign [Company Story](../learn-the-business/company-story.md).
 4. Review [Process Flows](../learn-the-business/process-flows.md).
 5. Assign [Dataset Guide](../start-here/dataset-overview.md).
-6. Choose the first analytics track in [Analysis Tracks](../analytics/analysis-tracks.md).
+6. Choose the first reusable SQL path in [Query Library](../analytics/analysis-tracks.md).
 7. Use [Cases](../analytics/cases/index.md) once students understand the basic document and table flow.
 
 This order helps students understand the business and the process logic before they move into SQL, Excel, or open-ended analysis.
@@ -86,7 +86,7 @@ Most instructors can adopt <DisplayName /> successfully with the published teach
 ## Next Steps
 
 - Use [Start Here](../start-here/index.md) as the primary student launch page.
-- Use [Analysis Tracks](../analytics/analysis-tracks.md) to choose the first topic pack.
+- Use [Query Library](../analytics/analysis-tracks.md) to choose the first reusable SQL pack.
 - Use [Cases](../analytics/cases/index.md) for guided assignments.
 - Use [Schema Reference](../reference/schema.md) and [GLEntry Posting Reference](../reference/posting.md) as assignment support references.
 - Use [Customize](../technical/dataset-delivery.md) only when you need a locally generated variant.

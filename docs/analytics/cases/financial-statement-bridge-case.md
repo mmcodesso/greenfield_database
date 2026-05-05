@@ -31,7 +31,7 @@ You need to prove how posted operational and finance-controlled activity builds 
 ## Before You Start
 
 - Main tables: `GLEntry`, `Account`, `JournalEntry`, `SalesInvoice`, `SalesInvoiceLine`, `CreditMemo`, `CreditMemoLine`, `PurchaseInvoice`, `DisbursementPayment`, `GoodsReceiptLine`, `ShipmentLine`, `PayrollRegister`, `WorkOrderClose`
-- Related guides: [Financial Analytics](../financial.md), [Executive Overview](../reports/executive-overview.md)
+- Related guides: [Financial Queries](../financial.md), [Executive Overview](../reports/executive-overview.md)
 - Related process pages: [Manual Journals and Close Cycle](../../processes/manual-journals-and-close.md), [Order-to-Cash Process](../../processes/o2c.md), [Procure-to-Pay Process](../../processes/p2p.md), [Manufacturing Process](../../processes/manufacturing.md), [Payroll Process](../../processes/payroll.md)
 - Supporting references: [Schema Reference](../../reference/schema.md), [GLEntry Posting Reference](../../reference/posting.md), [Dataset Guide](../../start-here/dataset-overview.md)
 - This case starts at the posted-ledger and presentation layer rather than tracing one operating document chain. Use the working-capital case when you need settlement timing and current-liability pressure instead of statement tie-out.

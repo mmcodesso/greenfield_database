@@ -31,7 +31,7 @@ You need to prove where price realization falls below base list pricing, how muc
 ## Before You Start
 
 - Main tables: `PriceList`, `PriceListLine`, `PromotionProgram`, `PriceOverrideApproval`, `SalesOrder`, `SalesOrderLine`, `SalesInvoice`, `SalesInvoiceLine`, `Customer`, `Item`
-- Related guides: [Financial Analytics](../financial.md), [Managerial Analytics](../managerial.md), [Commercial and Working Capital](../reports/commercial-and-working-capital.md)
+- Related guides: [Financial Queries](../financial.md), [Managerial Queries](../managerial.md), [Commercial and Working Capital](../reports/commercial-and-working-capital.md)
 - Related process page: [Order-to-Cash Process](../../processes/o2c.md)
 - Supporting references: [Schema Reference](../../reference/schema.md), [GLEntry Posting Reference](../../reference/posting.md), [Dataset Guide](../../start-here/dataset-overview.md)
 - This case starts from realized pricing outcomes, then explains the policy layers beneath them rather than tracing one operational document chain. Use the pricing audit case when you need full control-exception review.
@@ -246,4 +246,4 @@ Submit a short case memo or notebook note with these four artifacts:
 
 - Use [Pricing Governance Audit Case](pricing-governance-audit-case.md) when you want the full control-focused follow-through.
 - Use [Commercial and Working Capital](../reports/commercial-and-working-capital.md) when you want the broader commercial perspective above the case.
-- Use [Financial Analytics](../financial.md) and [Managerial Analytics](../managerial.md) for the broader pricing and margin query sets.
+- Use [Financial Queries](../financial.md) and [Managerial Queries](../managerial.md) for the broader pricing and margin query sets.

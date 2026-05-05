@@ -1,42 +1,47 @@
 ---
-title: Analysis Tracks
-description: Topic-based entry points for financial, managerial, and audit analysis using the published dataset.
-sidebar_label: Analysis Tracks
+title: Query Library
+description: Query repository for financial, managerial, audit, and case-support SQL used in the published teaching dataset.
+sidebar_label: Query Library
 ---
 
-# Analysis Tracks
+import { QueryCatalog } from "@site/src/components/QueryReference";
+import { caseSupportTraceQueries } from "@site/src/generated/queryDocCollections";
 
-Analysis Tracks is the guide hub for the three main topic paths in this section. Students use these pages when they already know the process they are following and want the query, table, and interpretation path that fits a financial, managerial, or audit question.
+# Query Library
 
-Each track stays focused on one analytical point of view. Financial Analytics follows statements, working capital, close, and commercial performance. Managerial Analytics follows portfolio, labor, planning, and operating performance. Audit Analytics follows controls, exceptions, approvals, and source-table review.
+The Query Library is the reusable SQL repository for this section. Use it when students need to find a query, understand what the query is trying to prove, inspect the source tables, or copy SQL into SQLite for their own analysis.
 
-## Available Tracks
+Reports and cases answer different teaching needs. Reports give students finished perspective-led outputs. Cases give students a guided assignment flow. The Query Library sits underneath both: it exposes the SQL building blocks and the source-table logic behind the learning path.
 
-| Track | Best use | Go to |
+## Query Domains
+
+| Domain | What students use it for | Go to |
 |---|---|---|
-| Financial Analytics | Revenue, margin, receivables, payables, working capital, close, and statement interpretation | [Financial Analytics](financial.md) |
-| Managerial Analytics | Portfolio mix, labor, service levels, planning, replenishment, and operating performance | [Managerial Analytics](managerial.md) |
-| Audit Analytics | Document-chain controls, approvals, workforce controls, planning support, pricing governance, and anomaly review | [Audit Analytics](audit.md) |
+| Financial Queries | Statements, settlement timing, working capital, payroll liabilities, accruals, CAPEX, budget, and commercial performance | [Financial Queries](financial.md) |
+| Managerial Queries | Cost management, product portfolio, manufacturing, labor, workforce coverage, planning, replenishment, pricing, and design-service utilization | [Managerial Queries](managerial.md) |
+| Audit Queries | Document completeness, approvals, master data, workforce controls, planning support, pricing governance, source tracing, and anomaly review | [Audit Queries](audit.md) |
 
-## How the Tracks Differ
+## When to Use the Query Library
 
-| Track | Main question | Best follow-through |
-|---|---|---|
-| Financial Analytics | How did business activity affect statements, balances, and settlement timing? | [Reports Hub](reports/index.md), [SQL Guide](sql-guide.md), [Cases](cases/index.md) |
-| Managerial Analytics | How did operations, labor, product mix, and planning affect performance? | [Reports Hub](reports/index.md), [SQL Guide](sql-guide.md), [Cases](cases/index.md) |
-| Audit Analytics | Which controls, exceptions, or approval patterns need investigation? | [SQL Guide](sql-guide.md), [Cases](cases/index.md), [Reports Hub](reports/index.md) |
+Open the Query Library when the class needs the SQL inventory rather than a finished report or a guided case:
 
-## When to Use This Hub
+1. start with [SQL Guide](sql-guide.md) when students need the mechanics of running SQL
+2. open the query domain that matches the accounting or business question
+3. use the compact query cards to read the objective, output grain, and main tables
+4. expand the SQL only when students are ready to inspect joins, filters, or calculations
+5. move into [Reports](reports/index.md) or [Cases](cases/index.md) when students need interpretation or a structured assignment
 
-Use this hub when students need to choose the first topic page after they understand the business cycle:
+## Case-Support Trace Queries
 
-1. start with the process page or the section landing page in [Analyze the Data](index.md)
-2. choose the track that matches the analytical question
-3. use the matching SQL, report, or case follow-through once the topic is clear
+These queries are built for the core process-tracing cases. They are public SQL, but they are best used inside the matching case because the case explains the transaction story and the required student output.
+
+<QueryCatalog
+  items={caseSupportTraceQueries}
+  helperText="Use these trace queries with the matching case page. They are source-level support queries rather than general starter packs."
+/>
 
 ## Next Steps
 
-1. Open the track that matches the analytical question you want to teach first.
-2. Use [SQL Guide](sql-guide.md) or [Excel Guide](excel-guide.md) when students need the working workflow.
-3. Use [Reports Hub](reports/index.md) when students need perspective-led interpretation.
-4. Use [Cases](cases/index.md) when students need a guided investigation.
+1. Use [Financial Queries](financial.md), [Managerial Queries](managerial.md), or [Audit Queries](audit.md) when students need reusable SQL.
+2. Use [Reports Hub](reports/index.md) when students need management-style or perspective-led interpretation.
+3. Use [Cases](cases/index.md) when students need a guided assignment with required output.

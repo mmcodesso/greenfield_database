@@ -31,7 +31,7 @@ You need to explain one CAPEX story from source documents through the asset regi
 ## Before You Start
 
 - Main tables: `PurchaseRequisition`, `PurchaseOrder`, `PurchaseInvoice`, `DisbursementPayment`, `FixedAsset`, `FixedAssetEvent`, `DebtAgreement`, `DebtScheduleLine`, `Warehouse`, `WorkCenter`, `CostCenter`, `JournalEntry`, `GLEntry`, `Account`
-- Related guides: [Financial Analytics](../financial.md), [Executive Overview](../reports/executive-overview.md)
+- Related guides: [Financial Queries](../financial.md), [Executive Overview](../reports/executive-overview.md)
 - Related process pages: [Procure-to-Pay Process](../../processes/p2p.md), [Manufacturing Process](../../processes/manufacturing.md), [Manual Journals and Close Cycle](../../processes/manual-journals-and-close.md)
 - Supporting references: [Schema Reference](../../reference/schema.md), [GLEntry Posting Reference](../../reference/posting.md), [Dataset Guide](../../start-here/dataset-overview.md)
 - This case follows the fixed-asset lifecycle from the posted subledger and related financing records. It does not extend into budget or pro-forma cash-flow planning.
@@ -238,4 +238,4 @@ Submit a short case memo or notebook note with these four artifacts:
 - Use [Manufacturing Process](../../processes/manufacturing.md) to connect plant-equipment depreciation back into manufacturing clearing and standard-cost interpretation.
 - Use [Manual Journals and Close Cycle](../../processes/manual-journals-and-close.md) for the debt reclass, depreciation, note payment, and disposal journals that complete the lifecycle.
 - Use [GLEntry Posting Reference](../../reference/posting.md) and [Schema Reference](../../reference/schema.md) when you need the exact posting rules or table bridges.
-- Use [Financial Analytics](../financial.md) when you want the wider statement and cash-flow analysis around the same CAPEX events.
+- Use [Financial Queries](../financial.md) when you want the wider statement and cash-flow analysis around the same CAPEX events.

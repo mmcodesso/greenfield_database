@@ -639,6 +639,284 @@ export const starterQueryMaps = {
   ]
 };
 
+const q = (queryKey) => ({ queryKey });
+
+export const queryLibraryGroups = {
+  "financial": [
+    {
+      "title": "Revenue, margin, and commercial pricing",
+      "description": "Use these queries to connect billed revenue, gross margin, promotions, price realization, and customer-facing commercial activity.",
+      "items": [
+        q("financial/01_monthly_revenue_and_gross_margin.sql"),
+        q("financial/07_customer_credit_and_refunds.sql"),
+        q("financial/21_revenue_and_gross_margin_by_collection_style_lifecycle_supply_mode.sql"),
+        q("financial/25_price_realization_vs_list_by_segment_customer_region_collection_style.sql"),
+        q("financial/26_gross_margin_impact_of_promotions_vs_nonpromotion_sales.sql"),
+        q("financial/42_annual_net_revenue_bridge.sql"),
+        q("financial/43_invoice_revenue_cutoff_exception_summary.sql"),
+        q("financial/44_invoice_revenue_cutoff_exception_trace.sql")
+      ]
+    },
+    {
+      "title": "AR, AP, customer cash, and working capital",
+      "description": "Use these queries to separate invoice aging, cash application, supplier settlement, and month-end working-capital pressure.",
+      "items": [
+        q("financial/02_ar_aging_open_invoices.sql"),
+        q("financial/03_ap_aging_open_invoices.sql"),
+        q("financial/15_customer_deposits_and_unapplied_cash_aging.sql"),
+        q("financial/19_working_capital_bridge_by_month.sql"),
+        q("financial/20_cash_conversion_timing_review.sql"),
+        q("financial/45_monthly_ar_aging_detail.sql"),
+        q("financial/46_monthly_ar_aging_summary.sql"),
+        q("financial/47_monthly_ap_aging_detail.sql"),
+        q("financial/48_monthly_ap_aging_summary.sql")
+      ]
+    },
+    {
+      "title": "Payroll, accruals, and manufacturing cost",
+      "description": "Use these queries to explain payroll liabilities, gross-to-net pay, accrued expenses, and manufacturing-accounting movement.",
+      "items": [
+        q("financial/08_manufacturing_wip_clearing_variance.sql"),
+        q("financial/09_payroll_liability_rollforward.sql"),
+        q("financial/10_gross_to_net_payroll_review.sql"),
+        q("financial/11_payroll_cash_payments_and_remittances.sql"),
+        q("financial/12_accrued_expense_rollforward.sql"),
+        q("financial/13_accrued_vs_invoiced_vs_paid_timing.sql"),
+        q("financial/14_hourly_payroll_hours_to_paid_earnings_bridge.sql"),
+        q("financial/17_manufacturing_cost_component_bridge.sql"),
+        q("financial/18_payroll_expense_mix_by_cost_center_and_pay_class.sql"),
+        q("financial/22_payroll_and_people_cost_mix_by_cost_center_job_family_level.sql")
+      ]
+    },
+    {
+      "title": "Trial balance, statements, reconciliation, and close",
+      "description": "Use these queries to move from posted GL activity into trial balance, financial statements, control-account support, and close validation.",
+      "items": [
+        q("financial/04_trial_balance_by_period.sql"),
+        q("financial/05_journal_and_close_cycle_review.sql"),
+        q("financial/06_control_account_reconciliation.sql"),
+        q("financial/16_retained_earnings_and_close_entry_impact.sql"),
+        q("financial/27_income_statement_monthly.sql"),
+        q("financial/28_income_statement_quarterly.sql"),
+        q("financial/29_income_statement_annual.sql"),
+        q("financial/30_balance_sheet_monthly.sql"),
+        q("financial/31_balance_sheet_quarterly.sql"),
+        q("financial/32_balance_sheet_annual.sql"),
+        q("financial/33_cash_flow_statement_indirect_monthly.sql"),
+        q("financial/34_cash_flow_statement_indirect_quarterly.sql"),
+        q("financial/35_cash_flow_statement_indirect_annual.sql"),
+        q("financial/36_cash_flow_statement_direct_monthly.sql"),
+        q("financial/37_cash_flow_statement_direct_quarterly.sql"),
+        q("financial/38_cash_flow_statement_direct_annual.sql"),
+        q("financial/39_annual_income_to_equity_bridge.sql"),
+        q("financial/40_post_close_profit_and_loss_leakage_review.sql"),
+        q("financial/41_round_dollar_manual_journal_close_sensitivity_review.sql")
+      ]
+    },
+    {
+      "title": "Budget, pro forma, CAPEX, fixed assets, and design services",
+      "description": "Use these queries to connect explicit budget assumptions, pro forma statements, fixed-asset lifecycle events, debt timing, and design-service revenue.",
+      "items": [
+        q("financial/23_forecast_vs_actual_demand_by_week_item_group_collection_lifecycle.sql"),
+        q("financial/24_recommendation_conversion_by_type_priority_planner.sql"),
+        q("financial/49_pro_forma_income_statement_monthly.sql"),
+        q("financial/50_pro_forma_balance_sheet_monthly.sql"),
+        q("financial/51_pro_forma_cash_flow_indirect_monthly.sql"),
+        q("financial/52_budget_vs_actual_statement_bridge_monthly.sql"),
+        q("financial/53_budget_vs_actual_working_capital_and_cash_bridge.sql"),
+        q("financial/54_fixed_asset_rollforward_by_behavior_group.sql"),
+        q("financial/55_capex_acquisitions_financing_and_disposals.sql"),
+        q("financial/56_debt_amortization_and_cash_impact.sql"),
+        q("financial/57_design_service_revenue_and_billed_hours_by_customer_month.sql")
+      ]
+    }
+  ],
+  "managerial": [
+    {
+      "title": "Budget, cost center, and cost management",
+      "description": "Use these queries to compare cost-center activity, budget expectations, and price-volume-cost budget bridges.",
+      "items": [
+        q("managerial/01_budget_vs_actual_by_cost_center.sql"),
+        q("managerial/05_cost_center_activity_summary.sql"),
+        q("managerial/51_budget_vs_actual_revenue_price_volume_cost_bridge.sql")
+      ]
+    },
+    {
+      "title": "Portfolio, profitability, service, returns, and pricing",
+      "description": "Use these queries to compare sales mix, product economics, contribution margin, service outcomes, returns, and commercial pricing pressure.",
+      "items": [
+        q("managerial/02_sales_mix_by_customer_region_item_group.sql"),
+        q("managerial/06_basic_product_profitability.sql"),
+        q("managerial/13_unit_cost_bridge_dm_dl_varoh_fixedoh.sql"),
+        q("managerial/14_absorption_vs_contribution_margin.sql"),
+        q("managerial/15_manufactured_vs_purchased_margin_comparison.sql"),
+        q("managerial/25_backorder_fill_rate_and_shipment_lag.sql"),
+        q("managerial/26_returns_and_refund_impact_by_customer_and_item.sql"),
+        q("managerial/30_sales_margin_by_collection_style_material.sql"),
+        q("managerial/31_product_portfolio_mix_by_collection_style_lifecycle_supply_mode.sql"),
+        q("managerial/32_contribution_margin_by_collection_material_lifecycle_supply_mode.sql"),
+        q("managerial/33_customer_service_impact_by_collection_style.sql"),
+        q("managerial/35_portfolio_return_refund_impact_by_collection_lifecycle.sql"),
+        q("managerial/47_sales_rep_override_rate_and_discount_dispersion.sql"),
+        q("managerial/48_collection_revenue_margin_before_after_promotions.sql"),
+        q("managerial/49_customer_specific_pricing_concentration_and_dependency.sql"),
+        q("managerial/50_monthly_price_floor_pressure_and_override_concentration.sql")
+      ]
+    },
+    {
+      "title": "Inventory, purchasing, and supplier performance",
+      "description": "Use these queries to inspect inventory movement, purchasing activity, and supplier receipt reliability.",
+      "items": [
+        q("managerial/03_inventory_movement_by_item_and_warehouse.sql"),
+        q("managerial/04_purchasing_activity_by_supplier_category.sql"),
+        q("managerial/27_supplier_lead_time_and_receipt_reliability.sql")
+      ]
+    },
+    {
+      "title": "Manufacturing, routing, throughput, labor, and capacity",
+      "description": "Use these queries to connect BOM, routing, work-center load, work-order activity, labor support, and manufacturing variance.",
+      "items": [
+        q("managerial/07_bom_standard_cost_rollup.sql"),
+        q("managerial/08_work_order_throughput_by_month.sql"),
+        q("managerial/09_material_usage_and_scrap_review.sql"),
+        q("managerial/10_production_completion_and_fg_availability.sql"),
+        q("managerial/11_manufacturing_variance_by_month_item_group.sql"),
+        q("managerial/12_direct_labor_by_work_order_and_employee_class.sql"),
+        q("managerial/16_labor_efficiency_and_rate_variance.sql"),
+        q("managerial/17_routing_master_review.sql"),
+        q("managerial/18_work_center_activity_and_operation_hours.sql"),
+        q("managerial/19_daily_load_vs_capacity.sql"),
+        q("managerial/20_monthly_work_center_utilization.sql"),
+        q("managerial/21_operation_delay_and_bottleneck_review.sql"),
+        q("managerial/22_backlog_aging_by_work_center.sql"),
+        q("managerial/23_shift_adherence_and_overtime_by_work_center.sql"),
+        q("managerial/24_approved_clock_hours_vs_labor_allocation.sql"),
+        q("managerial/28_paid_hours_vs_productive_labor_by_work_center.sql")
+      ]
+    },
+    {
+      "title": "Workforce coverage, planning, replenishment, and design-service utilization",
+      "description": "Use these queries to review workforce structure, roster coverage, attendance pressure, forecast quality, replenishment recommendations, and design-service utilization.",
+      "items": [
+        q("managerial/29_headcount_by_cost_center_job_family_status.sql"),
+        q("managerial/34_labor_and_headcount_by_work_location_job_family_cost_center.sql"),
+        q("managerial/36_staffing_coverage_vs_work_center_planned_load.sql"),
+        q("managerial/37_rostered_vs_worked_hours_by_work_center_shift.sql"),
+        q("managerial/38_absence_rate_by_work_location_job_family_month.sql"),
+        q("managerial/39_overtime_approval_coverage_and_concentration.sql"),
+        q("managerial/40_punch_to_pay_bridge_for_hourly_workers.sql"),
+        q("managerial/41_late_arrival_early_departure_by_shift_department.sql"),
+        q("managerial/42_inventory_coverage_and_projected_stockout_risk.sql"),
+        q("managerial/43_rough_cut_capacity_load_vs_available_hours.sql"),
+        q("managerial/44_expedite_pressure_by_item_family_and_month.sql"),
+        q("managerial/45_forecast_error_and_bias_by_collection_style_family.sql"),
+        q("managerial/46_supply_plan_driver_mix_by_collection_and_supply_mode.sql"),
+        q("managerial/52_design_service_engagement_utilization_and_labor_margin.sql")
+      ]
+    }
+  ],
+  "audit": [
+    {
+      "title": "Core process completeness and anomaly triage",
+      "description": "Use these queries to start from document-chain completeness, cutoff timing, anomaly triage, and customer-service exception patterns.",
+      "items": [
+        q("audit/01_o2c_document_chain_completeness.sql"),
+        q("audit/02_p2p_document_chain_completeness.sql"),
+        q("audit/04_cutoff_and_timing_analysis.sql"),
+        q("audit/06_potential_anomaly_review.sql"),
+        q("audit/07_backorder_and_return_review.sql")
+      ]
+    },
+    {
+      "title": "Manufacturing and work-order controls",
+      "description": "Use these queries to test BOM, routing, scheduling, capacity, operation timing, labor support, and released-work-order exception seeds.",
+      "items": [
+        q("audit/08_missing_bom_or_supply_mode_conflict.sql"),
+        q("audit/09_over_issue_and_open_wip_review.sql"),
+        q("audit/10_work_order_close_timing_review.sql"),
+        q("audit/14_missing_routing_or_operation_link_review.sql"),
+        q("audit/15_operation_sequence_and_final_completion_review.sql"),
+        q("audit/16_schedule_on_nonworking_day_review.sql"),
+        q("audit/17_over_capacity_day_review.sql"),
+        q("audit/18_completion_before_scheduled_operation_end.sql"),
+        q("audit/20_labor_outside_scheduled_operation_window_review.sql"),
+        q("audit/52_released_work_orders_due_without_actual_start_review.sql"),
+        q("audit/53_released_work_orders_due_without_actual_start_summary.sql")
+      ]
+    },
+    {
+      "title": "Payroll, workforce, attendance, and time controls",
+      "description": "Use these queries to review payroll support, employee lifecycle activity, schedule and punch integrity, absence conflicts, overtime, and roster control.",
+      "items": [
+        q("audit/11_payroll_control_review.sql"),
+        q("audit/12_labor_time_after_close_and_paid_without_time.sql"),
+        q("audit/19_time_clock_exceptions_by_employee_supervisor_work_center.sql"),
+        q("audit/21_paid_without_clock_and_clock_without_pay_review.sql"),
+        q("audit/25_time_clock_payroll_labor_bridge_review.sql"),
+        q("audit/27_terminated_employee_activity_review.sql"),
+        q("audit/33_terminated_employee_activity_rollup_by_process_area.sql"),
+        q("audit/37_scheduled_without_punch_and_punch_without_schedule_review.sql"),
+        q("audit/38_overtime_without_approval_review.sql"),
+        q("audit/39_absence_with_worked_time_review.sql"),
+        q("audit/40_overlapping_or_incomplete_punch_review.sql"),
+        q("audit/41_roster_after_termination_review.sql")
+      ]
+    },
+    {
+      "title": "Master data, approvals, role design, and authority limits",
+      "description": "Use these queries to test approval roles, executive uniqueness, employee assignments, item completeness, lifecycle status, and authority limits.",
+      "items": [
+        q("audit/03_approval_and_sod_review.sql"),
+        q("audit/28_approval_role_review_by_org_position.sql"),
+        q("audit/29_executive_role_uniqueness_and_control_assignment_review.sql"),
+        q("audit/30_item_master_completeness_review.sql"),
+        q("audit/31_discontinued_or_prelaunch_item_activity_review.sql"),
+        q("audit/32_approval_authority_review_by_expected_role_family.sql"),
+        q("audit/34_current_state_employee_assignment_review.sql"),
+        q("audit/35_approval_authority_limit_review.sql"),
+        q("audit/36_item_status_alignment_review.sql")
+      ]
+    },
+    {
+      "title": "Accrual, cash, duplicate-reference, and financial timing review",
+      "description": "Use these queries to investigate duplicate payment references, accrued-service settlement, customer deposits, cash application, and supplier-reference exceptions.",
+      "items": [
+        q("audit/05_duplicate_payment_reference_review.sql"),
+        q("audit/13_over_under_accrual_review.sql"),
+        q("audit/23_accrued_service_settlement_exception_review.sql"),
+        q("audit/24_customer_deposits_and_unapplied_cash_exception_review.sql"),
+        q("audit/26_duplicate_ap_reference_detail_review.sql")
+      ]
+    },
+    {
+      "title": "Planning-support, pricing-governance, and design-service controls",
+      "description": "Use these queries to test planning support, inventory policy, replenishment conversion, commercial pricing governance, and design-service billing support.",
+      "items": [
+        q("audit/42_forecast_approval_and_override_review.sql"),
+        q("audit/43_inactive_or_stale_inventory_policy_review.sql"),
+        q("audit/44_requisitions_and_work_orders_without_planning_support.sql"),
+        q("audit/45_recommendation_converted_after_need_by_date_review.sql"),
+        q("audit/46_discontinued_or_prelaunch_planning_activity_review.sql"),
+        q("audit/47_sales_below_floor_without_approval.sql"),
+        q("audit/48_expired_or_overlapping_price_list_review.sql"),
+        q("audit/49_promotion_scope_and_date_mismatch_review.sql"),
+        q("audit/50_customer_specific_price_list_bypass_review.sql"),
+        q("audit/51_override_approval_completeness_review.sql"),
+        q("audit/54_design_service_approved_vs_billed_hours_review.sql")
+      ]
+    }
+  ]
+};
+
+export const caseSupportTraceQueries = [
+  q("cases/01_o2c_line_trace_order_shipment_invoice.sql"),
+  q("cases/02_o2c_source_to_gl_trace.sql"),
+  q("cases/03_p2p_invoice_line_trace_receipt_vs_accrual.sql"),
+  q("cases/04_p2p_accrual_journal_invoice_payment_gl_trace.sql"),
+  q("cases/05_manufacturing_work_order_operation_trace.sql"),
+  q("cases/06_manufacturing_work_order_close_gl_trace.sql")
+];
+
 export const caseQuerySequences = {
   "attendance-control-audit-case": [
     {
