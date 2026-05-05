@@ -28,23 +28,13 @@ You need to prove where forecast demand diverges from actual order demand, what 
 - An urgency and conversion explanation tied to expedites and recommendation follow-through.
 - A short management-facing recommendation on which planning issue should move next into audit review or execution follow-through.
 
-## Key Data Sources
+## Before You Start
 
 - Main tables: `DemandForecast`, `InventoryPolicy`, `SupplyPlanRecommendation`, `MaterialRequirementPlan`, `RoughCutCapacityPlan`, `PurchaseRequisition`, `WorkOrder`, `Item`
 - Related guides: [Operations and Risk](../reports/operations-and-risk.md), [Managerial Analytics](../managerial.md)
 - Related process pages: [Manufacturing Process](../../processes/manufacturing.md), [Procure-to-Pay Process](../../processes/p2p.md)
 - Supporting references: [Schema Reference](../../reference/schema.md), [Dataset Guide](../../start-here/dataset-overview.md)
-- This case stays on forecast, replenishment, and rough-cut capacity. Use the audit case for planning-governance failures and use the manufacturing process page when you need the execution follow-through.
-
-## Recommended Query Sequence
-
-1. `financial/23_forecast_vs_actual_demand_by_week_item_group_collection_lifecycle.sql`
-2. `managerial/45_forecast_error_and_bias_by_collection_style_family.sql`
-3. `managerial/46_supply_plan_driver_mix_by_collection_and_supply_mode.sql`
-4. `managerial/42_inventory_coverage_and_projected_stockout_risk.sql`
-5. `managerial/44_expedite_pressure_by_item_family_and_month.sql`
-6. `financial/24_recommendation_conversion_by_type_priority_planner.sql`
-7. `managerial/43_rough_cut_capacity_load_vs_available_hours.sql`
+- This case stays at the planning-signal layer before execution and audit follow-up. Use the replenishment audit case for planning-governance failures and the manufacturing process page when you need execution follow-through.
 
 ## Step-by-Step Walkthrough
 
@@ -58,7 +48,7 @@ Measure where weekly forecast demand diverges from actual demand and identify wh
 
 **Why this step changes the diagnosis**
 
-Planning quality starts with signal quality. If forecast bias is concentrated in specific item families or lifecycle groups, later recommendation pressure becomes easier to explain.
+This step anchors the diagnosis in signal quality. If forecast bias is concentrated in specific item families or lifecycle groups, later recommendation pressure becomes easier to explain.
 
 **Suggested query**
 
@@ -97,7 +87,7 @@ Separate forecast-driven replenishment from backlog, safety-stock, and component
 
 **Why this step changes the diagnosis**
 
-Students need to explain why recommendations exist before they explain urgency. A forecast-driven recommendation and a backlog-driven recommendation carry different planning meaning.
+This step separates the cause of the recommendation pool. A forecast-driven recommendation and a backlog-driven recommendation carry different planning meaning.
 
 **Suggested query**
 
@@ -165,7 +155,7 @@ Show where recommendation pressure turns into expedites and how planners are con
 
 **Why this step changes the diagnosis**
 
-Expedite pressure signals urgency. Recommendation conversion signals whether planners are acting on the recommendation pool. You need both to explain how planning pressure is managed.
+This step separates urgency from follow-through. Expedite pressure signals where planning pressure has escalated, while conversion status shows whether planners are acting on the recommendation pool.
 
 **Suggested query**
 
@@ -204,7 +194,7 @@ Identify which work centers tighten first once manufactured replenishment pressu
 
 **Why this step changes the diagnosis**
 
-Planning does not stop at item availability. Manufactured recommendations also create weekly load pressure. Rough-cut capacity shows where that pressure becomes operationally meaningful before work orders are scheduled in detail.
+This step connects manufactured planning pressure to capacity response. Rough-cut capacity shows where the pressure becomes operationally meaningful before work orders are scheduled in detail.
 
 **Suggested query**
 
@@ -231,10 +221,10 @@ The query starts from `RoughCutCapacityPlan`, joins `WorkCenter`, aggregates pla
 ## Optional Excel Follow-Through
 
 1. Build one weekly pivot for forecast quantity versus actual order quantity by item family or collection.
-2. Build one pivot for recommendation driver mix and projected coverage.
-3. Build one narrower pivot for expedite concentration by month and item family.
-4. Build one weekly rough-cut capacity pivot by work center.
-5. Keep the workbook at the planning-signal level instead of extending it into execution or accounting detail.
+2. Add a forecast-error tab that ranks overforecast and underforecast patterns by collection and style family.
+3. Build one recommendation tab for driver mix and projected coverage.
+4. Add one urgency tab for expedite concentration and recommendation conversion by planner.
+5. Finish with one rough-cut capacity tab and a short conclusion on whether follow-up belongs in planning, manufacturing execution, or replenishment audit.
 
 ## Wrap-Up Questions
 
@@ -242,7 +232,7 @@ The query starts from `RoughCutCapacityPlan`, joins `WorkCenter`, aggregates pla
 - Is the recommendation pool driven more by forecast, backlog, safety stock, or component demand?
 - Where do projected stockout risk and expedite pressure overlap?
 - Which work centers tighten first when manufactured demand rises?
-- Which planning issue should move next into audit review or manufacturing follow-through?
+- Should the next action stay in planning, move into manufacturing execution follow-through, or move into the replenishment audit case?
 
 ## Next Steps
 

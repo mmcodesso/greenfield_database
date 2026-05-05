@@ -28,27 +28,19 @@ You need to prove which collections and lifecycle groups generate the strongest 
 - A return and refund interpretation tied to lifecycle grouping.
 - A short management-facing recommendation on the most attractive and least attractive portfolio families.
 
-## Key Data Sources
+## Before You Start
 
 - Main tables: `Item`, `SalesInvoiceLine`, `CreditMemoLine`, `SalesReturnLine`, `ShipmentLine`, `SalesOrderLine`, `CustomerRefund`
 - Related guides: [Managerial Analytics](../managerial.md), [Financial Analytics](../financial.md), [Operations and Risk](../reports/operations-and-risk.md)
 - Related cases: [Product Portfolio and Lifecycle Case](product-portfolio-and-lifecycle-case.md), [Pricing and Margin Governance Case](pricing-and-margin-governance-case.md)
 - Supporting references: [Schema Reference](../../reference/schema.md), [Dataset Guide](../../start-here/dataset-overview.md)
-- This case stays at the portfolio-family level. Use the lighter portfolio case for catalog setup and the pricing case for commercial-policy interpretation.
-
-## Recommended Query Sequence
-
-1. `managerial/31_product_portfolio_mix_by_collection_style_lifecycle_supply_mode.sql`
-2. `financial/21_revenue_and_gross_margin_by_collection_style_lifecycle_supply_mode.sql`
-3. `managerial/32_contribution_margin_by_collection_material_lifecycle_supply_mode.sql`
-4. `managerial/33_customer_service_impact_by_collection_style.sql`
-5. `managerial/35_portfolio_return_refund_impact_by_collection_lifecycle.sql`
+- This case ranks portfolio families across multiple performance lenses rather than tracing one document flow. Use the lighter portfolio case for catalog setup and the pricing case for commercial-policy interpretation.
 
 ## Step-by-Step Walkthrough
 
 ### Step 1. Define the portfolio mix you are evaluating
 
-Start by defining the portfolio population. You need a clear view of collections, style families, lifecycle groups, and supply modes before you start ranking performance.
+Start by defining the portfolio population. Before you rank performance, you need a clear view of collections, style families, lifecycle groups, and supply modes.
 
 **What we are trying to achieve**
 
@@ -56,7 +48,7 @@ Establish the mix of collections, style families, lifecycle groups, and supply m
 
 **Why this step changes the diagnosis**
 
-Students need the portfolio population before they interpret profitability. A ranking means very little if the underlying mix is unclear.
+This step gives you the portfolio frame. A ranking means very little if the underlying mix is unclear.
 
 **Suggested query**
 
@@ -82,7 +74,7 @@ The query groups `Item` rows by collection, style family, lifecycle status, and 
 
 ### Step 2. Rank the portfolio on billed sales and gross margin
 
-Once the mix is clear, move to the first performance ranking. This step establishes the top-line and gross-margin view that management usually sees first.
+Once the mix is clear, move to the first economic ranking. This step establishes the top-line and gross-margin view that management usually sees first.
 
 **What we are trying to achieve**
 
@@ -124,7 +116,7 @@ Show whether the portfolio ranking changes once variable-cost logic is used.
 
 **Why this step changes the diagnosis**
 
-Management decisions get stronger when students separate gross margin from contribution margin. Supply mode matters here because manufactured items exclude fixed overhead in this contribution view.
+This step changes the ranking logic. Supply mode matters here because manufactured items exclude fixed overhead in this contribution view, so some families can look better or worse than they did on gross margin alone.
 
 **Suggested query**
 
@@ -158,7 +150,7 @@ Show where fill rate, shipment lag, and backorder pressure reinforce or weaken t
 
 **Why this step changes the diagnosis**
 
-A strong collection financially can still create operational strain. Management needs both the economic and service view before it makes a portfolio decision.
+This step adds the operating lens. A strong collection financially can still create operational strain, and management needs both views before it makes a portfolio decision.
 
 **Suggested query**
 
@@ -192,7 +184,7 @@ Show how credit and refund pressure changes the final interpretation of portfoli
 
 **Why this step changes the diagnosis**
 
-The case should end with a balanced management view. A single metric cannot rank the portfolio reliably if return and refund pressure changes the real outcome.
+This step finishes the management view. A single metric cannot rank the portfolio reliably if return and refund pressure changes the real outcome.
 
 **Suggested query**
 
@@ -218,19 +210,19 @@ The query starts from `SalesInvoiceLine`, offsets the billed base with `CreditMe
 
 ## Optional Excel Follow-Through
 
-1. Start with one portfolio pivot by collection, lifecycle status, and supply mode.
-2. Add a second pivot for gross margin versus contribution margin.
-3. Add a third narrow view for service and return pressure.
-4. Compare rankings across the three views instead of building one giant workbook.
-5. Keep the analysis at the portfolio-family level instead of dropping into transaction detail.
+1. Start with one portfolio mix pivot by collection, lifecycle status, and supply mode.
+2. Add a second view that ranks gross margin by the same portfolio families.
+3. Add a third view that compares gross margin with contribution margin to show rank changes.
+4. Add a narrow service-and-return tab so fill rate, backorder pressure, credits, and refunds sit beside the economic ranking.
+5. Finish with a short conclusion tab that names which families to protect, invest in, repair, or reconsider.
 
 ## Wrap-Up Questions
 
-- Which collection looks strongest on net sales and gross margin?
-- Does contribution margin change that ranking?
-- Which collection combines weak service with weak economics?
-- How does lifecycle status change the interpretation of return and refund pressure?
-- Which portfolio family should management invest in, repair, or reconsider first?
+- Which collection or lifecycle group looks strongest on gross margin before contribution logic is applied?
+- Does contribution margin change that ranking materially, and why?
+- Which family combines weak service with weak economics?
+- Does return and refund pressure confirm or overturn the earlier ranking?
+- Which portfolio family should management protect, invest in, repair, or reconsider first once all four lenses are combined?
 
 ## Next Steps
 

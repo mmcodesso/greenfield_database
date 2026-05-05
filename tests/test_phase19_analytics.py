@@ -99,3 +99,26 @@ def test_phase19_docs_reference_new_query_and_case_flow() -> None:
     assert "Product Portfolio Profitability Case" not in analytics_hub
     assert "## Recommended teaching sequence" in instructor_guide
     assert "working-capital bridge by month" in sql_guide.lower()
+
+
+def test_phase19_profitability_case_uses_upgraded_walkthrough_shell() -> None:
+    profitability_case = Path("docs/analytics/cases/product-portfolio-profitability-case.md").read_text(encoding="utf-8")
+
+    for snippet in (
+        "## Before You Start",
+        "## Step-by-Step Walkthrough",
+        "## Optional Excel Follow-Through",
+        "## Wrap-Up Questions",
+        "## Next Steps",
+        "managerial/31_product_portfolio_mix_by_collection_style_lifecycle_supply_mode.sql",
+        "financial/21_revenue_and_gross_margin_by_collection_style_lifecycle_supply_mode.sql",
+        "managerial/32_contribution_margin_by_collection_material_lifecycle_supply_mode.sql",
+        "managerial/33_customer_service_impact_by_collection_style.sql",
+        "managerial/35_portfolio_return_refund_impact_by_collection_lifecycle.sql",
+        "product-portfolio-and-lifecycle-case.md",
+        "pricing-and-margin-governance-case.md",
+    ):
+        assert snippet in profitability_case
+
+    assert "## Key Data Sources" not in profitability_case
+    assert "## Recommended Query Sequence" not in profitability_case

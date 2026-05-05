@@ -768,28 +768,32 @@ export const caseQuerySequences = {
   ],
   "demand-planning-and-replenishment-case": [
     {
-      "lead": "Run",
+      "lead": "Start with forecast demand versus actual order demand using",
       "queryKey": "financial/23_forecast_vs_actual_demand_by_week_item_group_collection_lifecycle.sql"
     },
     {
-      "lead": "Run",
+      "lead": "Then isolate systematic forecast error and bias with",
+      "queryKey": "managerial/45_forecast_error_and_bias_by_collection_style_family.sql"
+    },
+    {
+      "lead": "Then explain the recommendation driver mix through",
+      "queryKey": "managerial/46_supply_plan_driver_mix_by_collection_and_supply_mode.sql"
+    },
+    {
+      "lead": "Then measure projected availability and stockout risk using",
       "queryKey": "managerial/42_inventory_coverage_and_projected_stockout_risk.sql"
     },
     {
-      "lead": "Run",
-      "queryKey": "financial/24_recommendation_conversion_by_type_priority_planner.sql"
-    },
-    {
-      "lead": "Run",
-      "queryKey": "managerial/43_rough_cut_capacity_load_vs_available_hours.sql"
-    },
-    {
-      "lead": "Run",
+      "lead": "Then identify where planning pressure escalates into expedites with",
       "queryKey": "managerial/44_expedite_pressure_by_item_family_and_month.sql"
     },
     {
-      "lead": "Run",
-      "queryKey": "managerial/46_supply_plan_driver_mix_by_collection_and_supply_mode.sql"
+      "lead": "Then test recommendation conversion and follow-through with",
+      "queryKey": "financial/24_recommendation_conversion_by_type_priority_planner.sql"
+    },
+    {
+      "lead": "Finish by connecting manufactured pressure to rough-cut capacity through",
+      "queryKey": "managerial/43_rough_cut_capacity_load_vs_available_hours.sql"
     }
   ],
   "financial-statement-bridge-case": [
@@ -1016,23 +1020,23 @@ export const caseQuerySequences = {
   ],
   "product-portfolio-profitability-case": [
     {
-      "lead": "Run",
+      "lead": "Start by defining the portfolio population with",
       "queryKey": "managerial/31_product_portfolio_mix_by_collection_style_lifecycle_supply_mode.sql"
     },
     {
-      "lead": "Run",
+      "lead": "Then rank billed sales and gross margin through",
       "queryKey": "financial/21_revenue_and_gross_margin_by_collection_style_lifecycle_supply_mode.sql"
     },
     {
-      "lead": "Run",
+      "lead": "Then test whether contribution margin changes the ranking with",
       "queryKey": "managerial/32_contribution_margin_by_collection_material_lifecycle_supply_mode.sql"
     },
     {
-      "lead": "Run",
+      "lead": "Then add the service-performance lens using",
       "queryKey": "managerial/33_customer_service_impact_by_collection_style.sql"
     },
     {
-      "lead": "Run",
+      "lead": "Finish with return and refund pressure through",
       "queryKey": "managerial/35_portfolio_return_refund_impact_by_collection_lifecycle.sql"
     }
   ],
@@ -1082,23 +1086,23 @@ export const caseQuerySequences = {
   ],
   "workforce-coverage-and-attendance-case": [
     {
-      "lead": "Run",
+      "lead": "Start with planned load versus rostered coverage using",
       "queryKey": "managerial/36_staffing_coverage_vs_work_center_planned_load.sql"
     },
     {
-      "lead": "Run",
+      "lead": "Then compare rostered hours with approved worked hours through",
       "queryKey": "managerial/37_rostered_vs_worked_hours_by_work_center_shift.sql"
     },
     {
-      "lead": "Run",
+      "lead": "Then localize absence concentration with",
       "queryKey": "managerial/38_absence_rate_by_work_location_job_family_month.sql"
     },
     {
-      "lead": "Run",
+      "lead": "Then evaluate overtime response and approval coverage using",
       "queryKey": "managerial/39_overtime_approval_coverage_and_concentration.sql"
     },
     {
-      "lead": "Run",
+      "lead": "Finish by translating attendance drift with",
       "queryKey": "managerial/41_late_arrival_early_departure_by_shift_department.sql"
     }
   ],

@@ -28,21 +28,13 @@ You need to prove where planned load outpaces rostered coverage, where approved 
 - An attendance-drift interpretation by shift and department.
 - A short management-facing recommendation on where planners or supervisors should act first.
 
-## Key Data Sources
+## Before You Start
 
 - Main tables: `EmployeeShiftRoster`, `WorkOrderOperationSchedule`, `TimeClockEntry`, `EmployeeAbsence`, `OvertimeApproval`, `ShiftDefinition`, `WorkCenter`, `Employee`
 - Related guides: [Operations and Risk](../reports/operations-and-risk.md), [Payroll and Workforce](../reports/payroll-perspective.md)
 - Related process pages: [Payroll Process](../../processes/payroll.md), [Manufacturing Process](../../processes/manufacturing.md)
 - Supporting references: [Schema Reference](../../reference/schema.md), [Dataset Guide](../../start-here/dataset-overview.md)
-- This case stays at the staffing and attendance-management level. Use the audit case for punch and approval exceptions, and use the workforce-cost case for payroll-cost interpretation.
-
-## Recommended Query Sequence
-
-1. `managerial/36_staffing_coverage_vs_work_center_planned_load.sql`
-2. `managerial/37_rostered_vs_worked_hours_by_work_center_shift.sql`
-3. `managerial/38_absence_rate_by_work_location_job_family_month.sql`
-4. `managerial/39_overtime_approval_coverage_and_concentration.sql`
-5. `managerial/41_late_arrival_early_departure_by_shift_department.sql`
+- This case diagnoses staffing coverage and attendance pressure rather than formal punch or approval exceptions. Use the audit case for exception testing and the workforce-cost case for payroll-cost interpretation.
 
 ## Step-by-Step Walkthrough
 
@@ -53,6 +45,8 @@ Start with the operational demand side. Before you interpret absences or overtim
 **What we are trying to achieve**
 
 Measure the daily gap between scheduled work-center load and rostered staffing hours.
+
+**Why this step changes the diagnosis**
 
 Coverage pressure starts here. If planned load already exceeds rostered hours, later worked-hour and overtime results become easier to interpret.
 
@@ -86,6 +80,8 @@ Once the planned gap is clear, move to the execution question. A rostered day do
 
 Compare planned rostered hours with approved worked hours by work center and shift.
 
+**Why this step changes the diagnosis**
+
 Rostered coverage and worked coverage answer different questions. The first shows staffing intent. The second shows the hours operations actually received.
 
 **Suggested query**
@@ -117,6 +113,8 @@ After you understand the coverage gap, isolate the workforce groups driving atte
 **What we are trying to achieve**
 
 Identify where absence hours concentrate across work locations and job families.
+
+**Why this step changes the diagnosis**
 
 Managers cannot act on a generic absence rate. They need to know which parts of the workforce create the pressure.
 
@@ -150,6 +148,8 @@ Now assess how operations responded once staffing pressure appeared.
 
 Show where overtime concentrates and whether it functions as occasional support or recurring dependency.
 
+**Why this step changes the diagnosis**
+
 Overtime can protect throughput in the short term. It also signals that the staffing model may already be under strain.
 
 **Suggested query**
@@ -182,6 +182,8 @@ Finish by measuring the smaller attendance patterns that reduce available time e
 
 Identify shifts and departments where late arrivals or early departures reduce actual available labor time.
 
+**Why this step changes the diagnosis**
+
 This is the last management step before a formal control review. Attendance drift is an operating signal. The audit case handles the exception-testing follow-through.
 
 **Suggested query**
@@ -208,19 +210,19 @@ The query compares scheduled start and end times from `EmployeeShiftRoster` to a
 
 ## Optional Excel Follow-Through
 
-1. Build one pivot by month and work center for planned load, rostered hours, and approved worked hours.
-2. Build one absence pivot by work location and job family.
-3. Build one narrower overtime pivot by work center and month.
-4. Build one shift or department pivot for late-arrival and early-departure minutes.
-5. Compare those views side by side instead of merging them into one oversized workbook.
+1. Build one coverage pivot by month and work center for planned load, rostered hours, and coverage gap.
+2. Add a worked-hours tab that compares rostered hours, approved worked hours, and overtime by shift.
+3. Build one absence pivot by work location and job family.
+4. Add a narrower overtime-response tab by work center and month.
+5. Finish with a shift or department tab for late-arrival and early-departure minutes, then name the first management follow-up.
 
 ## Wrap-Up Questions
 
-- Which work center has the most persistent negative coverage gap?
-- Does absence concentration or worked-hour shortfall explain more of that pressure?
-- Where does overtime act like a temporary response, and where does it look like chronic dependency?
-- Which shift or department shows the strongest attendance drift?
-- Which management action should come first?
+- Which work center has the most persistent negative planned-coverage gap?
+- Does worked-hour shortfall or absence concentration explain more of that pressure?
+- Where does overtime act like a temporary response, and where does it look like recurring dependency?
+- Which shift or department shows the clearest attendance drift?
+- Should the next action sit with planners, supervisors, or the attendance-control audit case?
 
 ## Next Steps
 

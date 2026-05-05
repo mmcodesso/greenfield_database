@@ -163,3 +163,26 @@ def test_phase21_docs_and_sidebar_entries_exist() -> None:
     sidebar_text = Path("sidebars.js").read_text(encoding="utf-8")
     assert "analytics/cases/workforce-coverage-and-attendance-case" in sidebar_text
     assert "analytics/cases/attendance-control-audit-case" in sidebar_text
+
+
+def test_phase21_workforce_coverage_case_uses_upgraded_walkthrough_shell() -> None:
+    workforce_case = Path("docs/analytics/cases/workforce-coverage-and-attendance-case.md").read_text(encoding="utf-8")
+
+    for snippet in (
+        "## Before You Start",
+        "## Step-by-Step Walkthrough",
+        "## Optional Excel Follow-Through",
+        "## Wrap-Up Questions",
+        "## Next Steps",
+        "managerial/36_staffing_coverage_vs_work_center_planned_load.sql",
+        "managerial/37_rostered_vs_worked_hours_by_work_center_shift.sql",
+        "managerial/38_absence_rate_by_work_location_job_family_month.sql",
+        "managerial/39_overtime_approval_coverage_and_concentration.sql",
+        "managerial/41_late_arrival_early_departure_by_shift_department.sql",
+        "attendance-control-audit-case.md",
+        "workforce-cost-and-org-control-case.md",
+    ):
+        assert snippet in workforce_case
+
+    assert "## Key Data Sources" not in workforce_case
+    assert "## Recommended Query Sequence" not in workforce_case

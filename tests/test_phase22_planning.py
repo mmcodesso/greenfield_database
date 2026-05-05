@@ -212,3 +212,28 @@ def test_phase22_docs_and_sidebar_entries_exist() -> None:
     assert "Demand Planning and Replenishment Case" in managerial_guide
     assert "inventory coverage and projected stockout risk" in sql_guide.lower()
     assert "Recommended Phase 19 to Phase 23 Classroom Sequence" in instructor_guide
+
+
+def test_phase22_demand_planning_case_uses_upgraded_walkthrough_shell() -> None:
+    demand_case = Path("docs/analytics/cases/demand-planning-and-replenishment-case.md").read_text(encoding="utf-8")
+
+    for snippet in (
+        "## Before You Start",
+        "## Step-by-Step Walkthrough",
+        "## Optional Excel Follow-Through",
+        "## Wrap-Up Questions",
+        "## Next Steps",
+        "financial/23_forecast_vs_actual_demand_by_week_item_group_collection_lifecycle.sql",
+        "managerial/45_forecast_error_and_bias_by_collection_style_family.sql",
+        "managerial/46_supply_plan_driver_mix_by_collection_and_supply_mode.sql",
+        "managerial/42_inventory_coverage_and_projected_stockout_risk.sql",
+        "managerial/44_expedite_pressure_by_item_family_and_month.sql",
+        "financial/24_recommendation_conversion_by_type_priority_planner.sql",
+        "managerial/43_rough_cut_capacity_load_vs_available_hours.sql",
+        "replenishment-support-audit-case.md",
+        "../../processes/manufacturing.md",
+    ):
+        assert snippet in demand_case
+
+    assert "## Key Data Sources" not in demand_case
+    assert "## Recommended Query Sequence" not in demand_case
