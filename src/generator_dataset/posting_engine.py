@@ -12,7 +12,7 @@ from generator_dataset.p2p import (
     purchase_invoice_line_matched_basis_map,
     purchase_invoice_unique_cost_center_map,
 )
-from generator_dataset.o2c import credit_memo_allocation_map
+from generator_dataset.o2c import credit_memo_allocation_map, sales_cost_center_id
 from generator_dataset.payroll import monthly_direct_labor_reclass_amount
 from generator_dataset.schema import TABLE_COLUMNS
 from generator_dataset.settings import GenerationContext
@@ -644,6 +644,147 @@ def post_customer_refunds(context: GenerationContext) -> list[dict[str, Any]]:
         assert_balanced(voucher_rows, refund.RefundNumber)
         rows.extend(voucher_rows)
 
+    return rows
+
+
+def post_sales_commission_accruals(context: GenerationContext) -> list[dict[str, Any]]:
+    accruals = context.tables["SalesCommissionAccrual"]
+    if accruals.empty:
+        return []
+
+    commission_expense_account_id = account_id_by_number(context, "6290")
+    commission_payable_account_id = account_id_by_number(context, "2034")
+    cost_center_id = sales_cost_center_id(context)
+    rows: list[dict[str, Any]] = []
+    for accrual in accruals.itertuples(index=False):
+        voucher_rows = [
+            build_gl_row(
+                context,
+                accrual.AccrualDate,
+                commission_expense_account_id,
+                float(accrual.CommissionAmount),
+                0.0,
+                "SalesCommissionAccrual",
+                accrual.AccrualNumber,
+                "SalesCommissionAccrual",
+                int(accrual.SalesCommissionAccrualID),
+                int(accrual.SalesInvoiceLineID),
+                cost_center_id,
+                "Accrue sales commission expense",
+                int(accrual.CreatedByEmployeeID),
+            ),
+            build_gl_row(
+                context,
+                accrual.AccrualDate,
+                commission_payable_account_id,
+                0.0,
+                float(accrual.CommissionAmount),
+                "SalesCommissionAccrual",
+                accrual.AccrualNumber,
+                "SalesCommissionAccrual",
+                int(accrual.SalesCommissionAccrualID),
+                int(accrual.SalesInvoiceLineID),
+                cost_center_id,
+                "Record sales commission payable",
+                int(accrual.CreatedByEmployeeID),
+            ),
+        ]
+        assert_balanced(voucher_rows, accrual.AccrualNumber)
+        rows.extend(voucher_rows)
+    return rows
+
+
+def post_sales_commission_adjustments(context: GenerationContext) -> list[dict[str, Any]]:
+    adjustments = context.tables["SalesCommissionAdjustment"]
+    if adjustments.empty:
+        return []
+
+    commission_expense_account_id = account_id_by_number(context, "6290")
+    commission_payable_account_id = account_id_by_number(context, "2034")
+    cost_center_id = sales_cost_center_id(context)
+    rows: list[dict[str, Any]] = []
+    for adjustment in adjustments.itertuples(index=False):
+        voucher_rows = [
+            build_gl_row(
+                context,
+                adjustment.AdjustmentDate,
+                commission_payable_account_id,
+                float(adjustment.CommissionAdjustmentAmount),
+                0.0,
+                "SalesCommissionAdjustment",
+                adjustment.AdjustmentNumber,
+                "SalesCommissionAdjustment",
+                int(adjustment.SalesCommissionAdjustmentID),
+                int(adjustment.CreditMemoLineID),
+                cost_center_id,
+                "Reduce sales commission payable for credit memo",
+                int(adjustment.ApprovedByEmployeeID),
+            ),
+            build_gl_row(
+                context,
+                adjustment.AdjustmentDate,
+                commission_expense_account_id,
+                0.0,
+                float(adjustment.CommissionAdjustmentAmount),
+                "SalesCommissionAdjustment",
+                adjustment.AdjustmentNumber,
+                "SalesCommissionAdjustment",
+                int(adjustment.SalesCommissionAdjustmentID),
+                int(adjustment.CreditMemoLineID),
+                cost_center_id,
+                "Reverse sales commission expense for credit memo",
+                int(adjustment.ApprovedByEmployeeID),
+            ),
+        ]
+        assert_balanced(voucher_rows, adjustment.AdjustmentNumber)
+        rows.extend(voucher_rows)
+    return rows
+
+
+def post_sales_commission_payments(context: GenerationContext) -> list[dict[str, Any]]:
+    payments = context.tables["SalesCommissionPayment"]
+    if payments.empty:
+        return []
+
+    commission_payable_account_id = account_id_by_number(context, "2034")
+    cash_account_id = account_id_by_number(context, "1010")
+    cost_center_id = sales_cost_center_id(context)
+    rows: list[dict[str, Any]] = []
+    for payment in payments.itertuples(index=False):
+        voucher_rows = [
+            build_gl_row(
+                context,
+                payment.PaymentDate,
+                commission_payable_account_id,
+                float(payment.NetPaymentAmount),
+                0.0,
+                "SalesCommissionPayment",
+                payment.PaymentNumber,
+                "SalesCommissionPayment",
+                int(payment.SalesCommissionPaymentID),
+                None,
+                cost_center_id,
+                "Clear sales commission payable",
+                int(payment.ApprovedByEmployeeID),
+            ),
+            build_gl_row(
+                context,
+                payment.PaymentDate,
+                cash_account_id,
+                0.0,
+                float(payment.NetPaymentAmount),
+                "SalesCommissionPayment",
+                payment.PaymentNumber,
+                "SalesCommissionPayment",
+                int(payment.SalesCommissionPaymentID),
+                None,
+                cost_center_id,
+                "Pay sales commissions",
+                int(payment.ApprovedByEmployeeID),
+            ),
+        ]
+        assert_balanced(voucher_rows, payment.PaymentNumber)
+        rows.extend(voucher_rows)
     return rows
 
 
@@ -1576,6 +1717,9 @@ def post_all_transactions(context: GenerationContext) -> None:
     operational_rows.extend(post_sales_returns(context))
     operational_rows.extend(post_credit_memos(context))
     operational_rows.extend(post_customer_refunds(context))
+    operational_rows.extend(post_sales_commission_accruals(context))
+    operational_rows.extend(post_sales_commission_adjustments(context))
+    operational_rows.extend(post_sales_commission_payments(context))
     operational_rows.extend(payroll_register_rows)
     operational_rows.extend(post_payroll_liability_remittances(context))
     operational_rows.extend(post_material_issues(context))

@@ -13,7 +13,7 @@ description: Learn the order-to-cash process in the synthetic accounting analyti
 
 ## Business Storyline
 
-In this dataset, the order-to-cash cycle starts when the sales team records customer demand and ends only when that sale is settled in cash. Several teams touch the process along the way. Sales captures the order and freight terms, warehouse staff ship what is available, accounting bills what actually left the warehouse and any billable freight, treasury records the money when it arrives, and accounting applies that cash against open invoices.
+In this dataset, the order-to-cash cycle starts when the sales team records customer demand and ends only when that sale is settled in cash. Several teams touch the process along the way. Sales captures the order and freight terms, warehouse staff ship what is available, accounting bills what actually left the warehouse and any billable freight, accounting accrues sales commissions from invoice-line revenue, treasury records the money when it arrives, and accounting applies that cash against open invoices.
 
 That distinction matters. A customer order is not revenue. A shipment is not the same thing as an invoice. A cash receipt is not the same thing as settlement. Students can see those stages separately in the data and use that separation to answer both accounting and audit questions.
 
@@ -29,19 +29,22 @@ flowchart LR
     SO[Sales Order]
     SH[Shipment]
     SI[Sales Invoice]
+    SC[Sales Commission Accrual]
     CR[Cash Receipt]
     CRA[Cash Receipt Application]
     GL[GLEntry]
 
     C --> SO --> SH --> SI
+    SI --> SC
     C --> CR --> CRA
     SH -. Posts COGS Inventory and Freight-Out Accrual .-> GL
     SI -. Posts AR Revenue Freight Revenue and Sales Tax .-> GL
+    SC -. Posts Commission Expense and Commission Payable .-> GL
     CR -. Posts Cash and Customer Deposits .-> GL
     CRA -. Clears AR from Customer Deposits .-> GL
 ```
 
-Read the main diagram as promise, fulfillment, billing, cash, and settlement. Orders show demand. Shipments show physical movement. Invoices create receivables and revenue. Cash receipts record the arrival of money. Cash applications show which invoices were actually settled.
+Read the main diagram as promise, fulfillment, billing, commission accrual, cash, and settlement. Orders show demand. Shipments show physical movement. Invoices create receivables and revenue. Commission accruals match selling expense to the invoice-line revenue that earned it. Cash receipts record the arrival of money. Cash applications show which invoices were actually settled.
 
 ## How to Read This Process in the Data
 
@@ -59,6 +62,7 @@ Start with the business flow, then move into the subsection diagrams and tables 
 | Order capture | `SalesOrder`, `SalesOrderLine` | Customer order header and ordered line | See promised demand, ordered quantity, and freight terms before fulfillment |
 | Service delivery and staffing | `ServiceEngagement`, `ServiceEngagementAssignment`, `ServiceTimeEntry` | One customer engagement, the employees assigned to it, and approved daily service hours | Review service staffing, approved billable versus non-billable time, and labor-cost snapshots |
 | Service billing trace | `ServiceBillingLine` | Monthly billed-hours rollup tied to one invoice line | Trace approved service hours into billed revenue without using shipment logic |
+| Sales commissions | `SalesCommissionRate`, `SalesCommissionAccrual`, `SalesCommissionAdjustment`, `SalesCommissionPayment`, `SalesCommissionPaymentLine` | Commission rate rules, invoice-line accruals, return clawbacks, and sales-rep payments | Trace selling expense, commission payable, and settlement timing |
 | Fulfillment | `Shipment`, `ShipmentLine` | Physical shipment event and shipped line | Measure what actually left the warehouse, carrier choice, and shipment-level freight accrual |
 | Billing | `SalesInvoice`, `SalesInvoiceLine` | Invoice header and billed line | Trace receivable creation, merchandise revenue, and billed freight back to shipment |
 | Cash receipt | `CashReceipt` | Cash arrival from the customer | Review collection timing, unapplied cash, and deposit behavior |
@@ -71,6 +75,9 @@ Start with the business flow, then move into the subsection diagrams and tables 
 | Shipment | Goods physically leave inventory and customer fulfillment occurs | Debit COGS and freight-out expense, and credit inventory plus accrued expenses for outbound freight |
 | Sales invoice | Accounting bills shipped quantity and creates the customer receivable | Debit AR and credit merchandise revenue, freight revenue, and sales tax payable |
 | Service invoice | Accounting bills approved design-service hours for the month | Debit AR and credit `4080` Sales Revenue - Design Services plus sales tax payable, with no shipment-driven inventory or COGS entry |
+| Sales commission accrual | Accounting recognizes commission earned on invoice-line revenue | Debit `6290` Sales Commission Expense and credit `2034` Sales Commission Payable |
+| Sales commission adjustment | A credit memo reverses commission on returned revenue | Debit `2034` Sales Commission Payable and credit `6290` Sales Commission Expense |
+| Sales commission payment | Accounting pays prior-month net commissions to sales reps | Debit `2034` Sales Commission Payable and credit cash |
 | Cash receipt | Customer money arrives, even if it is not yet matched to a specific invoice | Debit cash and credit customer deposits or unapplied cash |
 | Cash application | Accounting settles one or more open invoices with previously received cash | Debit customer deposits or unapplied cash and credit AR |
 
@@ -83,6 +90,8 @@ Start with the business flow, then move into the subsection diagrams and tables 
 - `CashReceipt.SalesInvoiceID` is compatibility metadata only and should not be treated as the authoritative settlement link.
 - `SalesOrderLine` carries pricing lineage through `BaseListPrice`, `PriceListLineID`, `PromotionID`, `PriceOverrideApprovalID`, and `PricingMethod`.
 - `ServiceBillingLine` is the authoritative hours-to-invoice bridge for design services, and `ServiceTimeEntry` is the approved-hours source behind that billing.
+- `SalesCommissionAccrual` is the invoice-line commission bridge. Its base is `SalesInvoiceLine.LineTotal`; freight, sales tax, deposits, AR timing, and unapplied cash are outside the commission base.
+- `SalesCommissionAdjustment` records credit-memo clawbacks, and `SalesCommissionPaymentLine` shows which accruals and adjustments were included in each sales-rep payment.
 - Some receipts remain unapplied for a period of time, which is useful for open-AR, unapplied-cash, and settlement-timing analysis.
 
 ## Analytical Subsections
@@ -121,7 +130,44 @@ flowchart LR
 -- Suggested analysis: Group by PricingMethod, customer segment, item group, or sales rep.
 ```
 
-### 2. Shipment to Invoice Traceability
+### 2. Sales Commissions and Payable Settlement
+
+Commission accounting starts from posted customer invoice lines. The routine applies a simple rate matrix by revenue type and customer segment, accrues the expense to a dedicated payable, reverses part of that payable when a credit memo claws back returned revenue, and pays sales reps monthly in arrears.
+
+```mermaid
+flowchart LR
+    SI[Sales Invoice Line]
+    RATE[Sales Commission Rate]
+    ACC[Sales Commission Accrual]
+    ADJ[Sales Commission Adjustment]
+    PAY[Sales Commission Payment]
+    GL[GLEntry]
+
+    SI --> RATE --> ACC --> GL
+    ACC --> ADJ --> GL
+    ACC --> PAY --> GL
+    ADJ --> PAY
+```
+
+**Tables involved**
+
+| Table | Role in the flow |
+|---|---|
+| `SalesCommissionRate` | Holds the active commission-rate matrix by revenue type and customer segment |
+| `SalesCommissionAccrual` | Records one commission accrual for each eligible invoice line |
+| `SalesCommissionAdjustment` | Records credit-memo clawbacks tied back to the original accrual |
+| `SalesCommissionPayment` | Records monthly net commission payments by sales rep |
+| `SalesCommissionPaymentLine` | Shows which accruals and adjustments were included in the payment |
+
+**Starter analytical question:** Which sales reps and customer segments generated the highest net commission expense after credit-memo clawbacks?
+
+```sql
+-- Teaching objective: Review commission expense and clawbacks by rep, segment, and month.
+-- Main join path: SalesCommissionAccrual -> SalesCommissionAdjustment, plus Employee and Customer.
+-- Suggested analysis: Compare gross commission expense, clawbacks, and net commission expense by revenue type.
+```
+
+### 3. Shipment to Invoice Traceability
 
 This view teaches students how billed revenue ties back to physical fulfillment. Treat this as a traceability diagram, not as a full ER diagram. For the full process-level entity relationships, see the [Schema Reference](../reference/schema.md). This subsection is especially useful for cutoff, completeness, and occurrence testing.
 
@@ -157,7 +203,7 @@ flowchart LR
 -- Suggested analysis: Filter invoice and shipment dates by month-end to test cutoff timing.
 ```
 
-### 3. Cash Receipt, Application, and Settlement
+### 4. Cash Receipt, Application, and Settlement
 
 This is the section students often need most. The cash receipt is the cash event. The cash application is the settlement event. Those are related, but they are not the same accounting moment. This distinction drives open-AR analysis, unapplied-cash review, and receivables testing.
 
@@ -191,7 +237,7 @@ Do not use `CashReceipt.SalesInvoiceID` as the main settlement link. The authori
 -- Suggested analysis: Compare receipt date, application date, and invoice due date for open-AR review.
 ```
 
-### 4. Design Services and Monthly Hour Billing
+### 5. Design Services and Monthly Hour Billing
 
 The design-services branch shares the same customer, invoice, and cash backbone as the rest of O2C, but it does not use shipment. Instead, one service order line opens one engagement, multiple employees can be assigned to that engagement, approved service time accumulates through the month, and `ServiceBillingLine` ties the approved billed hours to the invoice line.
 
@@ -226,7 +272,7 @@ flowchart LR
 -- Suggested analysis: Compare planned hours, approved billable hours, billed hours, and labor cost by customer or engagement.
 ```
 
-### 5. Backorder to Shipment Lag
+### 6. Backorder to Shipment Lag
 
 Not every order ships immediately. This subsection helps students see why order date, shipment date, and invoice date can diverge when inventory is short. It is useful for fulfillment-lag analysis, billing-lag review, and period timing differences around month-end.
 

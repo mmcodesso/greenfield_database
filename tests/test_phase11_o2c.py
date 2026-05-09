@@ -9,6 +9,7 @@ from generator_dataset.o2c import (
     generate_month_cash_receipts,
     generate_month_customer_refunds,
     generate_month_o2c,
+    generate_month_sales_commissions,
     generate_month_sales_invoices,
     generate_month_sales_returns,
     generate_month_shipments,
@@ -19,6 +20,7 @@ from generator_dataset.p2p import (
     generate_month_p2p,
     generate_month_purchase_invoices,
 )
+from generator_dataset.utils import money
 
 
 def test_phase11_multimonth_o2c_backorders_returns_and_applications() -> None:
@@ -33,6 +35,7 @@ def test_phase11_multimonth_o2c_backorders_returns_and_applications() -> None:
         generate_month_cash_receipts(context, year, month)
         generate_month_sales_returns(context, year, month)
         generate_month_customer_refunds(context, year, month)
+        generate_month_sales_commissions(context, year, month)
         generate_month_purchase_invoices(context, year, month)
         generate_month_disbursements(context, year, month)
 
@@ -109,6 +112,7 @@ def test_phase11_multimonth_o2c_freight_modeling() -> None:
         generate_month_cash_receipts(context, year, month)
         generate_month_sales_returns(context, year, month)
         generate_month_customer_refunds(context, year, month)
+        generate_month_sales_commissions(context, year, month)
         generate_month_purchase_invoices(context, year, month)
         generate_month_disbursements(context, year, month)
 
@@ -243,6 +247,89 @@ def test_phase11_full_dataset_design_service_invoice_posting(full_dataset_artifa
         shipment_lines["SalesOrderLineID"].astype(int).isin(service_invoice_lines["SalesOrderLineID"].astype(int))
     ]
     assert shipped_service_lines.empty
+
+
+def test_phase11_full_dataset_sales_commissions_accrue_adjust_and_settle(
+    full_dataset_artifacts: dict[str, object],
+) -> None:
+    context = full_dataset_artifacts["context"]
+    rates = context.tables["SalesCommissionRate"]
+    accruals = context.tables["SalesCommissionAccrual"]
+    adjustments = context.tables["SalesCommissionAdjustment"]
+    payments = context.tables["SalesCommissionPayment"]
+    payment_lines = context.tables["SalesCommissionPaymentLine"]
+    invoice_lines = context.tables["SalesInvoiceLine"]
+    credit_memo_lines = context.tables["CreditMemoLine"]
+    gl_entries = context.tables["GLEntry"]
+    accounts = context.tables["Account"][["AccountID", "AccountNumber"]]
+
+    assert len(rates) >= 8
+    assert not accruals.empty
+    assert not payments.empty
+    assert not payment_lines.empty
+    assert accruals["SalesInvoiceLineID"].is_unique
+    assert set(accruals["RevenueType"].astype(str)).issubset({"Merchandise", "Design Service"})
+
+    commissioned_invoice_line_ids = set(invoice_lines.loc[
+        invoice_lines["LineTotal"].astype(float).gt(0),
+        "SalesInvoiceLineID",
+    ].astype(int))
+    assert set(accruals["SalesInvoiceLineID"].astype(int)) == commissioned_invoice_line_ids
+
+    accrual_check = accruals.merge(
+        invoice_lines[["SalesInvoiceLineID", "LineTotal"]],
+        on="SalesInvoiceLineID",
+        how="left",
+    )
+    assert (
+        accrual_check["CommissionBaseAmount"].astype(float).round(2)
+        == accrual_check["LineTotal"].astype(float).round(2)
+    ).all()
+    expected_accrual = accrual_check.apply(
+        lambda row: money(float(row["CommissionBaseAmount"]) * float(row["CommissionRatePct"])),
+        axis=1,
+    )
+    assert (expected_accrual == accrual_check["CommissionAmount"].astype(float).round(2)).all()
+
+    if not credit_memo_lines.empty:
+        assert not adjustments.empty
+        assert adjustments["CreditMemoLineID"].is_unique
+        adjustment_check = adjustments.merge(
+            accruals[["SalesCommissionAccrualID", "CommissionRatePct"]],
+            on="SalesCommissionAccrualID",
+            how="left",
+            suffixes=("", "_Accrual"),
+        )
+        expected_adjustment = adjustment_check.apply(
+            lambda row: money(float(row["CommissionBaseReductionAmount"]) * float(row["CommissionRatePct_Accrual"])),
+            axis=1,
+        )
+        assert (expected_adjustment == adjustment_check["CommissionAdjustmentAmount"].astype(float).round(2)).all()
+
+    payment_detail = payment_lines.groupby("SalesCommissionPaymentID", as_index=False, dropna=False)["Amount"].sum()
+    payment_check = payments.merge(payment_detail, on="SalesCommissionPaymentID", how="left")
+    assert (
+        payment_check["Amount"].astype(float).round(2)
+        == payment_check["NetPaymentAmount"].astype(float).round(2)
+    ).all()
+
+    commission_gl = gl_entries[gl_entries["SourceDocumentType"].astype(str).isin([
+        "SalesCommissionAccrual",
+        "SalesCommissionAdjustment",
+        "SalesCommissionPayment",
+    ])].copy()
+    assert not commission_gl.empty
+    voucher_balance = commission_gl.groupby(["VoucherType", "VoucherNumber"], dropna=False)[["Debit", "Credit"]].sum()
+    assert (voucher_balance["Debit"].round(2) == voucher_balance["Credit"].round(2)).all()
+
+    commission_gl = commission_gl.merge(accounts, on="AccountID", how="left")
+    payable_activity = commission_gl[commission_gl["AccountNumber"].astype(str).eq("2034")]
+    assert round(float(payable_activity["Credit"].sum() - payable_activity["Debit"].sum()), 2) == round(
+        float(accruals["CommissionAmount"].sum())
+        - float(adjustments["CommissionAdjustmentAmount"].sum() if not adjustments.empty else 0.0)
+        - float(payments["NetPaymentAmount"].sum()),
+        2,
+    )
 
 
 def test_phase11_full_dataset_receivables_realism(full_dataset_artifacts: dict[str, object]) -> None:

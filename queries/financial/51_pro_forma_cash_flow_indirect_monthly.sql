@@ -65,6 +65,7 @@ balance_sheet_accounts AS (
     UNION ALL SELECT 2031, 'Change in Payroll Liabilities', 'Liability'
     UNION ALL SELECT 2032, 'Change in Payroll Liabilities', 'Liability'
     UNION ALL SELECT 2033, 'Change in Payroll Liabilities', 'Liability'
+    UNION ALL SELECT 2034, 'Change in Sales Commission Payable', 'Liability'
     UNION ALL SELECT 2040, 'Change in Accrued Expenses', 'Liability'
     UNION ALL SELECT 2060, 'Change in Unearned Revenue / Customer Advances', 'Liability'
     UNION ALL SELECT 2070, 'Change in Unearned Revenue / Customer Advances', 'Liability'
@@ -158,6 +159,7 @@ working_capital_adjustments AS (
         'Change in Prepaids and Other Current Assets',
         'Change in Accounts Payable',
         'Change in Accrued Expenses',
+        'Change in Sales Commission Payable',
         'Change in Payroll Liabilities',
         'Change in Unearned Revenue / Customer Advances'
     )
@@ -293,6 +295,7 @@ line_layout AS (
     UNION ALL SELECT 'Operating Activities', 'Change in Prepaids and Other Current Assets', NULL, 'account', 140
     UNION ALL SELECT 'Operating Activities', 'Change in Accounts Payable', 2010, 'account', 150
     UNION ALL SELECT 'Operating Activities', 'Change in Accrued Expenses', 2040, 'account', 160
+    UNION ALL SELECT 'Operating Activities', 'Change in Sales Commission Payable', 2034, 'account', 165
     UNION ALL SELECT 'Operating Activities', 'Change in Payroll Liabilities', NULL, 'account', 170
     UNION ALL SELECT 'Operating Activities', 'Change in Unearned Revenue / Customer Advances', NULL, 'account', 180
     UNION ALL SELECT 'Operating Activities', 'Other Operating Adjustments', NULL, 'account', 189

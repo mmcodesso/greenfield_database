@@ -12,7 +12,7 @@ import { QueryReference } from "@site/src/components/QueryReference";
 
 Charles River Home Furnishings receives an order from a regional interior-design firm furnishing a small hospitality renovation in the Boston area. The customer wants finished goods on a tight schedule, but inventory is not evenly available across every line. Sales can confirm the order immediately, yet warehouse fulfillment, billing, and cash settlement may unfold over different dates.
 
-This case goes beyond a simple "order paid in full" story. Shipment drives inventory relief and COGS. Invoice drives revenue and receivables. Cash receipt records money arriving. `CashReceiptApplication` determines when open AR is actually settled. If part of the order is later returned, the trace branches again into returns and credits.
+This case goes beyond a simple "order paid in full" story. Shipment drives inventory relief and COGS. Invoice drives revenue, receivables, and sales-commission expense. Cash receipt records money arriving. `CashReceiptApplication` determines when open AR is actually settled. If part of the order is later returned, the trace branches again into returns, credits, and commission clawbacks.
 
 Your job is to explain that chain as one connected business story and one connected data trail.
 
@@ -29,7 +29,7 @@ You need to prove that one O2C transaction can be traced cleanly from customer o
 
 ## Before You Start
 
-- Main tables: `SalesOrder`, `SalesOrderLine`, `Shipment`, `ShipmentLine`, `SalesInvoice`, `SalesInvoiceLine`, `CashReceipt`, `CashReceiptApplication`, `SalesReturn`, `SalesReturnLine`, `CreditMemo`, `GLEntry`
+- Main tables: `SalesOrder`, `SalesOrderLine`, `Shipment`, `ShipmentLine`, `SalesInvoice`, `SalesInvoiceLine`, `CashReceipt`, `CashReceiptApplication`, `SalesReturn`, `SalesReturnLine`, `CreditMemo`, `SalesCommissionAccrual`, `SalesCommissionAdjustment`, `SalesCommissionPayment`, `GLEntry`
 - Related process page: [Order-to-Cash Process](../../processes/o2c.md)
 - Supporting references: [Schema Reference](../../reference/schema.md), [GLEntry Posting Reference](../../reference/posting.md), [Dataset Guide](../../start-here/dataset-overview.md)
 - This case uses both starter query packs and two case-support SQL files built specifically for document tracing.
@@ -106,7 +106,7 @@ Now move from document completeness to posting logic. At this point, the goal is
 
 **What we are trying to achieve**
 
-Trace one order line through shipment and invoice detail, then tie those source rows back to posted `GLEntry` activity.
+Trace one order line through shipment and invoice detail, then tie those source rows back to posted `GLEntry` activity, including the commission accrual triggered by invoice-line revenue.
 
 This is where cutoff, occurrence, and revenue-recognition discussions become concrete. You can only answer those questions reliably if the source documents and ledger rows are connected.
 
@@ -124,16 +124,17 @@ This is where cutoff, occurrence, and revenue-recognition discussions become con
 
 **What this query does**
 
-The first query lays out the document trail at the line level. The second takes shipment and invoice source records and joins them to `GLEntry` and `Account`.
+The first query lays out the document trail at the line level. The second takes shipment, invoice, and commission source records and joins them to `GLEntry` and `Account`.
 
 **How it works**
 
-The line-trace query starts at `SalesOrderLine`, then left joins `ShipmentLine` and `SalesInvoiceLine` so open, shipped, and billed lines all remain visible. The source-to-GL query filters `GLEntry` by `SourceDocumentType` and separates shipment-line postings from invoice header and invoice-line postings.
+The line-trace query starts at `SalesOrderLine`, then left joins `ShipmentLine` and `SalesInvoiceLine` so open, shipped, and billed lines all remain visible. The source-to-GL query filters `GLEntry` by `SourceDocumentType` and separates shipment-line postings, invoice header and invoice-line postings, sales-commission accruals, credit-memo clawbacks, and commission payments.
 
 **What to look for in the result**
 
 - shipment rows should carry inventory and COGS impact
 - invoice rows should carry revenue and AR impact, even when AR is recorded at the invoice header level
+- commission accrual rows should debit `6290` and credit `2034` from invoice-line revenue only
 - posting dates should line up with the event that actually created the accounting entry
 - lines with no downstream record should still remain visible in the trace
 
@@ -219,14 +220,14 @@ Submit a short case memo or notebook note with these four artifacts:
 
 1. Filter `SalesOrder` to one customer, one month, or one order number range.
 2. Use `SalesOrderLineID` to trace into `ShipmentLine` and then `SalesInvoiceLine`.
-3. Use `ShipmentLineID` and `SalesInvoiceLineID` to compare operational dates with posted `GLEntry` timing.
+3. Use `ShipmentLineID` and `SalesInvoiceLineID` to compare operational dates with posted `GLEntry` timing, including sales-commission accruals tied to invoice lines.
 4. Use `SalesInvoiceID` to trace into `CashReceiptApplication` and open-invoice analysis.
 5. If the order later changed, extend the trace into `SalesReturn`, `SalesReturnLine`, and `CreditMemo`.
 
 ## Wrap-Up Questions
 
-- Accounting/process: Which event creates revenue, which event relieves inventory, and where can timing diverge without an error?
-- Database/source evidence: Which order, shipment, invoice, cash-application, return, or GL key proves the trace?
+- Accounting/process: Which event creates revenue, which event relieves inventory, which event accrues commission expense, and where can timing diverge without an error?
+- Database/source evidence: Which order, shipment, invoice, commission, cash-application, return, or GL key proves the trace?
 - Analytics judgment: Which part of the order-to-cash chain carries the greatest cutoff or settlement risk?
 - Escalation/next step: How should a later return or credit change the conclusion about the original sale?
 

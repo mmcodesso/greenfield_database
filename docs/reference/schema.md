@@ -143,6 +143,12 @@ erDiagram
     SalesInvoiceLine ||--o| ServiceBillingLine : traced_by
     CashReceipt ||--o{ CashReceiptApplication : applies
     SalesInvoice ||--o{ CashReceiptApplication : settled_by
+    SalesInvoiceLine ||--o| SalesCommissionAccrual : earns
+    SalesCommissionRate ||--o{ SalesCommissionAccrual : rates
+    SalesCommissionAccrual ||--o{ SalesCommissionAdjustment : clawed_back_by
+    SalesCommissionAccrual ||--o{ SalesCommissionPaymentLine : settled_by
+    SalesCommissionAdjustment ||--o{ SalesCommissionPaymentLine : netted_by
+    SalesCommissionPayment ||--|{ SalesCommissionPaymentLine : contains
     SalesReturn ||--|{ SalesReturnLine : contains
     ShipmentLine ||--o{ SalesReturnLine : returned_on
     SalesInvoice ||--o{ CreditMemo : corrected_by
@@ -168,6 +174,11 @@ erDiagram
 | `SalesInvoice` | Invoice header | `SalesInvoiceID`, `InvoiceNumber`, `CustomerID`, `InvoiceDate`, `DueDate`, `FreightAmount`, `Status` |
 | `SalesInvoiceLine` | Billed line | `SalesInvoiceLineID`, `SalesInvoiceID`, `SalesOrderLineID`, `ShipmentLineID`, `ItemID`, `PricingMethod` |
 | `ServiceBillingLine` | Monthly billed-hours rollup tied to one invoice line | `ServiceBillingLineID`, `ServiceEngagementID`, `SalesInvoiceLineID`, `BillingPeriodStartDate`, `BillingPeriodEndDate`, `BilledHours`, `HourlyRate`, `LineAmount`, `Status` |
+| `SalesCommissionRate` | Commission-rate matrix by revenue type and customer segment | `SalesCommissionRateID`, `RevenueType`, `CustomerSegment`, `RatePct`, `EffectiveStartDate`, `EffectiveEndDate`, `Status` |
+| `SalesCommissionAccrual` | Invoice-line commission accrual | `SalesCommissionAccrualID`, `SalesInvoiceLineID`, `SalesRepEmployeeID`, `CommissionBaseAmount`, `CommissionRatePct`, `CommissionAmount` |
+| `SalesCommissionAdjustment` | Credit-memo clawback against an original commission accrual | `SalesCommissionAdjustmentID`, `SalesCommissionAccrualID`, `CreditMemoLineID`, `CommissionBaseReductionAmount`, `CommissionAdjustmentAmount` |
+| `SalesCommissionPayment` | Monthly net commission payment by sales rep | `SalesCommissionPaymentID`, `PaymentNumber`, `PaymentDate`, `SalesRepEmployeeID`, `NetPaymentAmount` |
+| `SalesCommissionPaymentLine` | Settlement detail connecting payments to accruals and clawbacks | `SalesCommissionPaymentLineID`, `SalesCommissionPaymentID`, `SourceDocumentType`, `SourceDocumentID`, `Amount` |
 | `CashReceipt` | Customer cash event | `CashReceiptID`, `ReceiptNumber`, `CustomerID`, `ReceiptDate`, `Amount` |
 | `CashReceiptApplication` | Invoice settlement detail | `CashReceiptApplicationID`, `CashReceiptID`, `SalesInvoiceID`, `ApplicationDate`, `AppliedAmount` |
 | `SalesReturn` | Return header | `SalesReturnID`, `ReturnNumber`, `CustomerID`, `ReturnDate`, `Status` |
@@ -189,6 +200,11 @@ erDiagram
 - `ShipmentLine.SalesOrderLineID -> SalesOrderLine.SalesOrderLineID`
 - `SalesInvoiceLine.ShipmentLineID -> ShipmentLine.ShipmentLineID`
 - `ServiceBillingLine.SalesInvoiceLineID -> SalesInvoiceLine.SalesInvoiceLineID`
+- `SalesCommissionAccrual.SalesInvoiceLineID -> SalesInvoiceLine.SalesInvoiceLineID`
+- `SalesCommissionAccrual.SalesCommissionRateID -> SalesCommissionRate.SalesCommissionRateID`
+- `SalesCommissionAdjustment.SalesCommissionAccrualID -> SalesCommissionAccrual.SalesCommissionAccrualID`
+- `SalesCommissionAdjustment.CreditMemoLineID -> CreditMemoLine.CreditMemoLineID`
+- `SalesCommissionPaymentLine.SalesCommissionPaymentID -> SalesCommissionPayment.SalesCommissionPaymentID`
 - `CashReceiptApplication.SalesInvoiceID -> SalesInvoice.SalesInvoiceID`
 - `SalesReturnLine.ShipmentLineID -> ShipmentLine.ShipmentLineID`
 - `CreditMemo.OriginalSalesInvoiceID -> SalesInvoice.SalesInvoiceID`
@@ -432,6 +448,7 @@ erDiagram
 - Service invoice lines stay in `SalesInvoiceLine`, but `ShipmentLineID` remains null on those rows and `ServiceBillingLine` becomes the authoritative hours-to-invoice bridge.
 - O2C freight remains header-level. `SalesOrder.FreightTerms` sets the policy, `Shipment.FreightCost` and `Shipment.BillableFreightAmount` capture the fulfillment result, `SalesInvoice.FreightAmount` carries billed freight, and `CreditMemo.FreightCreditAmount` shows any freight credit.
 - Price-list and promotion lineage live directly on `SalesOrderLine`, `SalesInvoiceLine`, and `CreditMemoLine`. Postings remain net revenue.
+- Sales commissions are a separate O2C payable routine. `SalesCommissionAccrual.CommissionBaseAmount` comes from `SalesInvoiceLine.LineTotal`; commission payments settle `2034` Sales Commission Payable separately from payroll.
 - `PurchaseOrder.RequisitionID` is compatibility metadata when one PO batches multiple requisitions. Use `PurchaseOrderLine.RequisitionID` as the authoritative trace.
 - `PurchaseInvoiceLine.GoodsReceiptLineID` is the main match key for receipt-based inventory invoicing.
 - `PurchaseInvoiceLine.AccrualJournalEntryID` links direct service invoices back to accrual journals.

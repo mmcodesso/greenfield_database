@@ -31,6 +31,7 @@ DIRECT_LINE_LABELS = {
     "DisbursementPayment": "Cash Paid to Suppliers",
     "PayrollPayment": "Cash Paid for Payroll",
     "PayrollLiabilityRemittance": "Cash Paid for Payroll Taxes and Withholdings",
+    "SalesCommissionPayment": "Cash Paid for Sales Commissions",
 }
 OTHER_OPERATING_EXPENSE_LINE_LABEL = "Cash Paid for Other Operating Expenses"
 INVESTING_LINE_LABEL = "Capital Expenditures and Asset Transactions"
@@ -574,7 +575,8 @@ def test_direct_method_classifies_known_cash_sources(
             'CustomerRefund',
             'DisbursementPayment',
             'PayrollPayment',
-            'PayrollLiabilityRemittance'
+            'PayrollLiabilityRemittance',
+            'SalesCommissionPayment'
       )
       AND NOT (
             gl.SourceDocumentType = 'DisbursementPayment'

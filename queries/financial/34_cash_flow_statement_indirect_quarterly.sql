@@ -195,7 +195,8 @@ classified_cash_vouchers AS (
                 'CustomerRefund',
                 'DisbursementPayment',
                 'PayrollPayment',
-                'PayrollLiabilityRemittance'
+                'PayrollLiabilityRemittance',
+                'SalesCommissionPayment'
             )
                 THEN 'Operating Activities'
             WHEN vcf.HasInvestingCounterpart = 1
@@ -216,6 +217,8 @@ classified_cash_vouchers AS (
                 THEN 'Cash Paid for Payroll'
             WHEN cv.SourceDocumentType = 'PayrollLiabilityRemittance'
                 THEN 'Cash Paid for Payroll Taxes and Withholdings'
+            WHEN cv.SourceDocumentType = 'SalesCommissionPayment'
+                THEN 'Cash Paid for Sales Commissions'
             WHEN cv.SourceDocumentType = 'DisbursementPayment'
              AND COALESCE(cdf.IsCapexDisbursement, 0) = 1
                 THEN 'Capital Expenditures and Asset Transactions'
@@ -303,6 +306,7 @@ working_capital_account_layout AS (
             WHEN CAST(AccountNumber AS INTEGER) IN (1050, 1060, 1070, 1080) THEN 'Change in Prepaids and Other Current Assets'
             WHEN CAST(AccountNumber AS INTEGER) = 2010 THEN 'Change in Accounts Payable'
             WHEN CAST(AccountNumber AS INTEGER) = 2040 THEN 'Change in Accrued Expenses'
+            WHEN CAST(AccountNumber AS INTEGER) = 2034 THEN 'Change in Sales Commission Payable'
             WHEN CAST(AccountNumber AS INTEGER) IN (2030, 2031, 2032, 2033) THEN 'Change in Payroll Liabilities'
             WHEN CAST(AccountNumber AS INTEGER) IN (2060, 2070) THEN 'Change in Unearned Revenue / Customer Advances'
             ELSE 'Other Operating Adjustments'
@@ -503,6 +507,7 @@ line_layout AS (
     UNION ALL SELECT 'Operating Activities', 'Change in Prepaids and Other Current Assets', 'account', 140
     UNION ALL SELECT 'Operating Activities', 'Change in Accounts Payable', 'account', 150
     UNION ALL SELECT 'Operating Activities', 'Change in Accrued Expenses', 'account', 160
+    UNION ALL SELECT 'Operating Activities', 'Change in Sales Commission Payable', 'account', 165
     UNION ALL SELECT 'Operating Activities', 'Change in Payroll Liabilities', 'account', 170
     UNION ALL SELECT 'Operating Activities', 'Change in Unearned Revenue / Customer Advances', 'account', 180
     UNION ALL SELECT 'Operating Activities', 'Other Operating Adjustments', 'account', 189

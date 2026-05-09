@@ -11,7 +11,7 @@ This page gives the codebase-level view of how the dataset is generated.
 
 For table structure and join fields, use [Schema Reference](../reference/schema.md). For event-to-ledger behavior, use [GLEntry Posting Reference](../reference/posting.md). For current scope and planned improvements, use [Roadmap](roadmap.md).
 
-The current system includes demand forecasts, inventory policies, supply recommendations, component-demand planning, rough-cut capacity tieout, and explicit O2C pricing lineage through price lists, promotions, and override approvals. It also includes the workforce-planning layer that supports the approved daily time-clock model.
+The current system includes demand forecasts, inventory policies, supply recommendations, component-demand planning, rough-cut capacity tieout, explicit O2C pricing lineage through price lists, promotions, and override approvals, and a separate O2C sales-commission subledger. It also includes the workforce-planning layer that supports the approved daily time-clock model.
 
 ## Current System at a Glance
 
@@ -79,7 +79,7 @@ In plain language, the build:
 | `planning.py` | Generate inventory policies, weekly demand forecasts, supply recommendations, component-demand plans, rough-cut capacity rows, and recommendation conversion helpers |
 | `payroll.py` | Generate shifts, assignments, daily rosters, absences, raw punches, approved time clocks, overtime approvals, payroll periods, labor time, payroll registers, payments, remittances, and manufacturing labor helpers |
 | `budgets.py` | Generate opening balances, driver-based `BudgetLine` detail, summary `Budget` rows, and pro forma balance roll-forwards |
-| `o2c.py` | Generate price lists, promotions, pricing resolution, orders, shipments, invoices, receipts, applications, returns, credits, and refunds |
+| `o2c.py` | Generate price lists, promotions, pricing resolution, orders, shipments, invoices, receipts, applications, returns, credits, refunds, commission accruals, clawbacks, and sales-rep settlements |
 | `p2p.py` | Generate requisitions, purchase orders, receipts, supplier invoices, and disbursements |
 | `journals.py` | Generate recurring journals, accrued-expense activity, reclasses, and year-end close journals |
 | `posting_engine.py` | Convert operational and payroll events into balanced GL entries |
@@ -100,8 +100,9 @@ The current teaching and analytics layer includes:
 - workforce-planning detail for rosters, absences, punches, and overtime approvals that supports new attendance and staffing analytics
 - weekly planning support for forecast, policy, recommendation, MRP, and rough-cut capacity analysis
 - commercial-pricing support for segment and customer price lists, promotions, override approvals, and price-realization analysis
+- sales-commission support for invoice-line accruals, credit-memo clawbacks, rep-level payments, and payable rollforward analysis
 
-Planning outputs support normal replenishment activity. The O2C layer also includes formal commercial-pricing resolution and explicit pricing lineage.
+Planning outputs support normal replenishment activity. The O2C layer also includes formal commercial-pricing resolution, explicit pricing lineage, and sales-commission accounting tied to invoice-line revenue.
 
 ## Posting, Validation, and Outputs
 
@@ -114,6 +115,7 @@ The validation layer checks:
 - O2C, P2P, manufacturing, payroll, and time-clock controls
 - planning controls for forecast coverage, policy validity, recommendation conversion, MRP reconciliation, and rough-cut capacity availability
 - pricing controls for price-list coverage, promotion validity, price-floor compliance, and invoice or credit pricing-lineage consistency
+- sales-commission traceability from invoice lines and credit memo lines into payable activity
 - master-data controls for employee roles, employment validity, item catalog completeness, and launch-date usage
 - voucher balance, trial balance, and control-account roll-forwards
 - journal-header-to-GL agreement and close-cycle completeness

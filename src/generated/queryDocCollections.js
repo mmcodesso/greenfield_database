@@ -211,6 +211,10 @@ export const starterQueryMaps = {
     {
       "label": "Design-service revenue and billed hours",
       "queryKey": "financial/57_design_service_revenue_and_billed_hours_by_customer_month.sql"
+    },
+    {
+      "label": "Sales commission payable rollforward",
+      "queryKey": "financial/58_sales_commission_payable_rollforward.sql"
     }
   ],
   "managerial": [
@@ -421,6 +425,10 @@ export const starterQueryMaps = {
     {
       "label": "Design-service engagement utilization and labor margin",
       "queryKey": "managerial/52_design_service_engagement_utilization_and_labor_margin.sql"
+    },
+    {
+      "label": "Sales commission expense by rep and segment",
+      "queryKey": "managerial/53_sales_commission_expense_by_rep_segment.sql"
     }
   ],
   "audit": [
@@ -669,7 +677,8 @@ export const queryLibraryGroups = {
         q("financial/45_monthly_ar_aging_detail.sql"),
         q("financial/46_monthly_ar_aging_summary.sql"),
         q("financial/47_monthly_ap_aging_detail.sql"),
-        q("financial/48_monthly_ap_aging_summary.sql")
+        q("financial/48_monthly_ap_aging_summary.sql"),
+        q("financial/58_sales_commission_payable_rollforward.sql")
       ]
     },
     {
@@ -760,7 +769,8 @@ export const queryLibraryGroups = {
         q("managerial/47_sales_rep_override_rate_and_discount_dispersion.sql"),
         q("managerial/48_collection_revenue_margin_before_after_promotions.sql"),
         q("managerial/49_customer_specific_pricing_concentration_and_dependency.sql"),
-        q("managerial/50_monthly_price_floor_pressure_and_override_concentration.sql")
+        q("managerial/50_monthly_price_floor_pressure_and_override_concentration.sql"),
+        q("managerial/53_sales_commission_expense_by_rep_segment.sql")
       ]
     },
     {
@@ -1198,6 +1208,10 @@ export const caseQuerySequences = {
       "queryKey": "financial/02_ar_aging_open_invoices.sql"
     },
     {
+      "lead": "Then trace commission accruals, clawbacks, and payments with",
+      "queryKey": "financial/58_sales_commission_payable_rollforward.sql"
+    },
+    {
       "lead": "If you want the exception follow-up, run",
       "queryKey": "audit/07_backorder_and_return_review.sql"
     }
@@ -1418,6 +1432,10 @@ export const caseQuerySequences = {
     {
       "lead": "Run",
       "queryKey": "financial/13_accrued_vs_invoiced_vs_paid_timing.sql"
+    },
+    {
+      "lead": "Then isolate the sales-commission liability layer with",
+      "queryKey": "financial/58_sales_commission_payable_rollforward.sql"
     },
     {
       "lead": "Then compare plan to actual with",

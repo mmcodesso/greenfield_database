@@ -14,6 +14,7 @@ WITH monthly_bucket_movements AS (
             WHEN a.AccountNumber = '2010' THEN 'Accounts Payable'
             WHEN a.AccountNumber = '2020' THEN 'GRNI'
             WHEN a.AccountNumber IN ('2030', '2031', '2032', '2033') THEN 'Payroll Liabilities'
+            WHEN a.AccountNumber = '2034' THEN 'Sales Commission Payable'
             WHEN a.AccountNumber = '2040' THEN 'Accrued Expenses'
             WHEN a.AccountNumber = '2060' THEN 'Customer Deposits and Unapplied Cash'
         END AS WorkingCapitalBucket,
@@ -29,7 +30,7 @@ WITH monthly_bucket_movements AS (
     FROM GLEntry AS g
     JOIN Account AS a
         ON a.AccountID = g.AccountID
-    WHERE a.AccountNumber IN ('1020', '1040', '1045', '1046', '2010', '2020', '2030', '2031', '2032', '2033', '2040', '2060')
+    WHERE a.AccountNumber IN ('1020', '1040', '1045', '1046', '2010', '2020', '2030', '2031', '2032', '2033', '2034', '2040', '2060')
     GROUP BY
         g.FiscalYear,
         g.FiscalPeriod,
@@ -39,6 +40,7 @@ WITH monthly_bucket_movements AS (
             WHEN a.AccountNumber = '2010' THEN 'Accounts Payable'
             WHEN a.AccountNumber = '2020' THEN 'GRNI'
             WHEN a.AccountNumber IN ('2030', '2031', '2032', '2033') THEN 'Payroll Liabilities'
+            WHEN a.AccountNumber = '2034' THEN 'Sales Commission Payable'
             WHEN a.AccountNumber = '2040' THEN 'Accrued Expenses'
             WHEN a.AccountNumber = '2060' THEN 'Customer Deposits and Unapplied Cash'
         END
@@ -66,11 +68,12 @@ SELECT
     ROUND(SUM(CASE WHEN WorkingCapitalBucket = 'Accounts Payable' THEN EndingBalance ELSE 0 END), 2) AS AccountsPayableEndingBalance,
     ROUND(SUM(CASE WHEN WorkingCapitalBucket = 'GRNI' THEN EndingBalance ELSE 0 END), 2) AS GRNIEndingBalance,
     ROUND(SUM(CASE WHEN WorkingCapitalBucket = 'Customer Deposits and Unapplied Cash' THEN EndingBalance ELSE 0 END), 2) AS CustomerDepositsEndingBalance,
+    ROUND(SUM(CASE WHEN WorkingCapitalBucket = 'Sales Commission Payable' THEN EndingBalance ELSE 0 END), 2) AS SalesCommissionPayableEndingBalance,
     ROUND(SUM(CASE WHEN WorkingCapitalBucket = 'Accrued Expenses' THEN EndingBalance ELSE 0 END), 2) AS AccruedExpensesEndingBalance,
     ROUND(SUM(CASE WHEN WorkingCapitalBucket = 'Payroll Liabilities' THEN EndingBalance ELSE 0 END), 2) AS PayrollLiabilitiesEndingBalance,
     ROUND(
         SUM(CASE WHEN WorkingCapitalBucket IN ('Accounts Receivable', 'Inventory and WIP') THEN EndingBalance ELSE 0 END)
-        - SUM(CASE WHEN WorkingCapitalBucket IN ('Accounts Payable', 'GRNI', 'Customer Deposits and Unapplied Cash', 'Accrued Expenses', 'Payroll Liabilities') THEN EndingBalance ELSE 0 END),
+        - SUM(CASE WHEN WorkingCapitalBucket IN ('Accounts Payable', 'GRNI', 'Customer Deposits and Unapplied Cash', 'Sales Commission Payable', 'Accrued Expenses', 'Payroll Liabilities') THEN EndingBalance ELSE 0 END),
         2
     ) AS NetWorkingCapital
 FROM ending_balances

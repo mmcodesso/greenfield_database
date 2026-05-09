@@ -169,6 +169,16 @@ reports:
     preview_row_limit: 25
     excel_enabled: true
     csv_enabled: true
+  - slug: sales-commission-payable-rollforward
+    title: Sales Commission Payable Rollforward
+    area: financial
+    process_group: working-capital-and-cash-conversion
+    cadence: Monthly
+    description: Reconcile commission payable from invoice-line accruals through credit-memo clawbacks and sales-rep payments.
+    query_path: queries/financial/58_sales_commission_payable_rollforward.sql
+    preview_row_limit: 25
+    excel_enabled: true
+    csv_enabled: true
   - slug: customer-credit-and-refunds
     title: Customer Credit and Refunds
     area: financial
@@ -276,6 +286,16 @@ reports:
     cadence: Monthly
     description: Compare budgeted and actual spend by cost center and account classification.
     query_path: queries/managerial/01_budget_vs_actual_by_cost_center.sql
+    preview_row_limit: 25
+    excel_enabled: true
+    csv_enabled: true
+  - slug: sales-commission-expense-by-rep-segment
+    title: Sales Commission Expense by Rep and Segment
+    area: managerial
+    process_group: performance-and-planning
+    cadence: Monthly
+    description: Review gross commission expense, clawbacks, and net commission expense by sales rep, revenue type, customer segment, and month.
+    query_path: queries/managerial/53_sales_commission_expense_by_rep_segment.sql
     preview_row_limit: 25
     excel_enabled: true
     csv_enabled: true

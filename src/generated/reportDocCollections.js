@@ -74,6 +74,9 @@ export const reportAreaCollections = {
           "reportKey": "budget-vs-actual-working-capital-and-cash-bridge"
         },
         {
+          "reportKey": "sales-commission-payable-rollforward"
+        },
+        {
           "reportKey": "customer-deposits-and-unapplied-cash-aging"
         },
         {
@@ -131,6 +134,9 @@ export const reportAreaCollections = {
       "items": [
         {
           "reportKey": "budget-vs-actual-by-cost-center"
+        },
+        {
+          "reportKey": "sales-commission-expense-by-rep-segment"
         },
         {
           "reportKey": "budget-vs-actual-revenue-price-volume-cost-bridge"

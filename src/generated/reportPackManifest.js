@@ -249,6 +249,25 @@ const reportPackManifest = {
         }
       },
       {
+        "reportSlug": "sales-commission-payable-rollforward",
+        "teachingRole": "drill-down",
+        "whyItMatters": "The commission rollforward separates invoice-driven commission accruals from credit-memo clawbacks and cash settlement.",
+        "discussionQuestions": [
+          "Which months build the largest sales-commission payable balance?",
+          "How much of the payable is reduced by credit-memo clawbacks before payment?",
+          "Does commission settlement timing explain part of the operating cash-flow bridge?"
+        ],
+        "suggestedAnalysis": [
+          "Compare commission accrual credits with clawback and payment debits.",
+          "Read the ending payable beside the working-capital bridge and indirect cash flow.",
+          "Use the result to decide whether the liability is normal timing or a follow-up item."
+        ],
+        "relatedLink": {
+          "label": "Working Capital and Cash Conversion Case",
+          "href": "/docs/analytics/cases/working-capital-and-cash-conversion-case"
+        }
+      },
+      {
         "reportSlug": "budget-vs-actual-working-capital-and-cash-bridge",
         "teachingRole": "drill-down",
         "whyItMatters": "This bridge makes the planning model accountable on the working-capital and cash balances that most directly affect liquidity.",
@@ -342,6 +361,22 @@ const reportPackManifest = {
         "relatedLink": null
       },
       {
+        "reportSlug": "sales-commission-expense-by-rep-segment",
+        "teachingRole": "drill-down",
+        "whyItMatters": "The commission expense view connects billed revenue to selling-cost behavior by rep, revenue type, and customer segment.",
+        "discussionQuestions": [
+          "Which reps or segments drive the largest commission expense?",
+          "Does commission cost follow merchandise and design-service revenue mix?",
+          "Where do credit-memo clawbacks materially change the original expense?"
+        ],
+        "suggestedAnalysis": [
+          "Compare gross commission expense with clawbacks and net commission expense.",
+          "Split the result by revenue type and customer segment before ranking reps.",
+          "Use the result beside revenue, returns, and price-realization reports."
+        ],
+        "relatedLink": null
+      },
+      {
         "reportSlug": "budget-vs-actual-revenue-price-volume-cost-bridge",
         "teachingRole": "drill-down",
         "whyItMatters": "The revenue price-volume-cost bridge shows whether plan variance comes from demand, realized selling price, or standard-cost consumption by portfolio slice.",
@@ -421,6 +456,25 @@ const reportPackManifest = {
           "Compare receipt amount, applied amount, and open unapplied balance.",
           "Focus on receipts with long delays before first application.",
           "Connect unapplied cash behavior to the working-capital story."
+        ],
+        "relatedLink": {
+          "label": "Working Capital and Cash Conversion Case",
+          "href": "/docs/analytics/cases/working-capital-and-cash-conversion-case"
+        }
+      },
+      {
+        "reportSlug": "sales-commission-payable-rollforward",
+        "teachingRole": "drill-down",
+        "whyItMatters": "The commission payable rollforward shows how sales activity creates a separate O2C liability before monthly rep settlement clears it.",
+        "discussionQuestions": [
+          "Which months show the largest commission payable buildup?",
+          "Do credit-memo clawbacks materially offset the invoice-line accruals?",
+          "How does monthly commission payment timing affect commercial cash conversion?"
+        ],
+        "suggestedAnalysis": [
+          "Compare accrual, clawback, payment, and ending-payable columns by month.",
+          "Read the payable movement beside AR, unapplied cash, and cash-flow reports.",
+          "Use the result to separate sales-cost accrual timing from payroll timing."
         ],
         "relatedLink": {
           "label": "Working Capital and Cash Conversion Case",

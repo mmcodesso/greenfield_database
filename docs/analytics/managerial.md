@@ -9,7 +9,7 @@ import { queryLibraryGroups } from "@site/src/generated/queryDocCollections";
 
 # Managerial Queries
 
-Use this page as the managerial and cost-accounting query library. The groups below organize reusable SQL around cost management, portfolio performance, inventory and supplier behavior, manufacturing operations, workforce coverage, planning, replenishment, and design-service utilization.
+Use this page as the managerial and cost-accounting query library. The groups below organize reusable SQL around cost management, portfolio performance, sales commissions, inventory and supplier behavior, manufacturing operations, workforce coverage, planning, replenishment, and design-service utilization.
 
 ## Managerial Query Groups
 
@@ -21,6 +21,7 @@ Use this page as the managerial and cost-accounting query library. The groups be
 |---|---|
 | Budget vs actual | `Budget`, `BudgetLine`, `CostCenter`, `Account`, `GLEntry`, `JournalEntry` |
 | Product portfolio and sales mix | `Item`, `SalesInvoiceLine`, `CreditMemoLine`, `ShipmentLine`, `SalesOrderLine`, `Customer`, `PriceList`, `PriceListLine`, `PromotionProgram`, `PriceOverrideApproval` |
+| Sales commissions | `SalesCommissionAccrual`, `SalesCommissionAdjustment`, `SalesCommissionRate`, `SalesCommissionPaymentLine`, `SalesInvoiceLine`, `CreditMemoLine`, `Employee`, `Customer` |
 | Inventory and purchasing | `GoodsReceiptLine`, `ShipmentLine`, `SalesReturnLine`, `ProductionCompletionLine`, `PurchaseOrderLine`, `Supplier`, `Warehouse`, `Item` |
 | BOM, routing, and work-center planning | `BillOfMaterial`, `BillOfMaterialLine`, `Routing`, `RoutingOperation`, `WorkCenter`, `WorkCenterCalendar`, `Item` |
 | Work-order throughput and variance | `WorkOrder`, `WorkOrderOperation`, `WorkOrderOperationSchedule`, `MaterialIssueLine`, `ProductionCompletionLine`, `WorkOrderClose` |
@@ -45,6 +46,7 @@ Use this page as the managerial and cost-accounting query library. The groups be
 - Workforce-planning analysis is stronger now that rostered hours, approved worked hours, absences, raw punches, and overtime approvals can be compared directly.
 - The dataset includes a weekly planning layer, so students can compare forecast, policy, recommendation, and rough-cut capacity pressure before execution starts.
 - The dataset includes commercial-pricing coverage, so students can compare list price, resolved price-list pricing, promotions, overrides, and net realized margin without introducing a separate quote system.
+- Sales commissions are modeled as a separate selling-cost subledger, so students can compare commission expense by rep, segment, and revenue type without mixing it into payroll.
 - The budget model now starts from `BudgetLine`, so students can move from forecast, planned price, standard cost, payroll, and timing assumptions into the summary `Budget` table and the pro forma statements.
 - The current manufacturing model is still a foundation. It supports operations, labor, and contribution-margin analysis without switching inventory valuation to actual cost.
 - Demand-planning analysis is most useful when students connect `DemandForecast`, `InventoryPolicy`, `SupplyPlanRecommendation`, `MaterialRequirementPlan`, and `RoughCutCapacityPlan` in one analytical path.

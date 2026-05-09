@@ -22,11 +22,13 @@ from generator_dataset.journals import (
     monthly_utilities_amount,
 )
 from generator_dataset.master_data import (
+    DESIGN_SERVICE_SEGMENT,
     approver_employee_id,
     current_role_employee_id,
     eligible_item_mask,
 )
 from generator_dataset.o2c import (
+    SALES_COMMISSION_RATES,
     customer_collection_factor,
     payment_term_days as customer_payment_term_days,
     resolve_price_list_line,
@@ -417,6 +419,24 @@ def _weighted_supplier_term_days(context: GenerationContext) -> float:
     if term_days.empty:
         return 30.0
     return float(term_days.mean())
+
+
+def _weighted_sales_commission_rate(customer_weights: dict[str, float], revenue_type: str) -> float:
+    if revenue_type == "Design Service":
+        segment_weights = {"Design Trade": 1.0}
+    else:
+        segment_weights = {
+            segment: weight
+            for segment, weight in customer_weights.items()
+            if segment != DESIGN_SERVICE_SEGMENT
+        }
+    total_weight = sum(float(weight) for weight in segment_weights.values())
+    if total_weight <= 0:
+        return 0.0
+    weighted_rate = 0.0
+    for segment, weight in segment_weights.items():
+        weighted_rate += float(weight) * float(SALES_COMMISSION_RATES.get((revenue_type, segment), 0.0))
+    return float(weighted_rate / total_weight)
 
 
 def _sellable_items(context: GenerationContext) -> pd.DataFrame:
@@ -984,9 +1004,9 @@ def generate_budgets(context: GenerationContext) -> None:
         account_number: account_id_by_number(context, account_number)
         for account_number in [
             "1010", "1020", "1040", "1045", "1050", "1110", "1120", "1130", "1140", "1150", "1160", "1170",
-            "1185", "1186", "2010", "2030", "2040", "2110", "2120", "2130", "3010", "3020", "3030",
+            "1185", "1186", "2010", "2030", "2034", "2040", "2110", "2120", "2130", "3010", "3020", "3030",
             "6060", "6070", "6080", "6090", "6100", "6110", "6120", "6130", "6140", "6180", "6190",
-            "6200", "7030",
+            "6200", "6290", "7030",
         ]
         if not context.tables["Account"].loc[
             context.tables["Account"]["AccountNumber"].astype(str).eq(account_number)
@@ -1005,6 +1025,7 @@ def generate_budgets(context: GenerationContext) -> None:
         "1050": money(float(opening_balance_map.get("1050", 0.0))),
         "2010": money(float(opening_balance_map.get("2010", 0.0))),
         "2030": money(float(opening_balance_map.get("2030", 0.0))),
+        "2034": money(float(opening_balance_map.get("2034", 0.0))),
         "2040": money(float(opening_balance_map.get("2040", 0.0))),
         "2110": money(float(opening_balance_map.get("2110", 0.0))),
         "2120": money(float(opening_balance_map.get("2120", 0.0))),
@@ -1039,6 +1060,7 @@ def generate_budgets(context: GenerationContext) -> None:
         month_revenue = 0.0
         month_cogs = 0.0
         month_operating_expense = 0.0
+        month_commission_expense = 0.0
         month_payroll_gross = 0.0
 
         month_plan = sales_plan.get((fiscal_year, fiscal_month), {})
@@ -1095,6 +1117,30 @@ def generate_budgets(context: GenerationContext) -> None:
             )
             month_revenue += float(revenue_amount)
             month_cogs += float(cogs_amount)
+
+            revenue_type = "Design Service" if str(item["ItemGroup"]) == "Services" else "Merchandise"
+            commission_rate = _weighted_sales_commission_rate(customer_weights, revenue_type)
+            commission_amount = money(float(revenue_amount) * commission_rate)
+            if commission_amount > 0 and "6290" in account_ids:
+                _append_budget_line(
+                    context,
+                    budget_line_rows,
+                    fiscal_year=fiscal_year,
+                    month=fiscal_month,
+                    account_id=account_ids["6290"],
+                    cost_center_id=sales_cost_center_id,
+                    item_id=int(item_id),
+                    warehouse_id=warehouse_id,
+                    quantity_value=float(revenue_amount),
+                    unit_amount=qty(commission_rate, "0.0001"),
+                    budget_amount=commission_amount,
+                    budget_category="Operating Expense",
+                    driver_type="Forecast Revenue x Commission Rate",
+                    approved_by_employee_id=approver_id,
+                    approved_date=approved_date,
+                )
+                month_commission_expense += commission_amount
+                month_operating_expense += commission_amount
 
         month_payroll = payroll_plan.get((fiscal_year, fiscal_month), {"gross": {}, "burden": {}, "headcount": {}})
         for cost_center_id, gross_amount in sorted(month_payroll["gross"].items()):
@@ -1285,6 +1331,7 @@ def generate_budgets(context: GenerationContext) -> None:
         )
         total_payroll_gross_all_cost_centers = sum(float(amount) for amount in month_payroll["gross"].values())
         ending_accrued_payroll = money(total_payroll_gross_all_cost_centers * ACCRUED_PAYROLL_FRACTION)
+        ending_sales_commission_payable = money(month_commission_expense)
         ending_accrued_expenses = money(total_accrual_expense * ACCRUED_EXPENSES_FRACTION)
         net_income = money(month_revenue - month_cogs - month_operating_expense)
         current_year_net_income[fiscal_year] = money(float(current_year_net_income.get(fiscal_year, 0.0)) + net_income)
@@ -1294,6 +1341,7 @@ def generate_budgets(context: GenerationContext) -> None:
         materials_change = money(ending_materials_inventory - float(running_balance["1045"]))
         accounts_payable_change = money(ending_accounts_payable - float(running_balance["2010"]))
         accrued_payroll_change = money(ending_accrued_payroll - float(running_balance["2030"]))
+        sales_commission_payable_change = money(ending_sales_commission_payable - float(running_balance["2034"]))
         accrued_expenses_change = money(ending_accrued_expenses - float(running_balance["2040"]))
         ending_cash = money(
             float(running_balance["1010"])
@@ -1304,6 +1352,7 @@ def generate_budgets(context: GenerationContext) -> None:
             - materials_change
             + accounts_payable_change
             + accrued_payroll_change
+            + sales_commission_payable_change
             + accrued_expenses_change
             - cash_capex_total
             + float(note_activity["principal_borrowed"])
@@ -1316,6 +1365,7 @@ def generate_budgets(context: GenerationContext) -> None:
         running_balance["1045"] = ending_materials_inventory
         running_balance["2010"] = ending_accounts_payable
         running_balance["2030"] = ending_accrued_payroll
+        running_balance["2034"] = ending_sales_commission_payable
         running_balance["2040"] = ending_accrued_expenses
         running_balance["2110"] = money(
             float(running_balance["2110"])
@@ -1323,7 +1373,7 @@ def generate_budgets(context: GenerationContext) -> None:
             - float(note_activity["principal_paid"])
         )
 
-        for account_number in ["1010", "1020", "1040", "1045", "1050", "2010", "2030", "2040", "2110", "2120", "2130", "3010", "3020", "3030"]:
+        for account_number in ["1010", "1020", "1040", "1045", "1050", "2010", "2030", "2034", "2040", "2110", "2120", "2130", "3010", "3020", "3030"]:
             if account_number not in account_ids or account_number not in running_balance:
                 continue
             driver_type = {
@@ -1333,6 +1383,7 @@ def generate_budgets(context: GenerationContext) -> None:
                 "1045": "Inventory Policy Coverage Rollforward",
                 "2010": "Supplier Payment Timing Rollforward",
                 "2030": "Payroll Cadence Rollforward",
+                "2034": "Sales Commission Timing Rollforward",
                 "2040": "Accrual Timing Rollforward",
                 "2110": "Debt Schedule Rollforward",
                 "3030": "Prior-Year Earnings Carryforward",

@@ -67,6 +67,9 @@ These documents are generated for process analysis but do **not** create `GLEntr
 | Sales return | `SalesReturn`, `SalesReturnLine` | `ReturnDate` | Item inventory account | Item COGS account |
 | Credit memo | `CreditMemo`, `CreditMemoLine` | `CreditMemoDate` | `4060` Sales Returns and Allowances, optional `4050` Freight Revenue reversal, and sales tax payable reversal | Accounts receivable or `2060` Customer Deposits and Unapplied Cash |
 | Customer refund | `CustomerRefund` | `RefundDate` | `2060` Customer Deposits and Unapplied Cash | Cash |
+| Sales commission accrual | `SalesCommissionAccrual` | `AccrualDate`, aligned to invoice date | `6290` Sales Commission Expense | `2034` Sales Commission Payable |
+| Sales commission adjustment | `SalesCommissionAdjustment` | `AdjustmentDate`, aligned to credit memo date | `2034` Sales Commission Payable | `6290` Sales Commission Expense |
+| Sales commission payment | `SalesCommissionPayment` | `PaymentDate` | `2034` Sales Commission Payable | Cash |
 | Goods receipt | `GoodsReceipt`, `GoodsReceiptLine` | `ReceiptDate` | Item inventory account | `2020` Goods Received Not Invoiced |
 | Material issue | `MaterialIssue`, `MaterialIssueLine` | `IssueDate` | `1046` Inventory - Work in Process | `1045` Inventory - Materials and Packaging |
 | Production completion | `ProductionCompletion`, `ProductionCompletionLine` | `CompletionDate` | `1040` Inventory - Finished Goods | `1046` Inventory - Work in Process and `1090` Manufacturing Cost Clearing |
@@ -97,6 +100,7 @@ These documents are generated for process analysis but do **not** create `GLEntr
 | `2031` | Payroll tax withholdings payable |
 | `2032` | Employer payroll taxes payable |
 | `2033` | Employee benefits and other deductions payable |
+| `2034` | Sales commission payable |
 | `2040` | Accrued expenses |
 | `2050` | Sales tax payable |
 | `2060` | Customer deposits and unapplied cash |
@@ -105,6 +109,7 @@ These documents are generated for process analysis but do **not** create `GLEntr
 | `4060` | Sales returns and allowances |
 | `5050` | Freight-out expense |
 | `5080` | Manufacturing variance |
+| `6290` | Sales commission expense |
 | `7020` | Gain or loss on asset disposal |
 | `7030` | Interest expense |
 | `3030` | Retained earnings |
@@ -125,3 +130,5 @@ Each operational posting written to `GLEntry` includes:
 - `FiscalPeriod`
 
 For design services, `SourceDocumentType = 'SalesInvoice'` and `SourceLineID = SalesInvoiceLineID` still hold the revenue trace. `ServiceBillingLine` is the extra bridge that explains which approved hours created that invoice line.
+
+Sales commissions are a separate O2C payable, not payroll. `SalesCommissionAccrual` rows use `SalesInvoiceLine.LineTotal` as the commission base, credit-memo clawbacks use `SalesCommissionAdjustment`, and monthly settlements use `SalesCommissionPayment`.

@@ -201,6 +201,7 @@ EXPECTED_REPORT_COLUMNS = {
         "AccountsPayableEndingBalance",
         "GRNIEndingBalance",
         "CustomerDepositsEndingBalance",
+        "SalesCommissionPayableEndingBalance",
         "AccruedExpensesEndingBalance",
         "PayrollLiabilitiesEndingBalance",
         "NetWorkingCapital",

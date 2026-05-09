@@ -9,7 +9,7 @@ import { queryLibraryGroups } from "@site/src/generated/queryDocCollections";
 
 # Financial Queries
 
-Use this page as the financial-accounting query library. The groups below organize reusable SQL by the question students are trying to answer: statement tie-out, settlement timing, working capital, payroll liabilities, manufacturing cost, CAPEX, budget, and commercial performance.
+Use this page as the financial-accounting query library. The groups below organize reusable SQL by the question students are trying to answer: statement tie-out, settlement timing, working capital, sales-commission payable, payroll liabilities, manufacturing cost, CAPEX, budget, and commercial performance.
 
 ## Financial Query Groups
 
@@ -26,7 +26,8 @@ Use this page as the financial-accounting query library. The groups below organi
 | Revenue and gross margin | `SalesInvoice`, `SalesInvoiceLine`, `Shipment`, `ShipmentLine`, `CreditMemo`, `CreditMemoLine`, `Item`, `PriceList`, `PriceListLine`, `PromotionProgram`, `GLEntry`, `Account` |
 | AR and customer cash | `SalesInvoice`, `CashReceipt`, `CashReceiptApplication`, `CreditMemo`, `CustomerRefund`, `Customer` |
 | AP and supplier cash | `PurchaseInvoice`, `PurchaseInvoiceLine`, `DisbursementPayment`, `Supplier`, `GoodsReceipt` |
-| Working capital | `GLEntry`, `Account`, `SalesInvoice`, `CashReceiptApplication`, `PurchaseInvoice`, `DisbursementPayment`, `PayrollRegister`, `PayrollLiabilityRemittance` |
+| Working capital | `GLEntry`, `Account`, `SalesInvoice`, `CashReceiptApplication`, `SalesCommissionAccrual`, `SalesCommissionAdjustment`, `SalesCommissionPayment`, `PurchaseInvoice`, `DisbursementPayment`, `PayrollRegister`, `PayrollLiabilityRemittance` |
+| Sales commissions | `SalesCommissionRate`, `SalesCommissionAccrual`, `SalesCommissionAdjustment`, `SalesCommissionPayment`, `SalesCommissionPaymentLine`, `SalesInvoiceLine`, `CreditMemoLine`, `GLEntry`, `Account` |
 | Accrued expenses | `JournalEntry`, `PurchaseInvoice`, `PurchaseInvoiceLine`, `Shipment`, `GLEntry`, `Account`, `Supplier`, `Item` |
 | Payroll liabilities and support | `PayrollPeriod`, `TimeClockEntry`, `LaborTimeEntry`, `PayrollRegister`, `PayrollRegisterLine`, `PayrollPayment`, `PayrollLiabilityRemittance`, `Employee` |
 | Manufacturing balances | `WorkOrderClose`, `ProductionCompletionLine`, `MaterialIssueLine`, `JournalEntry`, `GLEntry`, `Account` |
@@ -124,6 +125,7 @@ This sequence starts in the fixed-asset subledger, then ties the asset lifecycle
 - The richer item master now supports collection, style family, lifecycle, and supply-mode financial analysis without changing the underlying posting model.
 - The richer employee master now supports job-family, job-level, and people-cost review without requiring a separate HR-history subledger.
 - Customer deposits and unapplied cash analysis should start from `CashReceipt` and `CashReceiptApplication`, alongside AR.
+- Sales commission analysis should start from `SalesInvoiceLine.LineTotal`, then trace `SalesCommissionAccrual`, `SalesCommissionAdjustment`, `SalesCommissionPaymentLine`, and `SalesCommissionPayment` into `2034` and `6290`.
 - Accrued-expense analysis should focus on `2040`, `PurchaseInvoiceLine.AccrualJournalEntryID`, the service-item lines that settle finance-managed estimates, and the outbound-freight accrual and settlement pattern created from `Shipment.FreightCost`.
 - Year-end close entries are real posted journals and should be filtered when you want raw multi-year P&L activity.
 - The income-statement starter queries use pre-close P&L activity, so they exclude the year-end close journals that zero out revenue and expense accounts.

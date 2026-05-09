@@ -66,6 +66,18 @@ FULL_RETURN_REASON_PROBABILITY = 0.20
 
 CARRIERS = ["Private Fleet", "FedEx Freight", "UPS Freight", "DHL Supply Chain"]
 PAYMENT_METHODS = ["ACH", "Wire Transfer", "Check", "Credit Card"]
+SALES_COMMISSION_PAYMENT_METHODS = ["ACH", "Direct Deposit"]
+SALES_COMMISSION_REVENUE_TYPES = ("Merchandise", "Design Service")
+SALES_COMMISSION_RATES = {
+    ("Merchandise", "Strategic"): 0.0200,
+    ("Merchandise", "Wholesale"): 0.0150,
+    ("Merchandise", "Design Trade"): 0.0250,
+    ("Merchandise", "Small Business"): 0.0300,
+    ("Design Service", "Strategic"): 0.0300,
+    ("Design Service", "Wholesale"): 0.0250,
+    ("Design Service", "Design Trade"): 0.0400,
+    ("Design Service", "Small Business"): 0.0350,
+}
 SEGMENT_PRICE_DISCOUNTS = {
     "Strategic": 0.12,
     "Wholesale": 0.10,
@@ -369,6 +381,26 @@ def clamp_date_to_month(value: pd.Timestamp, year: int, month: int) -> pd.Timest
     return value
 
 
+def next_business_day(value: pd.Timestamp) -> pd.Timestamp:
+    candidate = pd.Timestamp(value).normalize()
+    while candidate.day_name() in {"Saturday", "Sunday"}:
+        candidate = candidate + pd.Timedelta(days=1)
+    return candidate
+
+
+def nth_business_day(year: int, month: int, business_day_number: int) -> pd.Timestamp:
+    if business_day_number <= 0:
+        raise ValueError("business_day_number must be positive.")
+    candidate = pd.Timestamp(year=year, month=month, day=1)
+    seen = 0
+    while True:
+        if candidate.day_name() not in {"Saturday", "Sunday"}:
+            seen += 1
+            if seen == business_day_number:
+                return candidate
+        candidate = candidate + pd.Timedelta(days=1)
+
+
 def sales_cost_center_id(context: GenerationContext) -> int:
     cost_centers = context.tables["CostCenter"]
     matches = cost_centers.loc[cost_centers["CostCenterName"].eq("Sales"), "CostCenterID"]
@@ -383,6 +415,15 @@ def employee_ids_for_cost_center(
     event_date: pd.Timestamp | str | None = None,
 ) -> list[int]:
     return employee_ids_for_cost_center_as_of(context, cost_center_name, event_date)
+
+
+def commission_accounting_approver_id(context: GenerationContext, event_date: pd.Timestamp | str) -> int:
+    return approver_employee_id(
+        context,
+        event_date,
+        preferred_titles=("Accounting Manager", "Controller", "Chief Financial Officer"),
+        fallback_cost_center_name="Administration",
+    )
 
 
 def warehouse_ids(context: GenerationContext) -> list[int]:
@@ -973,6 +1014,74 @@ def generate_promotions(context: GenerationContext) -> None:
             promotion_sequence += 1
 
     append_rows(context, "PromotionProgram", rows)
+
+
+def generate_sales_commission_rates(context: GenerationContext) -> None:
+    if not context.tables["SalesCommissionRate"].empty:
+        return
+
+    start_date = pd.Timestamp(context.settings.fiscal_year_start).normalize()
+    end_date = pd.Timestamp(context.settings.fiscal_year_end).normalize()
+    approved_by_employee_id = commission_accounting_approver_id(context, start_date)
+    rows: list[dict[str, Any]] = []
+    for (revenue_type, customer_segment), rate_pct in sorted(SALES_COMMISSION_RATES.items()):
+        rows.append({
+            "SalesCommissionRateID": next_id(context, "SalesCommissionRate"),
+            "RevenueType": revenue_type,
+            "CustomerSegment": customer_segment,
+            "RatePct": qty(rate_pct, "0.0001"),
+            "EffectiveStartDate": start_date.strftime("%Y-%m-%d"),
+            "EffectiveEndDate": end_date.strftime("%Y-%m-%d"),
+            "Status": "Active",
+            "ApprovedByEmployeeID": approved_by_employee_id,
+            "ApprovedDate": start_date.strftime("%Y-%m-%d"),
+        })
+
+    append_rows(context, "SalesCommissionRate", rows)
+
+
+def sales_commission_rate_lookup(context: GenerationContext) -> dict[tuple[str, str], dict[str, Any]]:
+    rates = context.tables["SalesCommissionRate"]
+    if rates.empty:
+        raise ValueError("Generate sales commission rates before commission accruals.")
+    lookup: dict[tuple[str, str], dict[str, Any]] = {}
+    active = rates[rates["Status"].astype(str).eq("Active")].copy()
+    for row in active.itertuples(index=False):
+        lookup[(str(row.RevenueType), str(row.CustomerSegment))] = {
+            "SalesCommissionRateID": int(row.SalesCommissionRateID),
+            "RatePct": float(row.RatePct),
+            "EffectiveStartDate": pd.Timestamp(row.EffectiveStartDate).normalize(),
+            "EffectiveEndDate": pd.Timestamp(row.EffectiveEndDate).normalize(),
+        }
+    return lookup
+
+
+def commission_revenue_type_by_invoice_line(context: GenerationContext) -> dict[int, str]:
+    mapping: dict[int, str] = {}
+    service_billing_lines = context.tables["ServiceBillingLine"]
+    if not service_billing_lines.empty:
+        for sales_invoice_line_id in service_billing_lines["SalesInvoiceLineID"].dropna().astype(int).tolist():
+            mapping[int(sales_invoice_line_id)] = "Design Service"
+    return mapping
+
+
+def selected_sales_commission_rate(
+    context: GenerationContext,
+    *,
+    revenue_type: str,
+    customer_segment: str,
+    event_date: pd.Timestamp,
+) -> dict[str, Any]:
+    lookup = sales_commission_rate_lookup(context)
+    key = (str(revenue_type), str(customer_segment))
+    rate = lookup.get(key)
+    if rate is None and str(customer_segment) == DESIGN_SERVICE_SEGMENT:
+        rate = lookup.get((str(revenue_type), "Design Trade"))
+    if rate is None:
+        raise ValueError(f"Missing sales commission rate for {key}.")
+    if not (rate["EffectiveStartDate"] <= event_date.normalize() <= rate["EffectiveEndDate"]):
+        raise ValueError(f"Sales commission rate for {key} is not active on {event_date:%Y-%m-%d}.")
+    return rate
 
 
 def price_list_lookup(context: GenerationContext) -> dict[str, Any]:
@@ -3275,6 +3384,261 @@ def generate_month_customer_refunds(context: GenerationContext, year: int, month
 
     append_rows(context, "CustomerRefund", refund_rows)
     refresh_o2c_statuses(context)
+
+
+def generate_month_sales_commission_accruals(context: GenerationContext, year: int, month: int) -> None:
+    generate_sales_commission_rates(context)
+    _, month_end = month_bounds(year, month)
+    invoices = context.tables["SalesInvoice"]
+    invoice_lines = context.tables["SalesInvoiceLine"]
+    if invoices.empty or invoice_lines.empty:
+        return
+
+    existing_line_ids = set(
+        context.tables["SalesCommissionAccrual"]["SalesInvoiceLineID"].dropna().astype(int).tolist()
+    )
+    invoice_lookup = invoices.set_index("SalesInvoiceID").to_dict("index")
+    sales_order_lookup = context.tables["SalesOrder"].set_index("SalesOrderID").to_dict("index")
+    customer_lookup = context.tables["Customer"].set_index("CustomerID").to_dict("index")
+    revenue_type_by_line = commission_revenue_type_by_invoice_line(context)
+    accrual_rows: list[dict[str, Any]] = []
+
+    for line in invoice_lines.sort_values(["SalesInvoiceID", "LineNumber", "SalesInvoiceLineID"]).itertuples(index=False):
+        sales_invoice_line_id = int(line.SalesInvoiceLineID)
+        if sales_invoice_line_id in existing_line_ids:
+            continue
+        invoice = invoice_lookup.get(int(line.SalesInvoiceID))
+        if invoice is None:
+            continue
+        invoice_date = pd.Timestamp(invoice["InvoiceDate"]).normalize()
+        if invoice_date > month_end:
+            continue
+        commission_base_amount = money(float(line.LineTotal))
+        if commission_base_amount <= 0:
+            continue
+
+        sales_order = sales_order_lookup[int(invoice["SalesOrderID"])]
+        customer = customer_lookup[int(invoice["CustomerID"])]
+        customer_segment = str(customer["CustomerSegment"])
+        revenue_type = revenue_type_by_line.get(sales_invoice_line_id, "Merchandise")
+        rate_segment = "Design Trade" if customer_segment == DESIGN_SERVICE_SEGMENT else customer_segment
+        rate = selected_sales_commission_rate(
+            context,
+            revenue_type=revenue_type,
+            customer_segment=rate_segment,
+            event_date=invoice_date,
+        )
+        commission_amount = money(commission_base_amount * float(rate["RatePct"]))
+        if commission_amount <= 0:
+            continue
+
+        accrual_id = next_id(context, "SalesCommissionAccrual")
+        accrual_rows.append({
+            "SalesCommissionAccrualID": accrual_id,
+            "AccrualNumber": format_doc_number("SCAC", int(invoice_date.year), accrual_id),
+            "AccrualDate": invoice_date.strftime("%Y-%m-%d"),
+            "SalesInvoiceID": int(line.SalesInvoiceID),
+            "SalesInvoiceLineID": sales_invoice_line_id,
+            "SalesOrderID": int(invoice["SalesOrderID"]),
+            "CustomerID": int(invoice["CustomerID"]),
+            "SalesRepEmployeeID": int(sales_order["SalesRepEmployeeID"]),
+            "SalesCommissionRateID": int(rate["SalesCommissionRateID"]),
+            "RevenueType": revenue_type,
+            "CustomerSegment": customer_segment,
+            "CommissionBaseAmount": commission_base_amount,
+            "CommissionRatePct": qty(float(rate["RatePct"]), "0.0001"),
+            "CommissionAmount": commission_amount,
+            "Status": "Accrued",
+            "CreatedByEmployeeID": commission_accounting_approver_id(context, invoice_date),
+            "CreatedDate": f"{invoice_date.strftime('%Y-%m-%d')} 12:00:00",
+        })
+        existing_line_ids.add(sales_invoice_line_id)
+
+    append_rows(context, "SalesCommissionAccrual", accrual_rows)
+
+
+def generate_month_sales_commission_adjustments(context: GenerationContext, year: int, month: int) -> None:
+    _, month_end = month_bounds(year, month)
+    credit_memos = context.tables["CreditMemo"]
+    credit_memo_lines = context.tables["CreditMemoLine"]
+    accruals = context.tables["SalesCommissionAccrual"]
+    if credit_memos.empty or credit_memo_lines.empty or accruals.empty:
+        return
+
+    existing_credit_line_ids = set(
+        context.tables["SalesCommissionAdjustment"]["CreditMemoLineID"].dropna().astype(int).tolist()
+    )
+    credit_lookup = credit_memos.set_index("CreditMemoID").to_dict("index")
+    return_line_lookup = context.tables["SalesReturnLine"].set_index("SalesReturnLineID").to_dict("index")
+    shipment_line_lookup = context.tables["ShipmentLine"].set_index("ShipmentLineID").to_dict("index")
+    invoice_lines = context.tables["SalesInvoiceLine"]
+    invoice_line_by_invoice_order_line: dict[tuple[int, int, int], dict[str, Any]] = {}
+    for invoice_line in invoice_lines.itertuples(index=False):
+        invoice_line_by_invoice_order_line[
+            (int(invoice_line.SalesInvoiceID), int(invoice_line.SalesOrderLineID), int(invoice_line.ItemID))
+        ] = invoice_line._asdict()
+    accrual_by_invoice_line = accruals.set_index("SalesInvoiceLineID").to_dict("index")
+    adjustment_rows: list[dict[str, Any]] = []
+
+    for line in credit_memo_lines.sort_values(["CreditMemoID", "LineNumber", "CreditMemoLineID"]).itertuples(index=False):
+        credit_memo_line_id = int(line.CreditMemoLineID)
+        if credit_memo_line_id in existing_credit_line_ids:
+            continue
+        credit_memo = credit_lookup.get(int(line.CreditMemoID))
+        if credit_memo is None:
+            continue
+        adjustment_date = pd.Timestamp(credit_memo["CreditMemoDate"]).normalize()
+        if adjustment_date > month_end:
+            continue
+        return_line = return_line_lookup.get(int(line.SalesReturnLineID))
+        if return_line is None:
+            continue
+        shipment_line = shipment_line_lookup.get(int(return_line["ShipmentLineID"]))
+        if shipment_line is None:
+            continue
+        invoice_line = invoice_line_by_invoice_order_line.get(
+            (
+                int(credit_memo["OriginalSalesInvoiceID"]),
+                int(shipment_line["SalesOrderLineID"]),
+                int(line.ItemID),
+            )
+        )
+        if invoice_line is None:
+            continue
+        accrual = accrual_by_invoice_line.get(int(invoice_line["SalesInvoiceLineID"]))
+        if accrual is None:
+            continue
+
+        base_reduction = money(float(line.LineTotal))
+        adjustment_amount = money(base_reduction * float(accrual["CommissionRatePct"]))
+        if adjustment_amount <= 0:
+            continue
+
+        adjustment_id = next_id(context, "SalesCommissionAdjustment")
+        adjustment_rows.append({
+            "SalesCommissionAdjustmentID": adjustment_id,
+            "AdjustmentNumber": format_doc_number("SCAJ", int(adjustment_date.year), adjustment_id),
+            "AdjustmentDate": adjustment_date.strftime("%Y-%m-%d"),
+            "SalesCommissionAccrualID": int(accrual["SalesCommissionAccrualID"]),
+            "CreditMemoID": int(line.CreditMemoID),
+            "CreditMemoLineID": credit_memo_line_id,
+            "SalesInvoiceID": int(credit_memo["OriginalSalesInvoiceID"]),
+            "SalesInvoiceLineID": int(invoice_line["SalesInvoiceLineID"]),
+            "SalesOrderID": int(credit_memo["SalesOrderID"]),
+            "CustomerID": int(credit_memo["CustomerID"]),
+            "SalesRepEmployeeID": int(accrual["SalesRepEmployeeID"]),
+            "CommissionBaseReductionAmount": base_reduction,
+            "CommissionRatePct": qty(float(accrual["CommissionRatePct"]), "0.0001"),
+            "CommissionAdjustmentAmount": adjustment_amount,
+            "Status": "Clawback",
+            "ApprovedByEmployeeID": int(credit_memo["ApprovedByEmployeeID"]),
+            "ApprovedDate": str(credit_memo["ApprovedDate"]),
+        })
+        existing_credit_line_ids.add(credit_memo_line_id)
+
+    append_rows(context, "SalesCommissionAdjustment", adjustment_rows)
+
+
+def generate_month_sales_commission_payments(context: GenerationContext, year: int, month: int) -> None:
+    accruals = context.tables["SalesCommissionAccrual"]
+    if accruals.empty:
+        return
+
+    current_month_start, _ = month_bounds(year, month)
+    period_start = current_month_start - pd.DateOffset(months=1)
+    period_end = period_start + pd.offsets.MonthEnd(1)
+    payment_date = nth_business_day(year, month, 10)
+    payment_lines = context.tables["SalesCommissionPaymentLine"]
+    settled_sources = {
+        (str(row.SourceDocumentType), int(row.SourceDocumentID))
+        for row in payment_lines.itertuples(index=False)
+    } if not payment_lines.empty else set()
+
+    source_rows: list[dict[str, Any]] = []
+    accrual_candidates = accruals.copy()
+    accrual_candidates["AccrualDateTS"] = pd.to_datetime(accrual_candidates["AccrualDate"], errors="coerce")
+    accrual_candidates = accrual_candidates[accrual_candidates["AccrualDateTS"].le(period_end)].copy()
+    for row in accrual_candidates.sort_values(["AccrualDate", "SalesCommissionAccrualID"]).itertuples(index=False):
+        source_key = ("SalesCommissionAccrual", int(row.SalesCommissionAccrualID))
+        if source_key in settled_sources:
+            continue
+        source_rows.append({
+            "SourceDocumentType": "SalesCommissionAccrual",
+            "SourceDocumentID": int(row.SalesCommissionAccrualID),
+            "SourceLineID": int(row.SalesInvoiceLineID),
+            "SalesRepEmployeeID": int(row.SalesRepEmployeeID),
+            "Amount": money(float(row.CommissionAmount)),
+        })
+
+    adjustments = context.tables["SalesCommissionAdjustment"]
+    if not adjustments.empty:
+        adjustment_candidates = adjustments.copy()
+        adjustment_candidates["AdjustmentDateTS"] = pd.to_datetime(adjustment_candidates["AdjustmentDate"], errors="coerce")
+        adjustment_candidates = adjustment_candidates[adjustment_candidates["AdjustmentDateTS"].le(period_end)].copy()
+        for row in adjustment_candidates.sort_values(["AdjustmentDate", "SalesCommissionAdjustmentID"]).itertuples(index=False):
+            source_key = ("SalesCommissionAdjustment", int(row.SalesCommissionAdjustmentID))
+            if source_key in settled_sources:
+                continue
+            source_rows.append({
+                "SourceDocumentType": "SalesCommissionAdjustment",
+                "SourceDocumentID": int(row.SalesCommissionAdjustmentID),
+                "SourceLineID": int(row.CreditMemoLineID),
+                "SalesRepEmployeeID": int(row.SalesRepEmployeeID),
+                "Amount": -money(float(row.CommissionAdjustmentAmount)),
+            })
+
+    if not source_rows:
+        return
+
+    payment_rows: list[dict[str, Any]] = []
+    payment_line_rows: list[dict[str, Any]] = []
+    rng = stable_rng(context, "sales-commission-payment", year, month)
+    for sales_rep_id in sorted({int(row["SalesRepEmployeeID"]) for row in source_rows}):
+        rep_sources = [row for row in source_rows if int(row["SalesRepEmployeeID"]) == sales_rep_id]
+        gross_accrual_amount = money(sum(float(row["Amount"]) for row in rep_sources if float(row["Amount"]) > 0))
+        adjustment_amount = money(-sum(float(row["Amount"]) for row in rep_sources if float(row["Amount"]) < 0))
+        net_payment_amount = money(gross_accrual_amount - adjustment_amount)
+        if net_payment_amount <= 0:
+            continue
+
+        payment_id = next_id(context, "SalesCommissionPayment")
+        payment_number = format_doc_number("SCPAY", int(payment_date.year), payment_id)
+        approver_id = commission_accounting_approver_id(context, payment_date)
+        payment_rows.append({
+            "SalesCommissionPaymentID": payment_id,
+            "PaymentNumber": payment_number,
+            "PaymentDate": payment_date.strftime("%Y-%m-%d"),
+            "SalesRepEmployeeID": sales_rep_id,
+            "PeriodStartDate": period_start.strftime("%Y-%m-%d"),
+            "PeriodEndDate": period_end.strftime("%Y-%m-%d"),
+            "GrossAccrualAmount": gross_accrual_amount,
+            "AdjustmentAmount": adjustment_amount,
+            "NetPaymentAmount": net_payment_amount,
+            "PaymentMethod": str(rng.choice(SALES_COMMISSION_PAYMENT_METHODS)),
+            "ReferenceNumber": f"SCP{payment_id:08d}",
+            "Status": "Paid",
+            "ApprovedByEmployeeID": approver_id,
+            "ClearedDate": next_business_day(payment_date + pd.Timedelta(days=int(rng.integers(0, 3)))).strftime("%Y-%m-%d"),
+        })
+        for source in rep_sources:
+            payment_line_rows.append({
+                "SalesCommissionPaymentLineID": next_id(context, "SalesCommissionPaymentLine"),
+                "SalesCommissionPaymentID": payment_id,
+                "SourceDocumentType": str(source["SourceDocumentType"]),
+                "SourceDocumentID": int(source["SourceDocumentID"]),
+                "SourceLineID": int(source["SourceLineID"]),
+                "SalesRepEmployeeID": sales_rep_id,
+                "Amount": money(float(source["Amount"])),
+            })
+
+    append_rows(context, "SalesCommissionPayment", payment_rows)
+    append_rows(context, "SalesCommissionPaymentLine", payment_line_rows)
+
+
+def generate_month_sales_commissions(context: GenerationContext, year: int, month: int) -> None:
+    generate_month_sales_commission_accruals(context, year, month)
+    generate_month_sales_commission_adjustments(context, year, month)
+    generate_month_sales_commission_payments(context, year, month)
 
 
 def generate_month_o2c(context: GenerationContext, year: int, month: int) -> None:

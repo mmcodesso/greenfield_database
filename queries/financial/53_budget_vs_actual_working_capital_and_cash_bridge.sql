@@ -54,7 +54,7 @@ actual_balance_activity AS (
     FROM GLEntry AS gl
     JOIN Account AS a
         ON a.AccountID = gl.AccountID
-    WHERE CAST(a.AccountNumber AS INTEGER) IN (1010, 1020, 1040, 1045, 2010, 2030, 2040)
+    WHERE CAST(a.AccountNumber AS INTEGER) IN (1010, 1020, 1040, 1045, 2010, 2030, 2034, 2040)
     GROUP BY gl.FiscalYear, gl.FiscalPeriod, CAST(a.AccountNumber AS INTEGER)
 ),
 actual_balance_accounts AS (
@@ -64,6 +64,7 @@ actual_balance_accounts AS (
     UNION ALL SELECT 1045
     UNION ALL SELECT 2010
     UNION ALL SELECT 2030
+    UNION ALL SELECT 2034
     UNION ALL SELECT 2040
 ),
 actual_running_balances AS (
@@ -96,7 +97,7 @@ budget_running_balances AS (
     JOIN Account AS a
         ON a.AccountID = bl.AccountID
     WHERE bl.BudgetCategory = 'Balance Sheet'
-      AND CAST(a.AccountNumber AS INTEGER) IN (1010, 1020, 1040, 1045, 2010, 2030, 2040)
+      AND CAST(a.AccountNumber AS INTEGER) IN (1010, 1020, 1040, 1045, 2010, 2030, 2034, 2040)
     GROUP BY bl.FiscalYear, bl.Month, CAST(a.AccountNumber AS INTEGER)
 ),
 metric_values AS (
@@ -131,6 +132,11 @@ metric_values AS (
 
     UNION ALL
 
+    SELECT FiscalYear, FiscalPeriod, 'Sales Commission Payable Ending Balance', ROUND(SUM(CASE WHEN AccountNumber = 2034 THEN EndingBalance ELSE 0 END), 2), 0.0
+    FROM budget_running_balances GROUP BY FiscalYear, FiscalPeriod
+
+    UNION ALL
+
     SELECT FiscalYear, FiscalPeriod, 'Accrued Expenses Ending Balance', ROUND(SUM(CASE WHEN AccountNumber = 2040 THEN EndingBalance ELSE 0 END), 2), 0.0
     FROM budget_running_balances GROUP BY FiscalYear, FiscalPeriod
 
@@ -147,7 +153,7 @@ metric_values AS (
         'Net Working Capital',
         ROUND(
             SUM(CASE WHEN AccountNumber IN (1020, 1040, 1045) THEN EndingBalance ELSE 0 END)
-            - SUM(CASE WHEN AccountNumber IN (2010, 2030, 2040) THEN EndingBalance ELSE 0 END),
+            - SUM(CASE WHEN AccountNumber IN (2010, 2030, 2034, 2040) THEN EndingBalance ELSE 0 END),
             2
         ),
         0.0
@@ -185,6 +191,11 @@ actual_metric_values AS (
 
     UNION ALL
 
+    SELECT FiscalYear, FiscalPeriod, 'Sales Commission Payable Ending Balance', ROUND(SUM(CASE WHEN AccountNumber = 2034 THEN EndingBalance ELSE 0 END), 2)
+    FROM actual_running_balances GROUP BY FiscalYear, FiscalPeriod
+
+    UNION ALL
+
     SELECT FiscalYear, FiscalPeriod, 'Accrued Expenses Ending Balance', ROUND(SUM(CASE WHEN AccountNumber = 2040 THEN EndingBalance ELSE 0 END), 2)
     FROM actual_running_balances GROUP BY FiscalYear, FiscalPeriod
 
@@ -201,7 +212,7 @@ actual_metric_values AS (
         'Net Working Capital',
         ROUND(
             SUM(CASE WHEN AccountNumber IN (1020, 1040, 1045) THEN EndingBalance ELSE 0 END)
-            - SUM(CASE WHEN AccountNumber IN (2010, 2030, 2040) THEN EndingBalance ELSE 0 END),
+            - SUM(CASE WHEN AccountNumber IN (2010, 2030, 2034, 2040) THEN EndingBalance ELSE 0 END),
             2
         )
     FROM actual_running_balances

@@ -435,8 +435,8 @@ const queryManifest = {
     "category": "cases",
     "filename": "02_o2c_source_to_gl_trace.sql",
     "publicPath": "/cases/02_o2c_source_to_gl_trace.sql",
-    "teachingObjective": "Tie shipment and invoice source rows back to posted GL activity.",
-    "mainTables": "Shipment, ShipmentLine, SalesInvoice, SalesInvoiceLine, GLEntry, Account, SalesOrder, Customer.",
+    "teachingObjective": "Tie shipment, invoice, and commission source rows back to posted GL activity.",
+    "mainTables": "Shipment, ShipmentLine, SalesInvoice, SalesInvoiceLine, SalesCommissionAccrual, SalesCommissionAdjustment, SalesCommissionPayment, GLEntry, Account, SalesOrder, Customer.",
     "outputShape": "One row per shipment or invoice source line and related GL posting row."
   },
   "cases/03_p2p_invoice_line_trace_receipt_vs_accrual.sql": {
@@ -927,6 +927,14 @@ const queryManifest = {
     "mainTables": "ServiceBillingLine, SalesInvoice, SalesInvoiceLine, Customer, GLEntry, Account.",
     "outputShape": "One row per invoice month and customer."
   },
+  "financial/58_sales_commission_payable_rollforward.sql": {
+    "category": "financial",
+    "filename": "58_sales_commission_payable_rollforward.sql",
+    "publicPath": "/financial/58_sales_commission_payable_rollforward.sql",
+    "teachingObjective": "Reconcile sales commission payable activity from invoice accrual through clawback and payment.",
+    "mainTables": "GLEntry, Account, SalesCommissionAccrual, SalesCommissionAdjustment, SalesCommissionPayment.",
+    "outputShape": "One row per fiscal period with sales commission payable activity and ending balance."
+  },
   "managerial/01_budget_vs_actual_by_cost_center.sql": {
     "category": "managerial",
     "filename": "01_budget_vs_actual_by_cost_center.sql",
@@ -1342,6 +1350,14 @@ const queryManifest = {
     "teachingObjective": "Compare engagement staffing mix, utilization, billed revenue, and labor margin for design services.",
     "mainTables": "ServiceEngagement, ServiceEngagementAssignment, ServiceTimeEntry, ServiceBillingLine, Customer, Employee.",
     "outputShape": "One row per service engagement."
+  },
+  "managerial/53_sales_commission_expense_by_rep_segment.sql": {
+    "category": "managerial",
+    "filename": "53_sales_commission_expense_by_rep_segment.sql",
+    "publicPath": "/managerial/53_sales_commission_expense_by_rep_segment.sql",
+    "teachingObjective": "Review sales commission expense by sales rep, revenue type, customer segment, and invoice month.",
+    "mainTables": "SalesCommissionAccrual, SalesCommissionAdjustment, Employee, Customer.",
+    "outputShape": "One row per sales rep, revenue type, customer segment, and fiscal month."
   }
 };
 

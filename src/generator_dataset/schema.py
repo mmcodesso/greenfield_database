@@ -138,6 +138,35 @@ TABLE_COLUMNS = {
         "CustomerRefundID", "RefundNumber", "RefundDate", "CustomerID", "CreditMemoID",
         "Amount", "PaymentMethod", "ReferenceNumber", "ApprovedByEmployeeID", "ClearedDate",
     ],
+    "SalesCommissionRate": [
+        "SalesCommissionRateID", "RevenueType", "CustomerSegment", "RatePct",
+        "EffectiveStartDate", "EffectiveEndDate", "Status", "ApprovedByEmployeeID",
+        "ApprovedDate",
+    ],
+    "SalesCommissionAccrual": [
+        "SalesCommissionAccrualID", "AccrualNumber", "AccrualDate", "SalesInvoiceID",
+        "SalesInvoiceLineID", "SalesOrderID", "CustomerID", "SalesRepEmployeeID",
+        "SalesCommissionRateID", "RevenueType", "CustomerSegment", "CommissionBaseAmount",
+        "CommissionRatePct", "CommissionAmount", "Status", "CreatedByEmployeeID",
+        "CreatedDate",
+    ],
+    "SalesCommissionAdjustment": [
+        "SalesCommissionAdjustmentID", "AdjustmentNumber", "AdjustmentDate",
+        "SalesCommissionAccrualID", "CreditMemoID", "CreditMemoLineID", "SalesInvoiceID",
+        "SalesInvoiceLineID", "SalesOrderID", "CustomerID", "SalesRepEmployeeID",
+        "CommissionBaseReductionAmount", "CommissionRatePct", "CommissionAdjustmentAmount",
+        "Status", "ApprovedByEmployeeID", "ApprovedDate",
+    ],
+    "SalesCommissionPayment": [
+        "SalesCommissionPaymentID", "PaymentNumber", "PaymentDate", "SalesRepEmployeeID",
+        "PeriodStartDate", "PeriodEndDate", "GrossAccrualAmount", "AdjustmentAmount",
+        "NetPaymentAmount", "PaymentMethod", "ReferenceNumber", "Status",
+        "ApprovedByEmployeeID", "ClearedDate",
+    ],
+    "SalesCommissionPaymentLine": [
+        "SalesCommissionPaymentLineID", "SalesCommissionPaymentID", "SourceDocumentType",
+        "SourceDocumentID", "SourceLineID", "SalesRepEmployeeID", "Amount",
+    ],
     "Supplier": [
         "SupplierID", "SupplierName", "ContactName", "Address", "City", "State",
         "PostalCode", "Country", "Phone", "Email", "PaymentTerms", "IsApproved",
@@ -472,6 +501,48 @@ SQLITE_INDEXES = {
     ),
     "CustomerRefund": (
         _sqlite_index("ux_customerrefund_refundnumber", "RefundNumber", unique=True),
+    ),
+    "SalesCommissionRate": (
+        _sqlite_index(
+            "ix_salescommissionrate_type_segment_dates",
+            "RevenueType",
+            "CustomerSegment",
+            "EffectiveStartDate",
+            "EffectiveEndDate",
+        ),
+    ),
+    "SalesCommissionAccrual": (
+        _sqlite_index("ux_salescommissionaccrual_invoice_line", "SalesInvoiceLineID", unique=True),
+        _sqlite_index(
+            "ix_salescommissionaccrual_rep_date",
+            "SalesRepEmployeeID",
+            "AccrualDate",
+        ),
+    ),
+    "SalesCommissionAdjustment": (
+        _sqlite_index("ux_salescommissionadjustment_credit_line", "CreditMemoLineID", unique=True),
+        _sqlite_index(
+            "ix_salescommissionadjustment_rep_date",
+            "SalesRepEmployeeID",
+            "AdjustmentDate",
+        ),
+    ),
+    "SalesCommissionPayment": (
+        _sqlite_index("ux_salescommissionpayment_paymentnumber", "PaymentNumber", unique=True),
+        _sqlite_index(
+            "ix_salescommissionpayment_rep_period",
+            "SalesRepEmployeeID",
+            "PeriodStartDate",
+            "PeriodEndDate",
+        ),
+    ),
+    "SalesCommissionPaymentLine": (
+        _sqlite_index(
+            "ix_salescommissionpaymentline_payment_source",
+            "SalesCommissionPaymentID",
+            "SourceDocumentType",
+            "SourceDocumentID",
+        ),
     ),
     "PurchaseRequisition": (
         _sqlite_index("ux_purchaserequisition_requisitionnumber", "RequisitionNumber", unique=True),

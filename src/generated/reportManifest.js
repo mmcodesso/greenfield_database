@@ -305,6 +305,24 @@ const reportManifest = {
     "excelPath": "/reports/financial/working-capital-and-cash-conversion/budget-vs-actual-working-capital-and-cash-bridge/budget-vs-actual-working-capital-and-cash-bridge.xlsx",
     "csvPath": "/reports/financial/working-capital-and-cash-conversion/budget-vs-actual-working-capital-and-cash-bridge/budget-vs-actual-working-capital-and-cash-bridge.csv"
   },
+  "sales-commission-payable-rollforward": {
+    "slug": "sales-commission-payable-rollforward",
+    "title": "Sales Commission Payable Rollforward",
+    "area": "financial",
+    "areaLabel": "Financial",
+    "processGroup": "working-capital-and-cash-conversion",
+    "processGroupLabel": "Working Capital and Cash Conversion",
+    "cadence": "Monthly",
+    "description": "Reconcile commission payable from invoice-line accruals through credit-memo clawbacks and sales-rep payments.",
+    "queryPath": "queries/financial/58_sales_commission_payable_rollforward.sql",
+    "previewRowLimit": 25,
+    "excelEnabled": true,
+    "csvEnabled": true,
+    "assetBasePath": "/reports/financial/working-capital-and-cash-conversion/sales-commission-payable-rollforward",
+    "previewPath": "/reports/financial/working-capital-and-cash-conversion/sales-commission-payable-rollforward/preview.json",
+    "excelPath": "/reports/financial/working-capital-and-cash-conversion/sales-commission-payable-rollforward/sales-commission-payable-rollforward.xlsx",
+    "csvPath": "/reports/financial/working-capital-and-cash-conversion/sales-commission-payable-rollforward/sales-commission-payable-rollforward.csv"
+  },
   "customer-credit-and-refunds": {
     "slug": "customer-credit-and-refunds",
     "title": "Customer Credit and Refunds",
@@ -502,6 +520,24 @@ const reportManifest = {
     "previewPath": "/reports/managerial/performance-and-planning/budget-vs-actual-by-cost-center/preview.json",
     "excelPath": "/reports/managerial/performance-and-planning/budget-vs-actual-by-cost-center/budget-vs-actual-by-cost-center.xlsx",
     "csvPath": "/reports/managerial/performance-and-planning/budget-vs-actual-by-cost-center/budget-vs-actual-by-cost-center.csv"
+  },
+  "sales-commission-expense-by-rep-segment": {
+    "slug": "sales-commission-expense-by-rep-segment",
+    "title": "Sales Commission Expense by Rep and Segment",
+    "area": "managerial",
+    "areaLabel": "Managerial",
+    "processGroup": "performance-and-planning",
+    "processGroupLabel": "Performance and Planning",
+    "cadence": "Monthly",
+    "description": "Review gross commission expense, clawbacks, and net commission expense by sales rep, revenue type, customer segment, and month.",
+    "queryPath": "queries/managerial/53_sales_commission_expense_by_rep_segment.sql",
+    "previewRowLimit": 25,
+    "excelEnabled": true,
+    "csvEnabled": true,
+    "assetBasePath": "/reports/managerial/performance-and-planning/sales-commission-expense-by-rep-segment",
+    "previewPath": "/reports/managerial/performance-and-planning/sales-commission-expense-by-rep-segment/preview.json",
+    "excelPath": "/reports/managerial/performance-and-planning/sales-commission-expense-by-rep-segment/sales-commission-expense-by-rep-segment.xlsx",
+    "csvPath": "/reports/managerial/performance-and-planning/sales-commission-expense-by-rep-segment/sales-commission-expense-by-rep-segment.csv"
   },
   "budget-vs-actual-revenue-price-volume-cost-bridge": {
     "slug": "budget-vs-actual-revenue-price-volume-cost-bridge",

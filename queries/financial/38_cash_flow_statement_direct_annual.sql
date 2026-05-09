@@ -195,7 +195,8 @@ classified_cash_vouchers AS (
                 'CustomerRefund',
                 'DisbursementPayment',
                 'PayrollPayment',
-                'PayrollLiabilityRemittance'
+                'PayrollLiabilityRemittance',
+                'SalesCommissionPayment'
             )
                 THEN 'Operating Activities'
             WHEN vcf.HasInvestingCounterpart = 1
@@ -216,6 +217,8 @@ classified_cash_vouchers AS (
                 THEN 'Cash Paid for Payroll'
             WHEN cv.SourceDocumentType = 'PayrollLiabilityRemittance'
                 THEN 'Cash Paid for Payroll Taxes and Withholdings'
+            WHEN cv.SourceDocumentType = 'SalesCommissionPayment'
+                THEN 'Cash Paid for Sales Commissions'
             WHEN cv.SourceDocumentType = 'DisbursementPayment'
              AND COALESCE(cdf.IsCapexDisbursement, 0) = 1
                 THEN 'Capital Expenditures and Asset Transactions'
@@ -266,6 +269,7 @@ line_layout AS (
     UNION ALL SELECT 'Operating Activities', 'Cash Paid to Suppliers', 'account', 120
     UNION ALL SELECT 'Operating Activities', 'Cash Paid for Payroll', 'account', 130
     UNION ALL SELECT 'Operating Activities', 'Cash Paid for Payroll Taxes and Withholdings', 'account', 140
+    UNION ALL SELECT 'Operating Activities', 'Cash Paid for Sales Commissions', 'account', 145
     UNION ALL SELECT 'Operating Activities', 'Cash Paid for Other Operating Expenses', 'account', 150
     UNION ALL SELECT 'Operating Activities', 'Other Operating Cash', 'account', 160
     UNION ALL SELECT 'Net Cash from Operating Activities', 'Net Cash from Operating Activities', 'subtotal', 190

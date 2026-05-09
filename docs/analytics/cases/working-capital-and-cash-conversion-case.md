@@ -12,25 +12,25 @@ import { QueryReference } from "@site/src/components/QueryReference";
 
 The finance team is reviewing why cash feels tighter than expected even though sales and operations still look healthy on the surface. Management does not need another generic balance-sheet recap. It needs a cross-process explanation of where working-capital pressure is building and which timing pattern deserves action first.
 
-That pressure does not come from one document chain. Customer receipts can arrive before AR settles. Goods can be received before suppliers are paid. Payroll liabilities can build before remittances leave the bank. Accrued expenses can rise before service invoices appear. Finance needs one working-capital story that connects those separate timing systems back to cash pressure.
+That pressure does not come from one document chain. Customer receipts can arrive before AR settles. Goods can be received before suppliers are paid. Sales commissions can be accrued from invoice-line revenue before the monthly rep settlement clears the liability. Payroll liabilities can build before remittances leave the bank. Accrued expenses can rise before service invoices appear. Finance needs one working-capital story that connects those separate timing systems back to cash pressure.
 
 Your job is to build that story from the control accounts first, then narrow it into the customer, supplier, payroll, and accrual timing patterns that actually explain the pressure.
 
 ## The Problem to Solve
 
-You need to prove which working-capital buckets moved the most by month, which timing patterns sit behind those balances, and how AR, AP, receipt timing, payroll liabilities, customer deposits, and accrued expenses change cash pressure. You also need to decide which driver deserves management follow-up first instead of treating every variance as equally important.
+You need to prove which working-capital buckets moved the most by month, which timing patterns sit behind those balances, and how AR, AP, receipt timing, sales-commission payable, payroll liabilities, customer deposits, and accrued expenses change cash pressure. You also need to decide which driver deserves management follow-up first instead of treating every variance as equally important.
 
 ## What You Need to Develop
 
 - A month-by-month working-capital pressure map built from the control accounts.
 - A customer-side explanation that separates open AR from cash already received but not yet applied.
 - A supplier-side explanation that separates open AP from receipt-to-payment timing and GRNI behavior.
-- A liability-layer explanation for payroll and accrued expenses that sits alongside the classic cash-conversion buckets.
+- A liability-layer explanation for sales commissions, payroll, and accrued expenses that sits alongside the classic cash-conversion buckets.
 - A short management-facing conclusion on which driver deserves follow-up first.
 
 ## Before You Start
 
-- Main tables: `GLEntry`, `Account`, `SalesInvoice`, `CashReceipt`, `CashReceiptApplication`, `PurchaseInvoice`, `PurchaseInvoiceLine`, `DisbursementPayment`, `GoodsReceipt`, `PayrollRegister`, `PayrollPayment`, `PayrollLiabilityRemittance`, `JournalEntry`
+- Main tables: `GLEntry`, `Account`, `SalesInvoice`, `CashReceipt`, `CashReceiptApplication`, `SalesCommissionAccrual`, `SalesCommissionAdjustment`, `SalesCommissionPayment`, `PurchaseInvoice`, `PurchaseInvoiceLine`, `DisbursementPayment`, `GoodsReceipt`, `PayrollRegister`, `PayrollPayment`, `PayrollLiabilityRemittance`, `JournalEntry`
 - Related guides: [Financial Queries](../financial.md), [Commercial and Working Capital](../reports/commercial-and-working-capital.md)
 - Related process pages: [Order-to-Cash Process](../../processes/o2c.md), [Procure-to-Pay Process](../../processes/p2p.md), [Payroll Process](../../processes/payroll.md), [Manual Journals and Close Cycle](../../processes/manual-journals-and-close.md)
 - Supporting references: [Schema Reference](../../reference/schema.md), [GLEntry Posting Reference](../../reference/posting.md), [Dataset Guide](../../start-here/dataset-overview.md)
@@ -44,7 +44,7 @@ Start from the monthly bridge. Before you debate timing, you need to know which 
 
 **What we are trying to achieve**
 
-Establish the month-by-month movement in AR, inventory and WIP, AP, GRNI, customer deposits, accrued expenses, and payroll liabilities.
+Establish the month-by-month movement in AR, inventory and WIP, AP, GRNI, customer deposits, sales commission payable, accrued expenses, and payroll liabilities.
 
 **Why this step changes the diagnosis**
 
@@ -70,7 +70,7 @@ The query classifies posted GL movement by account number into working-capital b
 - the largest monthly movements in net working capital
 - whether pressure came from assets, liabilities, or both
 - months where inventory and WIP moved differently from receivables
-- months where deposits, payroll liabilities, or accrued expenses changed the story materially
+- months where deposits, sales commission payable, payroll liabilities, or accrued expenses changed the story materially
 
 ### Step 2. Separate customer settlement timing from customer cash arrival
 
@@ -150,23 +150,28 @@ The AP query starts from `PurchaseInvoice`, subtracts `DisbursementPayment`, and
 - whether AP and GRNI move together or drift apart
 - whether supplier-side timing helps offset or increase overall cash pressure
 
-### Step 4. Bring payroll liabilities and accrued expenses into the same cash-pressure story
+### Step 4. Bring commission, payroll, and accrued liabilities into the same cash-pressure story
 
 At this point you know the commercial timing pattern. Now add the liability layers that sit outside the classic AR-inventory-AP triangle but still change the cash story materially.
 
 **What we are trying to achieve**
 
-Show how payroll liabilities and accrued expenses accumulate before cash leaves through remittances, supplier invoicing, and payment.
+Show how sales commissions, payroll liabilities, and accrued expenses accumulate before cash leaves through rep settlement, remittances, supplier invoicing, and payment.
 
 **Why this step changes the diagnosis**
 
-A narrow AR-inventory-AP view can miss a real source of current-liability pressure. Payroll and accrual timing can keep cash tight even when commercial activity looks stable.
+A narrow AR-inventory-AP view can miss a real source of current-liability pressure. Sales commission, payroll, and accrual timing can keep cash tight even when commercial activity looks stable.
 
 **Suggested query**
 
 <QueryReference
+  queryKey="financial/58_sales_commission_payable_rollforward.sql"
+  helperText="Use this first to measure commission accruals, credit-memo clawbacks, payments, and the ending payable."
+/>
+
+<QueryReference
   queryKey="financial/09_payroll_liability_rollforward.sql"
-  helperText="Use this first to measure payroll-liability movement by month and liability account."
+  helperText="Use this next to measure payroll-liability movement by month and liability account."
 />
 
 <QueryReference
@@ -186,17 +191,17 @@ A narrow AR-inventory-AP view can miss a real source of current-liability pressu
 
 **What this query does**
 
-The first two queries show how payroll liabilities build and then clear through employee cash and remittance cash. The second two show how accrued expenses build before supplier invoices arrive and how quickly those estimates move toward invoice and payment settlement.
+The commission query shows how invoice-line commission expense builds `2034`, how credit memos reduce the payable, and how monthly rep payments clear it. The payroll queries show how payroll liabilities build and then clear through employee cash and remittance cash. The accrual queries show how accrued expenses build before supplier invoices arrive and how quickly those estimates move toward invoice and payment settlement.
 
 **How it works**
 
-The payroll rollforward groups `GLEntry` by payroll-liability account and computes monthly net increase plus running ending balance. The payroll cash-outflow query combines `PayrollPayment` and `PayrollLiabilityRemittance` by fiscal period and separates the cash streams into net pay, employee tax, employer tax, and benefits. The accrual rollforward starts from `JournalEntry` rows tagged as accruals, joins them to `GLEntry`, and compares accrued amount with later invoice clearing and any accrual adjustment activity. The accrued-timing query joins accrual-linked invoice lines back to the originating journal and related payment summary so lag from estimate to invoice to payment stays visible.
+The commission rollforward groups `GLEntry` for `2034` and separates accrual credits from clawback and payment debits. The payroll rollforward groups `GLEntry` by payroll-liability account and computes monthly net increase plus running ending balance. The payroll cash-outflow query combines `PayrollPayment` and `PayrollLiabilityRemittance` by fiscal period and separates the cash streams into net pay, employee tax, employer tax, and benefits. The accrual rollforward starts from `JournalEntry` rows tagged as accruals, joins them to `GLEntry`, and compares accrued amount with later invoice clearing and any accrual adjustment activity. The accrued-timing query joins accrual-linked invoice lines back to the originating journal and related payment summary so lag from estimate to invoice to payment stays visible.
 
 **What to look for in the result**
 
-- liability accounts or expense families that build faster than they clear
+- liability accounts, commission reps, or expense families that build faster than they clear
 - months where remittance timing or first-payment timing lags the liability build materially
-- whether payroll and accrual liabilities reinforce or offset the commercial timing story
+- whether commission, payroll, and accrual liabilities reinforce or offset the commercial timing story
 - which liability layer looks structural versus limited to a narrower period or expense family
 
 ### Step 5. Prioritize the driver that deserves management follow-up first
@@ -257,15 +262,15 @@ Submit a short case memo or notebook note with these four artifacts:
 1. Build a month-by-month bridge tab from `GLEntry` and `Account` for the main working-capital buckets.
 2. Add a customer-timing tab for AR aging, unapplied cash, and days to first application.
 3. Add a supplier-timing tab for AP aging plus invoice-to-payment and receipt-to-payment timing.
-4. Add a liability-layer tab for payroll liabilities, remittances, accrual build, and accrual-to-invoice-to-payment timing.
+4. Add a liability-layer tab for commission payable, payroll liabilities, remittances, accrual build, and accrual-to-invoice-to-payment timing.
 5. Finish with a plan-versus-actual summary tab that forces one primary follow-up choice instead of a full statement-reconciliation model.
 
 ## Wrap-Up Questions
 
 - Accounting/process: Which working-capital bucket or liability layer best explains cash pressure across the modeled range?
-- Database/source evidence: Which customer, supplier, payroll, accrual, budget, or GL grain supports that pressure map?
+- Database/source evidence: Which customer, supplier, commission, payroll, accrual, budget, or GL grain supports that pressure map?
 - Analytics judgment: Where can cash tighten even while top-line activity remains strong?
-- Escalation/next step: Which follow-up path should open first: unapplied customer cash, supplier timing, payroll liabilities, or accrual accuracy?
+- Escalation/next step: Which follow-up path should open first: unapplied customer cash, supplier timing, sales-commission payable, payroll liabilities, or accrual accuracy?
 
 ## Next Steps
 

@@ -57,9 +57,11 @@ from generator_dataset.o2c import (
     generate_month_cash_receipts,
     generate_month_customer_refunds,
     generate_month_o2c,
+    generate_month_sales_commissions,
     generate_month_sales_returns,
     generate_month_sales_invoices,
     generate_month_shipments,
+    generate_sales_commission_rates,
     o2c_open_state,
 )
 from generator_dataset.p2p import (
@@ -243,6 +245,7 @@ def _generate_phase2_master_data_and_planning(
         ("Generate phase 2 customers", generate_customers),
         ("Generate phase 2 price lists", generate_price_lists),
         ("Generate phase 2 promotions", generate_promotions),
+        ("Generate phase 2 sales commission rates", generate_sales_commission_rates),
         ("Generate phase 2 suppliers", generate_suppliers),
         ("Generate phase 2 payroll periods", generate_payroll_periods),
         ("Generate phase 2 shift definitions and assignments", generate_shift_definitions_and_assignments),
@@ -882,6 +885,7 @@ def build_phase5(config_path: str | Path = "config/settings.yaml") -> Generation
 
     generate_month_sales_invoices(context, 2026, 1)
     generate_month_cash_receipts(context, 2026, 1)
+    generate_month_sales_commissions(context, 2026, 1)
     generate_month_purchase_invoices(context, 2026, 1)
     generate_month_capex_activity(context, 2026, 1)
     generate_month_disbursements(context, 2026, 1)
@@ -947,6 +951,7 @@ def build_phase11(config_path: str | Path = "config/settings.yaml") -> Generatio
 
     generate_month_sales_returns(context, 2026, 1)
     generate_month_customer_refunds(context, 2026, 1)
+    generate_month_sales_commissions(context, 2026, 1)
     generate_recurring_manual_journals(context)
     generate_accrued_service_settlements(context)
     generate_accrual_adjustment_journals(context)
@@ -976,6 +981,7 @@ def build_phase12(config_path: str | Path = "config/settings.yaml") -> Generatio
         generate_month_cash_receipts(context, year, month)
         generate_month_sales_returns(context, year, month)
         generate_month_customer_refunds(context, year, month)
+        generate_month_sales_commissions(context, year, month)
         generate_month_purchase_invoices(context, year, month)
         generate_month_capex_activity(context, year, month)
         generate_month_disbursements(context, year, month)
@@ -1008,6 +1014,7 @@ def build_phase13(config_path: str | Path = "config/settings.yaml") -> Generatio
         generate_month_cash_receipts(context, year, month)
         generate_month_sales_returns(context, year, month)
         generate_month_customer_refunds(context, year, month)
+        generate_month_sales_commissions(context, year, month)
         generate_month_purchase_invoices(context, year, month)
         generate_month_capex_activity(context, year, month)
         generate_month_disbursements(context, year, month)
@@ -1040,6 +1047,7 @@ def build_phase14(config_path: str | Path = "config/settings.yaml") -> Generatio
         generate_month_cash_receipts(context, year, month)
         generate_month_sales_returns(context, year, month)
         generate_month_customer_refunds(context, year, month)
+        generate_month_sales_commissions(context, year, month)
         generate_month_purchase_invoices(context, year, month)
         generate_month_capex_activity(context, year, month)
         generate_month_disbursements(context, year, month)
@@ -1072,6 +1080,7 @@ def build_phase15(config_path: str | Path = "config/settings.yaml") -> Generatio
         generate_month_cash_receipts(context, year, month)
         generate_month_sales_returns(context, year, month)
         generate_month_customer_refunds(context, year, month)
+        generate_month_sales_commissions(context, year, month)
         generate_month_purchase_invoices(context, year, month)
         generate_month_capex_activity(context, year, month)
         generate_month_disbursements(context, year, month)
@@ -1107,6 +1116,7 @@ def build_phase15_2(
         generate_month_cash_receipts(context, year, month)
         generate_month_sales_returns(context, year, month)
         generate_month_customer_refunds(context, year, month)
+        generate_month_sales_commissions(context, year, month)
         generate_month_purchase_invoices(context, year, month)
         generate_month_disbursements(context, year, month)
     generate_recurring_manual_journals(context)
@@ -1142,6 +1152,7 @@ def build_phase16(
         generate_month_cash_receipts(context, year, month)
         generate_month_sales_returns(context, year, month)
         generate_month_customer_refunds(context, year, month)
+        generate_month_sales_commissions(context, year, month)
         generate_month_purchase_invoices(context, year, month)
         generate_month_disbursements(context, year, month)
     generate_recurring_manual_journals(context)
@@ -1177,6 +1188,7 @@ def build_phase17(
         generate_month_cash_receipts(context, year, month)
         generate_month_sales_returns(context, year, month)
         generate_month_customer_refunds(context, year, month)
+        generate_month_sales_commissions(context, year, month)
         generate_month_purchase_invoices(context, year, month)
         generate_month_disbursements(context, year, month)
     generate_recurring_manual_journals(context)
@@ -1212,6 +1224,7 @@ def build_phase18(
         generate_month_cash_receipts(context, year, month)
         generate_month_sales_returns(context, year, month)
         generate_month_customer_refunds(context, year, month)
+        generate_month_sales_commissions(context, year, month)
         generate_month_purchase_invoices(context, year, month)
         generate_month_disbursements(context, year, month)
     generate_recurring_manual_journals(context)
@@ -1331,6 +1344,7 @@ def generate_all_months(context: GenerationContext) -> None:
         generate_month_cash_receipts(context, year, month)
         generate_month_sales_returns(context, year, month)
         generate_month_customer_refunds(context, year, month)
+        generate_month_sales_commissions(context, year, month)
         generate_month_purchase_invoices(context, year, month)
         generate_month_disbursements(context, year, month)
 
@@ -1540,6 +1554,7 @@ def build_full_dataset(
                 "generate_month_customer_refunds",
                 generate_month_customer_refunds,
             )
+            _run_month_step(context, year, month, "generate_month_sales_commissions", generate_month_sales_commissions)
             _run_month_step(context, year, month, "generate_month_purchase_invoices", generate_month_purchase_invoices)
             _run_month_step(context, year, month, "generate_month_capex_activity", generate_month_capex_activity)
             _run_month_step(context, year, month, "generate_month_disbursements", generate_month_disbursements)

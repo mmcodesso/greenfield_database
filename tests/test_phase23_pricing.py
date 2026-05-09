@@ -68,6 +68,11 @@ def test_phase23_schema_and_clean_build(phase23_clean_context) -> None:
         "PriceListLine",
         "PromotionProgram",
         "PriceOverrideApproval",
+        "SalesCommissionRate",
+        "SalesCommissionAccrual",
+        "SalesCommissionAdjustment",
+        "SalesCommissionPayment",
+        "SalesCommissionPaymentLine",
     ]:
         assert table_name in TABLE_COLUMNS
 

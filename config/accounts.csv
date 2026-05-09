@@ -26,6 +26,7 @@ AccountID,AccountNumber,AccountName,AccountType,AccountSubType,ParentAccountID,N
 96,2031,Payroll Tax Withholdings Payable,Liability,Current Liability,21,Credit,1
 97,2032,Employer Payroll Taxes Payable,Liability,Current Liability,21,Credit,1
 98,2033,Employee Benefits and Other Deductions Payable,Liability,Current Liability,21,Credit,1
+103,2034,Sales Commission Payable,Liability,Current Liability,21,Credit,1
 25,2040,Accrued Expenses,Liability,Current Liability,21,Credit,1
 26,2050,Sales Tax Payable,Liability,Current Liability,21,Credit,1
 27,2060,Customer Deposits and Unapplied Cash,Liability,Current Liability,21,Credit,1
@@ -86,6 +87,7 @@ AccountID,AccountNumber,AccountName,AccountType,AccountSubType,ParentAccountID,N
 89,6240,Salaries Expense - Marketing,Expense,Operating Expense,57,Debit,1
 90,6250,Salaries Expense - Research and Development,Expense,Operating Expense,57,Debit,1
 102,6280,Salaries Expense - Design Services,Expense,Operating Expense,57,Debit,1
+104,6290,Sales Commission Expense,Expense,Operating Expense,57,Debit,1
 80,7000,Other Income and Expense,Revenue,Header,,Credit,0
 81,7010,Interest Income,Revenue,Other Income,80,Credit,0
 82,7020,Gain or Loss on Asset Disposal,Revenue,Other Income or Expense,80,Credit,1

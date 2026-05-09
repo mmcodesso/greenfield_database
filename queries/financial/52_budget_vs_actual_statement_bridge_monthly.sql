@@ -272,6 +272,9 @@ actual_balance_summary AS (
     SELECT FiscalYear, FiscalPeriod, 'Balance Sheet', 'Accrued Payroll', ROUND(SUM(CASE WHEN AccountNumber = 2030 THEN EndingBalance ELSE 0 END), 2)
     FROM actual_running_balance_lines GROUP BY FiscalYear, FiscalPeriod
     UNION ALL
+    SELECT FiscalYear, FiscalPeriod, 'Balance Sheet', 'Sales Commission Payable', ROUND(SUM(CASE WHEN AccountNumber = 2034 THEN EndingBalance ELSE 0 END), 2)
+    FROM actual_running_balance_lines GROUP BY FiscalYear, FiscalPeriod
+    UNION ALL
     SELECT FiscalYear, FiscalPeriod, 'Balance Sheet', 'Accrued Expenses', ROUND(SUM(CASE WHEN AccountNumber = 2040 THEN EndingBalance ELSE 0 END), 2)
     FROM actual_running_balance_lines GROUP BY FiscalYear, FiscalPeriod
     UNION ALL
@@ -305,6 +308,9 @@ budget_balance_summary AS (
     FROM budget_balance_lines GROUP BY FiscalYear, FiscalPeriod
     UNION ALL
     SELECT FiscalYear, FiscalPeriod, 'Balance Sheet', 'Accrued Payroll', ROUND(SUM(CASE WHEN AccountNumber = 2030 THEN EndingBalance ELSE 0 END), 2)
+    FROM budget_balance_lines GROUP BY FiscalYear, FiscalPeriod
+    UNION ALL
+    SELECT FiscalYear, FiscalPeriod, 'Balance Sheet', 'Sales Commission Payable', ROUND(SUM(CASE WHEN AccountNumber = 2034 THEN EndingBalance ELSE 0 END), 2)
     FROM budget_balance_lines GROUP BY FiscalYear, FiscalPeriod
     UNION ALL
     SELECT FiscalYear, FiscalPeriod, 'Balance Sheet', 'Accrued Expenses', ROUND(SUM(CASE WHEN AccountNumber = 2040 THEN EndingBalance ELSE 0 END), 2)

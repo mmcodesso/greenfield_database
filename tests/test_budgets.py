@@ -457,7 +457,7 @@ def test_budget_balance_sheet_rollforwards_reconcile_to_net_income_and_capex_pla
     )
 
     balance_sheet = budget_lines[budget_lines["BudgetCategory"].astype(str).eq("Balance Sheet")].copy()
-    tracked_account_numbers = [1010, 1020, 1040, 1045, 2010, 2030, 2040, 2110]
+    tracked_account_numbers = [1010, 1020, 1040, 1045, 2010, 2030, 2034, 2040, 2110]
     ending_balances = (
         balance_sheet[balance_sheet["AccountNumber"].astype(int).isin(tracked_account_numbers)][
             ["FiscalYear", "Month", "AccountNumber", "BudgetAmount"]
@@ -595,6 +595,7 @@ def test_budget_balance_sheet_rollforwards_reconcile_to_net_income_and_capex_pla
         materials_change = round(float(row.get(1045, 0.0)) - previous_balances[1045], 2)
         accounts_payable_change = round(float(row.get(2010, 0.0)) - previous_balances[2010], 2)
         accrued_payroll_change = round(float(row.get(2030, 0.0)) - previous_balances[2030], 2)
+        sales_commission_payable_change = round(float(row.get(2034, 0.0)) - previous_balances[2034], 2)
         accrued_expenses_change = round(float(row.get(2040, 0.0)) - previous_balances[2040], 2)
         expected_cash = round(
             previous_balances[1010]
@@ -605,6 +606,7 @@ def test_budget_balance_sheet_rollforwards_reconcile_to_net_income_and_capex_pla
             - materials_change
             + accounts_payable_change
             + accrued_payroll_change
+            + sales_commission_payable_change
             + accrued_expenses_change
             - float(row["CashCapex"])
             + float(row["PrincipalBorrowed"])
@@ -619,6 +621,7 @@ def test_budget_balance_sheet_rollforwards_reconcile_to_net_income_and_capex_pla
             1045: round(float(row.get(1045, 0.0)), 2),
             2010: round(float(row.get(2010, 0.0)), 2),
             2030: round(float(row.get(2030, 0.0)), 2),
+            2034: round(float(row.get(2034, 0.0)), 2),
             2040: round(float(row.get(2040, 0.0)), 2),
             2110: round(float(row.get(2110, 0.0)), 2),
         }
